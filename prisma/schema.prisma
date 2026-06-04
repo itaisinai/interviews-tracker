@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PipelineType {
+  POTENTIAL
+  ACTIVE_PROCESS
+  ARCHIVED
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+  MAYBE
+}
+
+enum JobStatus {
+  RESEARCH_LEAD
+  TO_APPLY
+  APPLIED
+  RECRUITER_REACHED_OUT
+  PHONE_SCHEDULED
+  PHONE_DONE
+  TECHNICAL_SCHEDULED
+  TECHNICAL_DONE
+  HOME_ASSIGNMENT
+  ASSIGNMENT_SUBMITTED
+  FINAL_STAGE
+  OFFER
+  REJECTED
+  PAUSED
+  NOT_RELEVANT
+}
+
+enum InteractionStatus {
+  SCHEDULED
+  DONE
+  CANCELLED
+  NEEDS_FOLLOW_UP
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum OfferStatus {
+  NOT_DISCUSSED
+  DISCUSSED
+  VERBAL_OFFER
+  WRITTEN_OFFER
+  ACCEPTED
+  DECLINED
+}
+
+model JobOpportunity {
+  id                     String                  @id @default(cuid())
+  companyName            String
+  roleTitle              String
+  pipelineType           PipelineType
+  status                 JobStatus
+  priority               Priority
+  referrerOrConnection   String?
+  source                 String?
+  jobUrl                 String?
+  nextStep               String?
+  notes                  String?
+  employeesRangeId       String?
+  companyStageId         String?
+  workModelId            String?
+  location               String?
+  funding                String?
+  companyDescription     String?
+  productDescription     String?
+  customersTraction      String?
+  techStack              String?
+  backendFrontendSplit   String?
+  compensationNotes      String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  employeesRange         CompanySizeOption?      @relation(fields: [employeesRangeId], references: [id])
+  companyStage           CompanyStageOption?     @relation(fields: [companyStageId], references: [id])
+  workModel              WorkModelOption?        @relation(fields: [workModelId], references: [id])
+  domains                JobOpportunityDomain[]
+  interactions           Interaction[]
+  notesList              Note[]
+  tasks                  Task[]
+  compensation           Compensation?
+
+  @@unique([companyName, roleTitle])
+  @@index([pipelineType])
+  @@index([status])
+  @@index([priority])
+}
+
+model Interaction {
+  id               String            @id @default(cuid())
+  jobOpportunityId String
+  date             DateTime
+  type             String
+  stage            String?
+  status           InteractionStatus
+  personName       String?
+  personRole       String?
+  agenda           String?
+  notes            String?
+  outcome          String?
+  followUp         String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  jobOpportunity   JobOpportunity    @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
+  notesList        Note[]
+  tasks            Task[]
+
+  @@index([date])
+  @@index([status])
+}
+
+model Note {
+  id               String          @id @default(cuid())
+  jobOpportunityId String?
+  interactionId    String?
+  title            String
+  content          String
+  category         String
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  jobOpportunity   JobOpportunity? @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
+  interaction      Interaction?    @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id               String          @id @default(cuid())
+  jobOpportunityId String?
+  interactionId    String?
+  title            String
+  status           TaskStatus
+  priority         Priority
+  dueDate          DateTime?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  jobOpportunity   JobOpportunity? @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
+  interaction      Interaction?    @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Compensation {
+  id                 String         @id @default(cuid())
+  jobOpportunityId   String         @unique
+  baseSalary         String?
+  equity             String?
+  bonus              String?
+  signingBonus       String?
+  benefits           String?
+  vacationDays       String?
+  workModelNotes     String?
+  negotiationNotes   String?
+  offerStatus        OfferStatus    @default(NOT_DISCUSSED)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  jobOpportunity     JobOpportunity @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
+}
+
+model CompanySizeOption {
+  id            String           @id @default(cuid())
+  label         String           @unique
+  createdAt     DateTime         @default(now())
+  opportunities JobOpportunity[]
+}
+
+model CompanyStageOption {
+  id            String           @id @default(cuid())
+  label         String           @unique
+  createdAt     DateTime         @default(now())
+  opportunities JobOpportunity[]
+}
+
+model DomainOption {
+  id            String                 @id @default(cuid())
+  label         String                 @unique
+  createdAt     DateTime               @default(now())
+  opportunities JobOpportunityDomain[]
+}
+
+model WorkModelOption {
+  id            String           @id @default(cuid())
+  label         String           @unique
+  createdAt     DateTime         @default(now())
+  opportunities JobOpportunity[]
+}
+
+model InteractionTypeOption {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model InterviewStageOption {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model JobOpportunityDomain {
+  jobOpportunityId String
+  domainId         String
+  jobOpportunity   JobOpportunity @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
+  domain           DomainOption   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@id([jobOpportunityId, domainId])
+}

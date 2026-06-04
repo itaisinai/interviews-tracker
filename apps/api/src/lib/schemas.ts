@@ -1,0 +1,145 @@
+import { z } from "zod";
+
+export const pipelineTypeSchema = z.enum(["POTENTIAL", "ACTIVE_PROCESS", "ARCHIVED"]);
+export const prioritySchema = z.enum(["HIGH", "MEDIUM", "LOW", "MAYBE"]);
+export const jobStatusSchema = z.enum([
+  "RESEARCH_LEAD",
+  "TO_APPLY",
+  "APPLIED",
+  "RECRUITER_REACHED_OUT",
+  "PHONE_SCHEDULED",
+  "PHONE_DONE",
+  "TECHNICAL_SCHEDULED",
+  "TECHNICAL_DONE",
+  "HOME_ASSIGNMENT",
+  "ASSIGNMENT_SUBMITTED",
+  "FINAL_STAGE",
+  "OFFER",
+  "REJECTED",
+  "PAUSED",
+  "NOT_RELEVANT"
+]);
+export const interactionStatusSchema = z.enum(["SCHEDULED", "DONE", "CANCELLED", "NEEDS_FOLLOW_UP"]);
+export const taskStatusSchema = z.enum(["PENDING", "IN_PROGRESS", "DONE", "CANCELLED"]);
+export const offerStatusSchema = z.enum(["NOT_DISCUSSED", "DISCUSSED", "VERBAL_OFFER", "WRITTEN_OFFER", "ACCEPTED", "DECLINED"]);
+
+export const opportunityInputSchema = z.object({
+  companyName: z.string().min(1),
+  roleTitle: z.string().min(1),
+  pipelineType: pipelineTypeSchema,
+  status: jobStatusSchema,
+  priority: prioritySchema,
+  referrerOrConnection: z.string().nullish(),
+  source: z.string().nullish(),
+  jobUrl: z.string().nullish(),
+  nextStep: z.string().nullish(),
+  notes: z.string().nullish(),
+  employeesRangeId: z.string().nullish(),
+  companyStageId: z.string().nullish(),
+  workModelId: z.string().nullish(),
+  location: z.string().nullish(),
+  funding: z.string().nullish(),
+  companyDescription: z.string().nullish(),
+  productDescription: z.string().nullish(),
+  customersTraction: z.string().nullish(),
+  techStack: z.string().nullish(),
+  backendFrontendSplit: z.string().nullish(),
+  compensationNotes: z.string().nullish(),
+  domainIds: z.array(z.string()).default([])
+});
+
+export const interactionInputSchema = z.object({
+  date: z.string().datetime().or(z.string().min(1)),
+  type: z.string().min(1),
+  stage: z.string().nullish(),
+  status: interactionStatusSchema,
+  personName: z.string().nullish(),
+  personRole: z.string().nullish(),
+  agenda: z.string().nullish(),
+  notes: z.string().nullish(),
+  outcome: z.string().nullish(),
+  followUp: z.string().nullish()
+});
+
+export const noteInputSchema = z.object({
+  jobOpportunityId: z.string().nullish(),
+  interactionId: z.string().nullish(),
+  title: z.string().min(1),
+  content: z.string().min(1),
+  category: z.string().min(1)
+});
+
+export const taskInputSchema = z.object({
+  jobOpportunityId: z.string().nullish(),
+  interactionId: z.string().nullish(),
+  title: z.string().min(1),
+  status: taskStatusSchema,
+  priority: prioritySchema,
+  dueDate: z.string().nullish(),
+  notes: z.string().nullish()
+});
+
+export const compensationInputSchema = z.object({
+  jobOpportunityId: z.string().min(1),
+  baseSalary: z.string().nullish(),
+  equity: z.string().nullish(),
+  bonus: z.string().nullish(),
+  signingBonus: z.string().nullish(),
+  benefits: z.string().nullish(),
+  vacationDays: z.string().nullish(),
+  workModelNotes: z.string().nullish(),
+  negotiationNotes: z.string().nullish(),
+  offerStatus: offerStatusSchema
+});
+
+export const aiParseResponseSchema = z.object({
+  companyName: z.string().nullable(),
+  roleTitle: z.string().nullable(),
+  pipelineType: pipelineTypeSchema.nullable(),
+  status: z.string().nullable(),
+  prioritySuggestion: prioritySchema.nullable(),
+  company: z.object({
+    employees: z.string().nullable(),
+    stage: z.string().nullable(),
+    domains: z.array(z.string()),
+    workModel: z.string().nullable(),
+    location: z.string().nullable(),
+    funding: z.string().nullable(),
+    customersTraction: z.string().nullable(),
+    companyDescription: z.string().nullable(),
+    productDescription: z.string().nullable()
+  }),
+  role: z.object({
+    techStack: z.array(z.string()),
+    backendFrontendSplit: z.string().nullable(),
+    responsibilities: z.array(z.string()),
+    requirements: z.array(z.string()),
+    niceToHave: z.array(z.string()),
+    compensation: z.string().nullable()
+  }),
+  process: z.object({
+    knownNextInteraction: z.string().nullable(),
+    knownContact: z.string().nullable(),
+    suggestedNextStep: z.string().nullable()
+  }),
+  rawImportantNotes: z.array(z.string())
+});
+
+export const companyEnrichmentSchema = z.object({
+  companyName: z.string().nullable(),
+  employees: z.string().nullable(),
+  stage: z.string().nullable(),
+  domains: z.array(z.string()),
+  workModel: z.string().nullable(),
+  location: z.string().nullable(),
+  funding: z.string().nullable(),
+  investmentRounds: z.string().nullable(),
+  companyDescription: z.string().nullable(),
+  productDescription: z.string().nullable(),
+  customersTraction: z.string().nullable(),
+  techStack: z.array(z.string()),
+  backendFrontendSplit: z.string().nullable(),
+  compensationNotes: z.string().nullable(),
+  officeDaysPerWeek: z.number().nullable(),
+  rawImportantNotes: z.array(z.string())
+});
