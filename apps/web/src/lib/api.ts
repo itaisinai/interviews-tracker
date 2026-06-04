@@ -51,9 +51,5 @@ export const api = {
   upsertCompensation: (body: unknown) => request<Compensation>("/compensation", { method: "POST", body: JSON.stringify(body) }),
   deleteCompensation: (id: string) => request<void>(`/compensation/${id}`, { method: "DELETE" }),
   deleteOption: (kind: string, id: string) => request<void>(`/options/${kind}/${id}`, { method: "DELETE" }),
-  parseJob: (text: string) => request<ParsedJobDescription>("/ai/parse-job-description", { method: "POST", body: JSON.stringify({ text }) }),
-  importStatus: () => request<{ mode: "disabled" | "connected"; sheetId: string; message: string }>("/import/google-sheets/status"),
-  testImport: (body?: { spreadsheetId?: string }) => request("/import/google-sheets/test", { method: "POST", body: JSON.stringify(body ?? {}) }),
-  previewImport: (body?: { spreadsheetId?: string }) => request<{ opportunities: unknown[] }>("/import/google-sheets/preview", { method: "POST", body: JSON.stringify(body ?? {}) }),
-  runImport: (body?: { spreadsheetId?: string }) => request<{ importLog: { created: number; skipped: number; updated: number; results: unknown[] } }>("/import/google-sheets/run", { method: "POST", body: JSON.stringify(body ?? {}) })
+  parseJob: (text: string) => request<ParsedJobDescription>("/ai/parse-job-description", { method: "POST", body: JSON.stringify({ text }) })
 };

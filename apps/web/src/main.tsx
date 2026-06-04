@@ -13,7 +13,6 @@ import { InteractionsPage } from "./pages/interactions-page";
 import { TasksPage } from "./pages/tasks-page";
 import { CompensationPage } from "./pages/compensation-page";
 import { SettingsPage } from "./pages/settings-page";
-import { ImportPage } from "./pages/import-page";
 import { ParseJobPage } from "./pages/parse-job-page";
 import "./styles.css";
 
@@ -36,7 +35,6 @@ function App() {
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/compensation" element={<CompensationPage />} />
             <Route path="/parse" element={<ParseJobPage />} />
-            <Route path="/import" element={<ImportPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>

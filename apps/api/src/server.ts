@@ -5,7 +5,6 @@ import { aiRouter } from "./routes/ai.js";
 import { compensationRouter } from "./routes/compensation.js";
 import { companiesRouter } from "./routes/companies.js";
 import { dashboardRouter } from "./routes/dashboard.js";
-import { importGoogleSheetsRouter } from "./routes/import-google-sheets.js";
 import { interactionsRouter } from "./routes/interactions.js";
 import { notesRouter } from "./routes/notes.js";
 import { opportunitiesRouter } from "./routes/opportunities.js";
@@ -50,7 +49,6 @@ app.use("/api/notes", notesRouter);
 app.use("/api/compensation", compensationRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/options", optionsRouter);
-app.use("/api/import/google-sheets", importGoogleSheetsRouter);
 app.use("/api/ai", aiRouter);
 app.use(errorHandler);
 

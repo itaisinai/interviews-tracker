@@ -43,16 +43,10 @@ export function OpportunitiesPage() {
         title="Opportunities"
         description="Manage your active pipeline and potential leads."
         actions={
-          <>
-            <Link className="btn btn-secondary" to="/import">
-              <MaterialIcon name="upload_file" />
-              Import from Google Sheets
-            </Link>
-            <Link className="btn btn-primary" to="/opportunities/new">
-              <MaterialIcon name="add" />
-              Add Opportunity
-            </Link>
-          </>
+          <Link className="btn btn-primary" to="/opportunities/new">
+            <MaterialIcon name="add" />
+            Add Opportunity
+          </Link>
         }
       />
 
