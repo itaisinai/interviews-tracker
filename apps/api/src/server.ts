@@ -18,7 +18,8 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
-app.get("/api/health", (_request, response) => response.json({ ok: true }));
+app.get("/health", (_request, response) => response.json({ ok: true, service: "api" }));
+app.get("/api/health", (_request, response) => response.json({ ok: true, service: "api" }));
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/opportunities", opportunitiesRouter);
 app.use("/api/interactions", interactionsRouter);

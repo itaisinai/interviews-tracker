@@ -1,5 +1,7 @@
 # Job Search CRM
 
+[![CI](https://github.com/itaisinai/interviews-tracker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/itaisinai/interviews-tracker/actions/workflows/ci.yml)
+
 A full-stack personal CRM for managing a senior software engineering job search. It tracks potential companies, active interview processes, calls, interviews, notes, prep tasks, company research, compensation, follow-ups, and optional migration from the original Google Sheets tracker.
 
 ## Stack
@@ -10,9 +12,9 @@ A full-stack personal CRM for managing a senior software engineering job search.
 - Google Sheets import abstraction for real sheet data
 - OpenAI-backed AI parser abstraction with a local no-key fallback
 
-## Setup
+## Local Setup
 
-1. Install dependencies:
+1. Install dependencies. This also runs `prisma generate` through the `postinstall` script:
 
 ```sh
 yarn install
@@ -43,7 +45,41 @@ yarn db:seed
 yarn dev
 ```
 
-The API runs on `http://localhost:4000/api` and the web app runs on `http://localhost:5173`.
+The API runs on `http://localhost:4000/api` and the web app runs on `http://localhost:5173`. Health checks are available at:
+
+```sh
+curl http://localhost:4000/health
+curl http://localhost:4000/api/health
+```
+
+## Production Build
+
+Run validation and build:
+
+```sh
+yarn typecheck
+yarn build
+```
+
+`yarn build` regenerates Prisma Client, compiles the Express API to `dist/api`, and builds the Vite frontend to `dist/web`.
+
+For a production database, run migrations with:
+
+```sh
+yarn db:migrate:deploy
+```
+
+Start the compiled API with:
+
+```sh
+yarn start:api
+```
+
+The Vite frontend is a static build in `dist/web`. For a local production preview:
+
+```sh
+yarn start:web
+```
 
 ## Product Model
 
@@ -153,10 +189,14 @@ yarn import:google-sheets
 ## Scripts
 
 - `yarn dev`: start API and web app.
-- `yarn build`: build API and frontend.
+- `yarn build`: generate Prisma Client, build API, and build frontend.
 - `yarn typecheck`: TypeScript validation.
+- `yarn prisma:generate`: generate Prisma Client.
 - `yarn db:migrate`: run Prisma migrations.
+- `yarn db:migrate:deploy`: apply migrations in production/deployment.
 - `yarn db:seed`: seed local data.
+- `yarn start:api`: start the compiled API from `dist/api`.
+- `yarn start:web`: preview the built frontend from `dist/web`.
 - `yarn import:google-sheets`: run the import service from the CLI.
 
 ## Environment
