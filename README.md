@@ -32,11 +32,10 @@ cp .env.example .env
 docker compose up -d
 ```
 
-4. Run Prisma migration and seed data:
+4. Run Prisma migration:
 
 ```sh
 yarn db:migrate
-yarn db:seed
 ```
 
 5. Start the app:
@@ -81,6 +80,104 @@ The Vite frontend is a static build in `dist/web`. For a local production previe
 yarn start:web
 ```
 
+## Moving Existing Data To Neon
+
+This project reads database configuration from `.env`. Shell commands like `psql "$DATABASE_URL"` do not automatically load `.env`, so `$DATABASE_URL` may be empty unless you load it first. Prefer the Yarn scripts below because they load `.env` safely and handle quoted values.
+
+Restore and backup commands use PostgreSQL client tools: `psql` for restore and `pg_dump` for backup. If they are not installed locally, the scripts fall back to the Docker Compose `postgres` service.
+
+1. Configure the original database and Neon target in `.env`:
+
+```env
+SOURCE_DATABASE_URL="postgresql://USER:PASSWORD@SOURCE_HOST/source_db"
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/neondb?sslmode=require"
+```
+
+`SOURCE_DATABASE_URL` is the original database containing real data. `DATABASE_URL` is the Neon database target. If the target URL does not include `sslmode=require`, the restore script adds it before connecting.
+
+2. Export existing data from the source database:
+
+```sh
+yarn db:backup
+```
+
+This creates `backup-data.sql` using:
+
+```sh
+pg_dump "$SOURCE_DATABASE_URL" --data-only --no-owner --no-privileges --exclude-table=_prisma_migrations > backup-data.sql
+```
+
+The backup script fails if `SOURCE_DATABASE_URL` is missing, if `pg_dump` is unavailable, if the generated file is empty, or if all important application tables are empty. It checks `JobOpportunity`, `CompanySizeOption`, `DomainOption`, and `Interaction` before accepting the backup.
+
+3. Run migrations against Neon:
+
+```sh
+yarn db:migrate:deploy
+```
+
+4. Restore the data into Neon:
+
+```sh
+yarn db:restore
+```
+
+By default this restores `backup-data.sql` from the project root using:
+
+```sh
+psql "$DATABASE_URL" < backup-data.sql
+```
+
+The restore script:
+
+- fails if `.env` is missing
+- fails if `DATABASE_URL` is empty or invalid
+- fails if the backup file is missing or empty
+- fails if the backup file contains `_prisma_migrations`
+- prints the target host/database without printing the password
+- runs `psql "$DATABASE_URL" < backup-data.sql`
+- prints target counts after restore
+
+5. Print source and target record counts:
+
+```sh
+yarn db:counts:source
+yarn db:counts
+```
+
+These commands print counts for all Prisma models, including the `JobOpportunityDomain` join model. Use `yarn db:counts:source` before backup to confirm the source database actually contains data.
+
+6. Verify imported data with Prisma Studio:
+
+```sh
+yarn prisma studio
+```
+
+7. Run the app against Neon:
+
+```sh
+yarn dev
+```
+
+The migration is successful when `yarn db:backup` creates a non-empty `backup-data.sql`, `yarn db:migrate:deploy` succeeds against Neon, `yarn db:restore` succeeds, Prisma Studio shows migrated records, and the app displays the same opportunities, notes, tasks, and interactions as before.
+
+### Troubleshooting Neon Migration
+
+If `backup-data.sql` contains `COPY 0` for the application tables, `SOURCE_DATABASE_URL` is probably pointing at the wrong or empty database. Run:
+
+```sh
+yarn db:counts:source
+```
+
+If the source counts are zero, fix `SOURCE_DATABASE_URL` before running `yarn db:backup` again.
+
+If `yarn db:backup` or `yarn db:restore` reports that `pg_dump` or `psql` is unavailable and Docker fallback is unavailable, install PostgreSQL client tools locally or start the Docker Compose Postgres service.
+
+If restore fails with duplicate `_prisma_migrations` keys, the backup was created by an older command that included Prisma migration metadata. Recreate it with:
+
+```sh
+yarn db:backup
+```
+
 ## Product Model
 
 The app intentionally does not model the search as one large spreadsheet. The core records are:
@@ -93,14 +190,6 @@ The app intentionally does not model the search as one large spreadsheet. The co
 - Option tables: editable company sizes, stages, domains, work models, interaction types, and interview stages.
 
 The opportunities table stays compact and scannable with only: Company, Role, Status, Priority, Pipeline, Referrer / Connection, Next Interaction, Next Step, and Updated.
-
-## Seed Data
-
-The seed script includes:
-
-- Notch as an active process, with recruiter-call interaction and prep task.
-- Potential companies: Oligo, Buildots, Wiz, CrowdStrike, Amazon / Interets AI, Figma, Unity, AppsFlyer, Gong, Autodesk, Via, Google, and Daylight.
-- Default option lists for company sizes, stages, domains, work models, interaction types, and interview stages.
 
 ## AI Parsing
 
@@ -194,7 +283,11 @@ yarn import:google-sheets
 - `yarn prisma:generate`: generate Prisma Client.
 - `yarn db:migrate`: run Prisma migrations.
 - `yarn db:migrate:deploy`: apply migrations in production/deployment.
-- `yarn db:seed`: seed local data.
+- `yarn db:restore`: restore `backup-data.sql` into the configured database.
+- `yarn db:backup`: write a SQL backup from `SOURCE_DATABASE_URL`.
+- `yarn db:counts:source`: print all Prisma model counts from `SOURCE_DATABASE_URL`.
+- `yarn db:counts`: print all Prisma model counts from `DATABASE_URL`.
+- `yarn db:verify`: alias for `yarn db:counts`.
 - `yarn start:api`: start the compiled API from `dist/api`.
 - `yarn start:web`: preview the built frontend from `dist/web`.
 - `yarn import:google-sheets`: run the import service from the CLI.

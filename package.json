@@ -15,7 +15,11 @@
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:restore": "scripts/restore-db.sh",
+    "db:backup": "scripts/backup-db.sh",
+    "db:counts:source": "tsx scripts/db-counts.ts source",
+    "db:counts": "tsx scripts/db-counts.ts target",
+    "db:verify": "yarn db:counts",
     "start:api": "node dist/api/apps/api/src/server.js",
     "start:web": "vite preview --config apps/web/vite.config.ts --host 0.0.0.0",
     "import:google-sheets": "tsx apps/api/src/scripts/import-google-sheets.ts"
@@ -50,8 +54,5 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.1"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }
