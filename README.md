@@ -81,6 +81,87 @@ The Vite frontend is a static build in `dist/web`. For a local production previe
 yarn start:web
 ```
 
+## Production Deployment
+
+Target deployment:
+
+- Frontend: Vercel
+- API: Render
+- Database: Neon
+
+### Neon
+
+1. Create a Neon Postgres database.
+2. Copy the pooled or direct connection string.
+3. Make sure the connection string includes SSL, for example `sslmode=require`.
+
+### Render API
+
+Create a Render Web Service for the Express API.
+
+Recommended Render settings:
+
+- Runtime: Node
+- Build command: `yarn install --immutable && yarn build`
+- Start command: `yarn start:api`
+- Health check path: `/health`
+
+Set these Render environment variables:
+
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/neondb?sslmode=require
+FRONTEND_ORIGIN=https://your-vercel-app.vercel.app
+APP_PASSWORD=your-private-password
+```
+
+Run Neon migrations from your machine or from Render before using the API:
+
+```sh
+yarn db:migrate:deploy
+```
+
+The API serves routes under `/api`, so the production API base URL for the frontend should look like:
+
+```text
+https://your-render-service.onrender.com/api
+```
+
+### Vercel Frontend
+
+Create a Vercel project for the Vite app.
+
+Recommended Vercel settings:
+
+- Framework preset: Vite
+- Build command: `yarn build:web`
+- Output directory: `dist/web`
+
+Set this Vercel environment variable:
+
+```env
+VITE_API_BASE_URL=https://your-render-service.onrender.com/api
+```
+
+After the Vercel URL is known, update Render's `FRONTEND_ORIGIN` to that exact origin, without a trailing path.
+
+### Existing Data
+
+To move existing data into Neon, configure both source and target database URLs in `.env`:
+
+```env
+SOURCE_DATABASE_URL=postgresql://USER:PASSWORD@SOURCE_HOST/source_db
+DATABASE_URL=postgresql://USER:PASSWORD@NEON_HOST/neondb?sslmode=require
+```
+
+Then run:
+
+```sh
+yarn db:backup
+yarn db:migrate:deploy
+yarn db:restore
+yarn db:counts
+```
+
 ## Product Model
 
 The app intentionally does not model the search as one large spreadsheet. The core records are:

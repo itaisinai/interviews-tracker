@@ -14,8 +14,14 @@ import { tasksRouter } from "./routes/tasks.js";
 import { errorHandler } from "./lib/http.js";
 
 const app = express();
+const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors());
+app.use(cors({
+  origin: frontendOrigins.length > 0 ? frontendOrigins : true
+}));
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/health", (_request, response) => response.json({ ok: true, service: "api" }));
@@ -34,5 +40,5 @@ app.use(errorHandler);
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {
-  console.log(`API listening on http://localhost:${port}`);
+  console.log(`API listening on port ${port}`);
 });

@@ -1,6 +1,6 @@
 import type { CompanyDetail, CompanyEnrichment, CompanySummary, Compensation, Interaction, Opportunity, OptionsResponse, ParsedJobDescription, Task } from "./types";
 
-const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:4000/api";
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${baseUrl}${path}`, {
