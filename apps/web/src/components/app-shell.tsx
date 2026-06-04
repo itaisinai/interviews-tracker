@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MaterialIcon } from "./material-icon";
 
@@ -25,9 +26,17 @@ const placeholders: Record<string, string> = {
 };
 
 export function AppShell() {
+  const { logout, user } = useAuth0();
   const location = useLocation();
   const navigate = useNavigate();
   const activeBase = `/${location.pathname.split("/")[1]}` === "/" ? "/" : `/${location.pathname.split("/")[1]}`;
+  const displayName = user?.name ?? user?.email ?? "User";
+  const initials = (user?.name ?? user?.email ?? "U")
+    .split(/[\s@.]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 
   return (
     <div className="min-h-screen bg-background text-on-background">
@@ -60,9 +69,9 @@ export function AppShell() {
         <div className="mt-auto space-y-1 border-t border-outline-variant px-6 pt-6">
           <button className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low">
             <MaterialIcon name="person" />
-            <span className="font-body-md text-body-md">Profile</span>
+            <span className="min-w-0 truncate font-body-md text-body-md">{user?.email ?? displayName}</span>
           </button>
-          <button className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low">
+          <button className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low" onClick={() => void logout({ logoutParams: { returnTo: window.location.origin } })}>
             <MaterialIcon name="logout" />
             <span className="font-body-md text-body-md">Logout</span>
           </button>
@@ -86,10 +95,10 @@ export function AppShell() {
               Add Opportunity
             </button>
             <div className="hidden text-right sm:block">
-              <p className="font-label-md text-label-md text-on-background">Itai</p>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">Senior Engineer</p>
+              <p className="max-w-40 truncate font-label-md text-label-md text-on-background">{displayName}</p>
+              <p className="max-w-40 truncate font-label-sm text-label-sm text-on-surface-variant">{user?.email ?? "Authenticated"}</p>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-primary-container bg-on-primary-container font-geist text-sm font-bold text-white">I</div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-primary-container bg-on-primary-container font-geist text-sm font-bold text-white">{initials || "U"}</div>
           </div>
         </div>
       </header>
