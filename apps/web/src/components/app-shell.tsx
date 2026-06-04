@@ -10,7 +10,6 @@ const nav = [
   { to: "/tasks", label: "Tasks", icon: "assignment_turned_in" },
   { to: "/compensation", label: "Compensation", icon: "payments" },
   { to: "/parse", label: "Parse Job", icon: "auto_awesome" },
-  { to: "/import", label: "Import", icon: "upload_file" },
   { to: "/settings", label: "Settings", icon: "settings" }
 ];
 
@@ -22,7 +21,6 @@ const placeholders: Record<string, string> = {
   "/tasks": "Search tasks...",
   "/compensation": "Search offers...",
   "/parse": "Search parsed jobs...",
-  "/import": "Search data...",
   "/settings": "Search options..."
 };
 
