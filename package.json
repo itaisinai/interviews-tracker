@@ -20,7 +20,7 @@
     "db:counts:source": "tsx scripts/db-counts.ts source",
     "db:counts": "tsx scripts/db-counts.ts target",
     "db:verify": "yarn db:counts",
-    "start:api": "node dist/api/apps/api/src/server.js",
+    "start:api": "node dist/api/server.js",
     "start:web": "vite preview --config apps/web/vite.config.ts --host 0.0.0.0",
     "import:google-sheets": "tsx apps/api/src/scripts/import-google-sheets.ts"
   },
