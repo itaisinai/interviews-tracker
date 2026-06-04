@@ -10,15 +10,17 @@ import { notesRouter } from "./routes/notes.js";
 import { opportunitiesRouter } from "./routes/opportunities.js";
 import { optionsRouter } from "./routes/options.js";
 import { tasksRouter } from "./routes/tasks.js";
+import { requireAuth } from "./lib/auth.js";
 import { errorHandler } from "./lib/http.js";
 
 const app = express();
 const localOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"];
+const productionOrigins = ["https://interviews-tracker.vercel.app"];
 const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-const allowedOrigins = new Set([...frontendOrigins, ...localOrigins]);
+const allowedOrigins = new Set([...productionOrigins, ...frontendOrigins, ...localOrigins]);
 
 const corsOptions: cors.CorsOptions = {
   origin(origin, callback) {
@@ -41,6 +43,7 @@ app.use(express.json({ limit: "2mb" }));
 
 app.get("/health", (_request, response) => response.json({ ok: true, service: "api" }));
 app.get("/api/health", (_request, response) => response.json({ ok: true, service: "api" }));
+app.use("/api", requireAuth);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/opportunities", opportunitiesRouter);
 app.use("/api/interactions", interactionsRouter);

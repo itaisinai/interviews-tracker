@@ -2,10 +2,38 @@ import type { CompanyDetail, CompanyEnrichment, CompanySummary, Compensation, In
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
+type AccessTokenGetter = () => Promise<string>;
+
+let accessTokenGetter: AccessTokenGetter | undefined;
+
+export function setAccessTokenGetter(getter: AccessTokenGetter | undefined) {
+  accessTokenGetter = getter;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!accessTokenGetter) {
+    throw new Error("API auth token is not ready");
+  }
+
+  const token = await accessTokenGetter();
+
+  if (!token) {
+    throw new Error("API auth token is empty");
+  }
+  
+  const headers = new Headers(init?.headers);
+
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
   const response = await fetch(`${baseUrl}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers }
+    headers
   });
   if (!response.ok) {
     throw new Error(await response.text());

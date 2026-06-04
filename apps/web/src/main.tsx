@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AuthGate } from "./components/auth-gate";
 import { AppShell } from "./components/app-shell";
 import { DashboardPage } from "./pages/dashboard-page";
 import { OpportunitiesPage } from "./pages/opportunities-page";
@@ -20,26 +21,28 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/companies" element={<CompaniesPage />} />
-            <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
-            <Route path="/opportunities" element={<OpportunitiesPage />} />
-            <Route path="/opportunities/new" element={<OpportunityFormPage />} />
-            <Route path="/opportunities/:id" element={<OpportunityDetailPage />} />
-            <Route path="/opportunities/:id/edit" element={<OpportunityFormPage />} />
-            <Route path="/interactions" element={<InteractionsPage />} />
-            <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/compensation" element={<CompensationPage />} />
-            <Route path="/parse" element={<ParseJobPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <AuthGate>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AppShell />}>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/companies" element={<CompaniesPage />} />
+              <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
+              <Route path="/opportunities" element={<OpportunitiesPage />} />
+              <Route path="/opportunities/new" element={<OpportunityFormPage />} />
+              <Route path="/opportunities/:id" element={<OpportunityDetailPage />} />
+              <Route path="/opportunities/:id/edit" element={<OpportunityFormPage />} />
+              <Route path="/interactions" element={<InteractionsPage />} />
+              <Route path="/tasks" element={<TasksPage />} />
+              <Route path="/compensation" element={<CompensationPage />} />
+              <Route path="/parse" element={<ParseJobPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </AuthGate>
   );
 }
 

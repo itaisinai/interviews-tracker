@@ -109,7 +109,9 @@ Set these Render environment variables:
 ```env
 DATABASE_URL=postgresql://USER:PASSWORD@HOST/neondb?sslmode=require
 FRONTEND_ORIGIN=https://interviews-tracker.vercel.app
-APP_PASSWORD=your-private-password
+AUTH0_DOMAIN=your-tenant.us.auth0.com
+AUTH0_AUDIENCE=https://interviews-tracker-api
+ALLOWED_EMAIL=you@example.com
 ```
 
 Run Neon migrations from your machine or from Render before using the API:
@@ -138,9 +140,46 @@ Set this Vercel environment variable:
 
 ```env
 VITE_API_BASE_URL=https://interviews-tracker-api.onrender.com/api
+VITE_AUTH0_DOMAIN=your-tenant.us.auth0.com
+VITE_AUTH0_CLIENT_ID=your-spa-client-id
+VITE_AUTH0_AUDIENCE=https://interviews-tracker-api
+VITE_ALLOWED_EMAIL=you@example.com
 ```
 
 After the Vercel URL is known, update Render's `FRONTEND_ORIGIN` to that exact origin, without a trailing path.
+
+### Auth0
+
+Create an Auth0 Single Page Application for the Vite frontend and enable the Google social connection for it. Configure these application URLs:
+
+```text
+Allowed Callback URLs:
+http://localhost:5173, https://interviews-tracker.vercel.app
+
+Allowed Logout URLs:
+http://localhost:5173, https://interviews-tracker.vercel.app
+
+Allowed Web Origins:
+http://localhost:5173, https://interviews-tracker.vercel.app
+```
+
+Create an Auth0 API with the identifier used by `VITE_AUTH0_AUDIENCE` and `AUTH0_AUDIENCE`, for example:
+
+```text
+https://interviews-tracker-api
+```
+
+The backend validates Auth0 access tokens against that audience and issuer. It also restricts data access to `ALLOWED_EMAIL`. Auth0 access tokens for custom APIs do not always include `email` by default, so add an Auth0 Action that adds a namespaced email claim to the access token:
+
+```js
+exports.onExecutePostLogin = async (event, api) => {
+  if (event.authorization) {
+    api.accessToken.setCustomClaim("https://interviews-tracker/email", event.user.email);
+  }
+};
+```
+
+Set `VITE_ALLOWED_EMAIL` and `ALLOWED_EMAIL` to the same Google account email. The frontend blocks other authenticated users with an Access Denied screen, and the API returns `403` when the token email claim does not match. Requests without a valid bearer token return `401`.
 
 ## Product Model
 
