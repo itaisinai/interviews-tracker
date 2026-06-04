@@ -4,15 +4,20 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "concurrently \"yarn dev:api\" \"yarn dev:web\"",
     "dev:api": "tsx watch apps/api/src/server.ts",
     "dev:web": "vite --config apps/web/vite.config.ts --host 0.0.0.0",
-    "build": "npm run build:api && npm run build:web",
+    "build": "yarn prisma:generate && yarn build:api && yarn build:web",
     "build:api": "tsc -p apps/api/tsconfig.json",
     "build:web": "vite build --config apps/web/vite.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "start:api": "node dist/api/apps/api/src/server.js",
+    "start:web": "vite preview --config apps/web/vite.config.ts --host 0.0.0.0",
     "import:google-sheets": "tsx apps/api/src/scripts/import-google-sheets.ts"
   },
   "dependencies": {
