@@ -4,11 +4,23 @@ import { MaterialIcon } from "./material-icon";
 import { setAccessTokenGetter } from "../lib/api";
 
 const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN as string | undefined;
-const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID as string | undefined;
+const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID as
+  | string
+  | undefined;
 const auth0Audience = import.meta.env.VITE_AUTH0_AUDIENCE as string | undefined;
-const allowedEmail = (import.meta.env.VITE_ALLOWED_EMAIL as string | undefined)?.trim().toLowerCase();
+const allowedEmail = (import.meta.env.VITE_ALLOWED_EMAIL as string | undefined)
+  ?.trim()
+  .toLowerCase();
 
-function AuthPanel({ title, description, children }: { title: string; description: string; children?: ReactNode }) {
+function AuthPanel({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children?: ReactNode;
+}) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12 text-on-background">
       <section className="panel w-full max-w-md p-8">
@@ -16,7 +28,9 @@ function AuthPanel({ title, description, children }: { title: string; descriptio
           <MaterialIcon name="lock" filled />
         </div>
         <h1 className="font-headline-md text-headline-md font-bold">{title}</h1>
-        <p className="mt-2 font-body-md text-body-md text-on-surface-variant">{description}</p>
+        <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+          {description}
+        </p>
         {children ? <div className="mt-6">{children}</div> : null}
       </section>
     </main>
@@ -24,33 +38,99 @@ function AuthPanel({ title, description, children }: { title: string; descriptio
 }
 
 function AuthenticatedOnly({ children }: { children: ReactNode }) {
-  const { error, getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect, user } = useAuth0();
+  const {
+    error,
+    getAccessTokenSilently,
+    isAuthenticated,
+    isLoading,
+    loginWithRedirect,
+    user,
+  } = useAuth0();
   const [isTokenGetterReady, setIsTokenGetterReady] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   const email = user?.email?.trim().toLowerCase();
-  const hasAllowedEmail = Boolean(allowedEmail && email && email === allowedEmail);
+  const hasAllowedEmail = Boolean(
+    allowedEmail && email && email === allowedEmail,
+  );
 
   useEffect(() => {
-    if (!isAuthenticated || !hasAllowedEmail) {
-      setAccessTokenGetter(undefined);
-      setIsTokenGetterReady(false);
-      return;
+    let cancelled = false;
+
+    async function prepareToken() {
+      if (!isAuthenticated || !hasAllowedEmail) {
+        setAccessTokenGetter(undefined);
+        setIsTokenGetterReady(false);
+        setTokenError(null);
+        return;
+      }
+
+      try {
+        setIsTokenGetterReady(false);
+        setTokenError(null);
+
+        const token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: auth0Audience,
+            scope: "openid profile email",
+          },
+        });
+
+        if (!token) {
+          throw new Error("Auth0 returned an empty access token");
+        }
+
+        if (cancelled) return;
+
+        setAccessTokenGetter(() =>
+          getAccessTokenSilently({
+            authorizationParams: {
+              audience: auth0Audience,
+              scope: "openid profile email",
+            },
+          }),
+        );
+
+        setIsTokenGetterReady(true);
+      } catch (error) {
+        if (cancelled) return;
+
+        setAccessTokenGetter(undefined);
+        setIsTokenGetterReady(false);
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to get Auth0 access token";
+        setTokenError(message);
+
+        if (
+          message.includes("login_required") ||
+          message.includes("consent_required")
+        ) {
+          void loginWithRedirect({
+            authorizationParams: {
+              audience: auth0Audience,
+              scope: "openid profile email",
+              connection: "google-oauth2",
+            },
+          });
+        }
+      }
     }
 
-    setAccessTokenGetter(() =>
-      getAccessTokenSilently({
-        authorizationParams: {
-          audience: auth0Audience,
-          scope: "openid profile email"
-        }
-      })
-    );
-    setIsTokenGetterReady(true);
+    void prepareToken();
 
     return () => {
+      cancelled = true;
       setAccessTokenGetter(undefined);
       setIsTokenGetterReady(false);
     };
-  }, [getAccessTokenSilently, hasAllowedEmail, isAuthenticated]);
+  }, [
+    getAccessTokenSilently,
+    hasAllowedEmail,
+    isAuthenticated,
+    loginWithRedirect,
+  ]);
 
   if (isLoading) {
     return <AuthPanel title="Loading" description="Checking your session." />;
@@ -59,7 +139,14 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
   if (error) {
     return (
       <AuthPanel title="Login Error" description={error.message}>
-        <button className="btn btn-primary w-full" onClick={() => void loginWithRedirect({ authorizationParams: { connection: "google-oauth2" } })}>
+        <button
+          className="btn btn-primary w-full"
+          onClick={() =>
+            void loginWithRedirect({
+              authorizationParams: { connection: "google-oauth2" },
+            })
+          }
+        >
           <MaterialIcon name="login" />
           Try Again
         </button>
@@ -69,8 +156,18 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
 
   if (!isAuthenticated) {
     return (
-      <AuthPanel title="Sign in" description="Use your authorized Google account to access CareerFlow.">
-        <button className="btn btn-primary w-full" onClick={() => void loginWithRedirect({ authorizationParams: { connection: "google-oauth2" } })}>
+      <AuthPanel
+        title="Sign in"
+        description="Use your authorized Google account to access CareerFlow."
+      >
+        <button
+          className="btn btn-primary w-full"
+          onClick={() =>
+            void loginWithRedirect({
+              authorizationParams: { connection: "google-oauth2" },
+            })
+          }
+        >
           <MaterialIcon name="login" />
           Continue with Google
         </button>
@@ -80,14 +177,43 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
 
   if (!hasAllowedEmail) {
     return (
-      <AuthPanel title="Access Denied" description="This Google account is not allowed to access this workspace.">
-        <p className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface-variant">{user?.email ?? "No email returned by Auth0"}</p>
+      <AuthPanel
+        title="Access Denied"
+        description="This Google account is not allowed to access this workspace."
+      >
+        <p className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface-variant">
+          {user?.email ?? "No email returned by Auth0"}
+        </p>
+      </AuthPanel>
+    );
+  }
+
+  if (tokenError) {
+    return (
+      <AuthPanel title="Token Error" description={tokenError}>
+        <button
+          className="btn btn-primary w-full"
+          onClick={() =>
+            void loginWithRedirect({
+              authorizationParams: {
+                audience: auth0Audience,
+                scope: "openid profile email",
+                connection: "google-oauth2",
+              },
+            })
+          }
+        >
+          <MaterialIcon name="login" />
+          Try Again
+        </button>
       </AuthPanel>
     );
   }
 
   if (!isTokenGetterReady) {
-    return <AuthPanel title="Loading" description="Preparing your API session." />;
+    return (
+      <AuthPanel title="Loading" description="Preparing your API session." />
+    );
   }
 
   return <>{children}</>;
@@ -95,7 +221,12 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
 
 export function AuthGate({ children }: { children: ReactNode }) {
   if (!auth0Domain || !auth0ClientId || !auth0Audience || !allowedEmail) {
-    return <AuthPanel title="Auth0 Not Configured" description="Set VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID, VITE_AUTH0_AUDIENCE, and VITE_ALLOWED_EMAIL to use the app." />;
+    return (
+      <AuthPanel
+        title="Auth0 Not Configured"
+        description="Set VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID, VITE_AUTH0_AUDIENCE, and VITE_ALLOWED_EMAIL to use the app."
+      />
+    );
   }
 
   return (
@@ -107,10 +238,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
       authorizationParams={{
         audience: auth0Audience,
         redirect_uri: window.location.origin,
-        scope: "openid profile email"
+        scope: "openid profile email",
       }}
       onRedirectCallback={(appState) => {
-        window.history.replaceState({}, document.title, appState?.returnTo ?? window.location.pathname);
+        window.history.replaceState(
+          {},
+          document.title,
+          appState?.returnTo ?? window.location.pathname,
+        );
       }}
     >
       <AuthenticatedOnly>{children}</AuthenticatedOnly>

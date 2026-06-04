@@ -11,7 +11,16 @@ export function setAccessTokenGetter(getter: AccessTokenGetter | undefined) {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = accessTokenGetter ? await accessTokenGetter() : undefined;
+  if (!accessTokenGetter) {
+    throw new Error("API auth token is not ready");
+  }
+
+  const token = await accessTokenGetter();
+
+  if (!token) {
+    throw new Error("API auth token is empty");
+  }
+  
   const headers = new Headers(init?.headers);
 
   if (!headers.has("Content-Type")) {
