@@ -109,7 +109,7 @@ Set these Render environment variables:
 
 ```env
 DATABASE_URL=postgresql://USER:PASSWORD@HOST/neondb?sslmode=require
-FRONTEND_ORIGIN=https://your-vercel-app.vercel.app
+FRONTEND_ORIGIN=https://interviews-tracker.vercel.app
 APP_PASSWORD=your-private-password
 ```
 
@@ -122,7 +122,7 @@ yarn db:migrate:deploy
 The API serves routes under `/api`, so the production API base URL for the frontend should look like:
 
 ```text
-https://your-render-service.onrender.com/api
+https://interviews-tracker-api.onrender.com/api
 ```
 
 ### Vercel Frontend
@@ -138,7 +138,7 @@ Recommended Vercel settings:
 Set this Vercel environment variable:
 
 ```env
-VITE_API_BASE_URL=https://your-render-service.onrender.com/api
+VITE_API_BASE_URL=https://interviews-tracker-api.onrender.com/api
 ```
 
 After the Vercel URL is known, update Render's `FRONTEND_ORIGIN` to that exact origin, without a trailing path.
