@@ -18,49 +18,13 @@ function splitMonthDay(value: string) {
 
 export function InteractionsPage() {
   const [filter, setFilter] = useState("upcoming");
-  const [showForm, setShowForm] = useState(false);
   const [showGmailImport, setShowGmailImport] = useState(false);
   const [gmailOpportunityId, setGmailOpportunityId] = useState("");
-  const [form, setForm] = useState({
-    jobOpportunityId: "",
-    date: "",
-    type: "Recruiter Call",
-    stage: "Intro",
-    status: "SCHEDULED",
-    personName: "",
-    personRole: "",
-    agenda: "",
-    notes: "",
-    outcome: "",
-    followUp: ""
-  });
   const queryClient = useQueryClient();
   const { data = [], isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
-  const opportunitiesQuery = useQuery({ queryKey: ["opportunities", "interaction-form"], queryFn: () => api.opportunities("?summary=1"), staleTime: 30_000 });
+  const opportunitiesQuery = useQuery({ queryKey: ["opportunities", "gmail-import"], queryFn: () => api.opportunities("?summary=1"), staleTime: 30_000 });
   const { data: opportunities = [] } = opportunitiesQuery;
   const gmailOpportunity = useMemo(() => opportunities.find((item) => item.id === gmailOpportunityId) ?? null, [gmailOpportunityId, opportunities]);
-  const createInteraction = useMutation({
-    mutationFn: () => api.createGlobalInteraction(form),
-    onSuccess: () => {
-      setShowForm(false);
-      setForm({
-        jobOpportunityId: "",
-        date: "",
-        type: "Recruiter Call",
-        stage: "Intro",
-        status: "SCHEDULED",
-        personName: "",
-        personRole: "",
-        agenda: "",
-        notes: "",
-        outcome: "",
-        followUp: ""
-      });
-      void queryClient.invalidateQueries({ queryKey: ["interactions"] });
-      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-    }
-  });
   const deleteInteraction = useMutation({
     mutationFn: (id: string) => api.deleteInteraction(id),
     onSuccess: () => {
@@ -79,7 +43,7 @@ export function InteractionsPage() {
   const followUpPercent = data.length > 0 ? Math.round((followUpCount / data.length) * 100) : 0;
 
   function openGmailImport() {
-    const initialOpportunityId = form.jobOpportunityId || gmailOpportunityId || opportunities[0]?.id || "";
+    const initialOpportunityId = gmailOpportunityId || opportunities[0]?.id || "";
     setGmailOpportunityId(initialOpportunityId);
     setShowGmailImport(true);
   }
@@ -111,10 +75,6 @@ export function InteractionsPage() {
             <button className={`rounded-full px-4 py-2 font-label-md text-label-md ${showGmailImport ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"}`} onClick={() => (showGmailImport ? setShowGmailImport(false) : openGmailImport())}>
               <MaterialIcon name="mail" />
               {showGmailImport ? "Hide Gmail" : "Gmail"}
-            </button>
-            <button className={`rounded-full px-4 py-2 font-label-md text-label-md ${showForm ? "bg-secondary text-on-secondary" : "bg-surface-container-high text-on-surface-variant"}`} onClick={() => setShowForm((value) => !value)}>
-              <MaterialIcon name={showForm ? "close" : "add"} />
-              {showForm ? "Close" : "Add"}
             </button>
           </div>
         </section>
@@ -185,64 +145,6 @@ export function InteractionsPage() {
           </section>
         ) : null}
 
-        {showForm ? (
-          <section className="mb-5 rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
-            <div className="mb-4">
-              <h3 className="font-title-md text-title-md font-bold">Add Interaction</h3>
-              <p className="mt-1 text-body-md text-on-surface-variant">Attach the interaction to an existing opportunity.</p>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              <Field label="Opportunity">
-                <select className="input" value={form.jobOpportunityId} onChange={(event) => setForm({ ...form, jobOpportunityId: event.target.value })}>
-                  <option value="">Select company / role</option>
-                  {opportunities.map((item) => <option key={item.id} value={item.id}>{item.companyName} · {item.roleTitle}</option>)}
-                </select>
-              </Field>
-              <Field label="Date">
-                <input className="input" type="datetime-local" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
-              </Field>
-              <Field label="Type">
-                <input className="input" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} />
-              </Field>
-              <Field label="Stage">
-                <input className="input" value={form.stage} onChange={(event) => setForm({ ...form, stage: event.target.value })} />
-              </Field>
-              <Field label="Status">
-                <select className="input" value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
-                  <option>SCHEDULED</option>
-                  <option>DONE</option>
-                  <option>CANCELLED</option>
-                  <option>NEEDS_FOLLOW_UP</option>
-                </select>
-              </Field>
-              <Field label="Person">
-                <input className="input" value={form.personName} onChange={(event) => setForm({ ...form, personName: event.target.value })} placeholder="Recruiter, hiring manager..." />
-              </Field>
-              <Field label="Person role">
-                <input className="input" value={form.personRole} onChange={(event) => setForm({ ...form, personRole: event.target.value })} />
-              </Field>
-              <Field label="Agenda">
-                <textarea className="input min-h-24" value={form.agenda} onChange={(event) => setForm({ ...form, agenda: event.target.value })} />
-              </Field>
-              <Field label="Follow-up">
-                <textarea className="input min-h-24" value={form.followUp} onChange={(event) => setForm({ ...form, followUp: event.target.value })} />
-              </Field>
-              <Field label="Notes">
-                <textarea className="input min-h-24" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />
-              </Field>
-              <Field label="Outcome">
-                <textarea className="input min-h-24" value={form.outcome} onChange={(event) => setForm({ ...form, outcome: event.target.value })} />
-              </Field>
-            </div>
-            <div className="mt-5 flex flex-col gap-3">
-              <LoadingButton className="btn btn-primary w-full" disabled={!form.jobOpportunityId || !form.date} loading={createInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => createInteraction.mutate()}>
-                Save Interaction
-              </LoadingButton>
-              {createInteraction.error ? <p className="text-body-md text-error">{createInteraction.error.message}</p> : null}
-            </div>
-          </section>
-        ) : null}
-
         <section className="mb-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-title-md text-title-md font-bold">{filter === "upcoming" ? "Upcoming" : "Interactions"}</h2>
@@ -294,10 +196,6 @@ export function InteractionsPage() {
                 <MaterialIcon name="mail" />
                 {showGmailImport ? "Hide Gmail Import" : "Add interaction from Gmail"}
               </button>
-              <button className="btn btn-primary" onClick={() => setShowForm((value) => !value)}>
-                <MaterialIcon name={showForm ? "close" : "add"} />
-                {showForm ? "Close" : "Add Interaction"}
-              </button>
             </>
           }
         />
@@ -346,68 +244,6 @@ export function InteractionsPage() {
                 Choose an opportunity to search Gmail for related emails.
               </div>
             )}
-          </section>
-        ) : null}
-        {showForm ? (
-          <section className="panel mb-8 p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2 text-primary">
-                <MaterialIcon name="add_call" />
-              </div>
-              <div>
-                <h3 className="font-title-md text-title-md font-bold">Add Interaction</h3>
-                <p className="text-body-md text-on-surface-variant">Attach the interaction to an existing opportunity.</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <Field label="Opportunity">
-                <select className="input" value={form.jobOpportunityId} onChange={(event) => setForm({ ...form, jobOpportunityId: event.target.value })}>
-                  <option value="">Select company / role</option>
-                  {opportunities.map((item) => <option key={item.id} value={item.id}>{item.companyName} · {item.roleTitle}</option>)}
-                </select>
-              </Field>
-              <Field label="Date">
-                <input className="input" type="datetime-local" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
-              </Field>
-              <Field label="Type">
-                <input className="input" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} />
-              </Field>
-              <Field label="Stage">
-                <input className="input" value={form.stage} onChange={(event) => setForm({ ...form, stage: event.target.value })} />
-              </Field>
-              <Field label="Status">
-                <select className="input" value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
-                  <option>SCHEDULED</option>
-                  <option>DONE</option>
-                  <option>CANCELLED</option>
-                  <option>NEEDS_FOLLOW_UP</option>
-                </select>
-              </Field>
-              <Field label="Person">
-                <input className="input" value={form.personName} onChange={(event) => setForm({ ...form, personName: event.target.value })} placeholder="Recruiter, hiring manager..." />
-              </Field>
-              <Field label="Person role">
-                <input className="input" value={form.personRole} onChange={(event) => setForm({ ...form, personRole: event.target.value })} />
-              </Field>
-              <Field label="Agenda">
-                <textarea className="input min-h-24" value={form.agenda} onChange={(event) => setForm({ ...form, agenda: event.target.value })} />
-              </Field>
-              <Field label="Follow-up">
-                <textarea className="input min-h-24" value={form.followUp} onChange={(event) => setForm({ ...form, followUp: event.target.value })} />
-              </Field>
-              <Field label="Notes">
-                <textarea className="input min-h-24" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />
-              </Field>
-              <Field label="Outcome">
-                <textarea className="input min-h-24" value={form.outcome} onChange={(event) => setForm({ ...form, outcome: event.target.value })} />
-              </Field>
-            </div>
-            <div className="mt-5 flex items-center gap-3">
-              <LoadingButton className="btn btn-primary" disabled={!form.jobOpportunityId || !form.date} loading={createInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => createInteraction.mutate()}>
-                Save Interaction
-              </LoadingButton>
-              {createInteraction.error ? <p className="text-body-md text-error">{createInteraction.error.message}</p> : null}
-            </div>
           </section>
         ) : null}
         <div className="mb-8 flex flex-wrap gap-2">

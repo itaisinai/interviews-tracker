@@ -146,32 +146,60 @@ export function OpportunitiesPage() {
           }
         />
 
-        <div className="panel mb-6 flex flex-wrap items-center gap-4 p-4">
-          <input className="input max-w-xs border-none bg-surface-container-low" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
-          <span className="font-label-md text-label-md text-on-surface-variant">Filters:</span>
-          <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="">Status: All</option>
-            {jobStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-          </select>
-          <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={pipeline} onChange={(event) => setPipeline(event.target.value)}>
-            <option value="">Pipeline: All</option>
-            {pipelineTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-          </select>
-          <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={priority} onChange={(event) => setPriority(event.target.value)}>
-            <option value="">Priority: All</option>
-            {priorityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-          </select>
-          <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={domainId} onChange={(event) => setDomainId(event.target.value)}>
-            <option value="">Domain: All</option>
-            {options?.domains.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-          </select>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="font-label-md text-label-md text-on-surface-variant">Sort by:</span>
-            <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={sort} onChange={(event) => setSort(event.target.value)}>
-              <option value="updated">Recently Updated</option>
-              <option value="nextInteraction">Next Interaction</option>
-            </select>
-            {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
+        <div className="panel mb-6 grid grid-cols-1 gap-4 p-4 xl:grid-cols-12 xl:items-end">
+          <div className="xl:col-span-4">
+            <label className="block">
+              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Search</span>
+              <input className="input border-none bg-surface-container-low" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
+            </label>
+          </div>
+          <div className="xl:col-span-2">
+            <label className="block">
+              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Status</span>
+              <select className="input border-none bg-surface-container-low" value={status} onChange={(event) => setStatus(event.target.value)}>
+                <option value="">All</option>
+                {jobStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="xl:col-span-2">
+            <label className="block">
+              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Pipeline</span>
+              <select className="input border-none bg-surface-container-low" value={pipeline} onChange={(event) => setPipeline(event.target.value)}>
+                <option value="">All</option>
+                {pipelineTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="xl:col-span-2">
+            <label className="block">
+              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Priority</span>
+              <select className="input border-none bg-surface-container-low" value={priority} onChange={(event) => setPriority(event.target.value)}>
+                <option value="">All</option>
+                {priorityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="xl:col-span-2">
+            <label className="block">
+              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Domain</span>
+              <select className="input border-none bg-surface-container-low" value={domainId} onChange={(event) => setDomainId(event.target.value)}>
+                <option value="">All</option>
+                {options?.domains.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="xl:col-span-12 xl:mt-1">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="font-label-md text-label-md uppercase text-on-surface-variant">Sort by</span>
+                <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={sort} onChange={(event) => setSort(event.target.value)}>
+                  <option value="updated">Recently Updated</option>
+                  <option value="nextInteraction">Next Interaction</option>
+                </select>
+              </div>
+              {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
+            </div>
           </div>
         </div>
 
