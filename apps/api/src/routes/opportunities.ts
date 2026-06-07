@@ -1,8 +1,11 @@
 import { Router } from "express";
 import { asyncHandler } from "../lib/http.js";
+import { createTimer } from "../lib/logger.js";
+import { z } from "zod";
 import { opportunityInputSchema, interactionInputSchema, noteInputSchema, taskInputSchema } from "../lib/schemas.js";
 import { createOpportunity, deleteOpportunity, getOpportunity, listOpportunities, updateOpportunity } from "../services/opportunity-service.js";
 import { prisma } from "../lib/prisma.js";
+import { parseGmailEmailToInteraction, searchGmailMessages } from "../services/gmail-service.js";
 
 export const opportunitiesRouter = Router();
 
@@ -44,4 +47,48 @@ opportunitiesRouter.post("/:id/notes", asyncHandler(async (request, response) =>
 opportunitiesRouter.post("/:id/tasks", asyncHandler(async (request, response) => {
   const input = taskInputSchema.parse({ ...request.body, jobOpportunityId: request.params.id });
   response.status(201).json(await prisma.task.create({ data: { ...input, dueDate: input.dueDate ? new Date(input.dueDate) : null } }));
+}));
+
+opportunitiesRouter.get("/:id/gmail/search", asyncHandler(async (request, response) => {
+  const opportunity = await prisma.jobOpportunity.findUnique({
+    where: { id: request.params.id },
+    select: { companyName: true, roleTitle: true }
+  });
+
+  if (!opportunity) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  const timer = createTimer("gmail", "search opportunity emails", { company: opportunity.companyName });
+  const result = await searchGmailMessages({
+    auth0Email: request.auth?.email ?? "",
+    companyName: opportunity.companyName,
+    roleTitle: opportunity.roleTitle
+  });
+  timer.end({ candidates: result.candidates.length });
+  response.json(result);
+}));
+
+opportunitiesRouter.post("/:id/gmail/parse-email", asyncHandler(async (request, response) => {
+  const opportunity = await prisma.jobOpportunity.findUnique({
+    where: { id: request.params.id },
+    select: { companyName: true, roleTitle: true }
+  });
+
+  if (!opportunity) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  const { messageId } = z.object({ messageId: z.string().min(1) }).parse(request.body);
+  const timer = createTimer("gmail", "parse opportunity email", { company: opportunity.companyName, messageId });
+  const result = await parseGmailEmailToInteraction({
+    auth0Email: request.auth?.email ?? "",
+    companyName: opportunity.companyName,
+    roleTitle: opportunity.roleTitle,
+    messageId
+  });
+  timer.end({ company: opportunity.companyName });
+  response.json(result);
 }));

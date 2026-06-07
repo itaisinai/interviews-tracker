@@ -1,4 +1,6 @@
+import { z } from "zod";
 import { aiParseResponseSchema, companyEnrichmentSchema } from "../lib/schemas.js";
+import { gmailInteractionDraftSchema } from "../lib/schemas.js";
 import { createTimer } from "../lib/logger.js";
 import { buildJobParserSystemPrompt } from "./job-parser-skill.js";
 
@@ -8,6 +10,14 @@ export type CompanyEnrichment = typeof companyEnrichmentSchema._type;
 export interface AiParserService {
   parseJobDescription(text: string): Promise<ParsedJobDescription>;
   parseCompanyEnrichment(text: string): Promise<CompanyEnrichment>;
+  parseGmailEmailToInteraction(input: {
+    companyName: string;
+    roleTitle?: string | null;
+    subject: string;
+    from: string;
+    date: string;
+    body: string;
+  }): Promise<z.infer<typeof gmailInteractionDraftSchema>>;
 }
 
 type OpenAiTextOutput = {
@@ -138,6 +148,50 @@ export class OpenAiParserService implements AiParserService {
     });
 
     return companyEnrichmentSchema.parse(JSON.parse(outputText));
+  }
+
+  async parseGmailEmailToInteraction(input: {
+    companyName: string;
+    roleTitle?: string | null;
+    subject: string;
+    from: string;
+    date: string;
+    body: string;
+  }): Promise<z.infer<typeof gmailInteractionDraftSchema>> {
+    const outputText = await this.createStructuredOutput({
+      name: "gmail_interaction_draft",
+      schema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["date", "type", "stage", "status", "personName", "personRole", "agenda", "notes", "outcome", "followUp"],
+        properties: {
+          date: { type: "string" },
+          type: { type: "string" },
+          stage: { type: ["string", "null"] },
+          status: { type: "string", enum: ["SCHEDULED", "DONE", "CANCELLED", "NEEDS_FOLLOW_UP"] },
+          personName: { type: ["string", "null"] },
+          personRole: { type: ["string", "null"] },
+          agenda: { type: ["string", "null"] },
+          notes: { type: ["string", "null"] },
+          outcome: { type: ["string", "null"] },
+          followUp: { type: ["string", "null"] }
+        }
+      },
+      systemPrompt: [
+        "Extract a review-ready interaction draft from a Gmail message for a job-search CRM.",
+        "Preserve useful facts, dates, people, and next steps. Do not summarize away details that the user may need later.",
+        "Return only fields that match the JSON schema.",
+        `Company: ${input.companyName}`,
+        input.roleTitle ? `Role: ${input.roleTitle}` : null,
+        `Subject: ${input.subject}`,
+        `From: ${input.from}`,
+        `Date: ${input.date}`,
+        "If the message is clearly about scheduling, use SCHEDULED. If it describes a completed interaction, use DONE. If it was canceled or rescheduled, use CANCELLED. If it asks for follow-up, use NEEDS_FOLLOW_UP."
+      ].filter(Boolean).join("\n\n"),
+      text: input.body
+    });
+
+    return gmailInteractionDraftSchema.parse(JSON.parse(outputText));
   }
 
   private async createStructuredOutput(input: { name: string; schema: unknown; systemPrompt: string; text: string }) {

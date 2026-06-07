@@ -247,6 +247,21 @@ OPENAI_API_KEY=...
 
 The tool only searches fields that are missing. If funding already exists on the record, it skips funding research. When the research run completes, the UI shows the extracted result and source URLs before anything is saved.
 
+## Gmail Interaction Import
+
+The Opportunity page includes an `Add interaction from Gmail` flow. It uses a separate Gmail OAuth consent screen with read-only access and does not reuse the Auth0 login token.
+
+Set these local environment variables in the repository root `.env`:
+
+```env
+GMAIL_CLIENT_ID=...
+GMAIL_CLIENT_SECRET=...
+GMAIL_REDIRECT_URI=http://localhost:4000/api/gmail/callback
+GMAIL_TOKEN_ENCRYPTION_KEY=...
+```
+
+Create an OAuth client in Google Cloud, enable the Gmail API, and add the callback URL above to the authorized redirect URIs. The callback stores the refresh token encrypted in Postgres and the app uses it to search recent emails for the selected company.
+
 ## Scripts
 
 - `yarn dev`: start API and web app.

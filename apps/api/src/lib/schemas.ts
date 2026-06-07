@@ -162,6 +162,59 @@ export const companyResearchInputSchema = z.object({
   forceResearch: z.boolean().optional()
 });
 
+export const gmailMessageCandidateSchema = z.object({
+  id: z.string().min(1),
+  threadId: z.string().min(1),
+  subject: z.string().min(1),
+  from: z.string().min(1),
+  date: z.string().min(1),
+  snippet: z.string().min(1)
+});
+
+export const gmailInteractionDraftSchema = z.object({
+  date: z.string().min(1),
+  type: z.string().min(1),
+  stage: z.string().nullable(),
+  status: interactionStatusSchema,
+  personName: z.string().nullable(),
+  personRole: z.string().nullable(),
+  agenda: z.string().nullable(),
+  notes: z.string().nullable(),
+  outcome: z.string().nullable(),
+  followUp: z.string().nullable()
+});
+
+export const gmailStatusSchema = z.object({
+  configured: z.boolean(),
+  connected: z.boolean(),
+  googleEmail: z.string().nullable(),
+  updatedAt: z.string().nullable()
+});
+
+export const gmailConnectRequestSchema = z.object({
+  returnTo: z.string().optional()
+});
+
+export const gmailConnectResponseSchema = z.object({
+  authUrl: z.string().url()
+});
+
+export const gmailSearchResponseSchema = z.object({
+  companyName: z.string(),
+  roleTitle: z.string().nullable(),
+  query: z.string(),
+  candidates: z.array(gmailMessageCandidateSchema)
+});
+
+export const gmailParseEmailRequestSchema = z.object({
+  messageId: z.string().min(1)
+});
+
+export const gmailParseEmailResponseSchema = z.object({
+  email: gmailMessageCandidateSchema,
+  interaction: gmailInteractionDraftSchema
+});
+
 export const companyResearchResultSchema = z.object({
   companyName: z.string(),
   funding: z.string().nullable(),

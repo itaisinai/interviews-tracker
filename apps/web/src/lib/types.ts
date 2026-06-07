@@ -219,3 +219,48 @@ export type CompanyResearchApplyResponse = {
   research: CompanyResearchResult;
   updatedOpportunities: number;
 };
+
+export type GmailStatus = {
+  configured: boolean;
+  connected: boolean;
+  googleEmail: string | null;
+  updatedAt: string | null;
+};
+
+export type GmailMessageCandidate = {
+  id: string;
+  threadId: string;
+  subject: string;
+  from: string;
+  date: string;
+  snippet: string;
+};
+
+export type GmailSearchResponse = {
+  companyName: string;
+  roleTitle: string | null;
+  query: string;
+  candidates: GmailMessageCandidate[];
+};
+
+export type GmailInteractionDraft = {
+  date: string;
+  type: string;
+  stage: string | null;
+  status: InteractionStatus;
+  personName: string | null;
+  personRole: string | null;
+  agenda: string | null;
+  notes: string | null;
+  outcome: string | null;
+  followUp: string | null;
+};
+
+export type GmailParsedEmailResponse = {
+  email: GmailMessageCandidate;
+  interaction: GmailInteractionDraft;
+};
+
+export type GmailConnectResponse = {
+  authUrl: string;
+};

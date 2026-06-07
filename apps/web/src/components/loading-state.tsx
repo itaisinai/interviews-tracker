@@ -110,3 +110,55 @@ export function InlineLoadingState({ label = "Loading..." }: { label?: string })
     </span>
   );
 }
+
+type ProcessStateTone = "neutral" | "busy" | "success" | "danger";
+
+export function ProcessStateCard({
+  title,
+  description,
+  message,
+  progress,
+  tone = "neutral"
+}: {
+  title: string;
+  description?: string;
+  message: string;
+  progress?: number;
+  tone?: ProcessStateTone;
+}) {
+  const palette = {
+    neutral: "bg-secondary-container text-on-secondary-container",
+    busy: "bg-primary-container text-on-primary-container",
+    success: "bg-primary-container text-on-primary-container",
+    danger: "bg-error-container text-on-error-container"
+  }[tone];
+
+  const icon =
+    tone === "danger" ? "error" :
+    tone === "success" ? "check_circle" :
+    "sync";
+
+  return (
+    <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-5">
+      <div className="flex items-start gap-4">
+        <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${palette}`}>
+          {tone === "busy" ? (
+            <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            <MaterialIcon name={icon} filled />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant">{title}</p>
+          <p className="mt-1 text-body-md font-semibold text-on-background">{message}</p>
+          {description ? <p className="mt-1 text-body-md text-on-surface-variant">{description}</p> : null}
+        </div>
+      </div>
+      {typeof progress === "number" ? (
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-container-high">
+          <div className={`h-full rounded-full transition-[width,background-color] duration-300 ease-out ${tone === "danger" ? "bg-error" : tone === "success" ? "bg-primary" : "bg-secondary"}`} style={{ width: `${Math.max(4, Math.min(100, progress))}%` }} />
+        </div>
+      ) : null}
+    </div>
+  );
+}

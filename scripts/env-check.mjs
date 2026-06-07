@@ -47,7 +47,13 @@ const backendRequired = [
   "ALLOWED_EMAIL",
   "AI_PROVIDER",
   "OPENAI_API_KEY",
-  "OPENAI_MODEL"
+  "OPENAI_MODEL",
+  "COMPANY_RESEARCH_PROVIDER",
+  "EXA_API_KEY",
+  "GMAIL_CLIENT_ID",
+  "GMAIL_CLIENT_SECRET",
+  "GMAIL_REDIRECT_URI",
+  "GMAIL_TOKEN_ENCRYPTION_KEY"
 ];
 const required = [...backendRequired, ...frontendRequired];
 const missing = required.filter((key) => !hasValue(rootEnv, key));
