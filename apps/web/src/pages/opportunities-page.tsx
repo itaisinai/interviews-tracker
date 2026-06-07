@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import type { ColumnDef } from "@tanstack/react-table";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "../components/badge";
+import { DataTable } from "../components/data-table";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
 import { jobStatusOptions, pipelineTypeOptions, priorityOptions } from "../lib/enum-labels";
 import type { Opportunity } from "../lib/types";
-import { formatDate, initials, titleize } from "../lib/format";
+import { formatDate, titleize } from "../lib/format";
 
 function mobileOpportunityState(item: Opportunity) {
   if (item.pipelineType === "ACTIVE_PROCESS") return { label: "ACTIVE", tone: "active" as const, border: "border-primary" };
@@ -35,6 +37,7 @@ export function OpportunitiesPage() {
   const [domainId, setDomainId] = useState("");
   const [sort, setSort] = useState("updated");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: options, isLoading: optionsLoading, isError: optionsError, error: optionsErrorValue, refetch: refetchOptions, isFetching: optionsFetching } = useQuery({ queryKey: ["options"], queryFn: api.options, staleTime: Infinity });
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -56,6 +59,73 @@ export function OpportunitiesPage() {
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
     }
   });
+  const columns = useMemo<ColumnDef<Opportunity>[]>(() => [
+    {
+      header: "Company",
+      size: 220,
+      cell: ({ row }) => {
+        return <span className="block truncate font-medium text-on-background">{row.original.companyName}</span>;
+      }
+    },
+    {
+      header: "Role",
+      size: 240,
+      cell: ({ row }) => (
+        <div className="min-w-0">
+          <span className="block truncate font-medium text-on-surface-variant">{row.original.roleTitle}</span>
+        </div>
+      )
+    },
+    { header: "Status", size: 190, cell: ({ row }) => <Badge value={row.original.status} /> },
+    { header: "Priority", size: 140, cell: ({ row }) => <Badge value={row.original.priority} /> },
+    { header: "Pipeline", size: 200, cell: ({ row }) => <Badge value={row.original.pipelineType} /> },
+    { header: "Referrer / Connection", size: 220, cell: ({ row }) => <span className="block truncate text-body-md text-on-surface-variant">{row.original.referrerOrConnection ?? "-"}</span> },
+    {
+      header: "Next Interaction",
+      size: 190,
+      cell: ({ row }) => {
+        const next = row.original.interactions?.filter((interaction) => new Date(interaction.date) >= new Date()).sort((a, b) => +new Date(a.date) - +new Date(b.date))[0];
+        return <span className="block truncate font-medium text-on-surface-variant">{next ? `${formatDate(next.date)} ${next.type}` : "-"}</span>;
+      }
+    },
+    { header: "Next Step", size: 220, cell: ({ row }) => <span className="block truncate text-body-md font-medium text-primary">{row.original.nextStep ?? "-"}</span> },
+    { header: "Updated", size: 140, cell: ({ row }) => <span className="block truncate text-body-md italic text-on-surface-variant">{formatDate(row.original.updatedAt)}</span> },
+    {
+      header: "Job Link",
+      size: 140,
+      cell: ({ row }) =>
+        row.original.jobUrl ? (
+          <a
+            className="inline-flex w-fit items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-1 font-label-sm text-[11px] font-medium text-primary transition-colors hover:bg-surface-container-high/80"
+            href={row.original.jobUrl}
+            target="_blank"
+            rel="noreferrer"
+            title={`Open job link for ${row.original.companyName}`}
+          >
+            <MaterialIcon name="open_in_new" className="text-[15px]" />
+            Job link
+          </a>
+        ) : (
+          <span className="text-body-md text-on-surface-variant">-</span>
+        )
+    },
+    {
+      header: "Delete",
+      size: 110,
+      cell: ({ row }) => (
+        <LoadingButton
+          compact
+          aria-label={`Delete ${row.original.companyName} / ${row.original.roleTitle}`}
+          className="text-error"
+          icon="delete"
+          loading={deleteOpportunity.isPending && deleteOpportunity.variables === row.original.id}
+          onClick={() => {
+            if (window.confirm(`Delete ${row.original.companyName} / ${row.original.roleTitle}?`)) deleteOpportunity.mutate(row.original.id);
+          }}
+        />
+      )
+    }
+  ], [deleteOpportunity]);
 
   if (optionsLoading || isLoading) {
     return <PageLoadingState title="Opportunities" description="Loading your pipeline and filter options." />;
@@ -82,22 +152,13 @@ export function OpportunitiesPage() {
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
-          <div className="flex overflow-x-auto gap-3 pb-1 hide-scrollbar">
+          <div className="flex flex-wrap gap-3 pb-1 hide-scrollbar">
             <button className={`whitespace-nowrap rounded-full px-4 py-2 font-label-md ${!status && !pipeline && !priority && !domainId ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"}`} onClick={() => { setStatus(""); setPipeline(""); setPriority(""); setDomainId(""); }}>
               All
             </button>
-            <select className="rounded-full bg-surface-container-high px-4 py-2 font-label-md text-on-surface-variant" value={status} onChange={(event) => setStatus(event.target.value)}>
-              <option value="">Status</option>
-              {jobStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-            </select>
-            <select className="rounded-full bg-surface-container-high px-4 py-2 font-label-md text-on-surface-variant" value={pipeline} onChange={(event) => setPipeline(event.target.value)}>
-              <option value="">Pipeline</option>
-              {pipelineTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-            </select>
-            <select className="rounded-full bg-surface-container-high px-4 py-2 font-label-md text-on-surface-variant" value={priority} onChange={(event) => setPriority(event.target.value)}>
-              <option value="">Priority</option>
-              {priorityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-            </select>
+            <FilterChip label="Status" value={status} onChange={setStatus} options={jobStatusOptions} />
+            <FilterChip label="Pipeline" value={pipeline} onChange={setPipeline} options={pipelineTypeOptions} />
+            <FilterChip label="Priority" value={priority} onChange={setPriority} options={priorityOptions} />
           </div>
         </section>
 
@@ -134,7 +195,7 @@ export function OpportunitiesPage() {
         </Link>
       </div>
 
-      <div className="hidden md:block">
+      <div className="hidden md:flex h-[calc(100dvh-8rem)] min-h-0 flex-col overflow-hidden">
         <PageIntro
           title="Opportunities"
           description="Manage your active pipeline and potential leads."
@@ -146,112 +207,81 @@ export function OpportunitiesPage() {
           }
         />
 
-        <div className="panel mb-6 grid grid-cols-1 gap-4 p-4 xl:grid-cols-12 xl:items-end">
-          <div className="xl:col-span-4">
-            <label className="block">
-              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Search</span>
-              <input className="input border-none bg-surface-container-low" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
-            </label>
-          </div>
-          <div className="xl:col-span-2">
-            <label className="block">
-              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Status</span>
-              <select className="input border-none bg-surface-container-low" value={status} onChange={(event) => setStatus(event.target.value)}>
-                <option value="">All</option>
-                {jobStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-            </label>
-          </div>
-          <div className="xl:col-span-2">
-            <label className="block">
-              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Pipeline</span>
-              <select className="input border-none bg-surface-container-low" value={pipeline} onChange={(event) => setPipeline(event.target.value)}>
-                <option value="">All</option>
-                {pipelineTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-            </label>
-          </div>
-          <div className="xl:col-span-2">
-            <label className="block">
-              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Priority</span>
-              <select className="input border-none bg-surface-container-low" value={priority} onChange={(event) => setPriority(event.target.value)}>
-                <option value="">All</option>
-                {priorityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-            </label>
-          </div>
-          <div className="xl:col-span-2">
-            <label className="block">
-              <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">Domain</span>
-              <select className="input border-none bg-surface-container-low" value={domainId} onChange={(event) => setDomainId(event.target.value)}>
-                <option value="">All</option>
-                {options?.domains.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-              </select>
-            </label>
-          </div>
-          <div className="xl:col-span-12 xl:mt-1">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="font-label-md text-label-md uppercase text-on-surface-variant">Sort by</span>
-                <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={sort} onChange={(event) => setSort(event.target.value)}>
-                  <option value="updated">Recently Updated</option>
-                  <option value="nextInteraction">Next Interaction</option>
-                </select>
-              </div>
-              {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
-            </div>
+        <div className="panel mb-6 grid items-center gap-4 overflow-hidden px-5 py-5 xl:grid-cols-[minmax(240px,1.1fr)_auto_repeat(4,minmax(0,1fr))_minmax(140px,auto)]">
+          <input className="input min-w-0 border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
+          <span className="font-label-md text-label-md text-on-surface-variant">Filters:</span>
+          <FilterChip label="Status" value={status} onChange={setStatus} options={jobStatusOptions} />
+          <FilterChip label="Pipeline" value={pipeline} onChange={setPipeline} options={pipelineTypeOptions} />
+          <FilterChip label="Priority" value={priority} onChange={setPriority} options={priorityOptions} />
+          <FilterChip label="Domain" value={domainId} onChange={setDomainId} options={(options?.domains ?? []).map((item) => ({ value: item.id, label: item.label }))} />
+          <div className="ml-auto flex items-center gap-3">
+            <span className="font-label-md text-label-md text-on-surface-variant">Sort by:</span>
+            <select className="rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-4 py-2.5 pr-12 text-body-md text-[#20303d] outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10" value={sort} onChange={(event) => setSort(event.target.value)}>
+              <option value="updated">Recently Updated</option>
+              <option value="nextInteraction">Next Interaction</option>
+            </select>
+            {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-outline-variant bg-surface-container-lowest">
-                  {["Company", "Role", "Status", "Priority", "Pipeline", "Referrer / Connection", "Next Interaction", "Next Step", "Updated", "Delete"].map((heading) => (
-                    <th key={heading} className="px-6 py-4 text-left font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">{heading}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant">
-                {data.map((item) => {
-                  const next = item.interactions?.filter((interaction) => new Date(interaction.date) >= new Date()).sort((a, b) => +new Date(a.date) - +new Date(b.date))[0];
-                  const active = item.pipelineType === "ACTIVE_PROCESS";
-                  return (
-                    <tr key={item.id} className={`group transition-colors hover:bg-surface-container-low ${active ? "bg-primary/[0.02] hover:bg-primary/5" : ""}`}>
-                      <td className="px-6 py-4">
-                        <Link to={`/opportunities/${item.id}`} className="flex items-center">
-                          <div className={`mr-2 flex h-8 w-8 items-center justify-center rounded-lg font-bold text-white ${active ? "bg-on-primary-container" : "bg-surface-container-high text-on-background"}`}>{initials(item.companyName)}</div>
-                          <span className="font-medium text-on-background">{item.companyName}</span>
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex min-w-52 flex-col gap-1">
-                          <span className="font-medium text-on-surface-variant">{item.roleTitle}</span>
-                          {item.jobUrl ? (
-                            <a className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-1 font-label-sm text-label-sm text-primary hover:bg-primary/15" href={item.jobUrl} target="_blank" rel="noreferrer">
-                              <MaterialIcon name="open_in_new" className="text-[16px]" />
-                              Job link
-                            </a>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4"><Badge value={item.status} /></td>
-                      <td className="px-6 py-4"><Badge value={item.priority} /></td>
-                      <td className="px-6 py-4"><Badge value={item.pipelineType} /></td>
-                      <td className="px-6 py-4 text-body-md text-on-surface-variant">{item.referrerOrConnection ?? "-"}</td>
-                      <td className="px-6 py-4 font-medium text-on-surface-variant">{next ? `${formatDate(next.date)} ${next.type}` : "-"}</td>
-                      <td className="px-6 py-4 text-body-md font-medium text-primary">{item.nextStep ?? "-"}</td>
-                      <td className="px-6 py-4 text-body-md italic text-on-surface-variant">{formatDate(item.updatedAt)}</td>
-                      <td className="px-6 py-4"><LoadingButton compact aria-label={`Delete ${item.companyName} / ${item.roleTitle}`} className="text-error" icon="delete" loading={deleteOpportunity.isPending && deleteOpportunity.variables === item.id} onClick={() => { if (window.confirm(`Delete ${item.companyName} / ${item.roleTitle}?`)) deleteOpportunity.mutate(item.id); }} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
+          <div className="h-full overflow-auto custom-scrollbar">
+            <DataTable
+              data={data}
+              columns={columns}
+              className="min-w-[1500px]"
+              tableClassName="table-fixed w-full border-collapse text-left text-body-md"
+              emptyState={<span>No opportunities found.</span>}
+              getRowProps={(row) => ({
+                role: "link",
+                tabIndex: 0,
+                title: `Open ${row.companyName} / ${row.roleTitle}`,
+                className: `cursor-pointer transition-colors hover:bg-surface-container-low ${row.pipelineType === "ACTIVE_PROCESS" ? "bg-primary/[0.02] hover:bg-primary/5" : ""}`,
+                onClick: (event) => {
+                  const target = event.target as HTMLElement;
+                  if (target.closest("a,button,input,select,textarea")) return;
+                  navigate(`/opportunities/${row.id}`);
+                },
+                onKeyDown: (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    navigate(`/opportunities/${row.id}`);
+                  }
+                }
+              })}
+            />
           </div>
         </div>
       </div>
     </>
+  );
+}
+
+function FilterChip({
+  label,
+  value,
+  onChange,
+  options
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <div className="relative min-w-[150px] flex-1 md:min-w-0">
+      <span className="sr-only">{label}</span>
+      <select
+        aria-label={label}
+        title={`${label}: ${value || "All"}`}
+        className="appearance-none w-full rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-5 py-2 pr-12 text-[14px] text-[#20303d] shadow-sm outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value="">{label}: All</option>
+        {options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+      </select>
+      <MaterialIcon name="keyboard_arrow_down" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+    </div>
   );
 }
