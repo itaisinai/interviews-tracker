@@ -1,92 +1,28 @@
-export type GmailRawMessageHeader = {
-  name?: string;
-  value?: string;
-};
+import type {
+  GmailDerivedInteraction,
+  GmailMeetingDateSource,
+  GmailRawMessageHeader,
+  GmailRawMessagePayload,
+  GmailRawMessageResponse,
+  GmailSearchCandidateClassification,
+  GmailSearchCandidateMetadata,
+  GmailSearchQuery,
+  GmailStructuredEmail,
+  GmailStructuredEmailCalendar
+} from "@interviews-tracker/integrations";
 
-export type GmailRawMessagePayload = {
-  mimeType?: string;
-  filename?: string;
-  body?: {
-    data?: string;
-    size?: number;
-    attachmentId?: string;
-  };
-  parts?: GmailRawMessagePayload[];
-  headers?: GmailRawMessageHeader[];
-};
-
-export type GmailRawMessageResponse = {
-  id?: string;
-  threadId?: string;
-  snippet?: string;
-  internalDate?: string;
-  payload?: GmailRawMessagePayload;
-};
-
-export type GmailStructuredEmailCalendar = {
-  summary: string | null;
-  description: string | null;
-  location: string | null;
-  start: string | null;
-  end: string | null;
-  timezone: string | null;
-  attendees: string[];
-};
-
-export type GmailStructuredEmail = {
-  id: string;
-  threadId: string;
-  subject: string;
-  fromRaw: string;
-  senderName: string | null;
-  senderEmail: string | null;
-  to: string[];
-  cc: string[];
-  dateHeader: string | null;
-  internalDate: string;
-  snippet: string;
-  plainText: string;
-  htmlText: string;
-  calendarText: string;
-  calendar: GmailStructuredEmailCalendar | null;
-};
-
-export type GmailMeetingDateSource = "calendar" | "text" | "header";
-
-export type GmailDerivedInteraction = {
-  date: string;
-  dateSource: GmailMeetingDateSource;
-  type: string;
-  stage: string | null;
-  status: "SCHEDULED" | "DONE" | "CANCELLED" | "NEEDS_FOLLOW_UP";
-  personName: string | null;
-  personRole: string | null;
-  agenda: string | null;
-  notes: string | null;
-  outcome: string | null;
-  followUp: string | null;
-};
-
-export type GmailSearchQuery = {
-  query: string;
-};
-
-export type GmailSearchCandidateMetadata = {
-  id: string;
-  threadId: string;
-  subject: string;
-  from: string;
-  date: string;
-  snippet: string;
-};
-
-export type GmailSearchCandidateClassification = {
-  messageId: string;
-  isRelevant: boolean;
-  confidence: number;
-  emailType: "INTERVIEW_INVITATION" | "RECRUITER_MESSAGE" | "FOLLOW_UP" | "REJECTION" | "OFFER" | "UNRELATED";
-  reason: string;
-};
+export type {
+  GmailRawMessageHeader,
+  GmailRawMessagePayload,
+  GmailRawMessageResponse,
+  GmailStructuredEmailCalendar,
+  GmailStructuredEmail,
+  GmailMeetingDateSource,
+  GmailDerivedInteraction,
+  GmailSearchQuery,
+  GmailSearchCandidateMetadata,
+  GmailSearchCandidateClassification
+} from "@interviews-tracker/integrations";
 
 function decodeBase64Url(value: string) {
   return Buffer.from(value.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");

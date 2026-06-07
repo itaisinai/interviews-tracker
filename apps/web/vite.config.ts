@@ -9,8 +9,19 @@ export default defineConfig({
   plugins: [react()],
   root: appRoot,
   envDir: repoRoot,
+  resolve: {
+    alias: {
+      "@interviews-tracker/core": fileURLToPath(new URL("../../packages/core/src/index.ts", import.meta.url)),
+      "@interviews-tracker/ai": fileURLToPath(new URL("../../packages/ai/src/index.ts", import.meta.url)),
+      "@interviews-tracker/integrations": fileURLToPath(new URL("../../packages/integrations/src/index.ts", import.meta.url)),
+      "@interviews-tracker/api-client": fileURLToPath(new URL("../../packages/api-client/src/index.ts", import.meta.url))
+    }
+  },
   server: {
-    port: 5173
+    port: 5173,
+    fs: {
+      allow: [repoRoot]
+    }
   },
   build: {
     outDir: "../../dist/web",

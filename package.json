@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "concurrently \"yarn dev:api\" \"yarn dev:web\"",
