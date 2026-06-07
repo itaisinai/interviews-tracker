@@ -361,6 +361,159 @@ function parseInternalDate(value?: string) {
   return new Date().toISOString();
 }
 
+function parseTimeComponent(value: string) {
+  const match = value.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+
+  if (!match) {
+    return null;
+  }
+
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const meridiem = match[3].toUpperCase();
+
+  if (hour < 1 || hour > 12 || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  if (meridiem === "AM") {
+    hour = hour === 12 ? 0 : hour;
+  } else {
+    hour = hour === 12 ? 12 : hour + 12;
+  }
+
+  return { hour, minute };
+}
+
+function monthIndexFromName(value: string) {
+  const normalized = value.trim().slice(0, 3).toLowerCase();
+  const months: Record<string, number> = {
+    jan: 0,
+    feb: 1,
+    mar: 2,
+    apr: 3,
+    may: 4,
+    jun: 5,
+    jul: 6,
+    aug: 7,
+    sep: 8,
+    oct: 9,
+    nov: 10,
+    dec: 11
+  };
+
+  return months[normalized] ?? -1;
+}
+
+function parseTimezoneOffset(value: string) {
+  const explicitMatch = value.match(/GMT\s*([+-]\s*\d{1,2})/i) ?? value.match(/\bUTC\s*([+-]\s*\d{1,2})/i);
+
+  if (explicitMatch?.[1]) {
+    return Number(explicitMatch[1].replace(/\s+/g, ""));
+  }
+
+  if (/Israel Time|Asia\/Jerusalem|IDT/i.test(value)) {
+    return 3;
+  }
+
+  if (/\bIST\b/i.test(value)) {
+    return 3;
+  }
+
+  return null;
+}
+
+function localTimeToIso(parts: { year: number; month: number; day: number; hour: number; minute: number }, offsetHours: number) {
+  const utcMillis = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour - offsetHours, parts.minute);
+  return new Date(utcMillis).toISOString();
+}
+
+function extractDateComponents(text: string) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const patterns = [
+    /(?:\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b,?\s+)?(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}\s*(?:AM|PM))(?:\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM))?(?:\s*\(([^)]+)\))?/i,
+    /(?:on\s+)?([A-Za-z]{3,9})\s+(\d{1,2}),\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}\s*(?:AM|PM))(?:\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM))?(?:\s*\(([^)]+)\))?/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+
+    if (!match) {
+      continue;
+    }
+
+    const dateParts = match.slice(1, 4);
+    const timePart = match[4];
+    const timezonePart = match[5] ?? "";
+    const dateMatch = dateParts.length === 3 ? dateParts : null;
+    const timeMatch = parseTimeComponent(timePart);
+
+    if (!dateMatch || !timeMatch) {
+      continue;
+    }
+
+    let year: number;
+    let month: number;
+    let day: number;
+
+    if (/^\d{1,2}$/.test(dateMatch[0] ?? "")) {
+      day = Number(dateMatch[0]);
+      month = monthIndexFromName(dateMatch[1] ?? "") + 1;
+      year = Number(dateMatch[2]);
+    } else {
+      month = monthIndexFromName(dateMatch[0] ?? "") + 1;
+      day = Number(dateMatch[1]);
+      year = Number(dateMatch[2]);
+    }
+
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+      continue;
+    }
+
+    const offsetHours = parseTimezoneOffset(timezonePart);
+
+    if (offsetHours === null) {
+      continue;
+    }
+
+    return localTimeToIso(
+      {
+        year,
+        month,
+        day,
+        hour: timeMatch.hour,
+        minute: timeMatch.minute
+      },
+      offsetHours
+    );
+  }
+
+  return null;
+}
+
+function inferInteractionType(text: string) {
+  if (/phone interview|phone screen|screening call/i.test(text)) return "Phone Interview";
+  if (/recruiter call|intro call|intro chat/i.test(text)) return "Recruiter Call";
+  if (/technical interview|technical round/i.test(text)) return "Technical Interview";
+  if (/final interview|final round/i.test(text)) return "Final Interview";
+  if (/take-home|take home|assignment/i.test(text)) return "Take-home Assignment";
+  if (/follow[- ]up/i.test(text)) return "Follow-up";
+  return "Email";
+}
+
+function inferInteractionStage(text: string) {
+  if (/phone interview|phone screen|screening call/i.test(text)) return "Phone Interview";
+  if (/recruiter call|intro call|intro chat/i.test(text)) return "Recruiter Call";
+  if (/technical interview|technical round/i.test(text)) return "Technical Interview";
+  if (/final interview|final round/i.test(text)) return "Final Interview";
+  if (/take-home|take home|assignment/i.test(text)) return "Assignment";
+  return null;
+}
+
+function extractScheduledDate(text: string) {
+  return extractDateComponents(text);
+}
+
 function mapMessageCandidate(message: GmailMessageResponse): GmailMessageCandidate {
   const headers = message.payload?.headers ?? [];
 
@@ -424,9 +577,9 @@ export async function getGmailStatus(auth0Email: string): Promise<GmailStatus> {
 }
 
 export async function completeGmailOAuth(code: string, state: string) {
-    const settings = requireSettings();
-    const timer = createTimer("gmail", "connect", {});
-    try {
+  const settings = requireSettings();
+  const timer = createTimer("gmail", "connect", {});
+  try {
     const parsedState = verifyState(state, settings.encryptionSecret);
     const tokens = await exchangeCodeForTokens(code, settings);
     const refreshToken = tokens.refresh_token;
@@ -531,6 +684,7 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
     });
     const email = mapMessageCandidate(detail);
     const body = extractPayloadText(detail.payload);
+    const messageText = `${email.subject}\n${body}`;
 
     if (!body.trim()) {
       timer.fail(new Error("Unable to extract Gmail message body."), { company: input.companyName });
@@ -547,9 +701,15 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
       body
     });
 
+    const extractedDate = extractScheduledDate(messageText);
+    const normalizedType = interaction.type.trim().toLowerCase() === "object" ? inferInteractionType(messageText) : interaction.type.trim();
+    const normalizedStage = !interaction.stage || interaction.stage.trim().toLowerCase() === "object" ? inferInteractionStage(messageText) : interaction.stage.trim();
+
     const parsedInteraction = gmailInteractionDraftSchema.parse({
       ...interaction,
-      date: email.date
+      date: extractedDate ?? interaction.date,
+      type: normalizedType,
+      stage: normalizedStage
     });
 
     timer.end({ company: input.companyName });

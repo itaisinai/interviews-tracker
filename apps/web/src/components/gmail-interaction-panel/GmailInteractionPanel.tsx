@@ -19,6 +19,23 @@ function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function toDatetimeLocalValue(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const pad = (input: number) => String(input).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, onSaved }: GmailInteractionPanelProps) {
   const queryClient = useQueryClient();
   const statusQuery = useQuery({ queryKey: ["gmail-status"], queryFn: api.gmailStatus });
@@ -375,7 +392,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
               <input
                 className="input"
                 type="datetime-local"
-                value={draft.date.slice(0, 16)}
+                value={toDatetimeLocalValue(draft.date)}
                 onChange={(event) => setDraft({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })}
               />
             </Field>
