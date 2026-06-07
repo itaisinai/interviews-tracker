@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "../components/badge";
 import { MaterialIcon } from "../components/material-icon";
+import { GmailInteractionPanel } from "../components/gmail-interaction-panel";
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
@@ -10,6 +11,8 @@ import { formatDateTime } from "../lib/format";
 export function InteractionsPage() {
   const [filter, setFilter] = useState("upcoming");
   const [showForm, setShowForm] = useState(false);
+  const [showGmailImport, setShowGmailImport] = useState(false);
+  const [gmailOpportunityId, setGmailOpportunityId] = useState("");
   const [form, setForm] = useState({
     jobOpportunityId: "",
     date: "",
@@ -27,6 +30,10 @@ export function InteractionsPage() {
   const { data = [], isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
   const opportunitiesQuery = useQuery({ queryKey: ["opportunities", "interaction-form"], queryFn: () => api.opportunities() });
   const { data: opportunities = [] } = opportunitiesQuery;
+  const gmailOpportunity = useMemo(
+    () => opportunities.find((item) => item.id === gmailOpportunityId) ?? null,
+    [gmailOpportunityId, opportunities]
+  );
   const createInteraction = useMutation({
     mutationFn: () => api.createGlobalInteraction(form),
     onSuccess: () => {
@@ -66,6 +73,12 @@ export function InteractionsPage() {
   const followUpCount = data.filter((item) => item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim())).length;
   const followUpPercent = data.length > 0 ? Math.round((followUpCount / data.length) * 100) : 0;
 
+  function openGmailImport() {
+    const initialOpportunityId = form.jobOpportunityId || gmailOpportunityId || opportunities[0]?.id || "";
+    setGmailOpportunityId(initialOpportunityId);
+    setShowGmailImport(true);
+  }
+
   if (isLoading || opportunitiesQuery.isLoading) {
     return <PageLoadingState title="Interactions" description="Loading interactions and available opportunities." />;
   }
@@ -75,12 +88,75 @@ export function InteractionsPage() {
   }
 
   if (opportunitiesQuery.isError) {
-    return <PageErrorState title="Interactions" description={opportunitiesQuery.error instanceof Error ? opportunitiesQuery.error.message : "Unable to load opportunities for the form."} onRetry={() => void opportunitiesQuery.refetch()} />;
+      return <PageErrorState title="Interactions" description={opportunitiesQuery.error instanceof Error ? opportunitiesQuery.error.message : "Unable to load opportunities for the form."} onRetry={() => void opportunitiesQuery.refetch()} />;
   }
 
   return (
     <>
-      <PageIntro title="Interactions" description="Track your networking and interview progress with precision." actions={<>{isFetching ? <InlineLoadingState label="Refreshing" /> : null}<button className="btn btn-primary" onClick={() => setShowForm((value) => !value)}><MaterialIcon name={showForm ? "close" : "add"} />{showForm ? "Close" : "Add Interaction"}</button></>} />
+      <PageIntro
+        title="Interactions"
+        description="Track your networking and interview progress with precision."
+        actions={
+          <>
+            {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+            <button className="btn btn-secondary" onClick={() => (showGmailImport ? setShowGmailImport(false) : openGmailImport())}>
+              <MaterialIcon name="mail" />
+              {showGmailImport ? "Hide Gmail Import" : "Add interaction from Gmail"}
+            </button>
+            <button className="btn btn-primary" onClick={() => setShowForm((value) => !value)}>
+              <MaterialIcon name={showForm ? "close" : "add"} />
+              {showForm ? "Close" : "Add Interaction"}
+            </button>
+          </>
+        }
+      />
+      {showGmailImport ? (
+        <section className="panel mb-8 p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="rounded-lg bg-primary/10 p-2 text-primary">
+              <MaterialIcon name="mail" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-title-md text-title-md font-bold">Add interaction from Gmail</h3>
+              <p className="text-body-md text-on-surface-variant">Pick an opportunity, search Gmail for recent emails, then review the parsed interaction before saving.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+            <Field label="Opportunity">
+              <select className="input" value={gmailOpportunityId} onChange={(event) => setGmailOpportunityId(event.target.value)}>
+                <option value="">Select company / role</option>
+                {opportunities.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.companyName} · {item.roleTitle}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <div className="flex items-center gap-3">
+              <button className="btn btn-secondary" onClick={() => setShowGmailImport(false)}>
+                <MaterialIcon name="close" />
+                Close
+              </button>
+            </div>
+          </div>
+          {gmailOpportunity ? (
+            <div className="mt-6">
+              <GmailInteractionPanel
+                opportunityId={gmailOpportunity.id}
+                companyName={gmailOpportunity.companyName}
+                roleTitle={gmailOpportunity.roleTitle}
+                onSaved={() => {
+                  setShowGmailImport(false);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="mt-6 rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-5 text-body-md text-on-surface-variant">
+              Choose an opportunity to search Gmail for related emails.
+            </div>
+          )}
+        </section>
+      ) : null}
       {showForm ? (
         <section className="panel mb-8 p-6">
           <div className="mb-5 flex items-center gap-3">

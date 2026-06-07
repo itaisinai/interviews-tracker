@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Badge } from "../components/badge";
+import { GmailInteractionPanel } from "../components/gmail-interaction-panel";
 import { CompanyResearchPanel } from "../components/company-research-panel";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
@@ -81,6 +82,15 @@ export function OpportunityDetailPage() {
         }}
         targetOpportunityId={data.id}
       />
+
+      <div className="mt-6">
+        <GmailInteractionPanel
+          opportunityId={data.id}
+          companyName={data.companyName}
+          roleTitle={data.roleTitle}
+          onSaved={refresh}
+        />
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <section className="panel p-6 lg:col-span-4">

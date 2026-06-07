@@ -219,3 +219,98 @@ export type CompanyResearchApplyResponse = {
   research: CompanyResearchResult;
   updatedOpportunities: number;
 };
+
+export type GmailStatus = {
+  configured: boolean;
+  connected: boolean;
+  googleEmail: string | null;
+  updatedAt: string | null;
+};
+
+export type GmailMessageCandidate = {
+  id: string;
+  threadId: string;
+  subject: string;
+  from: string;
+  date: string;
+  snippet: string;
+};
+
+export type GmailEmailClassification = {
+  messageId: string;
+  isRelevant: boolean;
+  confidence: number;
+  emailType: "INTERVIEW_INVITATION" | "RECRUITER_MESSAGE" | "FOLLOW_UP" | "REJECTION" | "OFFER" | "UNRELATED";
+  reason: string;
+};
+
+export type GmailSearchCandidate = GmailMessageCandidate & {
+  relevance: GmailEmailClassification;
+};
+
+export type GmailEmailCalendar = {
+  summary: string | null;
+  description: string | null;
+  location: string | null;
+  start: string | null;
+  end: string | null;
+  timezone: string | null;
+  attendees: string[];
+};
+
+export type GmailStructuredEmail = {
+  id: string;
+  threadId: string;
+  subject: string;
+  fromRaw: string;
+  senderName: string | null;
+  senderEmail: string | null;
+  to: string[];
+  cc: string[];
+  dateHeader: string | null;
+  internalDate: string;
+  snippet: string;
+  plainText: string;
+  htmlText: string;
+  calendarText: string;
+  calendar: GmailEmailCalendar | null;
+};
+
+export type GmailEmailExtractionAnalysis = {
+  dateSource: "calendar" | "text" | "header";
+  stageSource: "explicit" | "generic" | "null";
+  typeSource: "explicit" | "derived";
+  statusSource: "calendar" | "text" | "header";
+  hasCalendar: boolean;
+  notes: string[];
+};
+
+export type GmailSearchResponse = {
+  companyName: string;
+  roleTitle: string | null;
+  query: string;
+  candidates: GmailSearchCandidate[];
+};
+
+export type GmailInteractionDraft = {
+  date: string;
+  type: string;
+  stage: string | null;
+  status: InteractionStatus;
+  personName: string | null;
+  personRole: string | null;
+  agenda: string | null;
+  notes: string | null;
+  outcome: string | null;
+  followUp: string | null;
+};
+
+export type GmailParsedEmailResponse = {
+  email: GmailStructuredEmail;
+  interaction: GmailInteractionDraft;
+  analysis: GmailEmailExtractionAnalysis;
+};
+
+export type GmailConnectResponse = {
+  authUrl: string;
+};

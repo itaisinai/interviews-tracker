@@ -220,3 +220,13 @@ model JobOpportunityDomain {
 
   @@id([jobOpportunityId, domainId])
 }
+
+model GmailConnection {
+  id                    String   @id @default(cuid())
+  auth0Email            String   @unique
+  googleEmail           String?
+  refreshTokenEncrypted  String
+  scope                 String?
+  connectedAt           DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

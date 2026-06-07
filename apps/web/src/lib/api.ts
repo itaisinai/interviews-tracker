@@ -1,4 +1,4 @@
-import type { CompanyDetail, CompanyEnrichment, CompanyResearchApplyResponse, CompanyResearchInput, CompanyResearchResult, CompanySummary, Compensation, Interaction, Opportunity, OptionsResponse, ParsedJobDescription, Task } from "./types";
+import type { CompanyDetail, CompanyEnrichment, CompanyResearchApplyResponse, CompanyResearchInput, CompanyResearchResult, CompanySummary, Compensation, GmailConnectResponse, GmailParsedEmailResponse, GmailSearchResponse, GmailStatus, Interaction, Opportunity, OptionsResponse, ParsedJobDescription, Task } from "./types";
 import { getApiErrorMessage } from "./error";
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
@@ -74,6 +74,10 @@ export const api = {
   researchCompany: (companyName: string, body: CompanyResearchInput) => request<{ research: CompanyResearchResult }>(`/companies/${encodeURIComponent(companyName)}/research`, { method: "POST", body: JSON.stringify(body) }),
   applyCompanyResearch: (companyName: string, body: { targetOpportunityId?: string | null; research: CompanyResearchResult }) => request<CompanyResearchApplyResponse>(`/companies/${encodeURIComponent(companyName)}/research/apply`, { method: "POST", body: JSON.stringify(body) }),
   deleteCompany: (companyName: string) => request<void>(`/companies/${encodeURIComponent(companyName)}`, { method: "DELETE" }),
+  gmailStatus: () => request<GmailStatus>("/gmail/status"),
+  gmailConnect: (body: { returnTo?: string }) => request<GmailConnectResponse>("/gmail/connect", { method: "POST", body: JSON.stringify(body) }),
+  gmailSearch: (id: string) => request<GmailSearchResponse>(`/opportunities/${id}/gmail/search`),
+  gmailParseEmail: (id: string, body: { messageId: string }) => request<GmailParsedEmailResponse>(`/opportunities/${id}/gmail/parse-email`, { method: "POST", body: JSON.stringify(body) }),
   tasks: () => request<Task[]>("/tasks"),
   createTask: (body: unknown) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(body) }),
   deleteTask: (id: string) => request<void>(`/tasks/${id}`, { method: "DELETE" }),

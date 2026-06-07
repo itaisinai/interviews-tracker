@@ -1,5 +1,12 @@
-import { aiParseResponseSchema, companyEnrichmentSchema } from "../lib/schemas.js";
+import { z } from "zod";
+import {
+  aiParseResponseSchema,
+  companyEnrichmentSchema,
+  gmailEmailClassificationSchema,
+  gmailInteractionDraftSchema
+} from "../lib/schemas.js";
 import { createTimer } from "../lib/logger.js";
+import { buildEmailInteractionParserSystemPrompt } from "./email-interaction-parser-skill.js";
 import { buildJobParserSystemPrompt } from "./job-parser-skill.js";
 
 export type ParsedJobDescription = typeof aiParseResponseSchema._type;
@@ -8,6 +15,35 @@ export type CompanyEnrichment = typeof companyEnrichmentSchema._type;
 export interface AiParserService {
   parseJobDescription(text: string): Promise<ParsedJobDescription>;
   parseCompanyEnrichment(text: string): Promise<CompanyEnrichment>;
+  classifyGmailEmails(input: {
+    companyName: string;
+    roleTitle?: string | null;
+    candidates: Array<{
+      messageId: string;
+      subject: string;
+      from: string;
+      snippet: string;
+      date: string;
+      senderDomain?: string | null;
+    }>;
+  }): Promise<Array<z.infer<typeof gmailEmailClassificationSchema>>>;
+  parseStructuredGmailEmailToInteraction(input: {
+    companyName: string;
+    roleTitle?: string | null;
+    email: unknown;
+    derived: {
+      date: string;
+      dateSource: "calendar" | "text" | "header";
+      type: string;
+      stage: string | null;
+      status: z.infer<typeof gmailInteractionDraftSchema>["status"];
+      personName: string | null;
+      personRole: string | null;
+      agenda: string | null;
+      notes: string | null;
+      followUp: string | null;
+    };
+  }): Promise<z.infer<typeof gmailInteractionDraftSchema>>;
 }
 
 type OpenAiTextOutput = {
@@ -100,6 +136,50 @@ const companyEnrichmentJsonSchema = {
   }
 } as const;
 
+const gmailEmailClassificationBatchJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["results"],
+  properties: {
+    results: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["messageId", "isRelevant", "confidence", "emailType", "reason"],
+        properties: {
+          messageId: { type: "string" },
+          isRelevant: { type: "boolean" },
+          confidence: { type: "number", minimum: 0, maximum: 1 },
+          emailType: {
+            type: "string",
+            enum: ["INTERVIEW_INVITATION", "RECRUITER_MESSAGE", "FOLLOW_UP", "REJECTION", "OFFER", "UNRELATED"]
+          },
+          reason: { type: "string" }
+        }
+      }
+    }
+  }
+} as const;
+
+const gmailInteractionDraftJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["date", "type", "stage", "status", "personName", "personRole", "agenda", "notes", "outcome", "followUp"],
+  properties: {
+    date: { type: "string" },
+    type: { type: "string" },
+    stage: { type: ["string", "null"] },
+    status: { type: "string", enum: ["SCHEDULED", "DONE", "CANCELLED", "NEEDS_FOLLOW_UP"] },
+    personName: { type: ["string", "null"] },
+    personRole: { type: ["string", "null"] },
+    agenda: { type: ["string", "null"] },
+    notes: { type: ["string", "null"] },
+    outcome: { type: ["string", "null"] },
+    followUp: { type: ["string", "null"] }
+  }
+} as const;
+
 export class OpenAiParserService implements AiParserService {
   constructor(
     private readonly apiKey: string,
@@ -138,6 +218,76 @@ export class OpenAiParserService implements AiParserService {
     });
 
     return companyEnrichmentSchema.parse(JSON.parse(outputText));
+  }
+
+  async classifyGmailEmails(input: {
+    companyName: string;
+    roleTitle?: string | null;
+    candidates: Array<{
+      messageId: string;
+      subject: string;
+      from: string;
+      snippet: string;
+      date: string;
+      senderDomain?: string | null;
+    }>;
+  }): Promise<Array<z.infer<typeof gmailEmailClassificationSchema>>> {
+    const outputText = await this.createStructuredOutput({
+      name: "gmail_email_classification_batch",
+      schema: gmailEmailClassificationBatchJsonSchema,
+      systemPrompt: [
+        "Classify each Gmail candidate for a job-search CRM.",
+        "Relevant means the email likely matters for the hiring process, even if confidence is only medium.",
+        "Do not over-filter generic recruiter or scheduling email when it refers to the target company or role.",
+        "Return results in the same order as the input candidates array.",
+        `Company: ${input.companyName}`,
+        input.roleTitle ? `Role: ${input.roleTitle}` : null,
+        JSON.stringify(input.candidates)
+      ].filter(Boolean).join("\n\n"),
+      text: JSON.stringify(input.candidates)
+    });
+
+    const parsed = JSON.parse(outputText) as { results?: Array<z.infer<typeof gmailEmailClassificationSchema>> };
+    return z.array(gmailEmailClassificationSchema).parse(parsed.results ?? []);
+  }
+
+  async parseStructuredGmailEmailToInteraction(input: {
+    companyName: string;
+    roleTitle?: string | null;
+    email: unknown;
+    derived: {
+      date: string;
+      dateSource: "calendar" | "text" | "header";
+      type: string;
+      stage: string | null;
+      status: z.infer<typeof gmailInteractionDraftSchema>["status"];
+      personName: string | null;
+      personRole: string | null;
+      agenda: string | null;
+      notes: string | null;
+      followUp: string | null;
+    };
+  }): Promise<z.infer<typeof gmailInteractionDraftSchema>> {
+    const outputText = await this.createStructuredOutput({
+      name: "gmail_interaction_draft",
+      schema: gmailInteractionDraftJsonSchema,
+      systemPrompt: [
+        buildEmailInteractionParserSystemPrompt(),
+        "You are given a structured email object and deterministic derived fields.",
+        "Do not change the provided date, type, stage, status, or sender name unless the structured email explicitly contradicts the derived values.",
+        "Fill agenda, notes, outcome, followUp, and personRole only when explicit in the structured email.",
+        "Never upgrade a generic Interview to Final Interview.",
+        "If stage is only Interview, keep it as Interview.",
+        "If the email is a calendar invite, keep the derived date from the calendar event.",
+        `Company: ${input.companyName}`,
+        input.roleTitle ? `Role: ${input.roleTitle}` : null,
+        `Derived: ${JSON.stringify(input.derived)}`,
+        `Email: ${JSON.stringify(input.email)}`
+      ].filter(Boolean).join("\n\n"),
+      text: JSON.stringify(input.email)
+    });
+
+    return gmailInteractionDraftSchema.parse(JSON.parse(outputText));
   }
 
   private async createStructuredOutput(input: { name: string; schema: unknown; systemPrompt: string; text: string }) {

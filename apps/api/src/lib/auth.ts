@@ -1,6 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 
+declare module "express-serve-static-core" {
+  interface Request {
+    auth?: {
+      email: string;
+    };
+  }
+}
+
 const bearerPrefix = "Bearer ";
 let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
 
@@ -78,6 +86,7 @@ export async function requireAuth(request: Request, response: Response, next: Ne
       return;
     }
 
+    request.auth = { email };
     next();
   } catch {
     response.status(401).json({ message: "Invalid bearer token" });
