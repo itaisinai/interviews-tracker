@@ -37,10 +37,14 @@ export function AppShell() {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+  const activeNavItem = nav.find((item) => item.to === activeBase) ?? nav[0];
+  const mobileTitle = activeNavItem.to === "/" ? "CareerFlow" : activeNavItem.label;
+  const mobileIcon = activeNavItem.to === "/" ? "rocket_launch" : activeNavItem.icon;
+  const avatar = user?.picture ?? null;
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <aside className="fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col border-r border-outline-variant bg-background py-6">
+      <aside className="fixed left-0 top-0 z-50 hidden h-full w-[260px] flex-col border-r border-outline-variant bg-background py-6 md:flex">
         <div className="mb-8 px-6">
           <h1 className="font-headline-md text-headline-md font-bold text-on-background">CareerFlow</h1>
           <p className="font-label-md text-label-md text-on-surface-variant">Senior Workspace</p>
@@ -77,33 +81,68 @@ export function AppShell() {
           </button>
         </div>
       </aside>
-      <header className="fixed right-0 top-0 z-40 h-16 w-[calc(100%-260px)] border-b border-outline-variant bg-background">
-        <div className="mx-auto flex h-full w-full max-w-[1280px] items-center justify-between px-6">
-          <div className="relative w-full max-w-md">
-            <MaterialIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-            <input className="w-full rounded-full border-none bg-surface-container-low py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary/20" placeholder={placeholders[activeBase] ?? "Search..."} />
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/90 backdrop-blur-md md:inset-x-auto md:left-[260px] md:right-0 md:z-40">
+        <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
+          <div className="flex items-center gap-3 md:hidden">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary">
+              <MaterialIcon name={mobileIcon} filled={activeBase === "/"} />
+            </div>
+            <span className="font-headline-md text-headline-md font-medium text-on-background">{mobileTitle}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="hidden w-full max-w-md items-center md:flex">
+            <div className="relative w-full max-w-md">
+              <MaterialIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+              <input className="w-full rounded-full border-none bg-surface-container-low py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary/20" placeholder={placeholders[activeBase] ?? "Search..."} />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 md:gap-4">
             <button className="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant">
               <MaterialIcon name="notifications" />
             </button>
             <button className="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant">
               <MaterialIcon name="help_outline" />
             </button>
-            <button className="btn btn-primary rounded-full" onClick={() => navigate("/opportunities/new")}>
-              <MaterialIcon name="add" />
-              Add Opportunity
-            </button>
+            <div className="hidden lg:block">
+              <button className="btn btn-primary rounded-full" onClick={() => navigate("/opportunities/new")}>
+                <MaterialIcon name="add" />
+                Add Opportunity
+              </button>
+            </div>
             <div className="hidden text-right sm:block">
               <p className="max-w-40 truncate font-label-md text-label-md text-on-background">{displayName}</p>
               <p className="max-w-40 truncate font-label-sm text-label-sm text-on-surface-variant">{user?.email ?? "Authenticated"}</p>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-primary-container bg-on-primary-container font-geist text-sm font-bold text-white">{initials || "U"}</div>
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-primary-container bg-on-primary-container font-geist text-sm font-bold text-white">
+              {avatar ? <img alt={displayName} className="h-full w-full object-cover" src={avatar} /> : initials || "U"}
+            </div>
           </div>
         </div>
       </header>
-      <main className="ml-[260px] min-h-screen pt-16">
-        <div className="mx-auto w-full max-w-[1280px] px-6 py-8">
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-outline-variant bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] md:hidden">
+        <div className="grid grid-cols-5">
+          {nav.filter((item) => ["/", "/opportunities", "/interactions", "/tasks", "/settings"].includes(item.to)).map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === "/"}
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center gap-1 py-2 text-[11px] transition-colors ${
+                  isActive ? "text-primary" : "text-on-surface-variant"
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <MaterialIcon name={item.icon} filled={isActive} />
+                  <span className="font-label-sm text-[11px]">{item.label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+      <main className="min-h-screen pt-16 pb-24 md:ml-[260px] md:pb-8">
+        <div className="mx-auto w-full max-w-[1280px] px-4 py-4 md:px-6 md:py-8">
           <Outlet />
         </div>
       </main>
@@ -113,7 +152,7 @@ export function AppShell() {
 
 export function PageIntro({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+    <div className="mb-8 hidden flex-col justify-between gap-6 md:flex md:items-end md:flex-row">
       <div>
         <h2 className="font-headline-lg text-headline-lg text-on-background">{title}</h2>
         {description ? <p className="mt-1 font-body-lg text-body-lg text-on-surface-variant">{description}</p> : null}
