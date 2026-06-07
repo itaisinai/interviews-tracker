@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { pipelineTone, priorityTone, statusTone, titleize } from "../lib/format";
+import { displayLabelForEnumValue } from "../lib/enum-labels";
 
 const colors: Record<string, string> = {
   active: "bg-secondary-container text-on-secondary-container",
@@ -15,5 +16,6 @@ const colors: Record<string, string> = {
 
 export function Badge({ value, children, tone }: { value: string; children?: ReactNode; tone?: keyof typeof colors }) {
   const inferred = tone ?? (["ACTIVE_PROCESS", "POTENTIAL", "ARCHIVED"].includes(value) ? pipelineTone(value) : ["HIGH", "MEDIUM", "LOW", "MAYBE"].includes(value) ? priorityTone(value) : statusTone(value));
-  return <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 font-label-md text-label-md ${colors[inferred] ?? colors.neutral}`}>{children ?? titleize(value)}</span>;
+  const display = children ?? displayLabelForEnumValue(value) ?? titleize(value);
+  return <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 font-label-md text-label-md ${colors[inferred] ?? colors.neutral}`}>{display}</span>;
 }

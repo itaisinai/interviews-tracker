@@ -6,6 +6,7 @@ import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
+import { jobStatusOptions, pipelineTypeOptions, priorityOptions } from "../lib/enum-labels";
 import type { Opportunity } from "../lib/types";
 import { formatDate, initials, titleize } from "../lib/format";
 
@@ -87,20 +88,15 @@ export function OpportunitiesPage() {
             </button>
             <select className="rounded-full bg-surface-container-high px-4 py-2 font-label-md text-on-surface-variant" value={status} onChange={(event) => setStatus(event.target.value)}>
               <option value="">Status</option>
-              {statuses.map((item) => <option key={item} value={item}>{titleize(item)}</option>)}
+              {jobStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
             <select className="rounded-full bg-surface-container-high px-4 py-2 font-label-md text-on-surface-variant" value={pipeline} onChange={(event) => setPipeline(event.target.value)}>
               <option value="">Pipeline</option>
-              <option value="ACTIVE_PROCESS">Active Process</option>
-              <option value="POTENTIAL">Potential</option>
-              <option value="ARCHIVED">Archived</option>
+              {pipelineTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
             <select className="rounded-full bg-surface-container-high px-4 py-2 font-label-md text-on-surface-variant" value={priority} onChange={(event) => setPriority(event.target.value)}>
               <option value="">Priority</option>
-              <option>HIGH</option>
-              <option>MEDIUM</option>
-              <option>LOW</option>
-              <option>MAYBE</option>
+              {priorityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
           </div>
         </section>
@@ -155,20 +151,15 @@ export function OpportunitiesPage() {
           <span className="font-label-md text-label-md text-on-surface-variant">Filters:</span>
           <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="">Status: All</option>
-            {statuses.map((item) => <option key={item} value={item}>{titleize(item)}</option>)}
+            {jobStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
           <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={pipeline} onChange={(event) => setPipeline(event.target.value)}>
             <option value="">Pipeline: All</option>
-            <option value="ACTIVE_PROCESS">Active Process</option>
-            <option value="POTENTIAL">Potential</option>
-            <option value="ARCHIVED">Archived</option>
+            {pipelineTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
           <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={priority} onChange={(event) => setPriority(event.target.value)}>
             <option value="">Priority: All</option>
-            <option>HIGH</option>
-            <option>MEDIUM</option>
-            <option>LOW</option>
-            <option>MAYBE</option>
+            {priorityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
           <select className="rounded-lg border-none bg-surface-container-low px-4 py-2 text-body-md focus:ring-1 focus:ring-primary" value={domainId} onChange={(event) => setDomainId(event.target.value)}>
             <option value="">Domain: All</option>
@@ -219,7 +210,7 @@ export function OpportunitiesPage() {
                       </td>
                       <td className="px-6 py-4"><Badge value={item.status} /></td>
                       <td className="px-6 py-4"><Badge value={item.priority} /></td>
-                      <td className="px-6 py-4"><Badge value={item.pipelineType}>{item.pipelineType === "POTENTIAL" ? "Potential / Research" : titleize(item.pipelineType)}</Badge></td>
+                      <td className="px-6 py-4"><Badge value={item.pipelineType} /></td>
                       <td className="px-6 py-4 text-body-md text-on-surface-variant">{item.referrerOrConnection ?? "-"}</td>
                       <td className="px-6 py-4 font-medium text-on-surface-variant">{next ? `${formatDate(next.date)} ${next.type}` : "-"}</td>
                       <td className="px-6 py-4 text-body-md font-medium text-primary">{item.nextStep ?? "-"}</td>
@@ -236,5 +227,3 @@ export function OpportunitiesPage() {
     </>
   );
 }
-
-const statuses = ["RESEARCH_LEAD", "TO_APPLY", "APPLIED", "RECRUITER_REACHED_OUT", "PHONE_SCHEDULED", "PHONE_DONE", "TECHNICAL_SCHEDULED", "TECHNICAL_DONE", "HOME_ASSIGNMENT", "ASSIGNMENT_SUBMITTED", "FINAL_STAGE", "OFFER", "REJECTED", "PAUSED", "NOT_RELEVANT"];
