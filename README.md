@@ -11,6 +11,27 @@ A full-stack personal CRM for managing a senior software engineering job search.
 - PostgreSQL, Prisma
 - OpenAI-backed AI parser for job and company ingestion
 
+## Package Boundaries
+
+The repo uses Yarn workspaces with bounded-context packages under `packages/`:
+
+- `@interviews-tracker/core`: CRM domain types, enums, and shared DTOs
+- `@interviews-tracker/ai`: job parsing, email parsing, and company research contracts plus prompt/skill builders
+- `@interviews-tracker/integrations`: Gmail and web-research DTOs and pure integration helpers
+- `@interviews-tracker/api-client`: browser-safe typed API client
+
+Dependency direction is intentionally one-way:
+
+```text
+apps -> packages
+api-client -> core, ai, integrations
+ai -> core
+integrations -> core
+core -> none
+```
+
+The React UI stays in `apps/web`. Reusable UI packages are not extracted unless they are clearly worth the extra boundary.
+
 ## Local Setup
 
 1. Install dependencies. This also runs `prisma generate` through the `postinstall` script:
