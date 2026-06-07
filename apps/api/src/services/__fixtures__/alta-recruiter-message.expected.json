@@ -1,0 +1,32 @@
+{
+  "companyName": "Alta",
+  "roleTitle": "Senior Software Engineer",
+  "pipelineType": "ACTIVE_PROCESS",
+  "status": "RECRUITER_REACHED_OUT",
+  "prioritySuggestion": "HIGH",
+  "company": {
+    "employees": "42 עובדים בעולם, 30 בארץ",
+    "stage": null,
+    "domains": [],
+    "workModel": "Hybrid - Wednesday from home",
+    "location": "Tel Aviv, Rothschild",
+    "funding": null,
+    "customersTraction": "30 לקוחות משלמים ביניהם Monday",
+    "companyDescription": "היי, מדברת נועה מחברת Alta.\nיש לנו משרת Senior Software Engineer.\nהם התעניינה בקורות החיים שלך.\nאנחנו יושבים בת״א, רוטשילד.\nימי רביעי מהבית.\nיש לנו 42 עובדים בעולם, 30 בארץ.\nיש 30 לקוחות משלמים ביניהם Monday.\nפיתוח ב- Node + React.",
+    "productDescription": null
+  },
+  "role": {
+    "techStack": ["Node.js", "React"],
+    "backendFrontendSplit": null,
+    "responsibilities": [],
+    "requirements": [],
+    "niceToHave": [],
+    "compensation": null
+  },
+  "process": {
+    "knownNextInteraction": null,
+    "knownContact": "נועה מחברת Alta.",
+    "suggestedNextStep": "Review parsed fields, research company fit, and decide whether to apply."
+  },
+  "rawImportantNotes": []
+}

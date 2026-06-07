@@ -1,4 +1,5 @@
 import { aiParseResponseSchema, companyEnrichmentSchema } from "../lib/schemas.js";
+import { buildJobParserSystemPrompt } from "./job-parser-skill.js";
 
 export type ParsedJobDescription = typeof aiParseResponseSchema._type;
 export type CompanyEnrichment = typeof companyEnrichmentSchema._type;
@@ -109,12 +110,13 @@ export class OpenAiParserService implements AiParserService {
       name: "parsed_job_description",
       schema: parsedJobDescriptionJsonSchema,
       systemPrompt: [
-        "Extract structured job-search CRM data from pasted job, company, recruiter, or interview-process text.",
-        "Use null for unknown scalar fields and [] for unknown lists.",
-        "Normalize pipelineType to POTENTIAL unless the text clearly says an interview process already started.",
-        "Normalize prioritySuggestion based on seniority, fit signals, company quality, and urgency.",
-        "Do not invent compensation, dates, contacts, or funding."
-      ].join(" "),
+        buildJobParserSystemPrompt(),
+        "This is an ingestion engine, not a summary generator.",
+        "Preserve every explicit fact that could help the user later, even if the result is verbose.",
+        "Put any useful leftover details into rawImportantNotes or suggestedNextStep instead of discarding them.",
+        "Return only data that matches the provided JSON schema.",
+        "Normalize prioritySuggestion based on seniority, fit signals, company quality, and urgency."
+      ].join("\n\n"),
       text
     });
 
@@ -187,109 +189,19 @@ export class OpenAiParserService implements AiParserService {
   }
 }
 
-export class MockAiParserService implements AiParserService {
-  async parseJobDescription(text: string): Promise<ParsedJobDescription> {
-    const lower = text.toLowerCase();
-    const domains = [
-      lower.includes("cyber") ? "Cybersecurity" : null,
-      lower.includes("ai") ? "AI" : null,
-      lower.includes("developer tool") ? "Developer Tools" : null,
-      lower.includes("fintech") ? "Fintech" : null
-    ].filter((domain): domain is string => Boolean(domain));
-
-    const parsed = {
-      companyName: this.extractAfter(text, /company[:\-]\s*([^\n]+)/i),
-      roleTitle: this.extractAfter(text, /(?:role|title)[:\-]\s*([^\n]+)/i) ?? "Software Engineer",
-      pipelineType: "POTENTIAL",
-      status: "RESEARCH_LEAD",
-      prioritySuggestion: lower.includes("senior") || lower.includes("principal") ? "HIGH" : "MEDIUM",
-      company: {
-        employees: this.extractAfter(text, /employees[:\-]\s*([^\n]+)/i),
-        stage: this.extractAfter(text, /stage[:\-]\s*([^\n]+)/i),
-        domains,
-        workModel: lower.includes("remote") ? "Remote" : lower.includes("hybrid") ? "Hybrid" : null,
-        location: this.extractAfter(text, /location[:\-]\s*([^\n]+)/i),
-        funding: this.extractAfter(text, /funding[:\-]\s*([^\n]+)/i),
-        customersTraction: this.extractAfter(text, /(?:traction|customers)[:\-]\s*([^\n]+)/i),
-        companyDescription: text.slice(0, 500),
-        productDescription: this.extractAfter(text, /product[:\-]\s*([^\n]+)/i)
-      },
-      role: {
-        techStack: ["TypeScript", "React", "Node.js", "PostgreSQL"].filter((tech) => lower.includes(tech.toLowerCase())),
-        backendFrontendSplit: null,
-        responsibilities: this.sentencesContaining(text, ["build", "own", "lead", "develop"]),
-        requirements: this.sentencesContaining(text, ["experience", "required", "must"]),
-        niceToHave: this.sentencesContaining(text, ["nice", "bonus", "plus"]),
-        compensation: this.extractAfter(text, /(?:compensation|salary)[:\-]\s*([^\n]+)/i)
-      },
-      process: {
-        knownNextInteraction: null,
-        knownContact: this.extractAfter(text, /(?:contact|recruiter)[:\-]\s*([^\n]+)/i),
-        suggestedNextStep: "Review parsed fields, research company fit, and decide whether to apply."
-      },
-      rawImportantNotes: text.split("\n").map((line) => line.trim()).filter((line) => line.length > 80).slice(0, 5)
-    };
-
-    return aiParseResponseSchema.parse(parsed);
-  }
-
-  async parseCompanyEnrichment(text: string): Promise<CompanyEnrichment> {
-    const lower = text.toLowerCase();
-    const domains = [
-      lower.includes("cyber") ? "Cybersecurity" : null,
-      lower.includes("ai") ? "AI" : null,
-      lower.includes("customer support") ? "Customer Support" : null,
-      lower.includes("fintech") ? "Fintech" : null,
-      lower.includes("developer tool") ? "Developer Tools" : null
-    ].filter((domain): domain is string => Boolean(domain));
-
-    return companyEnrichmentSchema.parse({
-      companyName: this.extractAfter(text, /company[:\-]\s*([^\n]+)/i),
-      employees: this.extractAfter(text, /(?:employees|size)[:\-]\s*([^\n]+)/i),
-      stage: this.extractAfter(text, /stage[:\-]\s*([^\n]+)/i),
-      domains,
-      workModel: this.extractAfter(text, /(?:work model|hybrid|remote|office)[:\-]\s*([^\n]+)/i) ?? (lower.includes("remote") ? "Remote" : lower.includes("hybrid") ? "Hybrid" : null),
-      location: this.extractAfter(text, /location[:\-]\s*([^\n]+)/i),
-      funding: this.extractAfter(text, /funding[:\-]\s*([^\n]+)/i),
-      investmentRounds: this.extractAfter(text, /(?:investment rounds|rounds|raised)[:\-]\s*([^\n]+)/i),
-      companyDescription: text.slice(0, 500),
-      productDescription: this.extractAfter(text, /product[:\-]\s*([^\n]+)/i),
-      customersTraction: this.extractAfter(text, /(?:traction|customers)[:\-]\s*([^\n]+)/i),
-      techStack: ["TypeScript", "React", "Node.js", "PostgreSQL", "Redis", "Python", "Go"].filter((tech) => lower.includes(tech.toLowerCase())),
-      backendFrontendSplit: this.extractAfter(text, /(?:backend.*frontend|split)[:\-]\s*([^\n]+)/i),
-      compensationNotes: this.extractAfter(text, /(?:compensation|salary)[:\-]\s*([^\n]+)/i),
-      officeDaysPerWeek: this.extractOfficeDays(lower),
-      rawImportantNotes: text.split("\n").map((line) => line.trim()).filter((line) => line.length > 60).slice(0, 8)
-    });
-  }
-
-  private extractAfter(text: string, regex: RegExp) {
-    return regex.exec(text)?.[1]?.trim() ?? null;
-  }
-
-  private sentencesContaining(text: string, terms: string[]) {
-    return text
-      .split(/[.\n]/)
-      .map((sentence) => sentence.trim())
-      .filter((sentence) => terms.some((term) => sentence.toLowerCase().includes(term)))
-      .slice(0, 5);
-  }
-
-  private extractOfficeDays(lower: string) {
-    const match = /(\d)\s*(?:days?|x)\s*(?:from|in)?\s*(?:office|onsite|on-site)/i.exec(lower);
-    return match ? Number(match[1]) : null;
-  }
-}
-
 export function createAiParserService(): AiParserService {
-  const apiKey = process.env.OPENAI_API_KEY ?? process.env.AI_API_KEY;
-  const provider = process.env.AI_PROVIDER ?? "openai";
+  const apiKey = process.env.OPENAI_API_KEY;
 
-  if (provider === "openai" && apiKey) {
+  if (apiKey) {
     return new OpenAiParserService(apiKey);
   }
 
-  return new MockAiParserService();
+  throw new Error("OPENAI_API_KEY is required. This parser now always uses OpenAI.");
 }
 
-export const aiParserService: AiParserService = createAiParserService();
+let aiParserServiceInstance: AiParserService | undefined;
+
+export function getAiParserService() {
+  aiParserServiceInstance ??= createAiParserService();
+  return aiParserServiceInstance;
+}
