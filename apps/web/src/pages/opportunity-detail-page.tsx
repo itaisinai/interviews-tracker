@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Badge } from "../components/badge";
+import { CompanyResearchPanel } from "../components/company-research-panel";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
+import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
 import { formatDateTime, initials, titleize } from "../lib/format";
 
@@ -11,7 +13,7 @@ export function OpportunityDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({ queryKey: ["opportunity", id], queryFn: () => api.opportunity(id), enabled: Boolean(id) });
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["opportunity", id], queryFn: () => api.opportunity(id), enabled: Boolean(id) });
   const [interaction, setInteraction] = useState({ date: "", type: "Recruiter Call", stage: "Intro", status: "SCHEDULED", personName: "", agenda: "", followUp: "" });
   const [note, setNote] = useState({ title: "", category: "General", content: "" });
   const [task, setTask] = useState({ title: "", status: "PENDING", priority: "MEDIUM", dueDate: "", notes: "" });
@@ -27,7 +29,13 @@ export function OpportunityDetailPage() {
   const deleteTask = useMutation({ mutationFn: (taskId: string) => api.deleteTask(taskId), onSuccess: refresh });
   const deleteCompensation = useMutation({ mutationFn: (compensationId: string) => api.deleteCompensation(compensationId), onSuccess: refresh });
 
-  if (isLoading || !data) return <p className="text-on-surface-variant">Loading opportunity...</p>;
+  if (isLoading || !data) {
+    return <PageLoadingState title="Opportunity" description="Loading opportunity details, notes, and interaction history." />;
+  }
+
+  if (isError) {
+    return <PageErrorState title="Opportunity" description={error instanceof Error ? error.message : "Unable to load opportunity."} onRetry={() => void refetch()} />;
+  }
 
   return (
     <>
@@ -36,14 +44,14 @@ export function OpportunityDetailPage() {
         description={data.roleTitle}
         actions={
           <>
+            {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
             <Link className="btn btn-secondary" to={`/opportunities/${data.id}/edit`}>
               <MaterialIcon name="edit" />
               Edit
             </Link>
-            <button className="btn btn-secondary text-error hover:bg-error-container" onClick={() => { if (window.confirm(`Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions, notes, tasks, and compensation.`)) deleteOpportunity.mutate(); }}>
-              <MaterialIcon name="delete" />
+            <LoadingButton className="btn btn-secondary text-error hover:bg-error-container" loading={deleteOpportunity.isPending} loadingLabel="Deleting..." icon="delete" onClick={() => { if (window.confirm(`Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions, notes, tasks, and compensation.`)) deleteOpportunity.mutate(); }}>
               Delete
-            </button>
+            </LoadingButton>
             <Link className="btn btn-primary" to="/opportunities">
               <MaterialIcon name="arrow_back" />
               Back to Pipeline
@@ -58,6 +66,21 @@ export function OpportunityDetailPage() {
         <Badge value={data.priority} />
         <Badge value={data.pipelineType}>{data.pipelineType === "POTENTIAL" ? "Potential / Research" : titleize(data.pipelineType)}</Badge>
       </div>
+
+      <CompanyResearchPanel
+        companyName={data.companyName}
+        roleTitle={data.roleTitle}
+        knownContext={`Status: ${data.status} · Pipeline: ${data.pipelineType} · Next step: ${data.nextStep ?? "None"}${data.notes ? ` · Notes: ${data.notes}` : ""}`}
+        existingCompanyData={{
+          funding: data.funding ?? null,
+          customersTraction: data.customersTraction ?? null,
+          companyDescription: data.companyDescription ?? null,
+          productDescription: data.productDescription ?? null,
+          location: data.location ?? null,
+          employees: data.employeesRange?.label ?? null
+        }}
+        targetOpportunityId={data.id}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <section className="panel p-6 lg:col-span-4">
@@ -124,10 +147,9 @@ export function OpportunityDetailPage() {
                 {item.notes ? <p className="mt-2 text-body-md text-on-surface-variant">Notes: {item.notes}</p> : null}
                 {item.outcome ? <p className="mt-2 text-body-md text-primary">Outcome: {item.outcome}</p> : null}
                 {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic text-on-background">Follow-up: {item.followUp}</p> : null}
-                <button className="mt-3 inline-flex items-center gap-1 font-label-md text-label-md text-error" onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
-                  <MaterialIcon name="delete" className="text-[16px]" />
+                <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
                   Delete interaction
-                </button>
+                </LoadingButton>
               </article>
             ))}
           </div>
@@ -142,13 +164,17 @@ export function OpportunityDetailPage() {
               <input className="input" value={interaction.personName} onChange={(e) => setInteraction({ ...interaction, personName: e.target.value })} placeholder="Person" />
               <input className="input" value={interaction.followUp} onChange={(e) => setInteraction({ ...interaction, followUp: e.target.value })} placeholder="Follow-up" />
               <textarea className="input col-span-2" value={interaction.agenda} onChange={(e) => setInteraction({ ...interaction, agenda: e.target.value })} placeholder="Agenda" />
-              <button className="btn btn-primary" onClick={() => addInteraction.mutate()}><MaterialIcon name="add" />Add interaction</button>
+              <LoadingButton className="btn btn-primary" loading={addInteraction.isPending} loadingLabel="Adding..." icon="add" onClick={() => addInteraction.mutate()}>
+                Add interaction
+              </LoadingButton>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <input className="input" value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Note title" />
               <input className="input" value={note.category} onChange={(e) => setNote({ ...note, category: e.target.value })} placeholder="Category" />
               <textarea className="input col-span-2" value={note.content} onChange={(e) => setNote({ ...note, content: e.target.value })} placeholder="Note content" />
-              <button className="btn btn-secondary" onClick={() => addNote.mutate()}><MaterialIcon name="note_add" />Add note</button>
+              <LoadingButton className="btn btn-secondary" loading={addNote.isPending} loadingLabel="Adding..." icon="note_add" onClick={() => addNote.mutate()}>
+                Add note
+              </LoadingButton>
             </div>
           </section>
 
@@ -156,7 +182,7 @@ export function OpportunityDetailPage() {
             <h3 className="mb-4 font-title-md text-title-md font-bold">Tasks</h3>
             {data.tasks.map((item) => (
               <div key={item.id} className="mb-3 rounded-lg bg-surface-container-low p-4">
-                <div className="flex items-center justify-between gap-3"><p className="font-semibold">{item.title}</p><div className="flex items-center gap-2"><Badge value={item.status} /><button className="text-error" onClick={() => { if (window.confirm("Delete this task?")) deleteTask.mutate(item.id); }}><MaterialIcon name="delete" /></button></div></div>
+                <div className="flex items-center justify-between gap-3"><p className="font-semibold">{item.title}</p><div className="flex items-center gap-2"><Badge value={item.status} /><LoadingButton compact aria-label="Delete task" className="text-error" icon="delete" loading={deleteTask.isPending && deleteTask.variables === item.id} onClick={() => { if (window.confirm("Delete this task?")) deleteTask.mutate(item.id); }} /></div></div>
                 <p className="mt-1 text-body-md text-on-surface-variant">{item.notes}</p>
               </div>
             ))}
@@ -164,7 +190,9 @@ export function OpportunityDetailPage() {
               <input className="input" value={task.title} onChange={(e) => setTask({ ...task, title: e.target.value })} placeholder="Task title" />
               <input className="input" type="date" value={task.dueDate} onChange={(e) => setTask({ ...task, dueDate: e.target.value })} />
               <textarea className="input col-span-2" value={task.notes} onChange={(e) => setTask({ ...task, notes: e.target.value })} placeholder="Task notes" />
-              <button className="btn btn-secondary" onClick={() => addTask.mutate()}><MaterialIcon name="assignment_add" />Add task</button>
+              <LoadingButton className="btn btn-secondary" loading={addTask.isPending} loadingLabel="Adding..." icon="assignment_add" onClick={() => addTask.mutate()}>
+                Add task
+              </LoadingButton>
             </div>
           </section>
 
@@ -172,7 +200,7 @@ export function OpportunityDetailPage() {
             <h3 className="mb-4 font-title-md text-title-md font-bold">Notes</h3>
             {data.notesList.map((item) => (
               <div key={item.id} className="border-b border-outline-variant py-3 last:border-0">
-                <div className="flex items-center justify-between gap-3"><p className="font-semibold">{item.title}</p><button className="text-error" onClick={() => { if (window.confirm("Delete this note?")) deleteNote.mutate(item.id); }}><MaterialIcon name="delete" /></button></div>
+                <div className="flex items-center justify-between gap-3"><p className="font-semibold">{item.title}</p><LoadingButton compact aria-label="Delete note" className="text-error" icon="delete" loading={deleteNote.isPending && deleteNote.variables === item.id} onClick={() => { if (window.confirm("Delete this note?")) deleteNote.mutate(item.id); }} /></div>
                 <p className="font-label-md text-label-md text-on-surface-variant">{item.category}</p>
                 <p className="mt-1 text-body-md">{item.content}</p>
               </div>
@@ -187,8 +215,12 @@ export function OpportunityDetailPage() {
               <input className="input" value={comp.bonus} onChange={(e) => setComp({ ...comp, bonus: e.target.value })} placeholder={data.compensation?.bonus ?? "Bonus"} />
               <select className="input" value={comp.offerStatus} onChange={(e) => setComp({ ...comp, offerStatus: e.target.value })}><option>NOT_DISCUSSED</option><option>DISCUSSED</option><option>VERBAL_OFFER</option><option>WRITTEN_OFFER</option><option>ACCEPTED</option><option>DECLINED</option></select>
               <textarea className="input col-span-2" value={comp.negotiationNotes} onChange={(e) => setComp({ ...comp, negotiationNotes: e.target.value })} placeholder={data.compensation?.negotiationNotes ?? "Negotiation notes"} />
-              <button className="btn btn-primary" onClick={() => saveComp.mutate()}><MaterialIcon name="save" />Save compensation</button>
-              {data.compensation ? <button className="btn btn-secondary text-error hover:bg-error-container" onClick={() => { if (window.confirm("Delete compensation details?")) deleteCompensation.mutate(data.compensation!.id); }}><MaterialIcon name="delete" />Delete compensation</button> : null}
+              <LoadingButton className="btn btn-primary" loading={saveComp.isPending} loadingLabel="Saving..." icon="save" onClick={() => saveComp.mutate()}>
+                Save compensation
+              </LoadingButton>
+              {data.compensation ? <LoadingButton className="btn btn-secondary text-error hover:bg-error-container" loading={deleteCompensation.isPending} loadingLabel="Deleting..." icon="delete" onClick={() => { if (window.confirm("Delete compensation details?")) deleteCompensation.mutate(data.compensation!.id); }}>
+                Delete compensation
+              </LoadingButton> : null}
             </div>
           </section>
         </aside>

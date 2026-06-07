@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "../components/badge";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
+import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
 import { formatDateTime } from "../lib/format";
 
@@ -23,8 +24,9 @@ export function InteractionsPage() {
     followUp: ""
   });
   const queryClient = useQueryClient();
-  const { data = [] } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
-  const { data: opportunities = [] } = useQuery({ queryKey: ["opportunities", "interaction-form"], queryFn: () => api.opportunities() });
+  const { data = [], isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
+  const opportunitiesQuery = useQuery({ queryKey: ["opportunities", "interaction-form"], queryFn: () => api.opportunities() });
+  const { data: opportunities = [] } = opportunitiesQuery;
   const createInteraction = useMutation({
     mutationFn: () => api.createGlobalInteraction(form),
     onSuccess: () => {
@@ -64,9 +66,21 @@ export function InteractionsPage() {
   const followUpCount = data.filter((item) => item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim())).length;
   const followUpPercent = data.length > 0 ? Math.round((followUpCount / data.length) * 100) : 0;
 
+  if (isLoading || opportunitiesQuery.isLoading) {
+    return <PageLoadingState title="Interactions" description="Loading interactions and available opportunities." />;
+  }
+
+  if (isError) {
+    return <PageErrorState title="Interactions" description={error instanceof Error ? error.message : "Unable to load interactions."} onRetry={() => void refetch()} />;
+  }
+
+  if (opportunitiesQuery.isError) {
+    return <PageErrorState title="Interactions" description={opportunitiesQuery.error instanceof Error ? opportunitiesQuery.error.message : "Unable to load opportunities for the form."} onRetry={() => void opportunitiesQuery.refetch()} />;
+  }
+
   return (
     <>
-      <PageIntro title="Interactions" description="Track your networking and interview progress with precision." actions={<button className="btn btn-primary" onClick={() => setShowForm((value) => !value)}><MaterialIcon name={showForm ? "close" : "add"} />{showForm ? "Close" : "Add Interaction"}</button>} />
+      <PageIntro title="Interactions" description="Track your networking and interview progress with precision." actions={<>{isFetching ? <InlineLoadingState label="Refreshing" /> : null}<button className="btn btn-primary" onClick={() => setShowForm((value) => !value)}><MaterialIcon name={showForm ? "close" : "add"} />{showForm ? "Close" : "Add Interaction"}</button></>} />
       {showForm ? (
         <section className="panel mb-8 p-6">
           <div className="mb-5 flex items-center gap-3">
@@ -122,10 +136,9 @@ export function InteractionsPage() {
             </Field>
           </div>
           <div className="mt-5 flex items-center gap-3">
-            <button className="btn btn-primary" disabled={!form.jobOpportunityId || !form.date || createInteraction.isPending} onClick={() => createInteraction.mutate()}>
-              <MaterialIcon name="save" />
-              {createInteraction.isPending ? "Saving..." : "Save Interaction"}
-            </button>
+            <LoadingButton className="btn btn-primary" disabled={!form.jobOpportunityId || !form.date} loading={createInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => createInteraction.mutate()}>
+              Save Interaction
+            </LoadingButton>
             {createInteraction.error ? <p className="text-body-md text-error">{createInteraction.error.message}</p> : null}
           </div>
         </section>
@@ -161,10 +174,9 @@ export function InteractionsPage() {
                 <p className="text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"} · {item.personName ?? "No person"}</p>
                 {item.agenda ? <p className="mt-3 text-body-md">{item.agenda}</p> : null}
                 {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic">"{item.followUp}"</p> : null}
-                <button className="mt-3 inline-flex items-center gap-1 font-label-md text-label-md text-error" onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
-                  <MaterialIcon name="delete" className="text-[16px]" />
+                <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
                   Delete
-                </button>
+                </LoadingButton>
               </article>
             ))}
           </div>

@@ -7,5 +7,6 @@ export const aiRouter = Router();
 
 aiRouter.post("/parse-job-description", asyncHandler(async (request, response) => {
   const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
-  response.json(await getAiParserService().parseJobDescription(text));
+  const result = await getAiParserService().parseJobDescription(text);
+  response.json(result);
 }));

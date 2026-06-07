@@ -4,15 +4,24 @@ import { Link } from "react-router-dom";
 import { Badge } from "../components/badge";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
+import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
 import { formatDate, initials } from "../lib/format";
 
 export function CompaniesPage() {
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
-  const { data = [] } = useQuery({ queryKey: ["companies"], queryFn: api.companies });
+  const { data = [], isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["companies"], queryFn: api.companies });
   const deleteCompany = useMutation({ mutationFn: (companyName: string) => api.deleteCompany(companyName), onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["companies"] }); void queryClient.invalidateQueries({ queryKey: ["opportunities"] }); } });
   const rows = data.filter((item) => item.companyName.toLowerCase().includes(search.toLowerCase()));
+
+  if (isLoading) {
+    return <PageLoadingState title="Companies" description="Loading your normalized company list." />;
+  }
+
+  if (isError) {
+    return <PageErrorState title="Companies" description={error instanceof Error ? error.message : "Unable to load companies."} onRetry={() => void refetch()} />;
+  }
 
   return (
     <>
@@ -20,6 +29,7 @@ export function CompaniesPage() {
       <div className="panel mb-6 flex items-center gap-3 p-4">
         <MaterialIcon name="search" className="text-on-surface-variant" />
         <input className="w-full border-none bg-transparent text-body-md focus:ring-0" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search company..." />
+        {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
       </div>
       <div className="overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
         <table className="w-full text-left text-body-md">
@@ -54,7 +64,16 @@ export function CompaniesPage() {
                 <td className="px-6 py-4 font-geist">{item.interactionsCount}</td>
                 <td className="px-6 py-4 text-on-surface-variant">{item.nextInteraction ? `${formatDate(item.nextInteraction.date)} ${item.nextInteraction.type}` : "-"}</td>
                 <td className="px-6 py-4"><Badge value={item.priority} /></td>
-                <td className="px-6 py-4"><button className="text-error" onClick={() => { if (window.confirm(`Delete ${item.companyName} and all its opportunities/interactions?`)) deleteCompany.mutate(item.companyName); }}><MaterialIcon name="delete" /></button></td>
+                <td className="px-6 py-4">
+                  <LoadingButton
+                    compact
+                    aria-label={`Delete ${item.companyName}`}
+                    className="text-error"
+                    icon="delete"
+                    loading={deleteCompany.isPending && deleteCompany.variables === item.companyName}
+                    onClick={() => { if (window.confirm(`Delete ${item.companyName} and all its opportunities/interactions?`)) deleteCompany.mutate(item.companyName); }}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>

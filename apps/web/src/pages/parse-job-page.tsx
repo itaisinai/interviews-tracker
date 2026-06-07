@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { MaterialIcon } from "../components/material-icon";
 import { ParserLoadingState } from "../components/parser-loading-state";
 import { PageIntro } from "../components/app-shell";
+import { LoadingButton } from "../components/loading-state";
 import { api } from "../lib/api";
 import type { ParserRunState } from "../lib/parser-run";
 
@@ -147,22 +148,20 @@ export function ParseJobPage() {
           </div>
           <textarea className="input min-h-[360px] bg-surface-container-low" value={text} onChange={(event) => setText(event.target.value)} placeholder="Paste a long job or company description..." />
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button className="btn btn-primary" disabled={isBusy} onClick={() => void runParser(text)}>
-              <MaterialIcon name={isBusy ? "hourglass_top" : "psychology"} />
-              {isBusy ? "Parsing..." : "Parse"}
-            </button>
+            <LoadingButton className="btn btn-primary" disabled={isBusy} loading={isBusy} loadingLabel="Parsing..." icon="psychology" onClick={() => void runParser(text)}>
+              Parse
+            </LoadingButton>
             {runState === "failed" ? (
-              <button className="btn btn-secondary" onClick={() => void runParser(text)}>
-                <MaterialIcon name="refresh" />
+              <LoadingButton className="btn btn-secondary" icon="refresh" onClick={() => void runParser(text)}>
                 Retry
-              </button>
+              </LoadingButton>
             ) : null}
           </div>
         </section>
         <section className="panel p-6 lg:col-span-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-title-md text-title-md font-bold">Review Parsed Data</h3>
-            {parseResult ? <button className="btn btn-primary" onClick={() => create.mutate()}><MaterialIcon name="add" />Create opportunity</button> : null}
+            {parseResult ? <LoadingButton className="btn btn-primary" loading={create.isPending} loadingLabel="Creating..." icon="add" onClick={() => create.mutate()}>Create opportunity</LoadingButton> : null}
           </div>
           {runState !== "idle" ? (
             <div className="mb-4 space-y-4">

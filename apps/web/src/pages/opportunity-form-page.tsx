@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { PageIntro } from "../components/app-shell";
 import { MaterialIcon } from "../components/material-icon";
+import { LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
 import type { JobStatus, PipelineType, Priority } from "../lib/types";
 
@@ -36,8 +37,8 @@ export function OpportunityFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: options } = useQuery({ queryKey: ["options"], queryFn: api.options });
-  const { data: existing } = useQuery({ queryKey: ["opportunity", id], queryFn: () => api.opportunity(id ?? ""), enabled: Boolean(id) });
+  const { data: options, isLoading: optionsLoading, isError: optionsError, error: optionsErrorValue, refetch: refetchOptions } = useQuery({ queryKey: ["options"], queryFn: api.options });
+  const { data: existing, isLoading: existingLoading, isError: existingError, error: existingErrorValue, refetch: refetchExisting } = useQuery({ queryKey: ["opportunity", id], queryFn: () => api.opportunity(id ?? ""), enabled: Boolean(id) });
   const { register, handleSubmit, reset } = useForm<FormValues>({ defaultValues: { pipelineType: "POTENTIAL", status: "RESEARCH_LEAD", priority: "MEDIUM", domainIds: [] } });
   const mutation = useMutation({
     mutationFn: (values: FormValues) => id ? api.updateOpportunity(id, values) : api.createOpportunity(values),
@@ -76,6 +77,18 @@ export function OpportunityFormPage() {
     }
   }, [existing, reset]);
 
+  if (optionsLoading || (id ? existingLoading : false)) {
+    return <PageLoadingState title={id ? "Edit Opportunity" : "Add Opportunity"} description="Loading form options and existing values." />;
+  }
+
+  if (optionsError) {
+    return <PageErrorState title="Opportunity form" description={optionsErrorValue instanceof Error ? optionsErrorValue.message : "Unable to load form options."} onRetry={() => void refetchOptions()} />;
+  }
+
+  if (existingError) {
+    return <PageErrorState title="Opportunity form" description={existingErrorValue instanceof Error ? existingErrorValue.message : "Unable to load the selected opportunity."} onRetry={() => void refetchExisting()} />;
+  }
+
   return (
     <>
       <PageIntro title={id ? "Edit Opportunity" : "Add Opportunity"} description="Capture the company, role, research context, and next step." />
@@ -108,7 +121,9 @@ export function OpportunityFormPage() {
           <Field label="Next step"><input className="input" {...register("nextStep")} /></Field>
           <Field label="General notes"><textarea className="input" {...register("notes")} /></Field>
         </Section>
-        <button className="btn btn-primary" type="submit"><MaterialIcon name="save" />{mutation.isPending ? "Saving..." : "Save Opportunity"}</button>
+        <LoadingButton className="btn btn-primary" type="submit" loading={mutation.isPending} loadingLabel="Saving..." icon="save">
+          Save Opportunity
+        </LoadingButton>
       </form>
     </>
   );

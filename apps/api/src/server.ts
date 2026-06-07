@@ -12,6 +12,7 @@ import { optionsRouter } from "./routes/options.js";
 import { tasksRouter } from "./routes/tasks.js";
 import { requireAuth } from "./lib/auth.js";
 import { errorHandler } from "./lib/http.js";
+import { logInfo } from "./lib/logger.js";
 
 const app = express();
 const localOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"];
@@ -57,5 +58,5 @@ app.use(errorHandler);
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {
-  console.log(`API listening on port ${port}`);
+  logInfo("server", "API listening", { port });
 });
