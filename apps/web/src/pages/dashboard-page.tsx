@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Badge } from "../components/badge";
@@ -17,8 +19,35 @@ const cardMeta = [
   ["tasksDueSoon", "Tasks Due Soon", "assignment_turned_in", "text-secondary", "bg-secondary/10"]
 ] as const;
 
+function splitMonthDay(value: string) {
+  const date = new Date(value);
+  return {
+    month: date.toLocaleDateString(undefined, { month: "short" }).toUpperCase(),
+    day: date.toLocaleDateString(undefined, { day: "numeric" }).toUpperCase()
+  };
+}
+
 export function DashboardPage() {
+  const { user } = useAuth0();
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
+  const displayName = user?.name ?? user?.email?.split("@")[0] ?? "Alex";
+
+  const mobilePriorityItems = useMemo(() => {
+    if (!data) {
+      return [];
+    }
+
+    const seen = new Set<string>();
+    return [...data.activeProcesses, ...data.highPriorityPotential].filter((item) => {
+      if (seen.has(item.id)) {
+        return false;
+      }
+      seen.add(item.id);
+      return true;
+    }).slice(0, 2);
+  }, [data]);
+
+  const pipelineHealth = Math.round(((data?.counts.activeProcesses ?? 0) / Math.max((data?.counts.activeProcesses ?? 0) + (data?.counts.potential ?? 0), 1)) * 100);
 
   if (isLoading || !data) {
     return <PageLoadingState title="Dashboard" description="Loading your pipeline, tasks, and upcoming interactions." />;
@@ -30,110 +59,247 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageIntro
-        title="Job Search Dashboard"
-        description={`Tracking ${data.counts.activeProcesses + data.counts.potential} opportunities across your network.`}
-        actions={
-          <>
-            {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
-            <Link className="btn btn-secondary" to="/parse">
-              <MaterialIcon name="description" />
-              Parse Job Description
-            </Link>
-            <Link className="btn btn-primary" to="/opportunities/new">
-              <MaterialIcon name="add" />
-              Add Opportunity
-            </Link>
-          </>
-        }
-      />
+      <div className="md:hidden">
+        <section className="mb-8">
+          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Hi {displayName},</h1>
+          <p className="font-body-md text-on-surface-variant">You have {data.counts.upcomingInteractions} interviews scheduled this week.</p>
+        </section>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-7">
-        {cardMeta.map(([key, label, icon, textClass, bgClass]) => (
-          <div key={key} className="group rounded-xl border border-outline-variant bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-all hover:shadow-lg">
-            <div className="mb-2 flex items-start justify-between">
-              <div className={`rounded-lg p-2 ${bgClass} ${textClass}`}>
-                <MaterialIcon name={icon} />
+        <section className="mb-8">
+          <div className="flex gap-4 overflow-x-auto pb-1 hide-scrollbar snap-x">
+            <div className="min-w-[240px] snap-start rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-label-md text-label-md uppercase text-on-surface-variant">Active Processes</span>
+                <MaterialIcon name="trending_up" className="text-primary" />
               </div>
-              <span className={`font-headline-md text-headline-md font-bold ${textClass}`}>{data.counts[key] ?? 0}</span>
+              <div className="flex items-end gap-2">
+                <span className="font-headline-md text-headline-md font-bold">{data.counts.activeProcesses}</span>
+                <span className="font-label-sm text-label-sm text-primary">{pipelineHealth}% pipeline health</span>
+              </div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-container-low">
+                <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(pipelineHealth, 10)}%` }} />
+              </div>
+              <p className="mt-2 font-label-sm text-label-sm text-on-surface-variant">Open opportunities in motion</p>
             </div>
-            <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">{label}</p>
-          </div>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <section className="panel p-6 lg:col-span-7">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-title-md text-title-md font-bold">Upcoming Interactions</h3>
-            <Link className="font-label-md text-label-md text-primary" to="/interactions">View all</Link>
-          </div>
-          <div className="space-y-4">
-            {data.upcomingInteractions.map((item) => (
-              <div key={item.id} className="rounded-xl border-2 border-primary bg-white p-5 shadow-sm">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
-                  <span className="h-1 w-1 rounded-full bg-outline-variant" />
-                  <MaterialIcon name="call" filled className="text-primary" />
-                  <span className="font-semibold">{item.type}</span>
-                </div>
-                <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.companyName}</h4>
-                <p className="mt-1 text-body-md text-on-surface-variant">{item.agenda}</p>
-                {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic text-on-background">{item.followUp}</p> : null}
+            <div className="min-w-[240px] snap-start rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-label-md text-label-md uppercase text-on-surface-variant">Potential</span>
+                <MaterialIcon name="explore" className="text-secondary" />
               </div>
-            ))}
-            {data.upcomingInteractions.length === 0 ? <p className="text-body-md text-on-surface-variant">No upcoming interactions.</p> : null}
+              <div className="flex items-end gap-2">
+                <span className="font-headline-md text-headline-md font-bold">{data.counts.potential}</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">leads</span>
+              </div>
+              <p className="mt-4 font-label-sm text-label-sm text-secondary">Potential opportunities to research</p>
+            </div>
+
+            <div className="min-w-[240px] snap-start rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-label-md text-label-md uppercase text-on-surface-variant">Interactions</span>
+                <MaterialIcon name="event" className="text-tertiary" />
+              </div>
+              <div className="flex items-end gap-2">
+                <span className="font-headline-md text-headline-md font-bold">{data.counts.upcomingInteractions}</span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">this week</span>
+              </div>
+              <p className="mt-4 font-label-sm text-label-sm text-on-surface-variant">{Math.max(data.counts.upcomingInteractions - data.tasksDueThisWeek.length, 0)} awaiting follow-up</p>
+            </div>
           </div>
         </section>
 
-        <aside className="space-y-6 lg:col-span-5">
-          <section className="panel p-6">
-            <h3 className="mb-4 font-title-md text-title-md font-bold">Active Processes</h3>
-            <div className="space-y-3">
-              {data.activeProcesses.map((item) => (
-                <Link key={item.id} to={`/opportunities/${item.id}`} className="flex items-center justify-between rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
-                  <div>
-                    <p className="font-semibold">{item.companyName}</p>
-                    <p className="text-body-md text-on-surface-variant">{item.roleTitle}</p>
-                  </div>
-                  <Badge value={item.status} />
-                </Link>
-              ))}
-            </div>
-          </section>
+        <section className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-title-md text-title-md font-bold">High Priority</h2>
+            <Link className="font-label-md text-label-md text-primary" to="/opportunities">View All</Link>
+          </div>
+          <div className="space-y-3">
+            {mobilePriorityItems.map((item) => {
+              const nextInteraction = item.interactions?.find((interaction) => new Date(interaction.date) >= new Date());
+              const badgeValue = item.status === "OFFER" ? "OFFER" : item.status === "REJECTED" ? "CLOSED" : item.pipelineType === "ACTIVE_PROCESS" ? "INTERVIEWING" : "APPLIED";
 
-          <section className="panel p-6">
-            <h3 className="mb-4 font-title-md text-title-md font-bold">High Priority Potential</h3>
-            <div className="space-y-3">
-              {data.highPriorityPotential.map((item) => (
-                <Link key={item.id} to={`/opportunities/${item.id}`} className="flex items-center justify-between rounded-lg border border-outline-variant bg-white p-4 hover:bg-surface-container-low">
-                  <span className="font-medium">{item.companyName}</span>
-                  <Badge value={item.priority} />
+              return (
+                <Link key={item.id} to={`/opportunities/${item.id}`} className={`block rounded-xl border bg-white p-4 shadow-sm ${item.pipelineType === "ACTIVE_PROCESS" ? "border-primary" : "border-outline-variant"}`}>
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="break-words font-title-md text-title-md font-bold text-on-background">{item.companyName}</h3>
+                      <p className="break-words font-body-md text-body-md text-on-surface-variant">{item.roleTitle}</p>
+                    </div>
+                    <Badge value={badgeValue} />
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-outline-variant/20 pt-4">
+                    <div className="flex items-center gap-1 font-label-md text-label-md text-on-surface-variant">
+                      <MaterialIcon name={item.referrerOrConnection ? "account_tree" : "schedule"} className="text-[18px]" />
+                      <span className="truncate">{item.referrerOrConnection ?? "Recent activity"}</span>
+                    </div>
+                    <Badge value={item.priority} />
+                    <div className="ml-auto font-label-md text-label-md font-semibold text-primary">
+                      {item.nextStep ?? nextInteraction?.type ?? "Review"}
+                    </div>
+                  </div>
                 </Link>
-              ))}
-            </div>
-          </section>
-        </aside>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-title-md text-title-md font-bold">Upcoming Interactions</h2>
+            <Link className="font-label-md text-label-md text-primary" to="/interactions">View All</Link>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-outline-variant bg-white">
+            {data.upcomingInteractions.map((item, index) => {
+              const parts = splitMonthDay(item.date);
+              return (
+                <div key={item.id} className={`flex items-center gap-3 p-4 ${index > 0 ? "border-t border-outline-variant/40" : ""}`}>
+                  <div className="w-10 shrink-0 text-center">
+                    <div className="font-label-sm text-label-sm text-primary">{parts.month}</div>
+                    <div className="font-headline-md text-headline-md font-semibold text-on-background">{parts.day}</div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-body-lg text-body-lg font-semibold text-on-background">{item.jobOpportunity?.companyName ?? item.type}</h3>
+                    <p className="truncate font-body-md text-body-md text-on-surface-variant">{item.agenda ?? item.followUp ?? item.type}</p>
+                  </div>
+                  <MaterialIcon name={item.type.toLowerCase().includes("email") ? "mail" : "video_call"} className="text-on-surface-variant" />
+                </div>
+              );
+            })}
+            {data.upcomingInteractions.length === 0 ? <p className="p-4 text-body-md text-on-surface-variant">No upcoming interactions.</p> : null}
+          </div>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="mb-3 font-title-md text-title-md font-bold">Tasks Due This Week</h2>
+          <div className="space-y-3">
+            {data.tasksDueThisWeek.map((task) => (
+              <div key={task.id} className="flex items-start gap-3 rounded-xl border border-outline-variant bg-white p-4">
+                <input type="checkbox" className="mt-1 h-5 w-5 rounded border-outline-variant text-primary focus:ring-primary" />
+                <div className="min-w-0 flex-1">
+                  <p className="break-words font-body-md text-body-md text-on-background">{task.title}</p>
+                  {task.jobOpportunity?.companyName ? <p className="mt-1 font-label-md text-label-md text-on-surface-variant">{task.jobOpportunity.companyName}</p> : null}
+                </div>
+                {task.priority === "HIGH" ? <MaterialIcon name="priority_high" className="text-error" /> : null}
+              </div>
+            ))}
+            {data.tasksDueThisWeek.length === 0 ? <p className="text-body-md text-on-surface-variant">No tasks due this week.</p> : null}
+          </div>
+        </section>
+
+        <section className="mb-6 rounded-2xl bg-primary p-6 text-on-primary">
+          <p className="font-body-lg text-body-lg font-semibold">Keep it up, {displayName}!</p>
+          <p className="mt-2 font-body-md text-body-md leading-6 text-on-primary/90">
+            You have {data.counts.upcomingInteractions} upcoming interactions and {data.tasksDueThisWeek.length} tasks due this week. Momentum is visible.
+          </p>
+        </section>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="relative overflow-hidden rounded-2xl bg-surface-container-high p-6">
-          <p className="font-label-md text-label-md uppercase text-on-surface-variant">Tasks This Week</p>
-          <h3 className="mt-2 font-headline-lg text-headline-lg">{data.tasksDueThisWeek.length}</h3>
-          <p className="mt-1 text-body-md font-medium text-primary">Preparation and follow-up actions</p>
-          <MaterialIcon name="trending_up" className="absolute -bottom-4 -right-4 text-[80px] opacity-10" />
+      <div className="hidden md:block">
+        <PageIntro
+          title="Job Search Dashboard"
+          description={`Tracking ${data.counts.activeProcesses + data.counts.potential} opportunities across your network.`}
+          actions={
+            <>
+              {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+              <Link className="btn btn-secondary" to="/parse">
+                <MaterialIcon name="description" />
+                Parse Job Description
+              </Link>
+              <Link className="btn btn-primary" to="/opportunities/new">
+                <MaterialIcon name="add" />
+                Add Opportunity
+              </Link>
+            </>
+          }
+        />
+
+        <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-7">
+          {cardMeta.map(([key, label, icon, textClass, bgClass]) => (
+            <div key={key} className="group rounded-xl border border-outline-variant bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-all hover:shadow-lg">
+              <div className="mb-2 flex items-start justify-between">
+                <div className={`rounded-lg p-2 ${bgClass} ${textClass}`}>
+                  <MaterialIcon name={icon} />
+                </div>
+                <span className={`font-headline-md text-headline-md font-bold ${textClass}`}>{data.counts[key] ?? 0}</span>
+              </div>
+              <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">{label}</p>
+            </div>
+          ))}
         </div>
-        <div className="relative overflow-hidden rounded-2xl border border-outline-variant bg-white p-6">
-          <p className="font-label-md text-label-md uppercase text-on-surface-variant">Pipeline Focus</p>
-          <h3 className="mt-2 font-headline-lg text-headline-lg">{data.counts.activeProcesses}</h3>
-          <p className="mt-1 text-body-md font-medium text-secondary">Active companies in motion</p>
-          <MaterialIcon name="rocket_launch" className="absolute -bottom-4 -right-4 text-[80px] opacity-10" />
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <section className="panel p-6 lg:col-span-7">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-title-md text-title-md font-bold">Upcoming Interactions</h3>
+              <Link className="font-label-md text-label-md text-primary" to="/interactions">View all</Link>
+            </div>
+            <div className="space-y-4">
+              {data.upcomingInteractions.map((item) => (
+                <div key={item.id} className="rounded-xl border-2 border-primary bg-white p-5 shadow-sm">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
+                    <span className="h-1 w-1 rounded-full bg-outline-variant" />
+                    <MaterialIcon name="call" filled className="text-primary" />
+                    <span className="font-semibold">{item.type}</span>
+                  </div>
+                  <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.companyName}</h4>
+                  <p className="mt-1 text-body-md text-on-surface-variant">{item.agenda}</p>
+                  {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic text-on-background">{item.followUp}</p> : null}
+                </div>
+              ))}
+              {data.upcomingInteractions.length === 0 ? <p className="text-body-md text-on-surface-variant">No upcoming interactions.</p> : null}
+            </div>
+          </section>
+
+          <aside className="space-y-6 lg:col-span-5">
+            <section className="panel p-6">
+              <h3 className="mb-4 font-title-md text-title-md font-bold">Active Processes</h3>
+              <div className="space-y-3">
+                {data.activeProcesses.map((item) => (
+                  <Link key={item.id} to={`/opportunities/${item.id}`} className="flex items-center justify-between rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
+                    <div>
+                      <p className="font-semibold">{item.companyName}</p>
+                      <p className="text-body-md text-on-surface-variant">{item.roleTitle}</p>
+                    </div>
+                    <Badge value={item.status} />
+                  </Link>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel p-6">
+              <h3 className="mb-4 font-title-md text-title-md font-bold">High Priority Potential</h3>
+              <div className="space-y-3">
+                {data.highPriorityPotential.map((item) => (
+                  <Link key={item.id} to={`/opportunities/${item.id}`} className="flex items-center justify-between rounded-lg border border-outline-variant bg-white p-4 hover:bg-surface-container-low">
+                    <span className="font-medium">{item.companyName}</span>
+                    <Badge value={item.priority} />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          </aside>
         </div>
-        <div className="relative overflow-hidden rounded-2xl bg-primary p-6 text-on-primary">
-          <p className="font-label-md text-label-md uppercase opacity-80">Offer Tracking</p>
-          <h3 className="mt-2 font-headline-lg text-headline-lg">{data.counts.offers}</h3>
-          <p className="mt-1 text-body-md font-medium opacity-90">Compensation conversations</p>
-          <MaterialIcon name="monetization_on" className="absolute -bottom-4 -right-4 text-[80px] opacity-10" />
+
+        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="relative overflow-hidden rounded-2xl bg-surface-container-high p-6">
+            <p className="font-label-md text-label-md uppercase text-on-surface-variant">Tasks This Week</p>
+            <h3 className="mt-2 font-headline-lg text-headline-lg">{data.tasksDueThisWeek.length}</h3>
+            <p className="mt-1 text-body-md font-medium text-primary">Preparation and follow-up actions</p>
+            <MaterialIcon name="trending_up" className="absolute -bottom-4 -right-4 text-[80px] opacity-10" />
+          </div>
+          <div className="relative overflow-hidden rounded-2xl border border-outline-variant bg-white p-6">
+            <p className="font-label-md text-label-md uppercase text-on-surface-variant">Pipeline Focus</p>
+            <h3 className="mt-2 font-headline-lg text-headline-lg">{data.counts.activeProcesses}</h3>
+            <p className="mt-1 text-body-md font-medium text-secondary">Active companies in motion</p>
+            <MaterialIcon name="rocket_launch" className="absolute -bottom-4 -right-4 text-[80px] opacity-10" />
+          </div>
+          <div className="relative overflow-hidden rounded-2xl bg-primary p-6 text-on-primary">
+            <p className="font-label-md text-label-md uppercase opacity-80">Offer Tracking</p>
+            <h3 className="mt-2 font-headline-lg text-headline-lg">{data.counts.offers}</h3>
+            <p className="mt-1 text-body-md font-medium opacity-90">Compensation conversations</p>
+            <MaterialIcon name="monetization_on" className="absolute -bottom-4 -right-4 text-[80px] opacity-10" />
+          </div>
         </div>
       </div>
     </>

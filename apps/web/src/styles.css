@@ -76,6 +76,15 @@ textarea {
   border-radius: 9999px;
 }
 
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .timeline-track::before {
   content: "";
   position: absolute;

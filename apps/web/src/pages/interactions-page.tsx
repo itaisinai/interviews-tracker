@@ -8,6 +8,14 @@ import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } f
 import { api } from "../lib/api";
 import { formatDateTime } from "../lib/format";
 
+function splitMonthDay(value: string) {
+  const date = new Date(value);
+  return {
+    month: date.toLocaleDateString(undefined, { month: "short" }).toUpperCase(),
+    day: date.toLocaleDateString(undefined, { day: "numeric" }).toUpperCase()
+  };
+}
+
 export function InteractionsPage() {
   const [filter, setFilter] = useState("upcoming");
   const [showForm, setShowForm] = useState(false);
@@ -28,12 +36,9 @@ export function InteractionsPage() {
   });
   const queryClient = useQueryClient();
   const { data = [], isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
-  const opportunitiesQuery = useQuery({ queryKey: ["opportunities", "interaction-form"], queryFn: () => api.opportunities() });
+  const opportunitiesQuery = useQuery({ queryKey: ["opportunities", "interaction-form"], queryFn: () => api.opportunities("?summary=1"), staleTime: 30_000 });
   const { data: opportunities = [] } = opportunitiesQuery;
-  const gmailOpportunity = useMemo(
-    () => opportunities.find((item) => item.id === gmailOpportunityId) ?? null,
-    [gmailOpportunityId, opportunities]
-  );
+  const gmailOpportunity = useMemo(() => opportunities.find((item) => item.id === gmailOpportunityId) ?? null, [gmailOpportunityId, opportunities]);
   const createInteraction = useMutation({
     mutationFn: () => api.createGlobalInteraction(form),
     onSuccess: () => {
@@ -88,40 +93,69 @@ export function InteractionsPage() {
   }
 
   if (opportunitiesQuery.isError) {
-      return <PageErrorState title="Interactions" description={opportunitiesQuery.error instanceof Error ? opportunitiesQuery.error.message : "Unable to load opportunities for the form."} onRetry={() => void opportunitiesQuery.refetch()} />;
+    return <PageErrorState title="Interactions" description={opportunitiesQuery.error instanceof Error ? opportunitiesQuery.error.message : "Unable to load opportunities for the form."} onRetry={() => void opportunitiesQuery.refetch()} />;
   }
 
   return (
     <>
-      <PageIntro
-        title="Interactions"
-        description="Track your networking and interview progress with precision."
-        actions={
-          <>
-            {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
-            <button className="btn btn-secondary" onClick={() => (showGmailImport ? setShowGmailImport(false) : openGmailImport())}>
-              <MaterialIcon name="mail" />
-              {showGmailImport ? "Hide Gmail Import" : "Add interaction from Gmail"}
-            </button>
-            <button className="btn btn-primary" onClick={() => setShowForm((value) => !value)}>
-              <MaterialIcon name={showForm ? "close" : "add"} />
-              {showForm ? "Close" : "Add Interaction"}
-            </button>
-          </>
-        }
-      />
-      {showGmailImport ? (
-        <section className="panel mb-8 p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2 text-primary">
-              <MaterialIcon name="mail" />
+      <div className="md:hidden">
+        <section className="mb-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Interactions</h1>
+              <p className="font-body-md text-on-surface-variant">Track networking and interview progress.</p>
             </div>
-            <div className="min-w-0">
-              <h3 className="font-title-md text-title-md font-bold">Add interaction from Gmail</h3>
-              <p className="text-body-md text-on-surface-variant">Pick an opportunity, search Gmail for recent emails, then review the parsed interaction before saving.</p>
+            {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button className={`rounded-full px-4 py-2 font-label-md text-label-md ${showGmailImport ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"}`} onClick={() => (showGmailImport ? setShowGmailImport(false) : openGmailImport())}>
+              <MaterialIcon name="mail" />
+              {showGmailImport ? "Hide Gmail" : "Gmail"}
+            </button>
+            <button className={`rounded-full px-4 py-2 font-label-md text-label-md ${showForm ? "bg-secondary text-on-secondary" : "bg-surface-container-high text-on-surface-variant"}`} onClick={() => setShowForm((value) => !value)}>
+              <MaterialIcon name={showForm ? "close" : "add"} />
+              {showForm ? "Close" : "Add"}
+            </button>
+          </div>
+        </section>
+
+        <section className="mb-5">
+          <div className="mb-3 flex overflow-x-auto gap-3 pb-1 hide-scrollbar">
+            {[
+              ["upcoming", "Upcoming"],
+              ["done", "Done"],
+              ["followup", "Follow-up"],
+              ["all", "All"]
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                className={`whitespace-nowrap rounded-full px-4 py-2 font-label-md text-label-md transition-all ${
+                  filter === key ? "bg-primary text-on-primary" : "border border-outline-variant bg-white text-on-surface-variant"
+                }`}
+                onClick={() => setFilter(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
+              <div className="font-label-md text-label-md uppercase text-on-surface-variant">Upcoming</div>
+              <div className="mt-2 font-headline-md text-headline-md font-bold">{data.filter((item) => new Date(item.date) >= new Date()).length}</div>
+            </div>
+            <div className="rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
+              <div className="font-label-md text-label-md uppercase text-on-surface-variant">Follow-up</div>
+              <div className="mt-2 font-headline-md text-headline-md font-bold">{followUpPercent}%</div>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+        </section>
+
+        {showGmailImport ? (
+          <section className="mb-5 rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
+            <div className="mb-4">
+              <h3 className="font-title-md text-title-md font-bold">Add interaction from Gmail</h3>
+              <p className="mt-1 text-body-md text-on-surface-variant">Pick an opportunity, search Gmail, then review before saving.</p>
+            </div>
             <Field label="Opportunity">
               <select className="input" value={gmailOpportunityId} onChange={(event) => setGmailOpportunityId(event.target.value)}>
                 <option value="">Select company / role</option>
@@ -132,161 +166,327 @@ export function InteractionsPage() {
                 ))}
               </select>
             </Field>
-            <div className="flex items-center gap-3">
-              <button className="btn btn-secondary" onClick={() => setShowGmailImport(false)}>
-                <MaterialIcon name="close" />
-                Close
-              </button>
-            </div>
-          </div>
-          {gmailOpportunity ? (
-            <div className="mt-6">
-              <GmailInteractionPanel
-                opportunityId={gmailOpportunity.id}
-                companyName={gmailOpportunity.companyName}
-                roleTitle={gmailOpportunity.roleTitle}
-                onSaved={() => {
-                  setShowGmailImport(false);
-                }}
-              />
-            </div>
-          ) : (
-            <div className="mt-6 rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-5 text-body-md text-on-surface-variant">
-              Choose an opportunity to search Gmail for related emails.
-            </div>
-          )}
-        </section>
-      ) : null}
-      {showForm ? (
-        <section className="panel mb-8 p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2 text-primary">
-              <MaterialIcon name="add_call" />
-            </div>
-            <div>
+            {gmailOpportunity ? (
+              <div className="mt-4">
+                <GmailInteractionPanel
+                  opportunityId={gmailOpportunity.id}
+                  companyName={gmailOpportunity.companyName}
+                  roleTitle={gmailOpportunity.roleTitle}
+                  onSaved={() => {
+                    setShowGmailImport(false);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-4 text-body-md text-on-surface-variant">
+                Choose an opportunity to search Gmail for related emails.
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        {showForm ? (
+          <section className="mb-5 rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
+            <div className="mb-4">
               <h3 className="font-title-md text-title-md font-bold">Add Interaction</h3>
-              <p className="text-body-md text-on-surface-variant">Attach the interaction to an existing opportunity.</p>
+              <p className="mt-1 text-body-md text-on-surface-variant">Attach the interaction to an existing opportunity.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <Field label="Opportunity">
+                <select className="input" value={form.jobOpportunityId} onChange={(event) => setForm({ ...form, jobOpportunityId: event.target.value })}>
+                  <option value="">Select company / role</option>
+                  {opportunities.map((item) => <option key={item.id} value={item.id}>{item.companyName} · {item.roleTitle}</option>)}
+                </select>
+              </Field>
+              <Field label="Date">
+                <input className="input" type="datetime-local" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
+              </Field>
+              <Field label="Type">
+                <input className="input" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} />
+              </Field>
+              <Field label="Stage">
+                <input className="input" value={form.stage} onChange={(event) => setForm({ ...form, stage: event.target.value })} />
+              </Field>
+              <Field label="Status">
+                <select className="input" value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
+                  <option>SCHEDULED</option>
+                  <option>DONE</option>
+                  <option>CANCELLED</option>
+                  <option>NEEDS_FOLLOW_UP</option>
+                </select>
+              </Field>
+              <Field label="Person">
+                <input className="input" value={form.personName} onChange={(event) => setForm({ ...form, personName: event.target.value })} placeholder="Recruiter, hiring manager..." />
+              </Field>
+              <Field label="Person role">
+                <input className="input" value={form.personRole} onChange={(event) => setForm({ ...form, personRole: event.target.value })} />
+              </Field>
+              <Field label="Agenda">
+                <textarea className="input min-h-24" value={form.agenda} onChange={(event) => setForm({ ...form, agenda: event.target.value })} />
+              </Field>
+              <Field label="Follow-up">
+                <textarea className="input min-h-24" value={form.followUp} onChange={(event) => setForm({ ...form, followUp: event.target.value })} />
+              </Field>
+              <Field label="Notes">
+                <textarea className="input min-h-24" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />
+              </Field>
+              <Field label="Outcome">
+                <textarea className="input min-h-24" value={form.outcome} onChange={(event) => setForm({ ...form, outcome: event.target.value })} />
+              </Field>
+            </div>
+            <div className="mt-5 flex flex-col gap-3">
+              <LoadingButton className="btn btn-primary w-full" disabled={!form.jobOpportunityId || !form.date} loading={createInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => createInteraction.mutate()}>
+                Save Interaction
+              </LoadingButton>
+              {createInteraction.error ? <p className="text-body-md text-error">{createInteraction.error.message}</p> : null}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="mb-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-title-md text-title-md font-bold">{filter === "upcoming" ? "Upcoming" : "Interactions"}</h2>
+            <span className="font-label-md text-label-md text-on-surface-variant">{rows.length}</span>
+          </div>
+          <div className="relative timeline-track">
+            <div className="space-y-3 pl-10">
+              {rows.map((item) => {
+                const parts = splitMonthDay(item.date);
+                return (
+                  <article key={item.id} className={`rounded-xl border bg-white p-4 shadow-sm ${item.status === "SCHEDULED" ? "border-primary" : "border-outline-variant"}`}>
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div className="w-10 shrink-0 text-center">
+                        <div className="font-label-sm text-label-sm text-primary">{parts.month}</div>
+                        <div className="font-headline-md text-headline-md font-semibold">{parts.day}</div>
+                      </div>
+                      <Badge value={item.status} />
+                    </div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <MaterialIcon name={item.type.toLowerCase().includes("email") ? "mail" : "call"} className="text-primary" />
+                      <span className="font-semibold text-on-background">{item.type}</span>
+                    </div>
+                    <h4 className="truncate font-title-md text-title-md font-bold">{item.jobOpportunity?.companyName}</h4>
+                    <p className="mt-1 text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"}</p>
+                    {item.agenda ? <p className="mt-3 text-body-md">{item.agenda}</p> : null}
+                    {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic">"{item.followUp}"</p> : null}
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">{formatDateTime(item.date)}</span>
+                      <LoadingButton compact aria-label="Delete interaction" className="text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
+                        Delete
+                      </LoadingButton>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Field label="Opportunity">
-              <select className="input" value={form.jobOpportunityId} onChange={(event) => setForm({ ...form, jobOpportunityId: event.target.value })}>
-                <option value="">Select company / role</option>
-                {opportunities.map((item) => <option key={item.id} value={item.id}>{item.companyName} · {item.roleTitle}</option>)}
-              </select>
-            </Field>
-            <Field label="Date">
-              <input className="input" type="datetime-local" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
-            </Field>
-            <Field label="Type">
-              <input className="input" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} />
-            </Field>
-            <Field label="Stage">
-              <input className="input" value={form.stage} onChange={(event) => setForm({ ...form, stage: event.target.value })} />
-            </Field>
-            <Field label="Status">
-              <select className="input" value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
-                <option>SCHEDULED</option>
-                <option>DONE</option>
-                <option>CANCELLED</option>
-                <option>NEEDS_FOLLOW_UP</option>
-              </select>
-            </Field>
-            <Field label="Person">
-              <input className="input" value={form.personName} onChange={(event) => setForm({ ...form, personName: event.target.value })} placeholder="Recruiter, hiring manager..." />
-            </Field>
-            <Field label="Person role">
-              <input className="input" value={form.personRole} onChange={(event) => setForm({ ...form, personRole: event.target.value })} />
-            </Field>
-            <Field label="Agenda">
-              <textarea className="input min-h-24" value={form.agenda} onChange={(event) => setForm({ ...form, agenda: event.target.value })} />
-            </Field>
-            <Field label="Follow-up">
-              <textarea className="input min-h-24" value={form.followUp} onChange={(event) => setForm({ ...form, followUp: event.target.value })} />
-            </Field>
-            <Field label="Notes">
-              <textarea className="input min-h-24" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />
-            </Field>
-            <Field label="Outcome">
-              <textarea className="input min-h-24" value={form.outcome} onChange={(event) => setForm({ ...form, outcome: event.target.value })} />
-            </Field>
-          </div>
-          <div className="mt-5 flex items-center gap-3">
-            <LoadingButton className="btn btn-primary" disabled={!form.jobOpportunityId || !form.date} loading={createInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => createInteraction.mutate()}>
-              Save Interaction
-            </LoadingButton>
-            {createInteraction.error ? <p className="text-body-md text-error">{createInteraction.error.message}</p> : null}
-          </div>
         </section>
-      ) : null}
-      <div className="mb-8 flex flex-wrap gap-2">
-        {[
-          ["upcoming", "Upcoming"],
-          ["done", "Done"],
-          ["followup", "Needs Follow-up"],
-          ["all", "All"]
-        ].map(([key, label]) => <button key={key} className={`rounded-full px-4 py-1.5 font-label-md text-label-md transition-all ${filter === key ? "bg-primary-container text-on-primary-container" : "border border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low"}`} onClick={() => setFilter(key)}>{label}</button>)}
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        <section className="relative timeline-track lg:col-span-8">
-          <div className="relative z-10 mb-6 flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary shadow-sm">
-              <MaterialIcon name="event" filled />
+      <div className="hidden md:block">
+        <PageIntro
+          title="Interactions"
+          description="Track your networking and interview progress with precision."
+          actions={
+            <>
+              {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+              <button className="btn btn-secondary" onClick={() => (showGmailImport ? setShowGmailImport(false) : openGmailImport())}>
+                <MaterialIcon name="mail" />
+                {showGmailImport ? "Hide Gmail Import" : "Add interaction from Gmail"}
+              </button>
+              <button className="btn btn-primary" onClick={() => setShowForm((value) => !value)}>
+                <MaterialIcon name={showForm ? "close" : "add"} />
+                {showForm ? "Close" : "Add Interaction"}
+              </button>
+            </>
+          }
+        />
+        {showGmailImport ? (
+          <section className="panel mb-8 p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                <MaterialIcon name="mail" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-title-md text-title-md font-bold">Add interaction from Gmail</h3>
+                <p className="text-body-md text-on-surface-variant">Pick an opportunity, search Gmail for recent emails, then review the parsed interaction before saving.</p>
+              </div>
             </div>
-            <h3 className="font-title-md text-title-md font-bold">{filter === "upcoming" ? "Upcoming" : "Interaction Timeline"}</h3>
-          </div>
-          <div className="ml-10 space-y-4">
-            {rows.map((item) => (
-              <article key={item.id} className={`rounded-xl bg-white p-5 shadow-sm transition-all hover:shadow-lg ${item.status === "SCHEDULED" ? "border-2 border-primary" : "border border-outline-variant"}`}>
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
-                  <span className="h-1 w-1 rounded-full bg-outline-variant" />
-                  <MaterialIcon name={item.type.toLowerCase().includes("email") ? "mail" : "call"} className="text-primary" />
-                  <span className="font-semibold">{item.type}</span>
-                  <Badge value={item.status} />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+              <Field label="Opportunity">
+                <select className="input" value={gmailOpportunityId} onChange={(event) => setGmailOpportunityId(event.target.value)}>
+                  <option value="">Select company / role</option>
+                  {opportunities.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.companyName} · {item.roleTitle}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <div className="flex items-center gap-3">
+                <button className="btn btn-secondary" onClick={() => setShowGmailImport(false)}>
+                  <MaterialIcon name="close" />
+                  Close
+                </button>
+              </div>
+            </div>
+            {gmailOpportunity ? (
+              <div className="mt-6">
+                <GmailInteractionPanel
+                  opportunityId={gmailOpportunity.id}
+                  companyName={gmailOpportunity.companyName}
+                  roleTitle={gmailOpportunity.roleTitle}
+                  onSaved={() => {
+                    setShowGmailImport(false);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="mt-6 rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-5 text-body-md text-on-surface-variant">
+                Choose an opportunity to search Gmail for related emails.
+              </div>
+            )}
+          </section>
+        ) : null}
+        {showForm ? (
+          <section className="panel mb-8 p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                <MaterialIcon name="add_call" />
+              </div>
+              <div>
+                <h3 className="font-title-md text-title-md font-bold">Add Interaction</h3>
+                <p className="text-body-md text-on-surface-variant">Attach the interaction to an existing opportunity.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <Field label="Opportunity">
+                <select className="input" value={form.jobOpportunityId} onChange={(event) => setForm({ ...form, jobOpportunityId: event.target.value })}>
+                  <option value="">Select company / role</option>
+                  {opportunities.map((item) => <option key={item.id} value={item.id}>{item.companyName} · {item.roleTitle}</option>)}
+                </select>
+              </Field>
+              <Field label="Date">
+                <input className="input" type="datetime-local" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
+              </Field>
+              <Field label="Type">
+                <input className="input" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} />
+              </Field>
+              <Field label="Stage">
+                <input className="input" value={form.stage} onChange={(event) => setForm({ ...form, stage: event.target.value })} />
+              </Field>
+              <Field label="Status">
+                <select className="input" value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
+                  <option>SCHEDULED</option>
+                  <option>DONE</option>
+                  <option>CANCELLED</option>
+                  <option>NEEDS_FOLLOW_UP</option>
+                </select>
+              </Field>
+              <Field label="Person">
+                <input className="input" value={form.personName} onChange={(event) => setForm({ ...form, personName: event.target.value })} placeholder="Recruiter, hiring manager..." />
+              </Field>
+              <Field label="Person role">
+                <input className="input" value={form.personRole} onChange={(event) => setForm({ ...form, personRole: event.target.value })} />
+              </Field>
+              <Field label="Agenda">
+                <textarea className="input min-h-24" value={form.agenda} onChange={(event) => setForm({ ...form, agenda: event.target.value })} />
+              </Field>
+              <Field label="Follow-up">
+                <textarea className="input min-h-24" value={form.followUp} onChange={(event) => setForm({ ...form, followUp: event.target.value })} />
+              </Field>
+              <Field label="Notes">
+                <textarea className="input min-h-24" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />
+              </Field>
+              <Field label="Outcome">
+                <textarea className="input min-h-24" value={form.outcome} onChange={(event) => setForm({ ...form, outcome: event.target.value })} />
+              </Field>
+            </div>
+            <div className="mt-5 flex items-center gap-3">
+              <LoadingButton className="btn btn-primary" disabled={!form.jobOpportunityId || !form.date} loading={createInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => createInteraction.mutate()}>
+                Save Interaction
+              </LoadingButton>
+              {createInteraction.error ? <p className="text-body-md text-error">{createInteraction.error.message}</p> : null}
+            </div>
+          </section>
+        ) : null}
+        <div className="mb-8 flex flex-wrap gap-2">
+          {[
+            ["upcoming", "Upcoming"],
+            ["done", "Done"],
+            ["followup", "Needs Follow-up"],
+            ["all", "All"]
+          ].map(([key, label]) => <button key={key} className={`rounded-full px-4 py-1.5 font-label-md text-label-md transition-all ${filter === key ? "bg-primary-container text-on-primary-container" : "border border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low"}`} onClick={() => setFilter(key)}>{label}</button>)}
+        </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          <section className="relative timeline-track lg:col-span-8">
+            <div className="relative z-10 mb-6 flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary shadow-sm">
+                <MaterialIcon name="event" filled />
+              </div>
+              <h3 className="font-title-md text-title-md font-bold">{filter === "upcoming" ? "Upcoming" : "Interaction Timeline"}</h3>
+            </div>
+            <div className="ml-10 space-y-4">
+              {rows.map((item) => (
+                <article key={item.id} className={`rounded-xl bg-white p-5 shadow-sm transition-all hover:shadow-lg ${item.status === "SCHEDULED" ? "border-2 border-primary" : "border border-outline-variant"}`}>
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
+                    <span className="h-1 w-1 rounded-full bg-outline-variant" />
+                    <MaterialIcon name={item.type.toLowerCase().includes("email") ? "mail" : "call"} className="text-primary" />
+                    <span className="font-semibold">{item.type}</span>
+                    <Badge value={item.status} />
+                  </div>
+                  <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.companyName}</h4>
+                  <p className="text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"} · {item.personName ?? "No person"}</p>
+                  {item.agenda ? <p className="mt-3 text-body-md">{item.agenda}</p> : null}
+                  {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic">"{item.followUp}"</p> : null}
+                  <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
+                    Delete
+                  </LoadingButton>
+                </article>
+              ))}
+            </div>
+          </section>
+          <aside className="space-y-6 lg:col-span-4">
+            <div className="rounded-xl border border-outline-variant bg-white p-6 shadow-sm">
+              <h3 className="mb-3 font-title-md text-title-md font-bold">Interaction Health</h3>
+              <div className="mb-6 rounded-xl bg-surface-container-low p-4">
+                <p className="font-label-md text-label-md text-on-surface-variant">Needs Follow-up</p>
+                <div className="mt-2 flex items-end justify-between">
+                  <span className="font-headline-md text-headline-md font-bold">{followUpPercent}%</span>
                 </div>
-                <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.companyName}</h4>
-                <p className="text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"} · {item.personName ?? "No person"}</p>
-                {item.agenda ? <p className="mt-3 text-body-md">{item.agenda}</p> : null}
-                {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic">"{item.followUp}"</p> : null}
-                <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
-                  Delete
-                </LoadingButton>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <aside className="space-y-6 lg:col-span-4">
-          <div className="panel p-6">
-            <h4 className="mb-6 font-title-md text-title-md font-bold">Interaction Health</h4>
-            <div className="mb-6">
-              <div className="mb-1 flex justify-between font-label-md text-label-md">
-                <span className="text-on-surface-variant">Needs Follow-up</span>
-                <span className="text-primary">{followUpPercent}%</span>
+                <div className="mt-3 h-2 rounded-full bg-surface-container-high">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${followUpPercent}%` }} />
+                </div>
               </div>
-              <div className="h-2 rounded-full bg-surface-container">
-                <div className="h-2 rounded-full bg-primary" style={{ width: `${followUpPercent}%` }} />
+              <div className="grid grid-cols-2 gap-3">
+                <StatCard label="Total" value={data.length} />
+                <StatCard label="Upcoming" value={data.filter((item) => new Date(item.date) >= new Date()).length} />
+                <StatCard label="Done" value={data.filter((item) => item.status === "DONE").length} />
+                <StatCard label="Follow-up" value={followUpCount} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Stat label="Total" value={data.length} />
-              <Stat label="Upcoming" value={data.filter((item) => new Date(item.date) >= new Date()).length} />
-              <Stat label="Done" value={data.filter((item) => item.status === "DONE").length} />
-              <Stat label="Follow-up" value={followUpCount} />
-            </div>
-          </div>
-        </aside>
+          </aside>
+        </div>
       </div>
     </>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
-  return <div className="rounded-lg bg-surface-container-low p-4 text-center"><span className="block font-headline-md text-headline-md font-bold">{value}</span><span className="font-label-md text-label-md text-on-surface-variant">{label}</span></div>;
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">{label}</span>
+      {children}
+    </label>
+  );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="space-y-1"><span className="label">{label}</span>{children}</label>;
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl bg-surface-container-low p-4 text-center">
+      <div className="font-headline-md text-headline-md font-bold text-on-background">{value}</div>
+      <div className="mt-1 font-label-md text-label-md text-on-surface-variant">{label}</div>
+    </div>
+  );
 }
