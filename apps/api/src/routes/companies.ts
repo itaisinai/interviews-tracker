@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
-import { aiParserService } from "../services/ai-parser-service.js";
+import { getAiParserService } from "../services/ai-parser-service.js";
 
 export const companiesRouter = Router();
 
@@ -77,7 +77,7 @@ companiesRouter.delete("/:companyName", asyncHandler(async (request, response) =
 companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, response) => {
   const companyName = decodeURIComponent(request.params.companyName);
   const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
-  const enrichment = await aiParserService.parseCompanyEnrichment(text);
+  const enrichment = await getAiParserService().parseCompanyEnrichment(text);
   const targetName = enrichment.companyName ?? companyName;
 
   const employeesRange = enrichment.employees ? await prisma.companySizeOption.upsert({ where: { label: enrichment.employees }, create: { label: enrichment.employees }, update: {} }) : null;

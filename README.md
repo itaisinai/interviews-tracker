@@ -9,7 +9,7 @@ A full-stack personal CRM for managing a senior software engineering job search.
 - React, TypeScript, Vite, Tailwind CSS, React Router, React Query, React Hook Form
 - Node.js, Express, TypeScript
 - PostgreSQL, Prisma
-- OpenAI-backed AI parser abstraction with a local no-key fallback
+- OpenAI-backed AI parser for job and company ingestion
 
 ## Local Setup
 
@@ -49,6 +49,14 @@ The API runs on `http://localhost:4000/api` and the web app runs on `http://loca
 curl http://localhost:4000/health
 curl http://localhost:4000/api/health
 ```
+
+## Local Environment Setup
+
+Use the repository root `.env` file for local development. The API reads that file through `dotenv/config`, and the Vite frontend reads the same root file through `envDir` in `apps/web/vite.config.ts`.
+
+Do not use `apps/web/.env` unless you intentionally want to override the normal setup. The frontend only sees `VITE_*` variables, while non-`VITE_*` variables are backend-only.
+
+Run `yarn env:check` after editing env vars. Restart `yarn dev` after env changes so both processes reload the updated values.
 
 ## Production Build
 
@@ -204,15 +212,16 @@ POST /api/ai/parse-job-description
 
 The parser returns a strict structured schema and the frontend shows a review screen before creating an opportunity. Nothing is saved automatically.
 
-By default the backend uses `OpenAiParserService` when `OPENAI_API_KEY` is set. If credentials are missing, it falls back to `MockAiParserService` so local development still works. The parser is behind the `AiParserService` interface in `apps/api/src/services/ai-parser-service.ts`, so a LangChain implementation can replace the OpenAI direct client without changing routes.
+The backend always uses `OpenAiParserService`. Set `OPENAI_API_KEY` locally and in deployment. The parser is behind the `AiParserService` interface in `apps/api/src/services/ai-parser-service.ts`, so a different OpenAI-facing implementation can replace the direct client without changing routes.
 
 Configure AI parsing in `.env`:
 
 ```env
-AI_PROVIDER=openai
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o-mini
 ```
+
+Local environment variables should live in the repository root `.env` file. Vite reads that file through `envDir`, so the frontend can see the `VITE_*` Auth0 variables there without duplicating them under `apps/web`.
 
 ## Available Companies
 
