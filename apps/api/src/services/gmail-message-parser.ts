@@ -1,0 +1,721 @@
+export type GmailRawMessageHeader = {
+  name?: string;
+  value?: string;
+};
+
+export type GmailRawMessagePayload = {
+  mimeType?: string;
+  filename?: string;
+  body?: {
+    data?: string;
+    size?: number;
+    attachmentId?: string;
+  };
+  parts?: GmailRawMessagePayload[];
+  headers?: GmailRawMessageHeader[];
+};
+
+export type GmailRawMessageResponse = {
+  id?: string;
+  threadId?: string;
+  snippet?: string;
+  internalDate?: string;
+  payload?: GmailRawMessagePayload;
+};
+
+export type GmailStructuredEmailCalendar = {
+  summary: string | null;
+  description: string | null;
+  location: string | null;
+  start: string | null;
+  end: string | null;
+  timezone: string | null;
+  attendees: string[];
+};
+
+export type GmailStructuredEmail = {
+  id: string;
+  threadId: string;
+  subject: string;
+  fromRaw: string;
+  senderName: string | null;
+  senderEmail: string | null;
+  to: string[];
+  cc: string[];
+  dateHeader: string | null;
+  internalDate: string;
+  snippet: string;
+  plainText: string;
+  htmlText: string;
+  calendarText: string;
+  calendar: GmailStructuredEmailCalendar | null;
+};
+
+export type GmailMeetingDateSource = "calendar" | "text" | "header";
+
+export type GmailDerivedInteraction = {
+  date: string;
+  dateSource: GmailMeetingDateSource;
+  type: string;
+  stage: string | null;
+  status: "SCHEDULED" | "DONE" | "CANCELLED" | "NEEDS_FOLLOW_UP";
+  personName: string | null;
+  personRole: string | null;
+  agenda: string | null;
+  notes: string | null;
+  outcome: string | null;
+  followUp: string | null;
+};
+
+export type GmailSearchQuery = {
+  query: string;
+};
+
+export type GmailSearchCandidateMetadata = {
+  id: string;
+  threadId: string;
+  subject: string;
+  from: string;
+  date: string;
+  snippet: string;
+};
+
+export type GmailSearchCandidateClassification = {
+  messageId: string;
+  isRelevant: boolean;
+  confidence: number;
+  emailType: "INTERVIEW_INVITATION" | "RECRUITER_MESSAGE" | "FOLLOW_UP" | "REJECTION" | "OFFER" | "UNRELATED";
+  reason: string;
+};
+
+function decodeBase64Url(value: string) {
+  return Buffer.from(value.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+}
+
+function headerValue(headers: GmailRawMessageHeader[] | undefined, name: string) {
+  return headers?.find((header) => header.name?.toLowerCase() === name.toLowerCase())?.value ?? "";
+}
+
+function splitMailboxList(value: string) {
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function parseMailbox(value: string) {
+  const match = value.match(/^(.*?)(?:\s*<([^>]+)>)?$/);
+  const name = match?.[1]?.trim().replace(/^"|"$/g, "") ?? "";
+  const email = match?.[2]?.trim() ?? "";
+
+  return {
+    raw: value.trim(),
+    name: name || null,
+    email: email || (value.includes("@") ? value.replace(/^.*<|>.*$/g, "").trim() : null)
+  };
+}
+
+function parseMailboxList(value: string) {
+  return splitMailboxList(value).map((item) => parseMailbox(item));
+}
+
+function stripHtml(value: string) {
+  return value
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<\/p>|<\/div>|<\/li>|<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
+function parseClockTime(value: string) {
+  const trimmed = value.trim();
+  const twelveHourMatch = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+
+  if (twelveHourMatch) {
+    let hour = Number(twelveHourMatch[1]);
+    const minute = Number(twelveHourMatch[2]);
+    const meridiem = twelveHourMatch[3].toUpperCase();
+
+    if (hour < 1 || hour > 12 || minute < 0 || minute > 59) {
+      return null;
+    }
+
+    if (meridiem === "AM") {
+      hour = hour === 12 ? 0 : hour;
+    } else {
+      hour = hour === 12 ? 12 : hour + 12;
+    }
+
+    return { hour, minute };
+  }
+
+  const twentyFourHourMatch = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+
+  if (twentyFourHourMatch) {
+    const hour = Number(twentyFourHourMatch[1]);
+    const minute = Number(twentyFourHourMatch[2]);
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return null;
+    }
+
+    return { hour, minute };
+  }
+
+  return null;
+}
+
+function monthIndexFromName(value: string) {
+  const normalized = value.trim().slice(0, 3).toLowerCase();
+  const months: Record<string, number> = {
+    jan: 0,
+    feb: 1,
+    mar: 2,
+    apr: 3,
+    may: 4,
+    jun: 5,
+    jul: 6,
+    aug: 7,
+    sep: 8,
+    oct: 9,
+    nov: 10,
+    dec: 11
+  };
+
+  return months[normalized] ?? -1;
+}
+
+function parseTimezoneOffset(value: string) {
+  const explicitMatch = value.match(/GMT\s*([+-]\s*\d{1,2})/i) ?? value.match(/\bUTC\s*([+-]\s*\d{1,2})/i);
+
+  if (explicitMatch?.[1]) {
+    return Number(explicitMatch[1].replace(/\s+/g, ""));
+  }
+
+  if (/Israel Time|Asia\/Jerusalem|IDT/i.test(value)) {
+    return 3;
+  }
+
+  if (/\bIST\b/i.test(value)) {
+    return 3;
+  }
+
+  return null;
+}
+
+function localTimeToIso(parts: { year: number; month: number; day: number; hour: number; minute: number }, offsetHours: number) {
+  const utcMillis = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour - offsetHours, parts.minute);
+  return new Date(utcMillis).toISOString();
+}
+
+function convertZonedLocalToIso(parts: { year: number; month: number; day: number; hour: number; minute: number }, timeZone: string) {
+  const utcGuess = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
+  const zonedParts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  }).formatToParts(new Date(utcGuess));
+
+  const getPart = (type: string) => Number(zonedParts.find((part) => part.type === type)?.value ?? "0");
+  const zonedAsUtc = Date.UTC(getPart("year"), getPart("month") - 1, getPart("day"), getPart("hour"), getPart("minute"), getPart("second"));
+  const offsetMs = zonedAsUtc - utcGuess;
+  return new Date(utcGuess - offsetMs).toISOString();
+}
+
+function parseDateTimeValue(value: string, timezone: string | null) {
+  const utcMatch = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/i);
+
+  if (utcMatch) {
+    return new Date(Date.UTC(
+      Number(utcMatch[1]),
+      Number(utcMatch[2]) - 1,
+      Number(utcMatch[3]),
+      Number(utcMatch[4]),
+      Number(utcMatch[5]),
+      Number(utcMatch[6])
+    )).toISOString();
+  }
+
+  const localMatch = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/i) ?? value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/i);
+
+  if (!localMatch) {
+    return null;
+  }
+
+  const year = Number(localMatch[1]);
+  const month = Number(localMatch[2]);
+  const day = Number(localMatch[3]);
+  const hour = Number(localMatch[4]);
+  const minute = Number(localMatch[5]);
+
+  if (timezone) {
+    try {
+      return convertZonedLocalToIso({ year, month, day, hour, minute }, timezone);
+    } catch {
+      return localTimeToIso({ year, month, day, hour, minute }, 0);
+    }
+  }
+
+  return localTimeToIso({ year, month, day, hour, minute }, 0);
+}
+
+function parseIcsPropertyLine(line: string) {
+  const separatorIndex = line.indexOf(":");
+
+  if (separatorIndex === -1) {
+    return null;
+  }
+
+  const rawName = line.slice(0, separatorIndex);
+  const value = line.slice(separatorIndex + 1);
+  const [name, ...params] = rawName.split(";");
+  const paramMap = new Map<string, string>();
+
+  for (const param of params) {
+    const [key, ...rest] = param.split("=");
+    if (key && rest.length > 0) {
+      paramMap.set(key.toUpperCase(), rest.join("="));
+    }
+  }
+
+  return {
+    name: name.toUpperCase(),
+    value,
+    params: paramMap
+  };
+}
+
+function unfoldIcsLines(value: string) {
+  return value.replace(/\r\n[ \t]/g, "").replace(/\n[ \t]/g, "");
+}
+
+export function parseIcsCalendar(value: string): GmailStructuredEmailCalendar | null {
+  const unfolded = unfoldIcsLines(value);
+  const lines = unfolded.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const eventLines: string[] = [];
+  let insideEvent = false;
+
+  for (const line of lines) {
+    if (line === "BEGIN:VEVENT") {
+      insideEvent = true;
+      continue;
+    }
+
+    if (line === "END:VEVENT") {
+      break;
+    }
+
+    if (insideEvent) {
+      eventLines.push(line);
+    }
+  }
+
+  if (!eventLines.length) {
+    return null;
+  }
+
+  const calendar: GmailStructuredEmailCalendar = {
+    summary: null,
+    description: null,
+    location: null,
+    start: null,
+    end: null,
+    timezone: null,
+    attendees: []
+  };
+
+  for (const line of eventLines) {
+    const property = parseIcsPropertyLine(line);
+
+    if (!property) {
+      continue;
+    }
+
+    if (property.name === "SUMMARY") {
+      calendar.summary = property.value.trim() || null;
+      continue;
+    }
+
+    if (property.name === "DESCRIPTION") {
+      calendar.description = property.value.trim() || null;
+      continue;
+    }
+
+    if (property.name === "LOCATION") {
+      calendar.location = property.value.trim() || null;
+      continue;
+    }
+
+    if (property.name === "ATTENDEE") {
+      const attendee = property.value.replace(/^mailto:/i, "").trim();
+      if (attendee) {
+        calendar.attendees.push(attendee);
+      }
+      continue;
+    }
+
+    if (property.name === "DTSTART" || property.name === "DTEND") {
+      const timezone = property.params.get("TZID") ?? calendar.timezone;
+      if (timezone) {
+        calendar.timezone = timezone;
+      }
+      const parsed = parseDateTimeValue(property.value.trim(), timezone ?? null);
+      if (property.name === "DTSTART") {
+        calendar.start = parsed;
+      } else {
+        calendar.end = parsed;
+      }
+    }
+  }
+
+  return calendar;
+}
+
+function collectTextFromPayload(payload: GmailRawMessagePayload | undefined) {
+  const result = {
+    plainText: "",
+    htmlText: "",
+    calendarText: "",
+    calendar: null as GmailStructuredEmailCalendar | null
+  };
+
+  if (!payload) {
+    return result;
+  }
+
+  const parts = payload.parts ?? [];
+
+  for (const part of parts) {
+    const child = collectTextFromPayload(part);
+    if (!result.plainText && child.plainText) {
+      result.plainText = child.plainText;
+    }
+    if (!result.htmlText && child.htmlText) {
+      result.htmlText = child.htmlText;
+    }
+    if (!result.calendarText && child.calendarText) {
+      result.calendarText = child.calendarText;
+    }
+    if (!result.calendar && child.calendar) {
+      result.calendar = child.calendar;
+    }
+  }
+
+  const data = payload.body?.data;
+
+  if (data) {
+    const decoded = decodeBase64Url(data).trim();
+
+    if (payload.mimeType === "text/plain" && decoded) {
+      result.plainText = result.plainText || decoded;
+    }
+
+    if (payload.mimeType === "text/html" && decoded) {
+      result.htmlText = result.htmlText || decoded;
+    }
+
+    if (payload.mimeType === "text/calendar" || payload.mimeType === "application/ics") {
+      result.calendarText = result.calendarText || decoded;
+      result.calendar = result.calendar || parseIcsCalendar(decoded);
+    }
+  }
+
+  return result;
+}
+
+function collectAllParts(payload: GmailRawMessagePayload | undefined, parts: GmailRawMessagePayload[] = []) {
+  if (!payload?.parts?.length) {
+    return parts;
+  }
+
+  for (const part of payload.parts) {
+    parts.push(part);
+    collectAllParts(part, parts);
+  }
+
+  return parts;
+}
+
+function parseMeetingTimeFromText(text: string) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const patterns = [
+    /(?:\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b,?\s+)?(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)(?:\s*-\s*\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)?(?:\s*\(([^)]+)\))?/i,
+    /(?:on\s+)?([A-Za-z]{3,9})\s+(\d{1,2}),\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)(?:\s*-\s*\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)?(?:\s*\(([^)]+)\))?/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+
+    if (!match) {
+      continue;
+    }
+
+    const timePart = match[4];
+    const timezonePart = match[5] ?? "";
+    const clock = parseClockTime(timePart);
+
+    if (!clock) {
+      continue;
+    }
+
+    let year: number;
+    let month: number;
+    let day: number;
+
+    if (/^\d{1,2}$/.test(match[1] ?? "")) {
+      day = Number(match[1]);
+      month = monthIndexFromName(match[2] ?? "") + 1;
+      year = Number(match[3]);
+    } else {
+      month = monthIndexFromName(match[1] ?? "") + 1;
+      day = Number(match[2]);
+      year = Number(match[3]);
+    }
+
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+      continue;
+    }
+
+    const offsetHours = parseTimezoneOffset(timezonePart);
+
+    if (offsetHours === null) {
+      continue;
+    }
+
+    return localTimeToIso({ year, month, day, hour: clock.hour, minute: clock.minute }, offsetHours);
+  }
+
+  return null;
+}
+
+function inferStageFromEmailText(text: string) {
+  if (/final interview|final round/i.test(text)) return "Final Interview";
+  if (/technical interview|technical round/i.test(text)) return "Technical Interview";
+  if (/hr screen|human resources screen/i.test(text)) return "HR Screen";
+  if (/recruiter screen|recruiter call|screening call|phone screen/i.test(text)) return "Recruiter Screen";
+  if (/onsite/i.test(text)) return "Onsite";
+  if (/interview/i.test(text)) return "Interview";
+  return null;
+}
+
+function inferTypeFromEmail(email: GmailStructuredEmail) {
+  const text = `${email.subject}\n${email.plainText}\n${email.calendar?.summary ?? ""}`;
+
+  if (/assignment|take-home|take home/i.test(text)) {
+    return "Home Assignment";
+  }
+
+  if (/interview|screening|onsite|phone screen/i.test(text) || email.calendar) {
+    return "Interview";
+  }
+
+  return "Email";
+}
+
+function inferStatusFromEmail(email: GmailStructuredEmail, meetingDate: string | null) {
+  const text = `${email.subject}\n${email.plainText}\n${email.calendar?.summary ?? ""}`.toLowerCase();
+
+  if (/cancel|canceled|cancelled|resched|re-sched|postpone/i.test(text)) {
+    return /cancel/i.test(text) ? "CANCELLED" : "NEEDS_FOLLOW_UP";
+  }
+
+  if (meetingDate) {
+    return new Date(meetingDate).getTime() > Date.now() ? "SCHEDULED" : "DONE";
+  }
+
+  if (/follow[- ]up/i.test(text)) {
+    return "NEEDS_FOLLOW_UP";
+  }
+
+  return "NEEDS_FOLLOW_UP";
+}
+
+export async function parseStructuredGmailEmail(input: {
+  message: GmailRawMessageResponse;
+  attachmentFetcher?: (messageId: string, attachmentId: string) => Promise<string>;
+}): Promise<GmailStructuredEmail> {
+  const headers = input.message.payload?.headers ?? [];
+  const structured = collectTextFromPayload(input.message.payload);
+  const messageId = input.message.id ?? "";
+  const threadId = input.message.threadId ?? "";
+  let calendar = structured.calendar;
+  let plainText = structured.plainText;
+  let htmlText = structured.htmlText;
+  let calendarText = structured.calendarText;
+
+  const messageParts = collectAllParts(input.message.payload);
+
+  for (const part of messageParts) {
+    const attachmentId = part.body?.attachmentId;
+    const mimeType = part.mimeType ?? "";
+    const filename = part.filename ?? "";
+
+    if (!attachmentId || !input.attachmentFetcher) {
+      continue;
+    }
+
+    if (mimeType === "text/calendar" || mimeType === "application/ics" || /\.ics$/i.test(filename)) {
+      const attachmentText = await input.attachmentFetcher(messageId, attachmentId);
+      if (attachmentText) {
+        calendarText = calendarText || attachmentText;
+        calendar = calendar || parseIcsCalendar(attachmentText);
+      }
+    }
+  }
+
+  const subject = headerValue(headers, "Subject") || "(No subject)";
+  const fromRaw = headerValue(headers, "From") || "Unknown sender";
+  const parsedFrom = parseMailbox(fromRaw);
+  const to = parseMailboxList(headerValue(headers, "To"));
+  const cc = parseMailboxList(headerValue(headers, "Cc"));
+  const dateHeader = headerValue(headers, "Date") || null;
+
+  return {
+    id: messageId,
+    threadId,
+    subject,
+    fromRaw,
+    senderName: parsedFrom.name,
+    senderEmail: parsedFrom.email,
+    to: to.map((item) => item.raw),
+    cc: cc.map((item) => item.raw),
+    dateHeader,
+    internalDate: input.message.internalDate ?? new Date().toISOString(),
+    snippet: input.message.snippet?.trim() || "(No snippet available)",
+    plainText,
+    htmlText,
+    calendarText,
+    calendar
+  };
+}
+
+export function buildGmailSearchQueries(companyName: string, roleTitle?: string | null) {
+  const queries = [
+    `${companyName} newer_than:365d`,
+    `"${companyName}" interview newer_than:365d`,
+    `"${companyName}" (interview OR recruiter OR assignment OR offer OR rejection) newer_than:365d`
+  ];
+
+  if (roleTitle?.trim()) {
+    queries.push(`"${companyName}" "${roleTitle.trim()}" newer_than:365d`);
+  }
+
+  return [...new Set(queries)];
+}
+
+export function extractStructuredEmailMeetingDate(email: GmailStructuredEmail) {
+  if (email.calendar?.start) {
+    return { date: email.calendar.start, dateSource: "calendar" as const };
+  }
+
+  const textSource = parseMeetingTimeFromText([
+    email.subject,
+    email.plainText,
+    email.calendarText
+  ].filter(Boolean).join("\n"));
+
+  if (textSource) {
+    return { date: textSource, dateSource: "text" as const };
+  }
+
+  if (email.dateHeader) {
+    const parsed = new Date(email.dateHeader);
+
+    if (!Number.isNaN(parsed.getTime())) {
+      return { date: parsed.toISOString(), dateSource: "header" as const };
+    }
+  }
+
+  return { date: email.internalDate, dateSource: "header" as const };
+}
+
+export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail): GmailDerivedInteraction {
+  const meeting = extractStructuredEmailMeetingDate(email);
+  const text = [email.subject, email.plainText, email.calendar?.summary ?? "", email.calendar?.description ?? ""].filter(Boolean).join("\n");
+  const type = inferTypeFromEmail(email);
+  const stage = inferStageFromEmailText(text);
+  const status = inferStatusFromEmail(email, meeting.date);
+  const agenda = email.calendar?.summary || null;
+  const notesParts = [
+    `Subject: ${email.subject}`,
+    `From: ${email.fromRaw}`,
+    email.calendar?.location ? `Location: ${email.calendar.location}` : null,
+    email.calendar?.start ? `Calendar start: ${email.calendar.start}` : null,
+    email.calendar?.end ? `Calendar end: ${email.calendar.end}` : null,
+    email.dateHeader ? `Date header: ${email.dateHeader}` : null,
+    email.plainText.trim() ? `Body: ${email.plainText.trim().slice(0, 1200)}` : null
+  ].filter(Boolean) as string[];
+
+  return {
+    date: meeting.date,
+    dateSource: meeting.dateSource,
+    type,
+    stage,
+    status,
+    personName: email.senderName,
+    personRole: null,
+    agenda,
+    notes: notesParts.join("\n"),
+    outcome: null,
+    followUp: /follow[- ]up|reply|confirm|let me know/i.test(text) ? "Follow up with the sender." : null
+  };
+}
+
+export function guessSenderDomain(email: GmailStructuredEmail) {
+  const source = email.senderEmail ?? email.fromRaw;
+  const match = source.match(/@([^>\s]+)/);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+export function classifySearchCandidateFallback(input: {
+  messageId: string;
+  companyName: string;
+  roleTitle?: string | null;
+  subject: string;
+  from: string;
+  snippet: string;
+  date: string;
+  senderDomain?: string | null;
+}): GmailSearchCandidateClassification {
+  const text = `${input.subject}\n${input.from}\n${input.snippet}`.toLowerCase();
+  const company = input.companyName.toLowerCase();
+  const role = input.roleTitle?.toLowerCase() ?? "";
+  const related = text.includes(company) || (role ? text.includes(role) : false);
+  const interview = /interview|screening|onsite|phone screen|recruiter|assignment|offer|rejection|follow[- ]up/.test(text);
+  const relevant = related || interview;
+  const confidence = relevant ? (related && interview ? 0.88 : 0.72) : 0.22;
+
+  let emailType: GmailSearchCandidateClassification["emailType"] = "UNRELATED";
+  if (/offer/.test(text)) emailType = "OFFER";
+  else if (/rejection|sorry|not moving forward/.test(text)) emailType = "REJECTION";
+  else if (/assignment|take-home|take home/.test(text)) emailType = "FOLLOW_UP";
+  else if (/interview|screening|onsite|phone screen/.test(text)) emailType = "INTERVIEW_INVITATION";
+  else if (/follow[- ]up|checking in|next steps|reschedule|schedule/.test(text)) emailType = "FOLLOW_UP";
+  else if (/recruiter|talent acquisition|hiring manager|human resources|hr/.test(text)) emailType = "RECRUITER_MESSAGE";
+
+  const reason = relevant
+    ? related && interview
+      ? `Mentions ${company} and hiring-process language.`
+      : related
+        ? `Directly mentions ${company}.`
+        : "Contains hiring-process language relevant to the opportunity."
+    : "No strong company or hiring-process signal found.";
+
+  return {
+    messageId: input.messageId,
+    isRelevant: relevant,
+    confidence,
+    emailType,
+    reason
+  };
+}

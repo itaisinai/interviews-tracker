@@ -1,0 +1,39 @@
+{
+  "id": "msg_unframe_interview",
+  "threadId": "thread_unframe_interview",
+  "internalDate": "1780905600000",
+  "snippet": "Interview with Unframe @ Mon 8 Jun 2026 11:30 - 11:50 (GMT+3)",
+  "payload": {
+    "mimeType": "multipart/alternative",
+    "headers": [
+      {
+        "name": "Subject",
+        "value": "Interview with Unframe @ Mon 8 Jun 2026 11:30 - 11:50 (GMT+3)"
+      },
+      {
+        "name": "From",
+        "value": "Noam Shchori <noam.shchori@unframe.ai>"
+      },
+      {
+        "name": "To",
+        "value": "Itai Sinai <itai.sinai@gmail.com>"
+      },
+      {
+        "name": "Cc",
+        "value": ""
+      },
+      {
+        "name": "Date",
+        "value": "Sun, 7 Jun 2026 15:00:00 GMT"
+      }
+    ],
+    "parts": [
+      {
+        "mimeType": "text/plain",
+        "body": {
+          "data": "SW52aXRhdGlvbiBmcm9tIHVuZnJhbWUgZm9yIGEgaW50ZXJ2aWV3IG9uIE1vbiA4IEp1biAyMDI2IDExOjMwIC0gMTE6NTAgKEdNVCszKS4gUGxlYXNlIGNvbmZpcm0u"
+        }
+      }
+    ]
+  }
+}

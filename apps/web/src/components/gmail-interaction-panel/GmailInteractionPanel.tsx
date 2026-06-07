@@ -4,7 +4,12 @@ import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
 import type { GmailFlowState } from "../../lib/gmail";
 import { gmailFlowMeta } from "../../lib/gmail";
-import type { GmailInteractionDraft, GmailMessageCandidate } from "../../lib/types";
+import type {
+  GmailEmailExtractionAnalysis,
+  GmailInteractionDraft,
+  GmailSearchCandidate,
+  GmailStructuredEmail
+} from "../../lib/types";
 import { InlineLoadingState, LoadingButton, ProcessStateCard } from "../loading-state";
 import { MaterialIcon } from "../material-icon";
 
@@ -43,8 +48,10 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("Connect Gmail, search recent emails, and turn one into an interaction.");
   const [error, setError] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<GmailMessageCandidate[]>([]);
-  const [selectedEmail, setSelectedEmail] = useState<GmailMessageCandidate | null>(null);
+  const [searchResults, setSearchResults] = useState<GmailSearchCandidate[]>([]);
+  const [selectedCandidate, setSelectedCandidate] = useState<GmailSearchCandidate | null>(null);
+  const [selectedEmail, setSelectedEmail] = useState<GmailStructuredEmail | null>(null);
+  const [analysis, setAnalysis] = useState<GmailEmailExtractionAnalysis | null>(null);
   const [draft, setDraft] = useState<GmailInteractionDraft | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -87,7 +94,9 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
   useEffect(() => {
     if (!statusQuery.data?.connected) {
       setSearchResults([]);
+      setSelectedCandidate(null);
       setSelectedEmail(null);
+      setAnalysis(null);
       setDraft(null);
     }
   }, [statusQuery.data?.connected]);
@@ -132,7 +141,9 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
     setFlowState("searching_emails");
     setMessage(searchHint);
     setSearchResults([]);
+    setSelectedCandidate(null);
     setSelectedEmail(null);
+    setAnalysis(null);
     setDraft(null);
 
     try {
@@ -157,15 +168,17 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
     }
   }
 
-  async function parseEmail(email: GmailMessageCandidate) {
+  async function parseEmail(email: GmailSearchCandidate) {
     const runId = activeRunIdRef.current + 1;
     activeRunIdRef.current = runId;
     setError(null);
     setSaveError(null);
     setSaveMessage(null);
     setLastAction("parse");
-    setSelectedEmail(email);
+    setSelectedCandidate(email);
     setDraft(null);
+    setSelectedEmail(null);
+    setAnalysis(null);
     setFlowState("fetching_email");
     setMessage(`Fetching the full body for "${email.subject}".`);
 
@@ -181,6 +194,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       }
 
       setSelectedEmail(response.email);
+      setAnalysis(response.analysis);
       setDraft(response.interaction);
       setFlowState("ready_for_review");
       setMessage("Ready for review.");
@@ -206,8 +220,8 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       return;
     }
 
-    if (lastAction === "parse" && selectedEmail) {
-      await parseEmail(selectedEmail);
+    if (lastAction === "parse" && selectedCandidate) {
+      await parseEmail(selectedCandidate);
     }
   }
 
@@ -227,10 +241,12 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setSaveMessage("Interaction created.");
-      setDraft(null);
-      setSelectedEmail(null);
-      onSaved?.();
-    },
+    setDraft(null);
+    setSelectedEmail(null);
+    setSelectedCandidate(null);
+    setAnalysis(null);
+    onSaved?.();
+  },
     onError: (caughtError) => {
       setSaveError(getErrorMessage(caughtError));
     }
@@ -331,7 +347,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                 </LoadingButton>
               </div>
               {searchResults.map((email) => {
-                const isSelected = selectedEmail?.id === email.id;
+                const isSelected = selectedCandidate?.id === email.id;
                 const isParsing = isSelected && (flowState === "fetching_email" || flowState === "parsing_email");
 
                 return (
@@ -349,6 +365,15 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                       <p className="shrink-0 text-body-md text-on-surface-variant">{new Date(email.date).toLocaleDateString()}</p>
                     </div>
                     <p className="mt-3 text-body-md text-on-surface-variant">{email.snippet}</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className={`rounded-full px-3 py-1 text-label-sm ${email.relevance.isRelevant ? "bg-primary-container text-on-primary-container" : "bg-surface-container-low text-on-surface-variant"}`}>
+                        {email.relevance.emailType}
+                      </span>
+                      <span className="rounded-full bg-surface-container-low px-3 py-1 text-label-sm text-on-surface-variant">
+                        Confidence {Math.round(email.relevance.confidence * 100)}%
+                      </span>
+                    </div>
+                    <p className="mt-2 text-body-sm text-on-surface-variant">{email.relevance.reason}</p>
                     {isParsing ? (
                       <div className="mt-3">
                         <InlineLoadingState label={flowState === "fetching_email" ? "Fetching" : "Parsing"} />
@@ -372,10 +397,13 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
             <div>
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Review interaction</p>
               <h4 className="font-title-md text-title-md font-bold">{selectedEmail.subject}</h4>
-              <p className="mt-1 text-body-md text-on-surface-variant">{selectedEmail.from}</p>
+              <p className="mt-1 text-body-md text-on-surface-variant">{selectedEmail.fromRaw}</p>
+              <p className="mt-2 text-body-sm text-on-surface-variant">
+                {analysis?.dateSource === "calendar" ? "Date source: calendar invite" : analysis?.dateSource === "text" ? "Date source: email text" : "Date source: email header"}
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <LoadingButton className="btn btn-secondary" disabled={saveInteraction.isPending} icon="close" onClick={() => { setDraft(null); setSelectedEmail(null); setMessage("Ready to search Gmail again."); }}>
+              <LoadingButton className="btn btn-secondary" disabled={saveInteraction.isPending} icon="close" onClick={() => { setDraft(null); setSelectedEmail(null); setSelectedCandidate(null); setAnalysis(null); setMessage("Ready to search Gmail again."); }}>
                 Select another email
               </LoadingButton>
               <LoadingButton className="btn btn-primary" loading={saveInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => void saveInteraction.mutate()}>
@@ -386,6 +414,14 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
 
           {saveMessage ? <p className="mt-4 rounded-lg bg-primary-container px-4 py-3 text-body-md text-on-primary-container">{saveMessage}</p> : null}
           {saveError ? <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-body-md text-on-error-container">{saveError}</p> : null}
+
+          <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4 text-body-md text-on-surface-variant">
+            <p><span className="font-semibold text-on-background">Source email:</span> {selectedEmail.subject}</p>
+            <p className="mt-1"><span className="font-semibold text-on-background">From:</span> {selectedEmail.fromRaw}</p>
+            <p className="mt-1"><span className="font-semibold text-on-background">Message date:</span> {new Date(selectedEmail.internalDate).toLocaleString()}</p>
+            {selectedEmail.calendar?.start ? <p className="mt-1"><span className="font-semibold text-on-background">Calendar start:</span> {new Date(selectedEmail.calendar.start).toLocaleString()}</p> : null}
+            {selectedEmail.calendar?.location ? <p className="mt-1"><span className="font-semibold text-on-background">Location:</span> {selectedEmail.calendar.location}</p> : null}
+          </div>
 
           <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Field label="Date">

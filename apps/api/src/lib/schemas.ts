@@ -171,6 +171,62 @@ export const gmailMessageCandidateSchema = z.object({
   snippet: z.string().min(1)
 });
 
+export const gmailEmailCalendarSchema = z.object({
+  summary: z.string().nullable(),
+  description: z.string().nullable(),
+  location: z.string().nullable(),
+  start: z.string().nullable(),
+  end: z.string().nullable(),
+  timezone: z.string().nullable(),
+  attendees: z.array(z.string())
+});
+
+export const gmailStructuredEmailSchema = z.object({
+  id: z.string().min(1),
+  threadId: z.string().min(1),
+  subject: z.string().min(1),
+  fromRaw: z.string().min(1),
+  senderName: z.string().nullable(),
+  senderEmail: z.string().nullable(),
+  to: z.array(z.string()),
+  cc: z.array(z.string()),
+  dateHeader: z.string().nullable(),
+  internalDate: z.string().min(1),
+  snippet: z.string().min(1),
+  plainText: z.string(),
+  htmlText: z.string(),
+  calendarText: z.string(),
+  calendar: gmailEmailCalendarSchema.nullable()
+});
+
+export const gmailEmailClassificationSchema = z.object({
+  messageId: z.string().min(1),
+  isRelevant: z.boolean(),
+  confidence: z.number().min(0).max(1),
+  emailType: z.enum([
+    "INTERVIEW_INVITATION",
+    "RECRUITER_MESSAGE",
+    "FOLLOW_UP",
+    "REJECTION",
+    "OFFER",
+    "UNRELATED"
+  ]),
+  reason: z.string().min(1)
+});
+
+export const gmailSearchCandidateSchema = gmailMessageCandidateSchema.extend({
+  relevance: gmailEmailClassificationSchema
+});
+
+export const gmailEmailExtractionAnalysisSchema = z.object({
+  dateSource: z.enum(["calendar", "text", "header"]),
+  stageSource: z.enum(["explicit", "generic", "null"]),
+  typeSource: z.enum(["explicit", "derived"]),
+  statusSource: z.enum(["calendar", "text", "header"]),
+  hasCalendar: z.boolean(),
+  notes: z.array(z.string())
+});
+
 export const gmailInteractionDraftSchema = z.object({
   date: z.string().min(1),
   type: z.string().min(1),
@@ -203,7 +259,7 @@ export const gmailSearchResponseSchema = z.object({
   companyName: z.string(),
   roleTitle: z.string().nullable(),
   query: z.string(),
-  candidates: z.array(gmailMessageCandidateSchema)
+  candidates: z.array(gmailSearchCandidateSchema)
 });
 
 export const gmailParseEmailRequestSchema = z.object({
@@ -211,8 +267,9 @@ export const gmailParseEmailRequestSchema = z.object({
 });
 
 export const gmailParseEmailResponseSchema = z.object({
-  email: gmailMessageCandidateSchema,
-  interaction: gmailInteractionDraftSchema
+  email: gmailStructuredEmailSchema,
+  interaction: gmailInteractionDraftSchema,
+  analysis: gmailEmailExtractionAnalysisSchema
 });
 
 export const companyResearchResultSchema = z.object({

@@ -1,9 +1,22 @@
 import crypto from "node:crypto";
 import { z } from "zod";
-import { gmailInteractionDraftSchema, gmailMessageCandidateSchema } from "../lib/schemas.js";
+import {
+  gmailEmailClassificationSchema,
+  gmailEmailExtractionAnalysisSchema,
+  gmailInteractionDraftSchema,
+  gmailMessageCandidateSchema,
+  gmailSearchCandidateSchema,
+  gmailStructuredEmailSchema
+} from "../lib/schemas.js";
 import { prisma } from "../lib/prisma.js";
 import { createTimer, logInfo } from "../lib/logger.js";
 import { getAiParserService } from "./ai-parser-service.js";
+import {
+  buildGmailSearchQueries,
+  classifySearchCandidateFallback,
+  deriveInteractionFromStructuredEmail,
+  parseStructuredGmailEmail
+} from "./gmail-message-parser.js";
 
 type GmailSettings = {
   clientId: string;
@@ -61,6 +74,11 @@ type GmailMessageResponse = {
   payload?: GmailMessagePayload;
 };
 
+type GmailAttachmentResponse = {
+  data?: string;
+  size?: number;
+};
+
 type GmailStatePayload = {
   auth0Email: string;
   returnTo: string;
@@ -76,6 +94,14 @@ export type GmailStatus = {
 };
 
 export type GmailMessageCandidate = z.infer<typeof gmailMessageCandidateSchema>;
+
+export type GmailSearchCandidate = z.infer<typeof gmailSearchCandidateSchema>;
+
+export type GmailStructuredEmail = z.infer<typeof gmailStructuredEmailSchema>;
+
+export type GmailEmailClassification = z.infer<typeof gmailEmailClassificationSchema>;
+
+export type GmailEmailExtractionAnalysis = z.infer<typeof gmailEmailExtractionAnalysisSchema>;
 
 export type GmailParsedInteraction = z.infer<typeof gmailInteractionDraftSchema>;
 
@@ -281,6 +307,12 @@ async function fetchGmailProfile(accessToken: string) {
   });
 }
 
+async function fetchGmailAttachment(messageId: string, attachmentId: string, accessToken: string) {
+  return fetchJson<GmailAttachmentResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/attachments/${attachmentId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+}
+
 async function getAccessTokenForEmail(auth0Email: string, settings = requireSettings()) {
   const connection = await prisma.gmailConnection.findUnique({ where: { auth0Email } });
 
@@ -296,6 +328,11 @@ async function getAccessTokenForEmail(auth0Email: string, settings = requireSett
 
 function headerValue(headers: GmailMessageHeader[] | undefined, name: string) {
   return headers?.find((header) => header.name?.toLowerCase() === name.toLowerCase())?.value ?? "";
+}
+
+function senderDomainFromHeader(value: string) {
+  const match = value.match(/@([^>\s]+)/);
+  return match?.[1]?.toLowerCase() ?? null;
 }
 
 function decodeBase64Url(value: string) {
@@ -618,48 +655,102 @@ export async function searchGmailMessages(input: { auth0Email: string; companyNa
   }
 
   const timer = createTimer("gmail", "search emails", { company: input.companyName });
-  const query = `${input.companyName} newer_than:180d`;
+  const queries = buildGmailSearchQueries(input.companyName, input.roleTitle);
   try {
-    const listResponse = await fetchJson<GmailListResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages?${new URLSearchParams({
-      q: query,
-      maxResults: "10",
-      includeSpamTrash: "false"
-    }).toString()}`, {
-      headers: { Authorization: `Bearer ${access.accessToken}` }
+    const messageMap = new Map<string, GmailMessageResponse & { query: string }>();
+
+    for (const query of queries) {
+      const listResponse = await fetchJson<GmailListResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages?${new URLSearchParams({
+        q: query,
+        maxResults: "10",
+        includeSpamTrash: "false"
+      }).toString()}`, {
+        headers: { Authorization: `Bearer ${access.accessToken}` }
+      });
+
+      const listMessages = (listResponse.messages ?? []).filter((message): message is { id: string; threadId?: string } => Boolean(message.id));
+
+      for (const message of listMessages) {
+        if (messageMap.has(message.id)) {
+          continue;
+        }
+
+        const detailParams = new URLSearchParams();
+        detailParams.set("format", "metadata");
+        detailParams.append("metadataHeaders", "Subject");
+        detailParams.append("metadataHeaders", "From");
+        detailParams.append("metadataHeaders", "Date");
+        const detail = await fetchJson<GmailMessageResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}?${detailParams.toString()}`, {
+          headers: { Authorization: `Bearer ${access.accessToken}` }
+        });
+
+        messageMap.set(message.id, {
+          ...detail,
+          threadId: detail.threadId ?? message.threadId ?? "",
+          query
+        });
+      }
+    }
+
+    const candidates = Array.from(messageMap.values()).map((message) => {
+      const candidate = mapMessageCandidate(message);
+      return {
+        ...candidate,
+        threadId: candidate.threadId || message.threadId || "",
+        relevance: classifySearchCandidateFallback({
+          messageId: candidate.id,
+          companyName: input.companyName,
+          roleTitle: input.roleTitle ?? null,
+          subject: candidate.subject,
+          from: candidate.from,
+          snippet: candidate.snippet,
+          date: candidate.date,
+          senderDomain: senderDomainFromHeader(candidate.from)
+        })
+      };
     });
 
-    const candidates = await Promise.all(
-      (listResponse.messages ?? [])
-        .filter((message): message is { id: string; threadId?: string } => Boolean(message.id))
-        .map(async (message) => {
-          const detailParams = new URLSearchParams();
-          detailParams.set("format", "metadata");
-          detailParams.append("metadataHeaders", "Subject");
-          detailParams.append("metadataHeaders", "From");
-          detailParams.append("metadataHeaders", "Date");
-          const detail = await fetchJson<GmailMessageResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}?${detailParams.toString()}`, {
-            headers: { Authorization: `Bearer ${access.accessToken}` }
-          });
+    let classifications: Array<z.infer<typeof gmailEmailClassificationSchema>> = [];
 
-          const candidate = mapMessageCandidate({
-            ...detail,
-            threadId: detail.threadId ?? message.threadId
-          });
+    try {
+      classifications = await getAiParserService().classifyGmailEmails({
+        companyName: input.companyName,
+        roleTitle: input.roleTitle ?? null,
+        candidates: candidates.map((candidate) => ({
+          messageId: candidate.id,
+          subject: candidate.subject,
+          from: candidate.from,
+          snippet: candidate.snippet,
+          date: candidate.date,
+          senderDomain: senderDomainFromHeader(candidate.from)
+        }))
+      });
+    } catch (error) {
+      logInfo("gmail", "candidate classification fallback", { company: input.companyName, error: error instanceof Error ? error.message : "unknown" });
+    }
 
-          return {
-            ...candidate,
-            threadId: candidate.threadId || message.threadId || ""
-          };
-        })
-    );
+    const classificationMap = new Map(classifications.map((item) => [item.messageId, item]));
+    const rankedCandidates = candidates.map((candidate) => ({
+      ...candidate,
+      relevance: classificationMap.get(candidate.id) ?? candidate.relevance
+    })).sort((a, b) => {
+      if (a.relevance.isRelevant !== b.relevance.isRelevant) {
+        return a.relevance.isRelevant ? -1 : 1;
+      }
 
-    const sortedCandidates = candidates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    timer.end({ candidates: sortedCandidates.length });
+      if (b.relevance.confidence !== a.relevance.confidence) {
+        return b.relevance.confidence - a.relevance.confidence;
+      }
+
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+
+    timer.end({ candidates: rankedCandidates.length, queries: queries.length });
     return {
       companyName: input.companyName,
       roleTitle: input.roleTitle ?? null,
-      query,
-      candidates: sortedCandidates
+      query: queries.join(" | "),
+      candidates: rankedCandidates
     };
   } catch (error) {
     timer.fail(error, { company: input.companyName });
@@ -682,40 +773,60 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
     }).toString()}`, {
       headers: { Authorization: `Bearer ${access.accessToken}` }
     });
-    const email = mapMessageCandidate(detail);
-    const body = extractPayloadText(detail.payload);
-    const messageText = `${email.subject}\n${body}`;
-
-    if (!body.trim()) {
-      timer.fail(new Error("Unable to extract Gmail message body."), { company: input.companyName });
-      throw new Error("Unable to extract Gmail message body.");
-    }
-
-    logInfo("gmail", "email parsed body ready", { company: input.companyName, subject: email.subject });
-    const interaction = await getAiParserService().parseGmailEmailToInteraction({
-      companyName: input.companyName,
-      roleTitle: input.roleTitle ?? null,
-      subject: email.subject,
-      from: email.from,
-      date: email.date,
-      body
+    const email = await parseStructuredGmailEmail({
+      message: detail,
+      attachmentFetcher: async (messageId, attachmentId) => {
+        const attachment = await fetchGmailAttachment(messageId, attachmentId, access.accessToken);
+        if (!attachment.data) {
+          return "";
+        }
+        return Buffer.from(attachment.data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+      }
     });
 
-    const extractedDate = extractScheduledDate(messageText);
-    const normalizedType = interaction.type.trim().toLowerCase() === "object" ? inferInteractionType(messageText) : interaction.type.trim();
-    const normalizedStage = !interaction.stage || interaction.stage.trim().toLowerCase() === "object" ? inferInteractionStage(messageText) : interaction.stage.trim();
+    const derived = deriveInteractionFromStructuredEmail(email);
+    logInfo("gmail", "email parsed structured data ready", { company: input.companyName, subject: email.subject, dateSource: derived.dateSource });
+
+    const aiInteraction = await getAiParserService().parseStructuredGmailEmailToInteraction({
+      companyName: input.companyName,
+      roleTitle: input.roleTitle ?? null,
+      email,
+      derived
+    });
 
     const parsedInteraction = gmailInteractionDraftSchema.parse({
-      ...interaction,
-      date: extractedDate ?? interaction.date,
-      type: normalizedType,
-      stage: normalizedStage
+      ...aiInteraction,
+      date: derived.date,
+      type: derived.type,
+      stage: derived.stage,
+      status: derived.status,
+      personName: derived.personName,
+      personRole: aiInteraction.personRole ?? derived.personRole,
+      agenda: aiInteraction.agenda ?? derived.agenda,
+      notes: [derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null,
+      outcome: aiInteraction.outcome ?? derived.outcome,
+      followUp: aiInteraction.followUp ?? derived.followUp
+    });
+
+    const analysis = gmailEmailExtractionAnalysisSchema.parse({
+      dateSource: derived.dateSource,
+      stageSource: derived.stage ? (derived.stage === "Interview" ? "generic" : "explicit") : "null",
+      typeSource: "derived",
+      statusSource: derived.dateSource,
+      hasCalendar: Boolean(email.calendar),
+      notes: [
+        `Date source: ${derived.dateSource}`,
+        email.calendar?.summary ? `Calendar summary: ${email.calendar.summary}` : null,
+        email.calendar?.location ? `Calendar location: ${email.calendar.location}` : null,
+        email.calendar?.start ? `Calendar start: ${email.calendar.start}` : null
+      ].filter(Boolean) as string[]
     });
 
     timer.end({ company: input.companyName });
     return {
       email,
-      interaction: parsedInteraction
+      interaction: parsedInteraction,
+      analysis
     };
   } catch (error) {
     timer.fail(error, { company: input.companyName });

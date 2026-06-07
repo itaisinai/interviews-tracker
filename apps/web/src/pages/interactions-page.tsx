@@ -101,7 +101,7 @@ export function InteractionsPage() {
             {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
             <button className="btn btn-secondary" onClick={() => (showGmailImport ? setShowGmailImport(false) : openGmailImport())}>
               <MaterialIcon name="mail" />
-              {showGmailImport ? "Hide Gmail Import" : "Add from Gmail"}
+              {showGmailImport ? "Hide Gmail Import" : "Add interaction from Gmail"}
             </button>
             <button className="btn btn-primary" onClick={() => setShowForm((value) => !value)}>
               <MaterialIcon name={showForm ? "close" : "add"} />
