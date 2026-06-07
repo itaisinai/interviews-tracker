@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "../components/badge";
+import { DataTable } from "../components/data-table";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
@@ -19,6 +21,20 @@ export function TasksPage() {
     if (filter === "week") return item.dueDate && +new Date(item.dueDate) <= Date.now() + 7 * 86400000;
     return true;
   }), [data, filter]);
+  const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => [
+    { header: "Due date", cell: ({ row }) => formatDate(row.original.dueDate) },
+    { header: "Company", cell: ({ row }) => <span className="font-semibold text-on-background">{row.original.jobOpportunity?.companyName}</span> },
+    { header: "Task", cell: ({ row }) => <span className="font-medium text-on-background">{row.original.title}</span> },
+    { header: "Priority", cell: ({ row }) => <Badge value={row.original.priority} /> },
+    { header: "Status", cell: ({ row }) => <Badge value={row.original.status} /> },
+    { header: "Notes", cell: ({ row }) => <span className="text-on-surface-variant">{row.original.notes}</span> },
+    {
+      header: "Delete",
+      cell: ({ row }) => (
+        <LoadingButton compact aria-label="Delete task" className="text-error" icon="delete" loading={deleteTask.isPending && deleteTask.variables === row.original.id} onClick={() => { if (window.confirm("Delete this task?")) deleteTask.mutate(row.original.id); }} />
+      )
+    }
+  ], [deleteTask]);
 
   if (isLoading) {
     return <PageLoadingState title="Tasks" description="Loading preparation, follow-up, and research work." />;
@@ -35,14 +51,9 @@ export function TasksPage() {
         {["pending", "week", "high", "done", "all"].map((item) => <button key={item} className={`rounded-full px-4 py-1.5 font-label-md text-label-md ${filter === item ? "bg-primary-container text-on-primary-container" : "border border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low"}`} onClick={() => setFilter(item)}>{item}</button>)}
       </div>
       <div className="overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
-        <table className="w-full text-left text-body-md">
-          <thead className="border-b border-outline-variant bg-surface-container-lowest font-label-md text-label-md uppercase text-on-surface-variant">
-            <tr><th className="px-6 py-4">Due date</th><th className="px-6 py-4">Company</th><th className="px-6 py-4">Task</th><th className="px-6 py-4">Priority</th><th className="px-6 py-4">Status</th><th className="px-6 py-4">Notes</th><th className="px-6 py-4">Delete</th></tr>
-          </thead>
-          <tbody className="divide-y divide-outline-variant">
-            {rows.map((item) => <tr key={item.id} className="hover:bg-surface-container-low"><td className="px-6 py-4">{formatDate(item.dueDate)}</td><td className="px-6 py-4 font-semibold">{item.jobOpportunity?.companyName}</td><td className="px-6 py-4 font-medium">{item.title}</td><td className="px-6 py-4"><Badge value={item.priority} /></td><td className="px-6 py-4"><Badge value={item.status} /></td><td className="px-6 py-4 text-on-surface-variant">{item.notes}</td><td className="px-6 py-4"><LoadingButton compact aria-label="Delete task" className="text-error" icon="delete" loading={deleteTask.isPending && deleteTask.variables === item.id} onClick={() => { if (window.confirm("Delete this task?")) deleteTask.mutate(item.id); }} /></td></tr>)}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto custom-scrollbar">
+          <DataTable data={rows} columns={columns} className="min-w-[1000px]" emptyState={<span>No tasks match the current filter.</span>} />
+        </div>
       </div>
     </>
   );

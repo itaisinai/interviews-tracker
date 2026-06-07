@@ -8,19 +8,18 @@ import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
-import { formatDateTime, initials, titleize } from "../lib/format";
+import { formatDateTime, initials } from "../lib/format";
+import { offerStatusOptions, labelForPipelineType } from "../lib/enum-labels";
 
 export function OpportunityDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["opportunity", id], queryFn: () => api.opportunity(id), enabled: Boolean(id) });
-  const [interaction, setInteraction] = useState({ date: "", type: "Recruiter Call", stage: "Intro", status: "SCHEDULED", personName: "", agenda: "", followUp: "" });
   const [note, setNote] = useState({ title: "", category: "General", content: "" });
   const [task, setTask] = useState({ title: "", status: "PENDING", priority: "MEDIUM", dueDate: "", notes: "" });
   const [comp, setComp] = useState({ baseSalary: "", equity: "", bonus: "", offerStatus: "NOT_DISCUSSED", negotiationNotes: "" });
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["opportunity", id] });
-  const addInteraction = useMutation({ mutationFn: () => api.createInteraction(id, interaction), onSuccess: refresh });
   const addNote = useMutation({ mutationFn: () => api.createOpportunityNote(id, note), onSuccess: refresh });
   const addTask = useMutation({ mutationFn: () => api.createOpportunityTask(id, task), onSuccess: refresh });
   const saveComp = useMutation({ mutationFn: () => api.upsertCompensation({ ...comp, jobOpportunityId: id }), onSuccess: refresh });
@@ -46,10 +45,6 @@ export function OpportunityDetailPage() {
         actions={
           <>
             {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
-            <Link className="btn btn-secondary" to={`/opportunities/${data.id}/edit`}>
-              <MaterialIcon name="edit" />
-              Edit
-            </Link>
             <LoadingButton className="btn btn-secondary text-error hover:bg-error-container" loading={deleteOpportunity.isPending} loadingLabel="Deleting..." icon="delete" onClick={() => { if (window.confirm(`Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions, notes, tasks, and compensation.`)) deleteOpportunity.mutate(); }}>
               Delete
             </LoadingButton>
@@ -65,7 +60,7 @@ export function OpportunityDetailPage() {
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-on-primary-container font-geist text-lg font-bold text-white">{initials(data.companyName)}</div>
         <Badge value={data.status} />
         <Badge value={data.priority} />
-        <Badge value={data.pipelineType}>{data.pipelineType === "POTENTIAL" ? "Potential / Research" : titleize(data.pipelineType)}</Badge>
+        <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
       </div>
 
       <CompanyResearchPanel
@@ -126,10 +121,6 @@ export function OpportunityDetailPage() {
         <section className="panel p-6 lg:col-span-4">
           <h3 className="font-title-md text-title-md font-bold">Next Step</h3>
           <p className="mt-4 rounded-lg bg-surface-container-low p-4 text-body-md font-medium text-on-background">{data.nextStep ?? "No next step set."}</p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Link className="btn btn-secondary" to={`/opportunities/${data.id}/edit`}>Change Status</Link>
-            <Link className="btn btn-secondary" to={`/opportunities/${data.id}/edit`}>Archive</Link>
-          </div>
         </section>
       </div>
 
@@ -167,17 +158,7 @@ export function OpportunityDetailPage() {
 
         <aside className="space-y-6 lg:col-span-5">
           <section className="panel p-6">
-            <h3 className="mb-4 font-title-md text-title-md font-bold">Quick Actions</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <input className="input" type="datetime-local" value={interaction.date} onChange={(e) => setInteraction({ ...interaction, date: e.target.value })} />
-              <input className="input" value={interaction.type} onChange={(e) => setInteraction({ ...interaction, type: e.target.value })} />
-              <input className="input" value={interaction.personName} onChange={(e) => setInteraction({ ...interaction, personName: e.target.value })} placeholder="Person" />
-              <input className="input" value={interaction.followUp} onChange={(e) => setInteraction({ ...interaction, followUp: e.target.value })} placeholder="Follow-up" />
-              <textarea className="input col-span-2" value={interaction.agenda} onChange={(e) => setInteraction({ ...interaction, agenda: e.target.value })} placeholder="Agenda" />
-              <LoadingButton className="btn btn-primary" loading={addInteraction.isPending} loadingLabel="Adding..." icon="add" onClick={() => addInteraction.mutate()}>
-                Add interaction
-              </LoadingButton>
-            </div>
+            <h3 className="mb-4 font-title-md text-title-md font-bold">Add Note</h3>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <input className="input" value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} placeholder="Note title" />
               <input className="input" value={note.category} onChange={(e) => setNote({ ...note, category: e.target.value })} placeholder="Category" />
@@ -223,7 +204,7 @@ export function OpportunityDetailPage() {
               <input className="input" value={comp.baseSalary} onChange={(e) => setComp({ ...comp, baseSalary: e.target.value })} placeholder={data.compensation?.baseSalary ?? "Base salary"} />
               <input className="input" value={comp.equity} onChange={(e) => setComp({ ...comp, equity: e.target.value })} placeholder={data.compensation?.equity ?? "Equity"} />
               <input className="input" value={comp.bonus} onChange={(e) => setComp({ ...comp, bonus: e.target.value })} placeholder={data.compensation?.bonus ?? "Bonus"} />
-              <select className="input" value={comp.offerStatus} onChange={(e) => setComp({ ...comp, offerStatus: e.target.value })}><option>NOT_DISCUSSED</option><option>DISCUSSED</option><option>VERBAL_OFFER</option><option>WRITTEN_OFFER</option><option>ACCEPTED</option><option>DECLINED</option></select>
+              <select className="input" value={comp.offerStatus} onChange={(e) => setComp({ ...comp, offerStatus: e.target.value })}>{offerStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
               <textarea className="input col-span-2" value={comp.negotiationNotes} onChange={(e) => setComp({ ...comp, negotiationNotes: e.target.value })} placeholder={data.compensation?.negotiationNotes ?? "Negotiation notes"} />
               <LoadingButton className="btn btn-primary" loading={saveComp.isPending} loadingLabel="Saving..." icon="save" onClick={() => saveComp.mutate()}>
                 Save compensation

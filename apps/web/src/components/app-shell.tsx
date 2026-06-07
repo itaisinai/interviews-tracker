@@ -10,7 +10,6 @@ const nav = [
   { to: "/interactions", label: "Interactions", icon: "forum" },
   { to: "/tasks", label: "Tasks", icon: "assignment_turned_in" },
   { to: "/compensation", label: "Compensation", icon: "payments" },
-  { to: "/parse", label: "Parse Job", icon: "auto_awesome" },
   { to: "/settings", label: "Settings", icon: "settings" }
 ];
 
@@ -38,13 +37,13 @@ export function AppShell() {
     .map((part) => part[0]?.toUpperCase())
     .join("");
   const activeNavItem = nav.find((item) => item.to === activeBase) ?? nav[0];
-  const mobileTitle = activeNavItem.to === "/" ? "CareerFlow" : activeNavItem.label;
-  const mobileIcon = activeNavItem.to === "/" ? "rocket_launch" : activeNavItem.icon;
+  const mobileTitle = activeBase === "/parse" ? "Parse Job" : activeNavItem.to === "/" ? "CareerFlow" : activeNavItem.label;
+  const mobileIcon = activeBase === "/parse" ? "auto_awesome" : activeNavItem.to === "/" ? "rocket_launch" : activeNavItem.icon;
   const avatar = user?.picture ?? null;
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <aside className="fixed left-0 top-0 z-50 hidden h-full w-[260px] flex-col border-r border-outline-variant bg-background py-6 md:flex">
+      <aside className="fixed left-0 top-0 z-50 hidden h-full w-[260px] flex-col border-r border-outline-variant bg-[#d7e8f4] py-6 md:flex">
         <div className="mb-8 px-6">
           <h1 className="font-headline-md text-headline-md font-bold text-on-background">CareerFlow</h1>
           <p className="font-label-md text-label-md text-on-surface-variant">Senior Workspace</p>
@@ -56,8 +55,8 @@ export function AppShell() {
               to={item.to}
               end={item.to === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-4 py-2 pl-4 pr-6 transition-colors hover:bg-surface-container-low ${
-                  isActive ? "border-l-2 border-primary bg-surface-container-low font-bold text-primary" : "font-medium text-on-surface-variant"
+                `flex items-center gap-4 py-2 pl-4 pr-6 transition-colors hover:bg-surface-container-low/80 ${
+                  isActive ? "border-l-2 border-primary bg-surface-container-lowest font-bold text-primary" : "font-medium text-on-surface-variant"
                 }`
               }
             >
@@ -71,17 +70,17 @@ export function AppShell() {
           ))}
         </nav>
         <div className="mt-auto space-y-1 border-t border-outline-variant px-6 pt-6">
-          <button className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low">
+          <button className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80">
             <MaterialIcon name="person" />
             <span className="min-w-0 truncate font-body-md text-body-md">{user?.email ?? displayName}</span>
           </button>
-          <button className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low" onClick={() => void logout({ logoutParams: { returnTo: window.location.origin } })}>
+          <button className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80" onClick={() => void logout({ logoutParams: { returnTo: window.location.origin } })}>
             <MaterialIcon name="logout" />
             <span className="font-body-md text-body-md">Logout</span>
           </button>
         </div>
       </aside>
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/90 backdrop-blur-md md:inset-x-auto md:left-[260px] md:right-0 md:z-40">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm md:inset-x-auto md:left-[260px] md:right-0 md:z-40">
         <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
           <div className="flex items-center gap-3 md:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary">
@@ -103,7 +102,7 @@ export function AppShell() {
               <MaterialIcon name="help_outline" />
             </button>
             <div className="hidden lg:block">
-              <button className="btn btn-primary rounded-full" onClick={() => navigate("/opportunities/new")}>
+              <button className="btn btn-primary rounded-full shadow-sm" onClick={() => navigate("/opportunities/new")}>
                 <MaterialIcon name="add" />
                 Add Opportunity
               </button>
@@ -126,7 +125,7 @@ export function AppShell() {
               to={item.to}
               end={item.to === "/"}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-1 py-2 text-[11px] transition-colors ${
+                `flex flex-col items-center justify-center gap-1 py-2 text-[10px] leading-none transition-colors ${
                   isActive ? "text-primary" : "text-on-surface-variant"
                 }`
               }
@@ -134,14 +133,14 @@ export function AppShell() {
               {({ isActive }) => (
                 <>
                   <MaterialIcon name={item.icon} filled={isActive} />
-                  <span className="font-label-sm text-[11px]">{item.label}</span>
+                  <span className="max-w-full truncate px-1 text-center font-label-sm text-[10px] leading-none">{item.label}</span>
                 </>
               )}
             </NavLink>
           ))}
         </div>
       </nav>
-      <main className="min-h-screen pt-16 pb-24 md:ml-[260px] md:pb-8">
+      <main className="min-h-screen pt-16 pb-24 md:ml-[260px] md:pb-8 md:overflow-x-hidden">
         <div className="mx-auto w-full max-w-[1280px] px-4 py-4 md:px-6 md:py-8">
           <Outlet />
         </div>
