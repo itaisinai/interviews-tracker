@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "../components/badge";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
+import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
 import { formatDate, initials, titleize } from "../lib/format";
 
@@ -15,7 +16,7 @@ export function OpportunitiesPage() {
   const [domainId, setDomainId] = useState("");
   const [sort, setSort] = useState("updated");
   const queryClient = useQueryClient();
-  const { data: options } = useQuery({ queryKey: ["options"], queryFn: api.options });
+  const { data: options, isLoading: optionsLoading, isError: optionsError, error: optionsErrorValue, refetch: refetchOptions, isFetching: optionsFetching } = useQuery({ queryKey: ["options"], queryFn: api.options });
   const query = useMemo(() => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
@@ -27,7 +28,7 @@ export function OpportunitiesPage() {
     const value = params.toString();
     return value ? `?${value}` : "";
   }, [domainId, pipeline, priority, search, sort, status]);
-  const { data = [] } = useQuery({ queryKey: ["opportunities", query], queryFn: () => api.opportunities(query) });
+  const { data = [], isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["opportunities", query], queryFn: () => api.opportunities(query) });
   const deleteOpportunity = useMutation({
     mutationFn: (id: string) => api.deleteOpportunity(id),
     onSuccess: () => {
@@ -36,6 +37,18 @@ export function OpportunitiesPage() {
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
     }
   });
+
+  if (optionsLoading || isLoading) {
+    return <PageLoadingState title="Opportunities" description="Loading your pipeline and filter options." />;
+  }
+
+  if (optionsError) {
+    return <PageErrorState title="Opportunities" description={optionsErrorValue instanceof Error ? optionsErrorValue.message : "Unable to load filter options."} onRetry={() => void refetchOptions()} />;
+  }
+
+  if (isError) {
+    return <PageErrorState title="Opportunities" description={error instanceof Error ? error.message : "Unable to load opportunities."} onRetry={() => void refetch()} />;
+  }
 
   return (
     <>
@@ -80,6 +93,7 @@ export function OpportunitiesPage() {
             <option value="updated">Recently Updated</option>
             <option value="nextInteraction">Next Interaction</option>
           </select>
+          {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
         </div>
       </div>
 
@@ -123,7 +137,7 @@ export function OpportunitiesPage() {
                     <td className="px-6 py-4 font-medium text-on-surface-variant">{next ? `${formatDate(next.date)} ${next.type}` : "-"}</td>
                     <td className="px-6 py-4 text-body-md font-medium text-primary">{item.nextStep ?? "-"}</td>
                     <td className="px-6 py-4 text-body-md italic text-on-surface-variant">{formatDate(item.updatedAt)}</td>
-                    <td className="px-6 py-4"><button className="text-error" onClick={() => { if (window.confirm(`Delete ${item.companyName} / ${item.roleTitle}?`)) deleteOpportunity.mutate(item.id); }}><MaterialIcon name="delete" /></button></td>
+                    <td className="px-6 py-4"><LoadingButton compact aria-label={`Delete ${item.companyName} / ${item.roleTitle}`} className="text-error" icon="delete" loading={deleteOpportunity.isPending && deleteOpportunity.variables === item.id} onClick={() => { if (window.confirm(`Delete ${item.companyName} / ${item.roleTitle}?`)) deleteOpportunity.mutate(item.id); }} /></td>
                   </tr>
                 );
               })}

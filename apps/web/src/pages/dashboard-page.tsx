@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "../components/badge";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
+import { InlineLoadingState, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
 import { formatDateTime } from "../lib/format";
 
@@ -17,9 +18,15 @@ const cardMeta = [
 ] as const;
 
 export function DashboardPage() {
-  const { data, isLoading } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
 
-  if (isLoading || !data) return <p className="font-body-md text-on-surface-variant">Loading dashboard...</p>;
+  if (isLoading || !data) {
+    return <PageLoadingState title="Dashboard" description="Loading your pipeline, tasks, and upcoming interactions." />;
+  }
+
+  if (isError) {
+    return <PageErrorState title="Dashboard" description={error instanceof Error ? error.message : "Unable to load the dashboard."} onRetry={() => void refetch()} />;
+  }
 
   return (
     <>
@@ -28,6 +35,7 @@ export function DashboardPage() {
         description={`Tracking ${data.counts.activeProcesses + data.counts.potential} opportunities across your network.`}
         actions={
           <>
+            {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
             <Link className="btn btn-secondary" to="/parse">
               <MaterialIcon name="description" />
               Parse Job Description

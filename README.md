@@ -231,7 +231,21 @@ The `Companies` page aggregates every company mentioned in job opportunities and
 - company profile fields such as size, stage, domains, work model, location, funding, product, traction, and tech stack
 - all interactions, notes, tasks, and compensation records connected to that company
 
-The company detail page includes an `Enrich` action. Paste company research, recruiter text, website snippets, or job descriptions, and the backend uses the AI parser to extract structured company details such as office days, tech stack, domain, location, size, funding, and investment rounds. The extracted data is saved back onto all matching opportunities for that company.
+The company detail page includes a `Research company` tool. It searches public sources for missing company facts and then shows a reviewable result with citations before saving the extracted data back onto matching opportunities for that company.
+
+## Company Research
+
+The company and opportunity detail pages include a `Research company` tool for filling missing company data from public web sources. It uses the Exa search API as the default provider and then asks OpenAI to structure the evidence into reviewable CRM fields.
+
+Set these local environment variables in the repository root `.env`:
+
+```env
+COMPANY_RESEARCH_PROVIDER=exa
+EXA_API_KEY=...
+OPENAI_API_KEY=...
+```
+
+The tool only searches fields that are missing. If funding already exists on the record, it skips funding research. When the research run completes, the UI shows the extracted result and source URLs before anything is saved.
 
 ## Scripts
 

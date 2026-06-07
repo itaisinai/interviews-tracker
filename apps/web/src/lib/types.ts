@@ -177,3 +177,45 @@ export type CompanyEnrichment = {
   officeDaysPerWeek: number | null;
   rawImportantNotes: string[];
 };
+
+export type CompanyResearchExistingData = {
+  funding?: string | null;
+  investmentRounds?: string | null;
+  customersTraction?: string | null;
+  companyDescription?: string | null;
+  productDescription?: string | null;
+  location?: string | null;
+  employees?: string | null;
+};
+
+export type CompanyResearchInput = {
+  companyName: string;
+  roleTitle?: string | null;
+  knownContext?: string | null;
+  existingCompanyData?: CompanyResearchExistingData | null;
+  forceResearch?: boolean;
+};
+
+export type CompanyResearchResult = {
+  companyName: string;
+  funding: string | null;
+  totalRaised: string | null;
+  roundsCount: number | null;
+  latestRound: string | null;
+  investors: string[];
+  investmentRounds: string | null;
+  employees: string | null;
+  location: string | null;
+  domains: string[];
+  customersTraction: string | null;
+  companyDescription: string | null;
+  productDescription: string | null;
+  sourceUrls: string[];
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  rawImportantNotes: string[];
+};
+
+export type CompanyResearchApplyResponse = {
+  research: CompanyResearchResult;
+  updatedOpportunities: number;
+};

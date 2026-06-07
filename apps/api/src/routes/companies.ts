@@ -1,10 +1,17 @@
 import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../lib/http.js";
+import { createTimer } from "../lib/logger.js";
 import { prisma } from "../lib/prisma.js";
 import { getAiParserService } from "../services/ai-parser-service.js";
+import { companyResearchApplyInputSchema, companyResearchInputSchema } from "../lib/schemas.js";
+import { buildResearchNote, getCompanyResearchService } from "../services/company-research-service.js";
 
 export const companiesRouter = Router();
+
+function isPresent(value: string | null | undefined) {
+  return typeof value === "string" && value.trim().length > 0;
+}
 
 const include = {
   employeesRange: true,
@@ -76,6 +83,7 @@ companiesRouter.delete("/:companyName", asyncHandler(async (request, response) =
 
 companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, response) => {
   const companyName = decodeURIComponent(request.params.companyName);
+  const timer = createTimer("route", "company enrich", { company: companyName });
   const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
   const enrichment = await getAiParserService().parseCompanyEnrichment(text);
   const targetName = enrichment.companyName ?? companyName;
@@ -116,5 +124,73 @@ companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, respon
     }
   }
 
+  timer.end({ updatedOpportunities: opportunities.length });
   response.json({ enrichment, updatedOpportunities: opportunities.length });
+}));
+
+companiesRouter.post("/:companyName/research", asyncHandler(async (request, response) => {
+  const companyName = decodeURIComponent(request.params.companyName);
+  const timer = createTimer("route", "company research", { company: companyName });
+  const input = companyResearchInputSchema.parse({ ...request.body, companyName });
+  const research = await getCompanyResearchService().research(input);
+
+  timer.end({ confidence: research.confidence });
+  response.json({ research });
+}));
+
+companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request, response) => {
+  const companyName = decodeURIComponent(request.params.companyName);
+  const timer = createTimer("route", "company research apply", { company: companyName });
+  const { targetOpportunityId, research } = companyResearchApplyInputSchema.parse(request.body);
+  const targetOpportunities = await prisma.jobOpportunity.findMany({
+    where: targetOpportunityId ? { id: targetOpportunityId } : { companyName },
+    select: {
+      id: true,
+      funding: true,
+      employeesRangeId: true,
+      location: true,
+      companyDescription: true,
+      productDescription: true,
+      customersTraction: true
+    }
+  });
+
+  if (targetOpportunities.length === 0) {
+    response.status(404).json({ message: "Company opportunity not found" });
+    return;
+  }
+
+  const employeesLabel = research.employees?.trim();
+  const employeesRange = employeesLabel ? await prisma.companySizeOption.upsert({
+    where: { label: employeesLabel },
+    create: { label: employeesLabel },
+    update: {}
+  }) : null;
+
+  for (const opportunity of targetOpportunities) {
+    await prisma.jobOpportunity.update({
+      where: { id: opportunity.id },
+      data: {
+        funding: isPresent(opportunity.funding) ? opportunity.funding : research.funding,
+        employeesRangeId: opportunity.employeesRangeId ?? employeesRange?.id ?? null,
+        location: isPresent(opportunity.location) ? opportunity.location : research.location,
+        companyDescription: isPresent(opportunity.companyDescription) ? opportunity.companyDescription : research.companyDescription,
+        productDescription: isPresent(opportunity.productDescription) ? opportunity.productDescription : research.productDescription,
+        customersTraction: isPresent(opportunity.customersTraction) ? opportunity.customersTraction : research.customersTraction
+      }
+    });
+  }
+
+  const noteTarget = targetOpportunities[0];
+  await prisma.note.create({
+    data: {
+      jobOpportunityId: noteTarget.id,
+      title: `Company research: ${research.companyName}`,
+      category: "Company Research",
+      content: buildResearchNote(research)
+    }
+  });
+
+  timer.end({ updatedOpportunities: targetOpportunities.length });
+  response.json({ research, updatedOpportunities: targetOpportunities.length });
 }));

@@ -1,4 +1,5 @@
 import { aiParseResponseSchema, companyEnrichmentSchema } from "../lib/schemas.js";
+import { createTimer } from "../lib/logger.js";
 import { buildJobParserSystemPrompt } from "./job-parser-skill.js";
 
 export type ParsedJobDescription = typeof aiParseResponseSchema._type;
@@ -140,6 +141,7 @@ export class OpenAiParserService implements AiParserService {
   }
 
   private async createStructuredOutput(input: { name: string; schema: unknown; systemPrompt: string; text: string }) {
+    const timer = createTimer("llm", `openai ${input.name}`, { model: this.model });
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -175,6 +177,7 @@ export class OpenAiParserService implements AiParserService {
     });
 
     if (!response.ok) {
+      timer.fail(new Error(`OpenAI parser failed: ${response.status}`), { name: input.name });
       throw new Error(`OpenAI parser failed: ${response.status} ${await response.text()}`);
     }
 
@@ -182,9 +185,11 @@ export class OpenAiParserService implements AiParserService {
     const outputText = payload.output_text ?? payload.output?.flatMap((item) => item.content ?? []).find((item) => item.type === "output_text")?.text;
 
     if (!outputText) {
+      timer.fail(new Error("OpenAI parser returned no text output."), { name: input.name });
       throw new Error("OpenAI parser returned no text output.");
     }
 
+    timer.end({ name: input.name });
     return outputText;
   }
 }

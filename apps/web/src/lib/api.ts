@@ -1,4 +1,5 @@
-import type { CompanyDetail, CompanyEnrichment, CompanySummary, Compensation, Interaction, Opportunity, OptionsResponse, ParsedJobDescription, Task } from "./types";
+import type { CompanyDetail, CompanyEnrichment, CompanyResearchApplyResponse, CompanyResearchInput, CompanyResearchResult, CompanySummary, Compensation, Interaction, Opportunity, OptionsResponse, ParsedJobDescription, Task } from "./types";
+import { getApiErrorMessage } from "./error";
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -36,7 +37,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers
   });
   if (!response.ok) {
-    throw new Error(await response.text());
+    throw new Error(await getApiErrorMessage(response));
   }
   if (response.status === 204) {
     return undefined as T;
@@ -70,6 +71,8 @@ export const api = {
   companies: () => request<CompanySummary[]>("/companies"),
   company: (companyName: string) => request<CompanyDetail>(`/companies/${encodeURIComponent(companyName)}`),
   enrichCompany: (companyName: string, text: string) => request<{ enrichment: CompanyEnrichment; updatedOpportunities: number }>(`/companies/${encodeURIComponent(companyName)}/enrich`, { method: "POST", body: JSON.stringify({ text }) }),
+  researchCompany: (companyName: string, body: CompanyResearchInput) => request<{ research: CompanyResearchResult }>(`/companies/${encodeURIComponent(companyName)}/research`, { method: "POST", body: JSON.stringify(body) }),
+  applyCompanyResearch: (companyName: string, body: { targetOpportunityId?: string | null; research: CompanyResearchResult }) => request<CompanyResearchApplyResponse>(`/companies/${encodeURIComponent(companyName)}/research/apply`, { method: "POST", body: JSON.stringify(body) }),
   deleteCompany: (companyName: string) => request<void>(`/companies/${encodeURIComponent(companyName)}`, { method: "DELETE" }),
   tasks: () => request<Task[]>("/tasks"),
   createTask: (body: unknown) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(body) }),
