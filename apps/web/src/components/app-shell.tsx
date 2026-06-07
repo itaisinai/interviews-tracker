@@ -126,7 +126,7 @@ export function AppShell() {
               to={item.to}
               end={item.to === "/"}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-1 py-2 text-[11px] transition-colors ${
+                `flex flex-col items-center justify-center gap-1 py-2 text-[10px] leading-none transition-colors ${
                   isActive ? "text-primary" : "text-on-surface-variant"
                 }`
               }
@@ -134,7 +134,7 @@ export function AppShell() {
               {({ isActive }) => (
                 <>
                   <MaterialIcon name={item.icon} filled={isActive} />
-                  <span className="font-label-sm text-[11px]">{item.label}</span>
+                  <span className="max-w-full truncate px-1 text-center font-label-sm text-[10px] leading-none">{item.label === "Parse Job" ? "Parse" : item.label}</span>
                 </>
               )}
             </NavLink>
