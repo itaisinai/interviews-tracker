@@ -8,7 +8,8 @@ import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
-import { formatDateTime, initials, titleize } from "../lib/format";
+import { formatDateTime, initials } from "../lib/format";
+import { offerStatusOptions, labelForPipelineType } from "../lib/enum-labels";
 
 export function OpportunityDetailPage() {
   const { id = "" } = useParams();
@@ -65,7 +66,7 @@ export function OpportunityDetailPage() {
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-on-primary-container font-geist text-lg font-bold text-white">{initials(data.companyName)}</div>
         <Badge value={data.status} />
         <Badge value={data.priority} />
-        <Badge value={data.pipelineType}>{data.pipelineType === "POTENTIAL" ? "Potential / Research" : titleize(data.pipelineType)}</Badge>
+        <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
       </div>
 
       <CompanyResearchPanel
@@ -223,7 +224,7 @@ export function OpportunityDetailPage() {
               <input className="input" value={comp.baseSalary} onChange={(e) => setComp({ ...comp, baseSalary: e.target.value })} placeholder={data.compensation?.baseSalary ?? "Base salary"} />
               <input className="input" value={comp.equity} onChange={(e) => setComp({ ...comp, equity: e.target.value })} placeholder={data.compensation?.equity ?? "Equity"} />
               <input className="input" value={comp.bonus} onChange={(e) => setComp({ ...comp, bonus: e.target.value })} placeholder={data.compensation?.bonus ?? "Bonus"} />
-              <select className="input" value={comp.offerStatus} onChange={(e) => setComp({ ...comp, offerStatus: e.target.value })}><option>NOT_DISCUSSED</option><option>DISCUSSED</option><option>VERBAL_OFFER</option><option>WRITTEN_OFFER</option><option>ACCEPTED</option><option>DECLINED</option></select>
+              <select className="input" value={comp.offerStatus} onChange={(e) => setComp({ ...comp, offerStatus: e.target.value })}>{offerStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
               <textarea className="input col-span-2" value={comp.negotiationNotes} onChange={(e) => setComp({ ...comp, negotiationNotes: e.target.value })} placeholder={data.compensation?.negotiationNotes ?? "Negotiation notes"} />
               <LoadingButton className="btn btn-primary" loading={saveComp.isPending} loadingLabel="Saving..." icon="save" onClick={() => saveComp.mutate()}>
                 Save compensation

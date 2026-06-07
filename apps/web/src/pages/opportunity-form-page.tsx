@@ -7,6 +7,7 @@ import { MaterialIcon } from "../components/material-icon";
 import { LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { ParserLoadingState } from "../components/parser-loading-state";
 import { api } from "../lib/api";
+import { jobStatusOptions, pipelineTypeOptions, priorityOptions } from "../lib/enum-labels";
 import type { JobStatus, PipelineType, Priority } from "../lib/types";
 import type { ParserRunState } from "../lib/parser-run";
 
@@ -297,9 +298,9 @@ export function OpportunityFormPage() {
           ) : null}
           <Field label="Company name"><input className="input" {...register("companyName", { required: true })} /></Field>
           <Field label="Role title"><input className="input" {...register("roleTitle", { required: true })} /></Field>
-          <Field label="Pipeline type"><select className="input" {...register("pipelineType")}><option>POTENTIAL</option><option>ACTIVE_PROCESS</option><option>ARCHIVED</option></select></Field>
-          <Field label="Status"><select className="input" {...register("status")}>{statuses.map((item) => <option key={item}>{item}</option>)}</select></Field>
-          <Field label="Priority"><select className="input" {...register("priority")}><option>HIGH</option><option>MEDIUM</option><option>LOW</option><option>MAYBE</option></select></Field>
+          <Field label="Pipeline type"><select className="input" {...register("pipelineType")}>{pipelineTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
+          <Field label="Status"><select className="input" {...register("status")}>{jobStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
+          <Field label="Priority"><select className="input" {...register("priority")}>{priorityOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
           <Field label="Referrer / connection"><input className="input" {...register("referrerOrConnection")} /></Field>
           <Field label="Job URL"><input className="input" {...register("jobUrl")} /></Field>
           <Field label="Source"><input className="input" {...register("source")} /></Field>
