@@ -9,6 +9,7 @@ import {
   getOpportunityHandler,
   listOpportunityInteractionsHandler,
   listOpportunitiesHandler,
+  parseOpportunityInteractionTextHandler,
   parseOpportunityGmailEmailHandler,
   searchOpportunityGmailHandler,
   updateOpportunityHandler
@@ -65,6 +66,16 @@ opportunitiesRouter.get("/:id/gmail/search", asyncHandler(async (request, respon
 
 opportunitiesRouter.post("/:id/gmail/parse-email", asyncHandler(async (request, response) => {
   const result = await parseOpportunityGmailEmailHandler(request);
+  if (!result) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  response.json(result);
+}));
+
+opportunitiesRouter.post("/:id/interactions/parse-text", asyncHandler(async (request, response) => {
+  const result = await parseOpportunityInteractionTextHandler(request);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;

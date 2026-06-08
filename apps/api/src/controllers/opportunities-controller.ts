@@ -2,9 +2,11 @@ import type { Request } from "express";
 import { z } from "zod";
 import { createTimer } from "../lib/logger.js";
 import { interactionInputSchema, noteInputSchema, taskInputSchema, opportunityInputSchema } from "../lib/schemas.js";
-import { getOpportunitySummaryRecord, listOpportunityInteractionsRecord, createOpportunityInteractionRecord, createOpportunityNoteRecord, createOpportunityTaskRecord } from "../repositories/opportunity-repository.js";
+import { getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord, createOpportunityNoteRecord, createOpportunityTaskRecord } from "../repositories/opportunity-repository.js";
 import { createOpportunity, deleteOpportunity, getOpportunity, listOpportunities, updateOpportunity } from "../services/opportunities/opportunity-service.js";
+import { createInteraction as createInteractionRecord } from "../services/interactions/interaction-service.js";
 import { parseGmailEmailToInteraction, searchGmailMessages } from "../services/gmail/gmail-service.js";
+import { getAiParserService } from "../services/ai/ai-parser-service.js";
 
 type AuthenticatedRequest = Request & { auth?: { email?: string | null } };
 
@@ -34,7 +36,7 @@ export function listOpportunityInteractionsHandler(request: Request) {
 
 export function createOpportunityInteractionHandler(request: Request) {
   const input = interactionInputSchema.parse(request.body);
-  return createOpportunityInteractionRecord(request.params.id, input);
+  return createInteractionRecord({ ...input, jobOpportunityId: request.params.id });
 }
 
 export function createOpportunityNoteHandler(request: Request) {
@@ -83,4 +85,27 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
   });
   timer.end({ company: opportunity.companyName });
   return result;
+}
+
+export async function parseOpportunityInteractionTextHandler(request: AuthenticatedRequest) {
+  const opportunity = await getOpportunityRecord(request.params.id);
+
+  if (!opportunity) {
+    return null;
+  }
+
+  const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
+  const timer = createTimer("ai", "parse opportunity interaction text", {
+    company: opportunity.companyName,
+    role: opportunity.roleTitle
+  });
+  const result = await getAiParserService().parseInteractionText({
+    companyName: opportunity.companyName,
+    roleTitle: opportunity.roleTitle,
+    opportunityContext: `Status: ${opportunity.status} · Pipeline: ${opportunity.pipelineType} · Next step: ${opportunity.nextStep ?? "None"}${opportunity.notes ? ` · Notes: ${opportunity.notes}` : ""}`,
+    text,
+    nowIso: new Date().toISOString()
+  });
+  timer.end({ company: opportunity.companyName });
+  return { interaction: result };
 }

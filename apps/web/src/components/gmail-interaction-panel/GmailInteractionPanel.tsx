@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { interactionStatusOptions, interactionTypeOptions, normalizeInteractionType } from "../../lib/enum-labels";
 import { getErrorMessage } from "../../lib/error";
 import type { GmailFlowState } from "../../lib/gmail";
 import { gmailFlowMeta } from "../../lib/gmail";
@@ -8,7 +9,8 @@ import type {
   GmailEmailExtractionAnalysis,
   GmailInteractionDraft,
   GmailSearchCandidate,
-  GmailStructuredEmail
+  GmailStructuredEmail,
+  Interaction
 } from "../../lib/types";
 import { InlineLoadingState, LoadingButton, ProcessStateCard } from "../loading-state";
 import { MaterialIcon } from "../material-icon";
@@ -17,7 +19,7 @@ type GmailInteractionPanelProps = {
   opportunityId: string;
   companyName: string;
   roleTitle: string;
-  onSaved?: () => void;
+  onSaved?: (interaction?: Interaction) => void;
 };
 
 function sleep(ms: number) {
@@ -195,7 +197,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
 
       setSelectedEmail(response.email);
       setAnalysis(response.analysis);
-      setDraft(response.interaction);
+      setDraft({ ...response.interaction, type: normalizeInteractionType(response.interaction.type) });
       setFlowState("ready_for_review");
       setMessage("Ready for review.");
     } catch (caughtError) {
@@ -233,7 +235,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
 
       return api.createInteraction(opportunityId, draft);
     },
-    onSuccess: () => {
+    onSuccess: (savedInteraction) => {
       void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
       void queryClient.invalidateQueries({ queryKey: ["company", companyName] });
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
@@ -241,12 +243,12 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setSaveMessage("Interaction created.");
-    setDraft(null);
-    setSelectedEmail(null);
-    setSelectedCandidate(null);
-    setAnalysis(null);
-    onSaved?.();
-  },
+      setDraft(null);
+      setSelectedEmail(null);
+      setSelectedCandidate(null);
+      setAnalysis(null);
+      onSaved?.(savedInteraction);
+    },
     onError: (caughtError) => {
       setSaveError(getErrorMessage(caughtError));
     }
@@ -433,17 +435,24 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
               />
             </Field>
             <Field label="Type">
-              <input className="input" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })} />
+              <select className="input" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as GmailInteractionDraft["type"] })}>
+                {interactionTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </Field>
             <Field label="Stage">
               <input className="input" value={draft.stage ?? ""} onChange={(event) => setDraft({ ...draft, stage: event.target.value || null })} />
             </Field>
             <Field label="Status">
               <select className="input" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as GmailInteractionDraft["status"] })}>
-                <option value="SCHEDULED">SCHEDULED</option>
-                <option value="DONE">DONE</option>
-                <option value="CANCELLED">CANCELLED</option>
-                <option value="NEEDS_FOLLOW_UP">NEEDS_FOLLOW_UP</option>
+                {interactionStatusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label="Person name">

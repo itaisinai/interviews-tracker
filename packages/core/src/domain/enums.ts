@@ -19,7 +19,20 @@ export const jobStatusSchema = z.enum([
   "PAUSED",
   "NOT_RELEVANT"
 ]);
-export const interactionStatusSchema = z.enum(["SCHEDULED", "DONE", "CANCELLED", "NEEDS_FOLLOW_UP"]);
+export const interactionStatusSchema = z.enum(["SCHEDULED", "DONE", "REJECTED", "CANCELLED", "NEEDS_FOLLOW_UP"]);
+export const interactionTypeSchema = z.enum([
+  "Email",
+  "Phone Call",
+  "Interview",
+  "Technical Interview",
+  "HR Screen",
+  "Recruiter Screen",
+  "Onsite",
+  "Home Assignment",
+  "Follow-up",
+  "Offer",
+  "Rejection"
+]);
 export const taskStatusSchema = z.enum(["PENDING", "IN_PROGRESS", "DONE", "CANCELLED"]);
 export const offerStatusSchema = z.enum(["NOT_DISCUSSED", "DISCUSSED", "VERBAL_OFFER", "WRITTEN_OFFER", "ACCEPTED", "DECLINED"]);
 
@@ -27,6 +40,7 @@ export type PipelineType = z.infer<typeof pipelineTypeSchema>;
 export type Priority = z.infer<typeof prioritySchema>;
 export type JobStatus = z.infer<typeof jobStatusSchema>;
 export type InteractionStatus = z.infer<typeof interactionStatusSchema>;
+export type InteractionType = z.infer<typeof interactionTypeSchema>;
 export type TaskStatus = z.infer<typeof taskStatusSchema>;
 export type OfferStatus = z.infer<typeof offerStatusSchema>;
 

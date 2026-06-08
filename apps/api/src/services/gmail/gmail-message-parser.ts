@@ -451,7 +451,39 @@ function inferTypeFromEmail(email: GmailStructuredEmail) {
     return "Home Assignment";
   }
 
-  if (/interview|screening|onsite|phone screen/i.test(text) || email.calendar) {
+  if (/phone call|phone interview|phone screen|screening call/i.test(text)) {
+    return "Phone Call";
+  }
+
+  if (/technical interview|technical round/i.test(text)) {
+    return "Technical Interview";
+  }
+
+  if (/hr screen|human resources screen/i.test(text)) {
+    return "HR Screen";
+  }
+
+  if (/recruiter screen|recruiter call/i.test(text)) {
+    return "Recruiter Screen";
+  }
+
+  if (/onsite/i.test(text)) {
+    return "Onsite";
+  }
+
+  if (/offer/i.test(text)) {
+    return "Offer";
+  }
+
+  if (/reject|not.*moving forward|moving on|not a fit|declin/i.test(text)) {
+    return "Rejection";
+  }
+
+  if (/follow[- ]up/i.test(text)) {
+    return "Follow-up";
+  }
+
+  if (/interview|screening/i.test(text) || email.calendar) {
     return "Interview";
   }
 
@@ -460,6 +492,10 @@ function inferTypeFromEmail(email: GmailStructuredEmail) {
 
 function inferStatusFromEmail(email: GmailStructuredEmail, meetingDate: string | null) {
   const text = `${email.subject}\n${email.plainText}\n${email.calendar?.summary ?? ""}`.toLowerCase();
+
+  if (/reject|not.*moving forward|moving on|not a fit|no longer/i.test(text)) {
+    return "REJECTED";
+  }
 
   if (/cancel|canceled|cancelled|resched|re-sched|postpone/i.test(text)) {
     return /cancel/i.test(text) ? "CANCELLED" : "NEEDS_FOLLOW_UP";
@@ -535,18 +571,41 @@ export async function parseStructuredGmailEmail(input: {
   };
 }
 
-export function buildGmailSearchQueries(companyName: string, roleTitle?: string | null) {
-  const queries = [
-    `${companyName} newer_than:365d`,
-    `"${companyName}" interview newer_than:365d`,
-    `"${companyName}" (interview OR recruiter OR assignment OR offer OR rejection) newer_than:365d`
-  ];
+function buildCompanySearchVariants(companyName: string) {
+  const variants = new Set<string>();
+  const normalized = companyName.trim();
 
-  if (roleTitle?.trim()) {
-    queries.push(`"${companyName}" "${roleTitle.trim()}" newer_than:365d`);
+  if (!normalized) {
+    return [];
   }
 
-  return [...new Set(queries)];
+  variants.add(normalized);
+
+  if (/\.ai\b/i.test(normalized)) {
+    const withoutAiSuffix = normalized.replace(/\.ai\b/gi, "").replace(/\s+/g, " ").trim();
+    if (withoutAiSuffix) {
+      variants.add(withoutAiSuffix);
+    }
+  }
+
+  return [...variants];
+}
+
+export function buildGmailSearchQueries(companyName: string, roleTitle?: string | null) {
+  const companyVariants = buildCompanySearchVariants(companyName);
+  const queries = new Set<string>();
+
+  for (const variant of companyVariants) {
+    queries.add(`${variant} newer_than:365d`);
+    queries.add(`"${variant}" interview newer_than:365d`);
+    queries.add(`"${variant}" (interview OR recruiter OR assignment OR offer OR rejection) newer_than:365d`);
+
+    if (roleTitle?.trim()) {
+      queries.add(`"${variant}" "${roleTitle.trim()}" newer_than:365d`);
+    }
+  }
+
+  return [...queries];
 }
 
 export function extractStructuredEmailMeetingDate(email: GmailStructuredEmail) {
@@ -633,7 +692,7 @@ export function classifySearchCandidateFallback(input: {
 
   let emailType: GmailSearchCandidateClassification["emailType"] = "UNRELATED";
   if (/offer/.test(text)) emailType = "OFFER";
-  else if (/rejection|sorry|not moving forward/.test(text)) emailType = "REJECTION";
+  else if (/rejection|sorry|not.*moving forward/.test(text)) emailType = "REJECTION";
   else if (/assignment|take-home|take home/.test(text)) emailType = "FOLLOW_UP";
   else if (/interview|screening|onsite|phone screen/.test(text)) emailType = "INTERVIEW_INVITATION";
   else if (/follow[- ]up|checking in|next steps|reschedule|schedule/.test(text)) emailType = "FOLLOW_UP";
