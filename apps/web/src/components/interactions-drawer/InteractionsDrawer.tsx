@@ -6,6 +6,7 @@ import {
 } from "../loading-state";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
 import { Badge } from "../badge";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
@@ -256,6 +257,16 @@ export function InteractionsDrawer({
             </p>
           </div>
           <div className="flex items-start gap-2">
+            {opportunity?.companyName ? (
+              <Link
+                className="btn btn-secondary"
+                to={`/companies/${encodeURIComponent(opportunity.companyName)}`}
+                title={`Open ${opportunity.companyName} company page`}
+              >
+                <MaterialIcon name="business" />
+                Company
+              </Link>
+            ) : null}
             <button className="btn btn-secondary" onClick={onClose}>
               <MaterialIcon name="close" />
               Close
