@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { InteractionType } from "@interviews-tracker/core";
 
 export type GmailRawMessageHeader = {
   name?: string;
@@ -58,9 +59,9 @@ export type GmailMeetingDateSource = "calendar" | "text" | "header";
 export type GmailDerivedInteraction = {
   date: string;
   dateSource: GmailMeetingDateSource;
-  type: string;
+  type: InteractionType;
   stage: string | null;
-  status: "SCHEDULED" | "DONE" | "CANCELLED" | "NEEDS_FOLLOW_UP";
+  status: "SCHEDULED" | "DONE" | "REJECTED" | "CANCELLED" | "NEEDS_FOLLOW_UP";
   personName: string | null;
   personRole: string | null;
   agenda: string | null;

@@ -3,6 +3,7 @@ export type {
   Priority,
   JobStatus,
   InteractionStatus,
+  InteractionType,
   TaskStatus,
   OfferStatus,
   Option,
@@ -22,7 +23,8 @@ export type {
   CompanyResearchExistingData,
   CompanyResearchInput,
   CompanyResearchResult,
-  CompanyResearchApplyResponse
+  CompanyResearchApplyResponse,
+  InteractionDraft
 } from "@interviews-tracker/ai";
 
 export type {

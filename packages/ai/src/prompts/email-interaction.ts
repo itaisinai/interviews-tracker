@@ -1,3 +1,5 @@
+import { interactionTypeSchema } from "@interviews-tracker/core";
+
 export const emailInteractionParserSkill = `
 # Email Interaction Parser Skill
 
@@ -27,17 +29,20 @@ export const emailInteractionParserSkill = `
 
 ## Type Rules
 
+- Type must be exactly one of: ${interactionTypeSchema.options.join(", ")}.
 - Calendar or interview invitation => Interview
+- If the subject/body/calendar title explicitly says Phone Call, type must be Phone Call.
+- If the invite is clearly a phone call, do not collapse it into a generic Interview.
 - Recruiter outreach or general recruiter message => Email
 - Assignment message => Home Assignment
-- Follow-up message => Follow-up Email
-- Rejection => Rejection
+- Follow-up message => Follow-up
 - Offer => Offer
 
 ## Status Rules
 
 - Future meeting invite => SCHEDULED
 - Past meeting summary or completed interaction => DONE
+- Explicit rejection or rejection follow-up => REJECTED
 - Cancellation or reschedule => CANCELLED or NEEDS_FOLLOW_UP
 - When unsure, prefer NEEDS_FOLLOW_UP over inventing a completed state.
 

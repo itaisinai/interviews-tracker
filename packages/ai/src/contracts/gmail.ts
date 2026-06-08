@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { interactionStatusSchema } from "@interviews-tracker/core";
+import { gmailInteractionDraftSchema } from "./interaction.js";
 
 export const gmailEmailExtractionAnalysisSchema = z.object({
   dateSource: z.enum(["calendar", "text", "header"]),
@@ -23,19 +23,6 @@ export const gmailEmailClassificationSchema = z.object({
     "UNRELATED"
   ]),
   reason: z.string().min(1)
-});
-
-export const gmailInteractionDraftSchema = z.object({
-  date: z.string().min(1),
-  type: z.string().min(1),
-  stage: z.string().nullish(),
-  status: interactionStatusSchema,
-  personName: z.string().nullable(),
-  personRole: z.string().nullable(),
-  agenda: z.string().nullable(),
-  notes: z.string().nullable(),
-  outcome: z.string().nullable(),
-  followUp: z.string().nullable()
 });
 
 export type GmailEmailExtractionAnalysis = z.infer<typeof gmailEmailExtractionAnalysisSchema>;

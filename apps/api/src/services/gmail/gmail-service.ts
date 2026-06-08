@@ -10,6 +10,7 @@ import {
 } from "../../lib/schemas.js";
 import { prisma } from "../../lib/prisma.js";
 import { createTimer, logInfo } from "../../lib/logger.js";
+import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
 import { getAiParserService } from "../ai/ai-parser-service.js";
 import {
   buildGmailSearchQueries,
@@ -528,29 +529,6 @@ function extractDateComponents(text: string) {
   return null;
 }
 
-function inferInteractionType(text: string) {
-  if (/phone interview|phone screen|screening call/i.test(text)) return "Phone Interview";
-  if (/recruiter call|intro call|intro chat/i.test(text)) return "Recruiter Call";
-  if (/technical interview|technical round/i.test(text)) return "Technical Interview";
-  if (/final interview|final round/i.test(text)) return "Final Interview";
-  if (/take-home|take home|assignment/i.test(text)) return "Take-home Assignment";
-  if (/follow[- ]up/i.test(text)) return "Follow-up";
-  return "Email";
-}
-
-function inferInteractionStage(text: string) {
-  if (/phone interview|phone screen|screening call/i.test(text)) return "Phone Interview";
-  if (/recruiter call|intro call|intro chat/i.test(text)) return "Recruiter Call";
-  if (/technical interview|technical round/i.test(text)) return "Technical Interview";
-  if (/final interview|final round/i.test(text)) return "Final Interview";
-  if (/take-home|take home|assignment/i.test(text)) return "Assignment";
-  return null;
-}
-
-function extractScheduledDate(text: string) {
-  return extractDateComponents(text);
-}
-
 function mapMessageCandidate(message: GmailMessageResponse): GmailMessageCandidate {
   const headers = message.payload?.headers ?? [];
 
@@ -796,16 +774,8 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
 
     const parsedInteraction = gmailInteractionDraftSchema.parse({
       ...aiInteraction,
-      date: derived.date,
-      type: derived.type,
-      stage: derived.stage,
-      status: derived.status,
-      personName: derived.personName,
-      personRole: aiInteraction.personRole ?? derived.personRole,
-      agenda: aiInteraction.agenda ?? derived.agenda,
-      notes: [derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null,
-      outcome: aiInteraction.outcome ?? derived.outcome,
-      followUp: aiInteraction.followUp ?? derived.followUp
+      date: aiInteraction.date?.trim() ? aiInteraction.date : derived.date,
+      notes: [derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null
     });
 
     const analysis = gmailEmailExtractionAnalysisSchema.parse({
@@ -825,7 +795,7 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
     timer.end({ company: input.companyName });
     return {
       email,
-      interaction: parsedInteraction,
+      interaction: promoteOverdueInteractionStatusForRead(parsedInteraction),
       analysis
     };
   } catch (error) {

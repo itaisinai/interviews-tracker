@@ -41,6 +41,7 @@ enum JobStatus {
 enum InteractionStatus {
   SCHEDULED
   DONE
+  REJECTED
   CANCELLED
   NEEDS_FOLLOW_UP
 }

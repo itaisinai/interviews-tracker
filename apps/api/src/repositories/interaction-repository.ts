@@ -1,19 +1,30 @@
 import { prisma } from "../lib/prisma.js";
 import { interactionInputSchema } from "../lib/schemas.js";
 import type { z } from "zod";
+import {
+  normalizeOverdueScheduledInteractionsForRead,
+  promoteOverdueInteractionStatusForRead,
+  promoteOverdueInteractionsForRead
+} from "./interaction-read-normalizer.js";
+import { syncOpportunityStatusRecord } from "./opportunity-repository.js";
 
 export type InteractionInput = z.infer<typeof interactionInputSchema>;
 
 export async function listInteractionRecords() {
-  return prisma.interaction.findMany({
+  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead();
+  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id)));
+
+  const interactions = await prisma.interaction.findMany({
     include: { jobOpportunity: true },
     orderBy: { date: "asc" }
   });
+
+  return promoteOverdueInteractionsForRead(interactions);
 }
 
 export async function createInteractionRecord(input: InteractionInput & { jobOpportunityId: string }) {
   const { jobOpportunityId, ...rest } = input;
-  return prisma.interaction.create({
+  const interaction = await prisma.interaction.create({
     data: {
       ...rest,
       date: new Date(rest.date),
@@ -21,10 +32,13 @@ export async function createInteractionRecord(input: InteractionInput & { jobOpp
     },
     include: { jobOpportunity: true }
   });
+
+  return promoteOverdueInteractionStatusForRead(interaction);
 }
 
 export async function updateInteractionRecord(id: string, input: InteractionInput) {
-  return prisma.interaction.update({ where: { id }, data: { ...input, date: new Date(input.date) } });
+  const interaction = await prisma.interaction.update({ where: { id }, data: { ...input, date: new Date(input.date) }, include: { jobOpportunity: true } });
+  return promoteOverdueInteractionStatusForRead(interaction);
 }
 
 export async function deleteInteractionRecord(id: string) {
@@ -32,10 +46,17 @@ export async function deleteInteractionRecord(id: string) {
 }
 
 export async function listOpportunityInteractionRecords(opportunityId: string) {
-  return prisma.interaction.findMany({
+  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead();
+  if (opportunityIds.includes(opportunityId)) {
+    await syncOpportunityStatusRecord(opportunityId);
+  }
+
+  const interactions = await prisma.interaction.findMany({
     where: { jobOpportunityId: opportunityId },
     orderBy: { date: "asc" }
   });
+
+  return promoteOverdueInteractionsForRead(interactions);
 }
 
 export async function createOpportunityInteractionRecord(opportunityId: string, input: InteractionInput) {
@@ -45,12 +66,17 @@ export async function createOpportunityInteractionRecord(opportunityId: string, 
 }
 
 export async function findUpcomingInteractionRecords(limit = 8) {
+  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead();
+  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id)));
+
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
-  return prisma.interaction.findMany({
+  const interactions = await prisma.interaction.findMany({
     where: { date: { gte: today } },
     include: { jobOpportunity: true },
     orderBy: { date: "asc" },
     take: limit
   });
+
+  return promoteOverdueInteractionsForRead(interactions);
 }

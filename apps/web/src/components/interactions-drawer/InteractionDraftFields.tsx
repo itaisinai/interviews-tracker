@@ -1,0 +1,88 @@
+import type { Dispatch, ReactNode, SetStateAction } from "react";
+import { interactionStatusOptions, interactionTypeOptions } from "../../lib/enum-labels";
+import type { InteractionDraft } from "../../lib/types";
+
+type InteractionDraftFieldsProps = {
+  draft: InteractionDraft;
+  setDraft: Dispatch<SetStateAction<InteractionDraft | null>>;
+};
+
+export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFieldsProps) {
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <Field label="Date">
+        <input
+          className="input"
+          type="datetime-local"
+          value={toDatetimeLocalValue(draft.date)}
+          onChange={(event) => setDraft({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })}
+        />
+      </Field>
+      <Field label="Type">
+        <select className="input" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as InteractionDraft["type"] })}>
+          {interactionTypeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Stage">
+        <input className="input" value={draft.stage ?? ""} onChange={(event) => setDraft({ ...draft, stage: event.target.value || null })} />
+      </Field>
+      <Field label="Status">
+        <select className="input" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as InteractionDraft["status"] })}>
+          {interactionStatusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Person name">
+        <input className="input" value={draft.personName ?? ""} onChange={(event) => setDraft({ ...draft, personName: event.target.value || null })} />
+      </Field>
+      <Field label="Person role">
+        <input className="input" value={draft.personRole ?? ""} onChange={(event) => setDraft({ ...draft, personRole: event.target.value || null })} />
+      </Field>
+      <Field label="Agenda">
+        <textarea className="input min-h-24" value={draft.agenda ?? ""} onChange={(event) => setDraft({ ...draft, agenda: event.target.value || null })} />
+      </Field>
+      <Field label="Notes">
+        <textarea className="input min-h-24" value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })} />
+      </Field>
+      <Field label="Outcome">
+        <textarea className="input min-h-24" value={draft.outcome ?? ""} onChange={(event) => setDraft({ ...draft, outcome: event.target.value || null })} />
+      </Field>
+      <Field label="Follow-up">
+        <textarea className="input min-h-24" value={draft.followUp ?? ""} onChange={(event) => setDraft({ ...draft, followUp: event.target.value || null })} />
+      </Field>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="space-y-1">
+      <span className="label">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function toDatetimeLocalValue(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const pad = (input: number) => String(input).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { interactionStatusSchema, jobStatusSchema, offerStatusSchema, pipelineTypeSchema, prioritySchema, taskStatusSchema, type InteractionStatus, type JobStatus, type OfferStatus, type PipelineType, type Priority, type TaskStatus, type Option } from "./enums.js";
+import { interactionStatusSchema, interactionTypeSchema, jobStatusSchema, offerStatusSchema, pipelineTypeSchema, prioritySchema, taskStatusSchema, type InteractionStatus, type InteractionType, type JobStatus, type OfferStatus, type PipelineType, type Priority, type TaskStatus, type Option } from "./enums.js";
 
 export const opportunityInputSchema = z.object({
   companyName: z.string().min(1),
@@ -28,7 +28,7 @@ export const opportunityInputSchema = z.object({
 
 export const interactionInputSchema = z.object({
   date: z.string().datetime().or(z.string().min(1)),
-  type: z.string().min(1),
+  type: interactionTypeSchema,
   stage: z.string().nullish(),
   status: interactionStatusSchema,
   personName: z.string().nullish(),
@@ -108,7 +108,7 @@ export type Interaction = {
   id: string;
   jobOpportunityId: string;
   date: string;
-  type: string;
+  type: InteractionType;
   stage?: string | null;
   status: InteractionStatus;
   personName?: string | null;

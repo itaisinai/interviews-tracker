@@ -1,5 +1,5 @@
 import type { CompanyDetail, CompanySummary, Compensation, Interaction, Opportunity, OptionsResponse, Task } from "@interviews-tracker/core";
-import type { CompanyEnrichment, CompanyResearchApplyResponse, CompanyResearchInput, CompanyResearchResult, ParsedJobDescription } from "@interviews-tracker/ai";
+import type { CompanyEnrichment, CompanyResearchApplyResponse, CompanyResearchInput, CompanyResearchResult, InteractionDraft, ParsedJobDescription } from "@interviews-tracker/ai";
 import type { GmailConnectResponse, GmailSearchResponse, GmailStatus, GmailStructuredEmail } from "@interviews-tracker/integrations";
 import { getApiErrorMessage } from "./error.js";
 
@@ -9,7 +9,7 @@ type AccessTokenGetter = () => Promise<string>;
 
 export type GmailParsedEmailResponse = {
   email: GmailStructuredEmail;
-  interaction: import("@interviews-tracker/ai").GmailInteractionDraft;
+  interaction: InteractionDraft;
   analysis: import("@interviews-tracker/ai").GmailEmailExtractionAnalysis;
 };
 
@@ -72,6 +72,7 @@ export const api = {
   updateOpportunity: (id: string, body: unknown) => request<Opportunity>(`/opportunities/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteOpportunity: (id: string) => request<void>(`/opportunities/${id}`, { method: "DELETE" }),
   createInteraction: (id: string, body: unknown) => request<Interaction>(`/opportunities/${id}/interactions`, { method: "POST", body: JSON.stringify(body) }),
+  updateInteraction: (id: string, body: unknown) => request<Interaction>(`/interactions/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   createOpportunityNote: (id: string, body: unknown) => request(`/opportunities/${id}/notes`, { method: "POST", body: JSON.stringify(body) }),
   createOpportunityTask: (id: string, body: unknown) => request<Task>(`/opportunities/${id}/tasks`, { method: "POST", body: JSON.stringify(body) }),
   interactions: () => request<Interaction[]>("/interactions"),
@@ -87,6 +88,7 @@ export const api = {
   gmailConnect: (body: { returnTo?: string }) => request<GmailConnectResponse>("/gmail/connect", { method: "POST", body: JSON.stringify(body) }),
   gmailSearch: (id: string) => request<GmailSearchResponse>(`/opportunities/${id}/gmail/search`),
   gmailParseEmail: (id: string, body: { messageId: string }) => request<GmailParsedEmailResponse>(`/opportunities/${id}/gmail/parse-email`, { method: "POST", body: JSON.stringify(body) }),
+  parseOpportunityInteractionText: (id: string, body: { text: string }) => request<{ interaction: InteractionDraft }>(`/opportunities/${id}/interactions/parse-text`, { method: "POST", body: JSON.stringify(body) }),
   tasks: () => request<Task[]>("/tasks"),
   createTask: (body: unknown) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(body) }),
   deleteTask: (id: string) => request<void>(`/tasks/${id}`, { method: "DELETE" }),

@@ -28,8 +28,13 @@ export function formatDateTime(value?: string | null) {
 }
 
 export function statusTone(status: JobStatus | string) {
+  if (status === "DONE") return "green";
+  if (status === "REJECTED") return "red";
+  if (status === "SCHEDULED") return "blue";
+  if (status === "CANCELLED") return "muted";
+  if (status === "NEEDS_FOLLOW_UP") return "warning";
   if (status === "PHONE_SCHEDULED" || status === "PHONE_DONE" || status === "TECHNICAL_SCHEDULED" || status === "TECHNICAL_DONE" || status === "OFFER") return "green";
-  if (status === "REJECTED" || status === "NOT_RELEVANT") return "muted";
+  if (status === "NOT_RELEVANT") return "muted";
   if (status === "HOME_ASSIGNMENT" || status === "ASSIGNMENT_SUBMITTED" || status === "FINAL_STAGE") return "violet";
   return "blue";
 }

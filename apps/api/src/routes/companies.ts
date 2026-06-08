@@ -6,6 +6,8 @@ import { prisma } from "../lib/prisma.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
 import { companyResearchApplyInputSchema, companyResearchInputSchema } from "../lib/schemas.js";
 import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";
+import { normalizeOverdueScheduledInteractionsForRead } from "../repositories/interaction-read-normalizer.js";
+import { syncOpportunityStatusRecord } from "../repositories/opportunity-repository.js";
 
 export const companiesRouter = Router();
 
@@ -25,6 +27,8 @@ const include = {
 };
 
 companiesRouter.get("/", asyncHandler(async (_request, response) => {
+  const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead();
+  await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id)));
   const opportunities = await prisma.jobOpportunity.findMany({ include, orderBy: { updatedAt: "desc" } });
   const companies = new Map<string, typeof opportunities>();
 
@@ -59,6 +63,8 @@ companiesRouter.get("/", asyncHandler(async (_request, response) => {
 
 companiesRouter.get("/:companyName", asyncHandler(async (request, response) => {
   const companyName = decodeURIComponent(request.params.companyName);
+  const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead();
+  await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id)));
   const opportunities = await prisma.jobOpportunity.findMany({
     where: { companyName },
     include,

@@ -1,7 +1,12 @@
 import type { Prisma } from "@prisma/client";
+import { compareJobStatuses, deriveOpportunityStatusFromInteractions } from "@interviews-tracker/core";
 import { prisma } from "../lib/prisma.js";
-import { interactionInputSchema, noteInputSchema, opportunityInputSchema, taskInputSchema } from "../lib/schemas.js";
+import { noteInputSchema, opportunityInputSchema, taskInputSchema } from "../lib/schemas.js";
 import type { z } from "zod";
+import {
+  normalizeOverdueScheduledInteractionsForRead,
+  promoteOpportunityInteractionsForRead
+} from "./interaction-read-normalizer.js";
 
 export type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
@@ -41,6 +46,9 @@ function toWrite(input: OpportunityInput): Prisma.JobOpportunityCreateInput {
 }
 
 export async function listOpportunityRecords(query: Record<string, string | undefined>) {
+  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead();
+  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id)));
+
   const where: Prisma.JobOpportunityWhereInput = {
     status: query.status ? { equals: query.status as Prisma.EnumJobStatusFilter<"JobOpportunity">["equals"] } : undefined,
     pipelineType: query.pipeline ? { equals: query.pipeline as Prisma.EnumPipelineTypeFilter<"JobOpportunity">["equals"] } : undefined,
@@ -54,15 +62,23 @@ export async function listOpportunityRecords(query: Record<string, string | unde
     domains: query.domainId ? { some: { domainId: query.domainId } } : undefined
   };
 
-  return prisma.jobOpportunity.findMany({
+  const opportunities = await prisma.jobOpportunity.findMany({
     where,
     include: opportunityInclude,
     orderBy: query.sort === "nextInteraction" ? { interactions: { _count: "desc" } } : { updatedAt: "desc" }
   });
+
+  return opportunities.map((opportunity) => promoteOpportunityInteractionsForRead(opportunity));
 }
 
 export async function getOpportunityRecord(id: string) {
-  return prisma.jobOpportunity.findUniqueOrThrow({ where: { id }, include: opportunityInclude });
+  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead();
+  if (opportunityIds.includes(id)) {
+    await syncOpportunityStatusRecord(id);
+  }
+
+  const opportunity = await prisma.jobOpportunity.findUniqueOrThrow({ where: { id }, include: opportunityInclude });
+  return promoteOpportunityInteractionsForRead(opportunity);
 }
 
 export async function getOpportunitySummaryRecord(id: string) {
@@ -70,35 +86,78 @@ export async function getOpportunitySummaryRecord(id: string) {
 }
 
 export async function createOpportunityRecord(input: OpportunityInput) {
-  return prisma.jobOpportunity.create({ data: toWrite(input), include: opportunityInclude });
+  const opportunity = await prisma.jobOpportunity.create({ data: toWrite(input), include: opportunityInclude });
+  return promoteOpportunityInteractionsForRead(opportunity);
 }
 
 export async function updateOpportunityRecord(id: string, input: OpportunityInput) {
   const data = toWrite(input);
-  return prisma.$transaction(async (tx) => {
+  const opportunity = await prisma.$transaction(async (tx) => {
     await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id } });
     return tx.jobOpportunity.update({ where: { id }, data, include: opportunityInclude });
   });
+
+  return promoteOpportunityInteractionsForRead(opportunity);
 }
 
 export async function deleteOpportunityRecord(id: string) {
   return prisma.jobOpportunity.delete({ where: { id } });
 }
 
+export async function syncOpportunityStatusRecord(id: string) {
+  const opportunity = await prisma.jobOpportunity.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      status: true,
+      interactions: {
+        select: {
+          type: true,
+          stage: true,
+          status: true,
+          outcome: true,
+          followUp: true,
+          date: true
+        },
+        orderBy: { date: "asc" }
+      }
+    }
+  });
+
+  if (!opportunity) {
+    return null;
+  }
+
+  const derivedStatus = deriveOpportunityStatusFromInteractions(opportunity.interactions);
+  const nextStatus = !derivedStatus
+    ? opportunity.status
+    : compareJobStatuses(derivedStatus, opportunity.status) > 0
+      ? derivedStatus
+      : opportunity.status;
+
+  if (nextStatus === opportunity.status) {
+    return opportunity.status;
+  }
+
+  await prisma.jobOpportunity.update({
+    where: { id: opportunity.id },
+    data: { status: nextStatus }
+  });
+
+  return nextStatus;
+}
+
 export async function listOpportunityInteractionsRecord(opportunityId: string) {
-  return prisma.interaction.findMany({
+  const interactions = await prisma.interaction.findMany({
     where: { jobOpportunityId: opportunityId },
     orderBy: { date: "asc" }
   });
+
+  return promoteOpportunityInteractionsForRead({ interactions }).interactions;
 }
 
-export type OpportunityInteractionInput = z.infer<typeof interactionInputSchema>;
 export type OpportunityNoteInput = z.infer<typeof noteInputSchema>;
 export type OpportunityTaskInput = z.infer<typeof taskInputSchema>;
-
-export async function createOpportunityInteractionRecord(opportunityId: string, input: OpportunityInteractionInput) {
-  return prisma.interaction.create({ data: { ...input, date: new Date(input.date), jobOpportunityId: opportunityId } });
-}
 
 export async function createOpportunityNoteRecord(opportunityId: string, input: OpportunityNoteInput) {
   return prisma.note.create({ data: { ...input, jobOpportunityId: opportunityId } });
