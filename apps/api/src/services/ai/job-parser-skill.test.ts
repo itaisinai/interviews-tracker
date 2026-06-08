@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { OpenAiParserService } from "./ai-parser-service.js";
-import { buildJobParserSystemPrompt } from "./job-parser-skill.js";
+import { buildJobParserSystemPrompt } from "@interviews-tracker/ai";
 
 const fixtureDir = fileURLToPath(new URL("./__fixtures__", import.meta.url));
 const altaMessage = readFileSync(`${fixtureDir}/alta-recruiter-message.txt`, "utf8");

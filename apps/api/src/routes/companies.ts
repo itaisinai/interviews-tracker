@@ -3,9 +3,9 @@ import { z } from "zod";
 import { asyncHandler } from "../lib/http.js";
 import { createTimer } from "../lib/logger.js";
 import { prisma } from "../lib/prisma.js";
-import { getAiParserService } from "../services/ai-parser-service.js";
+import { getAiParserService } from "../services/ai/ai-parser-service.js";
 import { companyResearchApplyInputSchema, companyResearchInputSchema } from "../lib/schemas.js";
-import { buildResearchNote, getCompanyResearchService } from "../services/company-research-service.js";
+import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";
 
 export const companiesRouter = Router();
 
@@ -35,7 +35,7 @@ companiesRouter.get("/", asyncHandler(async (_request, response) => {
   response.json([...companies.entries()].map(([companyName, items]) => {
     const primary = items[0];
     const interactions = items.flatMap((item) => item.interactions);
-    const domains = [...new Set(items.flatMap((item) => item.domains.map((domain) => domain.domain.label)))];
+    const domains = [...new Set(items.flatMap((item) => item.domains.map((domain: { domain: { label: string } }) => domain.domain.label)))];
 
     return {
       companyName,
@@ -91,7 +91,7 @@ companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, respon
   const employeesRange = enrichment.employees ? await prisma.companySizeOption.upsert({ where: { label: enrichment.employees }, create: { label: enrichment.employees }, update: {} }) : null;
   const companyStage = enrichment.stage ? await prisma.companyStageOption.upsert({ where: { label: enrichment.stage }, create: { label: enrichment.stage }, update: {} }) : null;
   const workModel = enrichment.workModel ? await prisma.workModelOption.upsert({ where: { label: enrichment.workModel }, create: { label: enrichment.workModel }, update: {} }) : null;
-  const domains = await Promise.all(enrichment.domains.map((label) => prisma.domainOption.upsert({ where: { label }, create: { label }, update: {} })));
+  const domains = await Promise.all(enrichment.domains.map((label: string) => prisma.domainOption.upsert({ where: { label }, create: { label }, update: {} })));
 
   const opportunities = await prisma.jobOpportunity.findMany({ where: { companyName }, select: { id: true } });
 

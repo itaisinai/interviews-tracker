@@ -1,5 +1,5 @@
 import type { SearchResult, CompanySearchProvider } from "./company-search-provider.js";
-import { createTimer } from "../lib/logger.js";
+import { createTimer } from "../../lib/logger.js";
 
 type ExaSearchResponse = {
   results?: Array<{

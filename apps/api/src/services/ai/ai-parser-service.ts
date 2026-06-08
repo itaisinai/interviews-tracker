@@ -4,10 +4,9 @@ import {
   companyEnrichmentSchema,
   gmailEmailClassificationSchema,
   gmailInteractionDraftSchema
-} from "../lib/schemas.js";
-import { createTimer } from "../lib/logger.js";
-import { buildEmailInteractionParserSystemPrompt } from "./email-interaction-parser-skill.js";
-import { buildJobParserSystemPrompt } from "./job-parser-skill.js";
+} from "@interviews-tracker/ai";
+import { createTimer } from "../../lib/logger.js";
+import { buildEmailInteractionParserSystemPrompt, buildJobParserSystemPrompt } from "@interviews-tracker/ai";
 
 export type ParsedJobDescription = typeof aiParseResponseSchema._type;
 export type CompanyEnrichment = typeof companyEnrichmentSchema._type;

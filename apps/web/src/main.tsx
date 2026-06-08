@@ -1,9 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthGate } from "./components/auth-gate";
 import { AppShell } from "./components/app-shell";
+import { queryClient } from "./lib/query-client";
 import { DashboardPage } from "./pages/dashboard-page";
 import { OpportunitiesPage } from "./pages/opportunities-page";
 import { CompaniesPage } from "./pages/companies-page";
@@ -16,8 +17,6 @@ import { CompensationPage } from "./pages/compensation-page";
 import { SettingsPage } from "./pages/settings-page";
 import { ParseJobPage } from "./pages/parse-job-page";
 import "./styles.css";
-
-const queryClient = new QueryClient();
 
 function App() {
   return (

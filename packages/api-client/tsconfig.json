@@ -5,7 +5,8 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": false,
+    "rootDir": "../../packages",
     "outDir": "../../dist/api-client"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "../core/src/**/*.ts", "../ai/src/**/*.ts", "../integrations/src/**/*.ts"]
 }

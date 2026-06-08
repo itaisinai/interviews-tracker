@@ -1,35 +1,27 @@
 import { Router } from "express";
-import { z } from "zod";
 import { asyncHandler } from "../lib/http.js";
-import { interactionInputSchema } from "../lib/schemas.js";
-import { prisma } from "../lib/prisma.js";
+import {
+  createInteractionHandler,
+  deleteInteractionHandler,
+  listInteractionsHandler,
+  updateInteractionHandler
+} from "../controllers/interactions-controller.js";
 
 export const interactionsRouter = Router();
 
 interactionsRouter.get("/", asyncHandler(async (_request, response) => {
-  response.json(await prisma.interaction.findMany({
-    include: { jobOpportunity: true },
-    orderBy: { date: "asc" }
-  }));
+  response.json(await listInteractionsHandler());
 }));
 
 interactionsRouter.post("/", asyncHandler(async (request, response) => {
-  const input = interactionInputSchema.extend({ jobOpportunityId: z.string().min(1) }).parse(request.body);
-  response.status(201).json(await prisma.interaction.create({
-    data: {
-      ...input,
-      date: new Date(input.date)
-    },
-    include: { jobOpportunity: true }
-  }));
+  response.status(201).json(await createInteractionHandler(request));
 }));
 
 interactionsRouter.put("/:id", asyncHandler(async (request, response) => {
-  const input = interactionInputSchema.parse(request.body);
-  response.json(await prisma.interaction.update({ where: { id: request.params.id }, data: { ...input, date: new Date(input.date) } }));
+  response.json(await updateInteractionHandler(request));
 }));
 
 interactionsRouter.delete("/:id", asyncHandler(async (request, response) => {
-  await prisma.interaction.delete({ where: { id: request.params.id } });
+  await deleteInteractionHandler(request);
   response.status(204).end();
 }));

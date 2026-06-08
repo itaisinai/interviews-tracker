@@ -2,7 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../lib/http.js";
 import { createTimer } from "../lib/logger.js";
 import { gmailConnectRequestSchema } from "../lib/schemas.js";
-import { createGmailAuthUrl, getGmailStatus } from "../services/gmail-service.js";
+import { createGmailAuthUrl, getGmailStatus } from "../services/gmail/gmail-service.js";
 
 export const gmailRouter = Router();
 

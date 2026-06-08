@@ -14,7 +14,7 @@ import { tasksRouter } from "./routes/tasks.js";
 import { requireAuth } from "./lib/auth.js";
 import { errorHandler } from "./lib/http.js";
 import { logInfo } from "./lib/logger.js";
-import { completeGmailOAuth } from "./services/gmail-service.js";
+import { completeGmailOAuth } from "./services/gmail/gmail-service.js";
 
 const app = express();
 const localOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"];

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../lib/http.js";
-import { getAiParserService } from "../services/ai-parser-service.js";
+import { getAiParserService } from "../services/ai/ai-parser-service.js";
 
 export const aiRouter = Router();
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { companyResearchExistingDataSchema, companyResearchInputSchema, companyResearchResultSchema } from "../lib/schemas.js";
-import { createTimer } from "../lib/logger.js";
+import { companyResearchExistingDataSchema, companyResearchInputSchema, companyResearchResultSchema } from "../../lib/schemas.js";
+import { createTimer } from "../../lib/logger.js";
 import { createCompanySearchProvider, type CompanySearchProvider, type SearchResult } from "./company-search-provider.js";
 
 type CompanyResearchExistingData = z.infer<typeof companyResearchExistingDataSchema>;

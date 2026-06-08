@@ -7,10 +7,10 @@ import {
   gmailMessageCandidateSchema,
   gmailSearchCandidateSchema,
   gmailStructuredEmailSchema
-} from "../lib/schemas.js";
-import { prisma } from "../lib/prisma.js";
-import { createTimer, logInfo } from "../lib/logger.js";
-import { getAiParserService } from "./ai-parser-service.js";
+} from "../../lib/schemas.js";
+import { prisma } from "../../lib/prisma.js";
+import { createTimer, logInfo } from "../../lib/logger.js";
+import { getAiParserService } from "../ai/ai-parser-service.js";
 import {
   buildGmailSearchQueries,
   classifySearchCandidateFallback,
