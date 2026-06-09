@@ -2,6 +2,7 @@ import type { Interaction } from "./types";
 import { normalizeInteractionType } from "./enum-labels";
 
 export type InteractionBadgeTone = "blue" | "green" | "red" | "muted" | "warning";
+export type OpportunityProcessBadgeTone = InteractionBadgeTone | "violet";
 
 const overdueInteractionTypes = [
   "Interview",
@@ -160,4 +161,47 @@ export function getInteractionTimelineBadgeMeta(
 
   const promoted = promoteOverdueInteractionStatusForRead(interaction);
   return getInteractionBadgeMeta(promoted);
+}
+
+type OpportunityProcessSource = Pick<NonNullable<Interaction["jobOpportunity"]>, "status" | "pipelineType">;
+
+export function getOpportunityProcessBadgeMeta(
+  opportunity: OpportunityProcessSource | null | undefined,
+  interactions: readonly Pick<Interaction, "type" | "status" | "outcome" | "followUp">[]
+) {
+  const interactionText = interactions
+    .flatMap((interaction) => [interaction.type, interaction.outcome, interaction.followUp])
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const hasRejectedInteraction =
+    opportunity?.status === "REJECTED" ||
+    interactions.some((interaction) => interaction.status === "REJECTED" || normalizeInteractionType(interaction.type) === "Rejection");
+
+  if (hasRejectedInteraction || /reject|declin|not.*moving forward|moving on|not a fit|no longer|withdrawn?|לא מתקדמים|דחייה|נדחה/.test(interactionText)) {
+    return { label: "Rejected", tone: "red" as const };
+  }
+
+  const hasOfferSignal =
+    opportunity?.status === "OFFER" ||
+    interactions.some((interaction) => normalizeInteractionType(interaction.type) === "Offer" || /offer|contract|agreement|חתימה|הצעה/.test(`${interaction.type} ${interaction.outcome ?? ""} ${interaction.followUp ?? ""}`.toLowerCase()));
+
+  if (hasOfferSignal) {
+    return { label: "Contract", tone: "violet" as const };
+  }
+
+  if (opportunity?.pipelineType === "ACTIVE_PROCESS" || interactions.length > 0) {
+    return { label: "In process", tone: "green" as const };
+  }
+
+  if (opportunity?.pipelineType === "POTENTIAL") {
+    return { label: "Potential", tone: "blue" as const };
+  }
+
+  if (opportunity?.pipelineType === "ARCHIVED") {
+    return { label: "Archived", tone: "muted" as const };
+  }
+
+  return null;
 }

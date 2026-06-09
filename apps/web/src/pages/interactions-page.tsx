@@ -1,21 +1,68 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Badge } from "../components/badge";
-import { MaterialIcon } from "../components/material-icon";
 import { GmailInteractionPanel } from "../components/gmail-interaction-panel";
 import { InteractionsDrawer } from "../components/interactions-drawer";
+import { OpportunityInteractionTimeline } from "../components/interactions-timeline";
 import { PageIntro } from "../components/app-shell";
-import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
+import { InlineLoadingState, PageErrorState, PageLoadingState } from "../components/loading-state";
+import { MaterialIcon } from "../components/material-icon";
 import { api } from "../lib/api";
-import { getInteractionTimelineBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
-import { formatDateTime } from "../lib/format";
+import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
+import type { Interaction } from "../lib/types";
 
-function splitMonthDay(value: string) {
-  const date = new Date(value);
-  return {
-    month: date.toLocaleDateString(undefined, { month: "short" }).toUpperCase(),
-    day: date.toLocaleDateString(undefined, { day: "numeric" }).toUpperCase()
-  };
+type InteractionOpportunityGroup = {
+  opportunityId: string;
+  companyName: string;
+  roleTitle: string;
+  interactions: Interaction[];
+  latestTimestamp: number;
+};
+
+function buildOpportunityGroups(interactions: readonly Interaction[]) {
+  const groups = new Map<string, InteractionOpportunityGroup>();
+
+  for (const interaction of interactions) {
+    const existing = groups.get(interaction.jobOpportunityId);
+    const timestamp = new Date(interaction.date).getTime();
+
+    if (!existing) {
+      groups.set(interaction.jobOpportunityId, {
+        opportunityId: interaction.jobOpportunityId,
+        companyName: interaction.jobOpportunity?.companyName ?? "Unknown company",
+        roleTitle: interaction.jobOpportunity?.roleTitle ?? "Unknown role",
+        interactions: [interaction],
+        latestTimestamp: timestamp
+      });
+      continue;
+    }
+
+    existing.interactions.push(interaction);
+    existing.latestTimestamp = Math.max(existing.latestTimestamp, timestamp);
+  }
+
+  return [...groups.values()].sort((left, right) => {
+    if (left.latestTimestamp !== right.latestTimestamp) {
+      return right.latestTimestamp - left.latestTimestamp;
+    }
+
+    return left.companyName.localeCompare(right.companyName) || left.roleTitle.localeCompare(right.roleTitle);
+  });
+}
+
+function filterOpportunityGroup(group: InteractionOpportunityGroup, filter: string) {
+  if (filter === "upcoming") {
+    return group.interactions.some((item) => new Date(item.date) >= new Date());
+  }
+
+  if (filter === "done") {
+    return group.interactions.some((item) => item.status === "DONE");
+  }
+
+  if (filter === "followup") {
+    return group.interactions.some((item) => item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim()));
+  }
+
+  return true;
 }
 
 export function InteractionsPage() {
@@ -28,6 +75,8 @@ export function InteractionsPage() {
   const opportunitiesQuery = useQuery({ queryKey: ["opportunities", "gmail-import"], queryFn: () => api.opportunities("?summary=1"), staleTime: 30_000 });
   const { data: opportunities = [] } = opportunitiesQuery;
   const displayInteractions = useMemo(() => promoteOverdueInteractionsForRead(data), [data]);
+  const opportunityGroups = useMemo(() => buildOpportunityGroups(displayInteractions), [displayInteractions]);
+  const visibleOpportunityGroups = useMemo(() => opportunityGroups.filter((group) => filterOpportunityGroup(group, filter)), [filter, opportunityGroups]);
   const gmailOpportunity = useMemo(() => opportunities.find((item) => item.id === gmailOpportunityId) ?? null, [gmailOpportunityId, opportunities]);
   const deleteInteraction = useMutation({
     mutationFn: (id: string) => api.deleteInteraction(id),
@@ -37,12 +86,6 @@ export function InteractionsPage() {
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
     }
   });
-  const rows = useMemo(() => displayInteractions.filter((item) => {
-    if (filter === "upcoming") return new Date(item.date) >= new Date();
-    if (filter === "done") return item.status === "DONE";
-    if (filter === "followup") return item.status === "NEEDS_FOLLOW_UP";
-    return true;
-  }), [displayInteractions, filter]);
   const selectedInteraction = useMemo(() => displayInteractions.find((item) => item.id === selectedInteractionId) ?? null, [displayInteractions, selectedInteractionId]);
   const followUpCount = displayInteractions.filter((item) => item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim())).length;
   const followUpPercent = displayInteractions.length > 0 ? Math.round((followUpCount / displayInteractions.length) * 100) : 0;
@@ -158,75 +201,22 @@ export function InteractionsPage() {
 
         <section className="mb-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-title-md text-title-md font-bold">{filter === "upcoming" ? "Upcoming" : "Interactions"}</h2>
-            <span className="font-label-md text-label-md text-on-surface-variant">{rows.length}</span>
+            <h2 className="font-title-md text-title-md font-bold">Opportunity timelines</h2>
+            <span className="font-label-md text-label-md text-on-surface-variant">{visibleOpportunityGroups.length}</span>
           </div>
-          <div className="relative timeline-track">
-            <div className="space-y-3 pl-10">
-              {rows.map((item) => {
-                const parts = splitMonthDay(item.date);
-                const selected = selectedInteractionId === item.id;
-                const badge = getInteractionTimelineBadgeMeta(
-                  item,
-                  displayInteractions.filter((candidate) => candidate.jobOpportunityId === item.jobOpportunityId),
-                );
-                return (
-                  <article
-                    key={item.id}
-                    role="button"
-                    tabIndex={0}
-                    aria-haspopup="dialog"
-                    aria-expanded={selected}
-                    className={`cursor-pointer rounded-xl border bg-white p-4 shadow-sm transition-all hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${selected ? "border-primary ring-1 ring-primary" : item.status === "NEEDS_FOLLOW_UP" ? "border-primary" : item.status === "SCHEDULED" ? "border-primary" : "border-outline-variant"}`}
-                    onClick={() => setSelectedInteractionId(item.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setSelectedInteractionId(item.id);
-                      }
-                    }}
-                  >
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div className="w-10 shrink-0 text-center">
-                        <div className="font-label-sm text-label-sm text-primary">{parts.month}</div>
-                        <div className="font-headline-md text-headline-md font-semibold">{parts.day}</div>
-                      </div>
-                    </div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <MaterialIcon name={item.type.toLowerCase().includes("email") ? "mail" : "call"} className="text-primary" />
-                      <span className="font-semibold text-on-background">{item.type}</span>
-                    </div>
-                    <h4 className="truncate font-title-md text-title-md font-bold">{item.jobOpportunity?.companyName}</h4>
-                    <p className="mt-1 text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"}</p>
-                    {badge ? (
-                      <div className="mt-3">
-                        <Badge value={item.status} tone={badge.tone}>
-                          {badge.label}
-                        </Badge>
-                      </div>
-                    ) : null}
-                    {item.outcome ? (
-                      <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md text-on-background">
-                        <span className="font-medium text-on-surface-variant">Outcome: </span>
-                        {item.outcome}
-                      </p>
-                    ) : null}
-                    {item.followUp ? (
-                      <p className="mt-3 rounded-lg border border-outline-variant bg-white p-3 text-body-md text-on-background">
-                        <span className="font-medium text-on-surface-variant">Next action: </span>
-                        {item.followUp}
-                      </p>
-                    ) : null}
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="font-label-sm text-label-sm text-on-surface-variant">{formatDateTime(item.date)}</span>
-                      <LoadingButton compact aria-label="Delete interaction" className="text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={(event) => { event.stopPropagation(); if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
-                        Delete
-                      </LoadingButton>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+          <div className="space-y-4">
+            {visibleOpportunityGroups.map((group) => (
+              <OpportunityInteractionTimeline
+                key={group.opportunityId}
+                companyName={group.companyName}
+                roleTitle={group.roleTitle}
+                interactions={group.interactions}
+                selectedInteractionId={selectedInteractionId}
+                onSelectInteraction={setSelectedInteractionId}
+                onDeleteInteraction={(interactionId) => deleteInteraction.mutate(interactionId)}
+                isDeletingInteraction={(interactionId) => deleteInteraction.isPending && deleteInteraction.variables === interactionId}
+              />
+            ))}
           </div>
         </section>
       </div>
@@ -301,68 +291,30 @@ export function InteractionsPage() {
           ].map(([key, label]) => <button key={key} className={`rounded-full px-4 py-1.5 font-label-md text-label-md transition-all ${filter === key ? "bg-primary-container text-on-primary-container" : "border border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low"}`} onClick={() => setFilter(key)}>{label}</button>)}
         </div>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <section className="relative timeline-track lg:col-span-8">
-            <div className="relative z-10 mb-6 flex items-center gap-4">
+          <section className="space-y-6 lg:col-span-8">
+            <div className="relative z-10 flex items-center gap-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary shadow-sm">
                 <MaterialIcon name="event" filled />
               </div>
-              <h3 className="font-title-md text-title-md font-bold">{filter === "upcoming" ? "Upcoming" : "Interaction Timeline"}</h3>
+              <div className="min-w-0">
+                <h3 className="font-title-md text-title-md font-bold">Opportunity timelines</h3>
+                <p className="text-body-md text-on-surface-variant">Each opportunity is grouped into its own timeline.</p>
+              </div>
             </div>
-            <div className="ml-10 space-y-4">
-            {rows.map((item) => {
-                const selected = selectedInteractionId === item.id;
-                const badge = getInteractionTimelineBadgeMeta(
-                  item,
-                  displayInteractions.filter((candidate) => candidate.jobOpportunityId === item.jobOpportunityId),
-                );
-                return (
-                  <article
-                  key={item.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-haspopup="dialog"
-                  aria-expanded={selected}
-                  className={`cursor-pointer rounded-xl bg-white p-5 shadow-sm transition-all hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${selected ? "border-2 border-primary" : item.status === "NEEDS_FOLLOW_UP" ? "border-2 border-primary" : item.status === "SCHEDULED" ? "border-2 border-primary" : "border border-outline-variant"}`}
-                  onClick={() => setSelectedInteractionId(item.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setSelectedInteractionId(item.id);
-                    }
-                  }}
-                >
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
-                    <span className="h-1 w-1 rounded-full bg-outline-variant" />
-                    <MaterialIcon name={item.type.toLowerCase().includes("email") ? "mail" : "call"} className="text-primary" />
-                    <span className="font-semibold">{item.type}</span>
-                  </div>
-                  <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.companyName}</h4>
-                  <p className="text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"} · {item.personName ?? "No person"}</p>
-                  {badge ? (
-                    <div className="mt-3">
-                      <Badge value={item.status} tone={badge.tone}>
-                        {badge.label}
-                      </Badge>
-                    </div>
-                  ) : null}
-                  {item.outcome ? (
-                    <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md text-on-background">
-                      <span className="font-medium text-on-surface-variant">Outcome: </span>
-                      {item.outcome}
-                    </p>
-                  ) : null}
-                  {item.followUp ? (
-                    <p className="mt-3 rounded-lg border border-outline-variant bg-white p-3 text-body-md text-on-background">
-                      <span className="font-medium text-on-surface-variant">Next action: </span>
-                      {item.followUp}
-                    </p>
-                  ) : null}
-                  <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={(event) => { event.stopPropagation(); if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
-                    Delete
-                  </LoadingButton>
-                </article>
-              )})}
+
+            <div className="space-y-6">
+              {visibleOpportunityGroups.map((group) => (
+                <OpportunityInteractionTimeline
+                  key={group.opportunityId}
+                  companyName={group.companyName}
+                  roleTitle={group.roleTitle}
+                  interactions={group.interactions}
+                  selectedInteractionId={selectedInteractionId}
+                  onSelectInteraction={setSelectedInteractionId}
+                  onDeleteInteraction={(interactionId) => deleteInteraction.mutate(interactionId)}
+                  isDeletingInteraction={(interactionId) => deleteInteraction.isPending && deleteInteraction.variables === interactionId}
+                />
+              ))}
             </div>
           </section>
           <aside className="space-y-6 lg:col-span-4">

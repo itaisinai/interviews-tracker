@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { getInteractionTimelineBadgeMeta } from "./interaction-status.js";
+import { getInteractionTimelineBadgeMeta, getOpportunityProcessBadgeMeta } from "./interaction-status.js";
 
 test("older interactions hide status badges when a later terminal event exists", () => {
   const interactions = [
@@ -46,4 +46,59 @@ test("completed interactions still show a passed badge when unresolved", () => {
     label: "Passed",
     tone: "green"
   });
+});
+
+test("company badge reflects rejected process state", () => {
+  assert.deepEqual(
+    getOpportunityProcessBadgeMeta(
+      {
+        status: "REJECTED",
+        pipelineType: "ACTIVE_PROCESS"
+      },
+      []
+    ),
+    {
+      label: "Rejected",
+      tone: "red"
+    }
+  );
+});
+
+test("company badge reflects offer state as contract", () => {
+  assert.deepEqual(
+    getOpportunityProcessBadgeMeta(
+      {
+        status: "OFFER",
+        pipelineType: "ACTIVE_PROCESS"
+      },
+      []
+    ),
+    {
+      label: "Contract",
+      tone: "violet"
+    }
+  );
+});
+
+test("company badge reflects active process", () => {
+  assert.deepEqual(
+    getOpportunityProcessBadgeMeta(
+      {
+        status: "PHONE_DONE",
+        pipelineType: "ACTIVE_PROCESS"
+      },
+      [
+        {
+          type: "Interview" as const,
+          status: "DONE" as const,
+          outcome: "Advanced",
+          followUp: null
+        }
+      ]
+    ),
+    {
+      label: "In process",
+      tone: "green"
+    }
+  );
 });
