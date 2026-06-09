@@ -22,6 +22,7 @@ test("skips funding searches when funding already exists", () => {
 test("forces research even when company already has complete data", () => {
   const queries = buildCompanyResearchQueries({
     companyName: "Notch",
+    linkedinUrl: "https://www.linkedin.com/company/notch-ai/",
     forceResearch: true,
     existingCompanyData: {
       funding: "Seed round",
@@ -36,6 +37,7 @@ test("forces research even when company already has complete data", () => {
 
   assert.ok(queries.length > 0);
   assert.ok(queries.every((query) => !query.includes("funding investors rounds")));
+  assert.ok(queries.some((query) => query.includes("linkedin.com/company")));
 });
 
 test("plans missing research fields", () => {
@@ -69,6 +71,14 @@ test("promotes company size from evidence when the model misses it", async () =>
           author: null,
           text: "Alta is a seed-stage company with 11-50 employees and offices in San Francisco.",
           highlights: ["11-50 employees", "Seed"]
+        },
+        {
+          title: "Alta | LinkedIn",
+          url: "https://www.linkedin.com/company/alta/",
+          publishedDate: null,
+          author: null,
+          text: "Alta",
+          highlights: []
         }
       ];
     }
@@ -76,6 +86,7 @@ test("promotes company size from evidence when the model misses it", async () =>
 
   const service = new CompanyResearchService(provider, async ({ companyName }) => ({
     companyName,
+    linkedinUrl: null,
     funding: null,
     totalRaised: null,
     roundsCount: null,
@@ -99,5 +110,6 @@ test("promotes company size from evidence when the model misses it", async () =>
   });
 
   assert.equal(result.employees, "11-50");
+  assert.equal(result.linkedinUrl, "https://www.linkedin.com/company/alta/");
   assert.ok(result.rawImportantNotes.some((note) => note.toLowerCase().includes("employees") && note.toLowerCase().includes("crunchbase")));
 });

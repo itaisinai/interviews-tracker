@@ -151,6 +151,6 @@ export function displayLabelForEnumValue(value: string) {
   if (value in interactionStatusLabels) return interactionStatusLabels[value as InteractionStatus];
   if (value in interactionTypeLabels) return interactionTypeLabels[value as InteractionType];
   const normalizedInteractionType = normalizeInteractionType(value);
-  if (normalizedInteractionType in interactionTypeLabels) return interactionTypeLabels[normalizedInteractionType];
+  if (normalizedInteractionType !== "Interview" || value.trim().toLowerCase() === "interview") return interactionTypeLabels[normalizedInteractionType];
   return null;
 }

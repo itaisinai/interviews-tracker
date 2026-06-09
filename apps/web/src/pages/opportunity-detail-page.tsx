@@ -9,7 +9,8 @@ import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
 import { formatDateTime, initials } from "../lib/format";
-import { offerStatusOptions, labelForPipelineType } from "../lib/enum-labels";
+import { displayLabelForEnumValue, labelForPipelineType, normalizeInteractionType, offerStatusOptions } from "../lib/enum-labels";
+import { getInteractionBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 
 export function OpportunityDetailPage() {
   const { id = "" } = useParams();
@@ -36,6 +37,8 @@ export function OpportunityDetailPage() {
   if (isError) {
     return <PageErrorState title="Opportunity" description={error instanceof Error ? error.message : "Unable to load opportunity."} onRetry={() => void refetch()} />;
   }
+
+  const displayedInteractions = promoteOverdueInteractionsForRead(data.interactions);
 
   return (
     <>
@@ -90,6 +93,7 @@ export function OpportunityDetailPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <section className="panel p-6 lg:col-span-4">
           <h3 className="font-title-md text-title-md font-bold">Company Details</h3>
+          <Detail label="LinkedIn" value={data.linkedinUrl} />
           <Detail label="Size" value={data.employeesRange?.label} />
           <Detail label="Stage" value={data.companyStage?.label} />
           <Detail label="Domains" value={data.domains.map((item) => item.domain.label).join(", ")} />
@@ -133,26 +137,31 @@ export function OpportunityDetailPage() {
             <h3 className="font-title-md text-title-md font-bold">Interactions Timeline</h3>
           </div>
           <div className="ml-10 space-y-4">
-            {data.interactions.map((item) => (
-              <article key={item.id} className="rounded-xl border border-outline-variant bg-white p-5 shadow-sm transition-all hover:shadow-lg">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
-                  <span className="h-1 w-1 rounded-full bg-outline-variant" />
-                  <MaterialIcon name="call" className="text-primary" />
-                  <span className="font-semibold">{item.type}</span>
-                  <Badge value={item.status} />
-                </div>
-                <h4 className="font-title-md text-title-md font-semibold">{item.stage ?? "Interview Stage"}</h4>
-                <p className="text-body-md text-on-surface-variant">{item.personName ?? "No person"} {item.personRole ? `· ${item.personRole}` : ""}</p>
-                {item.agenda ? <p className="mt-3 text-body-md">{item.agenda}</p> : null}
-                {item.notes ? <p className="mt-2 text-body-md text-on-surface-variant">Notes: {item.notes}</p> : null}
-                {item.outcome ? <p className="mt-2 text-body-md text-primary">Outcome: {item.outcome}</p> : null}
-                {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic text-on-background">Follow-up: {item.followUp}</p> : null}
-                <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
-                  Delete interaction
-                </LoadingButton>
-              </article>
-            ))}
+            {displayedInteractions.map((item) => {
+              const badge = getInteractionBadgeMeta(item);
+
+              return (
+                <article key={item.id} className="rounded-xl border border-outline-variant bg-white p-5 shadow-sm transition-all hover:shadow-lg">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
+                    <span className="h-1 w-1 rounded-full bg-outline-variant" />
+                    <MaterialIcon name={interactionTypeIcon(item.type)} className="text-primary" />
+                    <span className="font-semibold">{displayLabelForEnumValue(normalizeInteractionType(item.type)) ?? item.type}</span>
+                    <Badge value={item.status} tone={badge.tone}>
+                      {badge.label}
+                    </Badge>
+                  </div>
+                  <p className="text-body-md text-on-surface-variant">
+                    {item.personName ?? "No person"}
+                    {item.personRole ? ` · ${item.personRole}` : ""}
+                    {item.stage ? ` · ${item.stage}` : ""}
+                  </p>
+                  <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
+                    Delete interaction
+                  </LoadingButton>
+                </article>
+              );
+            })}
           </div>
         </section>
 
@@ -189,7 +198,7 @@ export function OpportunityDetailPage() {
 
           <section className="panel p-6">
             <h3 className="mb-4 font-title-md text-title-md font-bold">Notes</h3>
-            {data.notesList.map((item) => (
+            {data.notesList.filter((item) => item.category !== "Company Research").map((item) => (
               <div key={item.id} className="border-b border-outline-variant py-3 last:border-0">
                 <div className="flex items-center justify-between gap-3"><p className="font-semibold">{item.title}</p><LoadingButton compact aria-label="Delete note" className="text-error" icon="delete" loading={deleteNote.isPending && deleteNote.variables === item.id} onClick={() => { if (window.confirm("Delete this note?")) deleteNote.mutate(item.id); }} /></div>
                 <p className="font-label-md text-label-md text-on-surface-variant">{item.category}</p>
@@ -222,4 +231,16 @@ export function OpportunityDetailPage() {
 
 function Detail({ label, value }: { label: string; value?: string | null }) {
   return <div className="mt-4"><p className="label">{label}</p><p className="mt-1 text-body-md text-on-surface-variant">{value || "-"}</p></div>;
+}
+
+function interactionTypeIcon(type: string) {
+  const normalizedType = normalizeInteractionType(type);
+
+  if (normalizedType === "Email") return "mail";
+  if (normalizedType === "Phone Call") return "call";
+  if (normalizedType === "Home Assignment") return "assignment";
+  if (normalizedType === "Offer") return "payments";
+  if (normalizedType === "Rejection") return "cancel";
+  if (normalizedType === "Follow-up") return "reply";
+  return "event";
 }
