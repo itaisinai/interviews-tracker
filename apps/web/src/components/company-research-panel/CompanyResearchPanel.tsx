@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
+import { Badge } from "../badge";
 import type { CompanyResearchExistingData, CompanyResearchResult } from "../../lib/types";
 import { MaterialIcon } from "../material-icon";
 import { companyResearchLogTone, companyResearchRunMeta, companyResearchStepMessages, type CompanyResearchRunState } from "../../lib/company-research";
@@ -17,6 +18,7 @@ type CompanyResearchPanelProps = {
 
 export function CompanyResearchPanel({ companyName, roleTitle, knownContext, existingCompanyData, targetOpportunityId, onSaved }: CompanyResearchPanelProps) {
   const queryClient = useQueryClient();
+  const [linkedinUrl, setLinkedinUrl] = useState("");
   const [runState, setRunState] = useState<CompanyResearchRunState>("idle");
   const [stageIndex, setStageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -97,6 +99,7 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
         companyName,
         roleTitle: roleTitle ?? null,
         knownContext: knownContext ?? null,
+        linkedinUrl: linkedinUrl.trim() || null,
         existingCompanyData: existingCompanyData ?? null,
         forceResearch: true
       });
@@ -166,6 +169,16 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
           <p className="mt-3 max-w-3xl text-body-md text-on-surface-variant">
             {research ? "Review the extracted company research before saving it to the CRM." : "Searches public sources to fill in missing company facts such as funding, investors, size, location, and traction."}
           </p>
+          <div className="mt-4 max-w-2xl">
+            <Field label="LinkedIn URL">
+              <input
+                className="input"
+                value={linkedinUrl}
+                onChange={(event) => setLinkedinUrl(event.target.value)}
+                placeholder="https://www.linkedin.com/company/..."
+              />
+            </Field>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button className="btn btn-primary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
@@ -247,18 +260,19 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
           {saveError ? <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-body-md text-on-error-container">{saveError}</p> : null}
 
           <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Detail label="Funding" value={research.funding} />
-            <Detail label="Total raised" value={research.totalRaised} />
-            <Detail label="Rounds count" value={research.roundsCount != null ? String(research.roundsCount) : null} />
-            <Detail label="Latest round" value={research.latestRound} />
-            <Detail label="Investors" value={research.investors.length > 0 ? research.investors.join(", ") : null} />
-            <Detail label="Investment rounds" value={research.investmentRounds} />
-            <Detail label="Employees" value={research.employees} />
-            <Detail label="Location" value={research.location} />
-            <Detail label="Domains" value={research.domains.length > 0 ? research.domains.join(", ") : null} />
-            <Detail label="Customers / traction" value={research.customersTraction} />
-            <Detail label="Company description" value={research.companyDescription} />
-            <Detail label="Product description" value={research.productDescription} />
+            <Detail label="LinkedIn URL" value={research.linkedinUrl} status={diffStatus(null, research.linkedinUrl)} />
+            <Detail label="Funding" value={research.funding} status={diffStatus(existingCompanyData?.funding ?? null, research.funding)} />
+            <Detail label="Total raised" value={research.totalRaised} status={diffStatus(null, research.totalRaised)} />
+            <Detail label="Rounds count" value={research.roundsCount != null ? String(research.roundsCount) : null} status={diffStatus(null, research.roundsCount != null ? String(research.roundsCount) : null)} />
+            <Detail label="Latest round" value={research.latestRound} status={diffStatus(null, research.latestRound)} />
+            <Detail label="Investors" value={research.investors.length > 0 ? research.investors.join(", ") : null} status={diffStatus(null, research.investors.length > 0 ? research.investors.join(", ") : null)} />
+            <Detail label="Investment rounds" value={research.investmentRounds} status={diffStatus(existingCompanyData?.investmentRounds ?? null, research.investmentRounds)} />
+            <Detail label="Employees" value={research.employees} status={diffStatus(existingCompanyData?.employees ?? null, research.employees)} />
+            <Detail label="Location" value={research.location} status={diffStatus(existingCompanyData?.location ?? null, research.location)} />
+            <Detail label="Domains" value={research.domains.length > 0 ? research.domains.join(", ") : null} status={diffStatus(null, research.domains.length > 0 ? research.domains.join(", ") : null)} />
+            <Detail label="Customers / traction" value={research.customersTraction} status={diffStatus(existingCompanyData?.customersTraction ?? null, research.customersTraction)} />
+            <Detail label="Company description" value={research.companyDescription} status={diffStatus(existingCompanyData?.companyDescription ?? null, research.companyDescription)} />
+            <Detail label="Product description" value={research.productDescription} status={diffStatus(existingCompanyData?.productDescription ?? null, research.productDescription)} />
           </div>
 
           <div className="mt-5">
@@ -289,11 +303,58 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
   );
 }
 
-function Detail({ label, value }: { label: string; value: string | null }) {
+type DiffStatus = "NEW" | "UPDATED" | null;
+
+function diffStatus(existing: string | null | undefined, next: string | null | undefined): DiffStatus {
+  const current = normalizeComparable(existing);
+  const incoming = normalizeComparable(next);
+
+  if (!incoming) {
+    return null;
+  }
+
+  if (!current) {
+    return "NEW";
+  }
+
+  return current === incoming ? null : "UPDATED";
+}
+
+function normalizeComparable(value: string | null | undefined) {
+  return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? "";
+}
+
+function Detail({ label, value, status }: { label: string; value: string | null; status?: DiffStatus }) {
+  const isUrl = typeof value === "string" && /^https?:\/\//i.test(value);
+
   return (
     <div>
-      <p className="label">{label}</p>
-      <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{value || "-"}</p>
+      <div className="flex items-center gap-2">
+        <p className="label">{label}</p>
+        {status ? <Badge value={status} tone={status === "NEW" ? "green" : "violet"} /> : null}
+      </div>
+      {isUrl && value ? (
+        <a
+          className="mt-1 inline-flex max-w-full items-center gap-2 break-all text-body-md text-primary hover:underline"
+          href={value}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <MaterialIcon name="open_in_new" className="text-[16px]" />
+          <span>{value}</span>
+        </a>
+      ) : (
+        <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{value || "-"}</p>
+      )}
     </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="block">
+      <span className="label">{label}</span>
+      <div className="mt-2">{children}</div>
+    </label>
   );
 }

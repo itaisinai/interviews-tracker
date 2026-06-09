@@ -72,6 +72,7 @@ model JobOpportunity {
   referrerOrConnection   String?
   source                 String?
   jobUrl                 String?
+  linkedinUrl            String?
   nextStep               String?
   notes                  String?
   employeesRangeId       String?

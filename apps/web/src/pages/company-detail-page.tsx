@@ -28,7 +28,9 @@ export function CompanyDetailPage() {
 
   const primary = data.opportunities[0];
   const domains = [...new Set(data.opportunities.flatMap((item) => item.domains.map((domain) => domain.domain.label)))];
+  const linkedInUrl = data.opportunities.find((item) => Boolean(item.linkedinUrl?.trim()))?.linkedinUrl ?? primary?.linkedinUrl ?? null;
   const researchExistingData = {
+    linkedinUrl: linkedInUrl,
     funding: data.opportunities.find((item) => Boolean(item.funding?.trim()))?.funding ?? null,
     customersTraction: data.opportunities.find((item) => Boolean(item.customersTraction?.trim()))?.customersTraction ?? null,
     companyDescription: data.opportunities.find((item) => Boolean(item.companyDescription?.trim()))?.companyDescription ?? null,
@@ -62,6 +64,7 @@ export function CompanyDetailPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <section className="panel p-6 lg:col-span-4">
           <h3 className="font-title-md text-title-md font-bold">Company Profile</h3>
+          <Detail label="LinkedIn" value={linkedInUrl} />
           <Detail label="Domains" value={domains.join(", ")} />
           <Detail label="Size" value={primary?.employeesRange?.label} />
           <Detail label="Stage" value={primary?.companyStage?.label} />
@@ -129,5 +132,19 @@ export function CompanyDetailPage() {
 }
 
 function Detail({ label, value }: { label: string; value?: string | null }) {
-  return <div className="mt-4"><p className="label">{label}</p><p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{value || "-"}</p></div>;
+  const isUrl = typeof value === "string" && /^https?:\/\//i.test(value);
+
+  return (
+    <div className="mt-4">
+      <p className="label">{label}</p>
+      {isUrl && value ? (
+        <a className="mt-1 inline-flex items-center gap-2 break-all text-body-md text-primary hover:underline" href={value} target="_blank" rel="noreferrer">
+          <MaterialIcon name="open_in_new" className="text-[16px]" />
+          <span>{value}</span>
+        </a>
+      ) : (
+        <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{value || "-"}</p>
+      )}
+    </div>
+  );
 }

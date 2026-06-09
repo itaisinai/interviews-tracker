@@ -16,6 +16,7 @@ type ResearchExtractor = (input: {
   companyName: string;
   roleTitle?: string;
   knownContext?: string;
+  linkedinUrl?: string | null;
   existingCompanyData: CompanyResearchExistingData;
   evidence: ResearchEvidence[];
   missingFields: MissingResearchFields;
@@ -32,9 +33,10 @@ type MissingResearchFields = {
 const companyResearchResultJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["companyName", "funding", "totalRaised", "roundsCount", "latestRound", "investors", "investmentRounds", "employees", "location", "domains", "customersTraction", "companyDescription", "productDescription", "sourceUrls", "confidence", "rawImportantNotes"],
+  required: ["companyName", "linkedinUrl", "funding", "totalRaised", "roundsCount", "latestRound", "investors", "investmentRounds", "employees", "location", "domains", "customersTraction", "companyDescription", "productDescription", "sourceUrls", "confidence", "rawImportantNotes"],
   properties: {
     companyName: { type: "string" },
+    linkedinUrl: { type: ["string", "null"] },
     funding: { type: ["string", "null"] },
     totalRaised: { type: ["string", "null"] },
     roundsCount: { type: ["number", "null"] },
@@ -126,6 +128,18 @@ function extractEmployeesFromText(text: string) {
   return null;
 }
 
+function inferLinkedinUrlFromEvidence(evidence: ResearchEvidence[]) {
+  for (const group of evidence) {
+    for (const result of group.results) {
+      if (getHostname(result.url).includes("linkedin.com")) {
+        return result.url;
+      }
+    }
+  }
+
+  return null;
+}
+
 function getSourceUrlEvidence(employeesSource: string | null, sourceUrl: string) {
   return employeesSource ? `${employeesSource} (${sourceUrl})` : null;
 }
@@ -168,6 +182,7 @@ export function buildCompanyResearchQueries(input: CompanyResearchInput) {
   const forceResearch = input.forceResearch ?? false;
   const context = buildContextSuffix(input.roleTitle, input.knownContext);
   const contextSuffix = context.length > 0 ? ` ${context}` : "";
+  const linkedinUrl = normalizeText(input.linkedinUrl);
   const queries: string[] = [];
 
   if (missing.funding) {
@@ -190,10 +205,18 @@ export function buildCompanyResearchQueries(input: CompanyResearchInput) {
     queries.push(`${input.companyName} company website blog${contextSuffix}`);
   }
 
+  if (linkedinUrl.length > 0) {
+    queries.push(`${input.companyName} LinkedIn ${linkedinUrl}${contextSuffix}`);
+    queries.push(`site:linkedin.com/company ${input.companyName}${contextSuffix}`);
+  }
+
   if (forceResearch && queries.length === 0) {
     queries.push(`${input.companyName} company website blog${contextSuffix}`);
     queries.push(`${input.companyName} about product customers traction${contextSuffix}`);
     queries.push(`${input.companyName} employees headcount team size${contextSuffix}`);
+    if (linkedinUrl.length > 0) {
+      queries.push(`${input.companyName} LinkedIn ${linkedinUrl}${contextSuffix}`);
+    }
   }
 
   return [...new Set(queries.map((query) => query.trim()).filter(Boolean))];
@@ -248,6 +271,7 @@ function deriveConfidence(result: CompanyResearchResult, missing: MissingResearc
 export function buildResearchNote(result: CompanyResearchResult) {
   const lines = [
     `Company research for ${result.companyName}`,
+    result.linkedinUrl ? `LinkedIn URL: ${result.linkedinUrl}` : null,
     result.funding ? `Funding: ${result.funding}` : null,
     result.totalRaised ? `Total raised: ${result.totalRaised}` : null,
     result.roundsCount != null ? `Rounds count: ${result.roundsCount}` : null,
@@ -269,6 +293,7 @@ export function buildResearchNote(result: CompanyResearchResult) {
 
 function mergeResearchResult(input: CompanyResearchInput, extracted: CompanyResearchResult, evidenceUrls: string[], evidence: ResearchEvidence[]): CompanyResearchResult {
   const existing = input.existingCompanyData ?? {};
+  const linkedinUrl = normalizeText(input.linkedinUrl) || normalizeText(extracted.linkedinUrl) || normalizeText(inferLinkedinUrlFromEvidence(evidence));
   const funding = mergeValue(existing.funding, extracted.funding);
   const investmentRounds = mergeValue(existing.investmentRounds, extracted.investmentRounds);
   const inferredEmployees = existing.employees ? null : inferEmployeesFromEvidence(evidence);
@@ -281,6 +306,7 @@ function mergeResearchResult(input: CompanyResearchInput, extracted: CompanyRese
   const result: CompanyResearchResult = {
     ...extracted,
     companyName: normalizeText(extracted.companyName) || normalizeText(input.companyName),
+    linkedinUrl: linkedinUrl.length > 0 ? linkedinUrl : null,
     funding,
     investmentRounds,
     employees,
@@ -291,6 +317,7 @@ function mergeResearchResult(input: CompanyResearchInput, extracted: CompanyRese
     sourceUrls,
     rawImportantNotes: unique([
       ...extracted.rawImportantNotes,
+      linkedinUrl.length > 0 ? `LinkedIn URL: ${linkedinUrl}` : null,
       inferredEmployees?.note ?? null,
       sourceUrls.length > 0 ? `Source URLs: ${sourceUrls.join(", ")}` : null
     ]),
@@ -327,7 +354,7 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
     throw new Error("OPENAI_API_KEY is required for company research.");
   }
 
-  return async ({ companyName, roleTitle, knownContext, existingCompanyData, evidence, missingFields }) => {
+  return async ({ companyName, roleTitle, knownContext, linkedinUrl, existingCompanyData, evidence, missingFields }) => {
     const timer = createTimer("llm", "extract company research", { company: companyName, evidenceGroups: evidence.length });
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -347,8 +374,10 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
                   "You extract structured company research for a job search CRM.",
                   "Use only the supplied evidence. Do not invent facts, dates, funding amounts, investors, headcount, customers, or product details.",
                   "Prefer the most reliable sources: company site/blog, Crunchbase, TechCrunch, Calcalist, Globes, CTech, Geektime, VC portfolio pages, LinkedIn/company pages.",
+                  "If the evidence includes an official LinkedIn company page URL, return it in linkedinUrl.",
                   "If evidence is weak or conflicting, be conservative, return nulls, and mention uncertainty in rawImportantNotes.",
                   "If existing company data is already present, preserve it unless the evidence is clearly more specific.",
+                  "If a LinkedIn URL is provided, treat it as a strong identifier and include it in linkedinUrl in the response unless the evidence proves a different official LinkedIn company page.",
                   "For important funding and investor claims, include supporting URLs in rawImportantNotes.",
                   "Return compact but useful CRM data."
                 ].join(" ")
@@ -365,6 +394,7 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
                     companyName,
                     roleTitle: normalizeText(roleTitle),
                     knownContext: normalizeText(knownContext),
+                    linkedinUrl: normalizeText(linkedinUrl),
                     missingFields,
                     existingCompanyData,
                     evidence: createEvidencePayload(evidence)
@@ -417,12 +447,14 @@ export class CompanyResearchService {
       companyName: string;
       roleTitle?: string;
       knownContext?: string;
+      linkedinUrl?: string;
       existingCompanyData: CompanyResearchExistingData;
       forceResearch: boolean;
     } = {
       companyName: normalizeText(input.companyName),
       roleTitle: normalizeText(input.roleTitle) || undefined,
       knownContext: normalizeText(input.knownContext) || undefined,
+      linkedinUrl: normalizeText(input.linkedinUrl) || undefined,
       existingCompanyData: input.existingCompanyData ?? {},
       forceResearch: input.forceResearch ?? false
     };
@@ -434,6 +466,7 @@ export class CompanyResearchService {
     if (evidence.length === 0) {
       const result = mergeResearchResult(normalizedInput, {
         companyName: normalizedInput.companyName,
+        linkedinUrl: normalizedInput.linkedinUrl ?? null,
         funding: existing.funding ?? null,
         totalRaised: null,
         roundsCount: null,
@@ -457,6 +490,7 @@ export class CompanyResearchService {
       companyName: normalizedInput.companyName,
       roleTitle: normalizedInput.roleTitle,
       knownContext: normalizedInput.knownContext,
+      linkedinUrl: normalizedInput.linkedinUrl,
       existingCompanyData: existing,
       evidence,
       missingFields: getMissingResearchFields(existing)

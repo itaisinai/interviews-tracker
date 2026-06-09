@@ -10,6 +10,7 @@ export const opportunityInputSchema = z.object({
   referrerOrConnection: z.string().nullish(),
   source: z.string().nullish(),
   jobUrl: z.string().nullish(),
+  linkedinUrl: z.string().url().nullish(),
   nextStep: z.string().nullish(),
   notes: z.string().nullish(),
   employeesRangeId: z.string().nullish(),
@@ -80,6 +81,7 @@ export type Opportunity = {
   referrerOrConnection?: string | null;
   source?: string | null;
   jobUrl?: string | null;
+  linkedinUrl?: string | null;
   nextStep?: string | null;
   notes?: string | null;
   employeesRangeId?: string | null;

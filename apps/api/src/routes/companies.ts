@@ -155,6 +155,7 @@ companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request
       funding: true,
       employeesRangeId: true,
       location: true,
+      linkedinUrl: true,
       companyDescription: true,
       productDescription: true,
       customersTraction: true
@@ -172,6 +173,9 @@ companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request
     create: { label: employeesLabel },
     update: {}
   }) : null;
+  const domains = research.domains.length > 0
+    ? await Promise.all(research.domains.map((label: string) => prisma.domainOption.upsert({ where: { label }, create: { label }, update: {} })))
+    : [];
 
   for (const opportunity of targetOpportunities) {
     await prisma.jobOpportunity.update({
@@ -180,11 +184,19 @@ companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request
         funding: isPresent(opportunity.funding) ? opportunity.funding : research.funding,
         employeesRangeId: opportunity.employeesRangeId ?? employeesRange?.id ?? null,
         location: isPresent(opportunity.location) ? opportunity.location : research.location,
+        linkedinUrl: isPresent(opportunity.linkedinUrl) ? opportunity.linkedinUrl : research.linkedinUrl,
         companyDescription: isPresent(opportunity.companyDescription) ? opportunity.companyDescription : research.companyDescription,
         productDescription: isPresent(opportunity.productDescription) ? opportunity.productDescription : research.productDescription,
         customersTraction: isPresent(opportunity.customersTraction) ? opportunity.customersTraction : research.customersTraction
       }
     });
+
+    if (domains.length > 0) {
+      await prisma.jobOpportunityDomain.createMany({
+        data: domains.map((domain) => ({ jobOpportunityId: opportunity.id, domainId: domain.id })),
+        skipDuplicates: true
+      });
+    }
   }
 
   const noteTarget = targetOpportunities[0];

@@ -28,6 +28,7 @@ function toWrite(input: OpportunityInput): Prisma.JobOpportunityCreateInput {
     referrerOrConnection: rest.referrerOrConnection ?? null,
     source: rest.source ?? null,
     jobUrl: rest.jobUrl ?? null,
+    linkedinUrl: rest.linkedinUrl ?? null,
     nextStep: rest.nextStep ?? null,
     notes: rest.notes ?? null,
     location: rest.location ?? null,
