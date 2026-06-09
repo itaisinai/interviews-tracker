@@ -13,5 +13,6 @@ test("interaction text prompt includes the explicit type enum list", () => {
   assert.match(prompt, /Type must be exactly one of:/);
   assert.match(prompt, /Phone Call/);
   assert.match(prompt, /Follow-up/);
+  assert.match(prompt, /Put the human-readable result of the interaction in outcome/);
   assert.match(prompt, /If the text explicitly says Phone Call, use type Phone Call/);
 });

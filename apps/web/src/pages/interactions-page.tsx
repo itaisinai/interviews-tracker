@@ -7,7 +7,7 @@ import { InteractionsDrawer } from "../components/interactions-drawer";
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
-import { getInteractionBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
+import { getInteractionTimelineBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 import { formatDateTime } from "../lib/format";
 
 function splitMonthDay(value: string) {
@@ -166,7 +166,10 @@ export function InteractionsPage() {
               {rows.map((item) => {
                 const parts = splitMonthDay(item.date);
                 const selected = selectedInteractionId === item.id;
-                const badge = getInteractionBadgeMeta(item);
+                const badge = getInteractionTimelineBadgeMeta(
+                  item,
+                  displayInteractions.filter((candidate) => candidate.jobOpportunityId === item.jobOpportunityId),
+                );
                 return (
                   <article
                     key={item.id}
@@ -195,13 +198,25 @@ export function InteractionsPage() {
                     </div>
                     <h4 className="truncate font-title-md text-title-md font-bold">{item.jobOpportunity?.companyName}</h4>
                     <p className="mt-1 text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"}</p>
-                    <div className="mt-3">
-                      <Badge value={item.status} tone={badge.tone}>
-                        {badge.label}
-                      </Badge>
-                    </div>
-                    {item.agenda ? <p className="mt-3 text-body-md">{item.agenda}</p> : null}
-                    {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic">"{item.followUp}"</p> : null}
+                    {badge ? (
+                      <div className="mt-3">
+                        <Badge value={item.status} tone={badge.tone}>
+                          {badge.label}
+                        </Badge>
+                      </div>
+                    ) : null}
+                    {item.outcome ? (
+                      <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md text-on-background">
+                        <span className="font-medium text-on-surface-variant">Outcome: </span>
+                        {item.outcome}
+                      </p>
+                    ) : null}
+                    {item.followUp ? (
+                      <p className="mt-3 rounded-lg border border-outline-variant bg-white p-3 text-body-md text-on-background">
+                        <span className="font-medium text-on-surface-variant">Next action: </span>
+                        {item.followUp}
+                      </p>
+                    ) : null}
                     <div className="mt-4 flex items-center justify-between">
                       <span className="font-label-sm text-label-sm text-on-surface-variant">{formatDateTime(item.date)}</span>
                       <LoadingButton compact aria-label="Delete interaction" className="text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={(event) => { event.stopPropagation(); if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
@@ -294,9 +309,12 @@ export function InteractionsPage() {
               <h3 className="font-title-md text-title-md font-bold">{filter === "upcoming" ? "Upcoming" : "Interaction Timeline"}</h3>
             </div>
             <div className="ml-10 space-y-4">
-              {rows.map((item) => {
+            {rows.map((item) => {
                 const selected = selectedInteractionId === item.id;
-                const badge = getInteractionBadgeMeta(item);
+                const badge = getInteractionTimelineBadgeMeta(
+                  item,
+                  displayInteractions.filter((candidate) => candidate.jobOpportunityId === item.jobOpportunityId),
+                );
                 return (
                   <article
                   key={item.id}
@@ -321,13 +339,25 @@ export function InteractionsPage() {
                   </div>
                   <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.companyName}</h4>
                   <p className="text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"} · {item.personName ?? "No person"}</p>
-                  <div className="mt-3">
-                    <Badge value={item.status} tone={badge.tone}>
-                      {badge.label}
-                    </Badge>
-                  </div>
-                  {item.agenda ? <p className="mt-3 text-body-md">{item.agenda}</p> : null}
-                  {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic">"{item.followUp}"</p> : null}
+                  {badge ? (
+                    <div className="mt-3">
+                      <Badge value={item.status} tone={badge.tone}>
+                        {badge.label}
+                      </Badge>
+                    </div>
+                  ) : null}
+                  {item.outcome ? (
+                    <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md text-on-background">
+                      <span className="font-medium text-on-surface-variant">Outcome: </span>
+                      {item.outcome}
+                    </p>
+                  ) : null}
+                  {item.followUp ? (
+                    <p className="mt-3 rounded-lg border border-outline-variant bg-white p-3 text-body-md text-on-background">
+                      <span className="font-medium text-on-surface-variant">Next action: </span>
+                      {item.followUp}
+                    </p>
+                  ) : null}
                   <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={(event) => { event.stopPropagation(); if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
                     Delete
                   </LoadingButton>

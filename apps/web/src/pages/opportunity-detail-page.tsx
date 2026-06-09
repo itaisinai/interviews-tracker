@@ -10,7 +10,7 @@ import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } f
 import { api } from "../lib/api";
 import { formatDateTime, initials } from "../lib/format";
 import { displayLabelForEnumValue, labelForPipelineType, normalizeInteractionType, offerStatusOptions } from "../lib/enum-labels";
-import { getInteractionBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
+import { getInteractionTimelineBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 
 export function OpportunityDetailPage() {
   const { id = "" } = useParams();
@@ -138,7 +138,7 @@ export function OpportunityDetailPage() {
           </div>
           <div className="ml-10 space-y-4">
             {displayedInteractions.map((item) => {
-              const badge = getInteractionBadgeMeta(item);
+              const badge = getInteractionTimelineBadgeMeta(item, displayedInteractions);
 
               return (
                 <article key={item.id} className="rounded-xl border border-outline-variant bg-white p-5 shadow-sm transition-all hover:shadow-lg">
@@ -147,15 +147,29 @@ export function OpportunityDetailPage() {
                     <span className="h-1 w-1 rounded-full bg-outline-variant" />
                     <MaterialIcon name={interactionTypeIcon(item.type)} className="text-primary" />
                     <span className="font-semibold">{displayLabelForEnumValue(normalizeInteractionType(item.type)) ?? item.type}</span>
-                    <Badge value={item.status} tone={badge.tone}>
-                      {badge.label}
-                    </Badge>
+                    {badge ? (
+                      <Badge value={item.status} tone={badge.tone}>
+                        {badge.label}
+                      </Badge>
+                    ) : null}
                   </div>
                   <p className="text-body-md text-on-surface-variant">
                     {item.personName ?? "No person"}
                     {item.personRole ? ` · ${item.personRole}` : ""}
                     {item.stage ? ` · ${item.stage}` : ""}
                   </p>
+                  {item.outcome ? (
+                    <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md text-on-background">
+                      <span className="font-medium text-on-surface-variant">Outcome: </span>
+                      {item.outcome}
+                    </p>
+                  ) : null}
+                  {item.followUp ? (
+                    <p className="mt-3 rounded-lg border border-outline-variant bg-white p-3 text-body-md text-on-background">
+                      <span className="font-medium text-on-surface-variant">Next action: </span>
+                      {item.followUp}
+                    </p>
+                  ) : null}
                   <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
                     Delete interaction
                   </LoadingButton>
