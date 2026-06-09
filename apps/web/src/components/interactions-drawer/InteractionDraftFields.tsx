@@ -10,7 +10,7 @@ type InteractionDraftFieldsProps = {
 export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFieldsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Field label="Date">
+      <Field label="Date" help="When this interaction happened.">
         <input
           className="input"
           type="datetime-local"
@@ -18,7 +18,7 @@ export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFiel
           onChange={(event) => setDraft({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })}
         />
       </Field>
-      <Field label="Type">
+      <Field label="Type" help="What happened?">
         <select className="input" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as InteractionDraft["type"] })}>
           {interactionTypeOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -27,10 +27,10 @@ export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFiel
           ))}
         </select>
       </Field>
-      <Field label="Stage">
+      <Field label="Stage" help="Hiring stage, if relevant.">
         <input className="input" value={draft.stage ?? ""} onChange={(event) => setDraft({ ...draft, stage: event.target.value || null })} />
       </Field>
-      <Field label="Status">
+      <Field label="Status" help="Scheduling or state of this interaction.">
         <select className="input" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as InteractionDraft["status"] })}>
           {interactionStatusOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -39,32 +39,33 @@ export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFiel
           ))}
         </select>
       </Field>
-      <Field label="Person name">
+      <Field label="Person name" help="Who this interaction is with.">
         <input className="input" value={draft.personName ?? ""} onChange={(event) => setDraft({ ...draft, personName: event.target.value || null })} />
       </Field>
-      <Field label="Person role">
+      <Field label="Person role" help="Their role or title, if known.">
         <input className="input" value={draft.personRole ?? ""} onChange={(event) => setDraft({ ...draft, personRole: event.target.value || null })} />
       </Field>
-      <Field label="Agenda">
+      <Field label="Agenda" help="What was discussed or planned.">
         <textarea className="input min-h-24" value={draft.agenda ?? ""} onChange={(event) => setDraft({ ...draft, agenda: event.target.value || null })} />
       </Field>
-      <Field label="Notes">
+      <Field label="Notes" help="Extra context or raw details worth keeping.">
         <textarea className="input min-h-24" value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })} />
       </Field>
-      <Field label="Outcome">
+      <Field label="Outcome" help="What came out of this interaction.">
         <textarea className="input min-h-24" value={draft.outcome ?? ""} onChange={(event) => setDraft({ ...draft, outcome: event.target.value || null })} />
       </Field>
-      <Field label="Follow-up">
+      <Field label="Follow-up" help="What should happen next.">
         <textarea className="input min-h-24" value={draft.followUp ?? ""} onChange={(event) => setDraft({ ...draft, followUp: event.target.value || null })} />
       </Field>
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, help, children }: { label: string; help?: string; children: ReactNode }) {
   return (
     <label className="space-y-1">
       <span className="label">{label}</span>
+      {help ? <span className="block text-xs text-on-surface-variant">{help}</span> : null}
       {children}
     </label>
   );

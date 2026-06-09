@@ -16,8 +16,7 @@ import { MaterialIcon } from "../material-icon";
 import { api } from "../../lib/api";
 import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
 import {
-  getInteractionBadgeMeta,
-  promoteOverdueInteractionStatusForRead,
+  getInteractionTimelineBadgeMeta,
   promoteOverdueInteractionsForRead,
 } from "../../lib/interaction-status";
 import { formatDateTime } from "../../lib/format";
@@ -63,14 +62,16 @@ function interactionTypeIcon(type: string) {
 
 function InteractionTimelineItem({
   interaction,
+  interactions,
   selected,
   onClick,
 }: {
   interaction: Interaction;
+  interactions: readonly Interaction[];
   selected: boolean;
   onClick: () => void;
 }) {
-  const badge = getInteractionBadgeMeta(interaction);
+  const badgeMeta = getInteractionTimelineBadgeMeta(interaction, interactions);
   return (
     <button
       type="button"
@@ -86,9 +87,11 @@ function InteractionTimelineItem({
             Upcoming
           </Badge>
         ) : null}
-        <Badge value={interaction.status} tone={badge.tone}>
-          {badge.label}
-        </Badge>
+        {badgeMeta ? (
+          <Badge value={interaction.status} tone={badgeMeta.tone}>
+            {badgeMeta.label}
+          </Badge>
+        ) : null}
       </div>
       <div className="mt-2 flex items-center gap-2">
         <MaterialIcon name={interactionTypeIcon(interaction.type)} className="text-primary" />
@@ -101,6 +104,18 @@ function InteractionTimelineItem({
         {interaction.personRole ? ` · ${interaction.personRole}` : ""}
         {interaction.stage ? ` · ${interaction.stage}` : ""}
       </p>
+      {interaction.outcome ? (
+        <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md text-on-background">
+          <span className="font-medium text-on-surface-variant">Outcome: </span>
+          {interaction.outcome}
+        </p>
+      ) : null}
+      {interaction.followUp ? (
+        <p className="mt-3 rounded-lg border border-outline-variant bg-white p-3 text-body-md text-on-background">
+          <span className="font-medium text-on-surface-variant">Next action: </span>
+          {interaction.followUp}
+        </p>
+      ) : null}
     </button>
   );
 }
@@ -223,9 +238,8 @@ export function InteractionsDrawer({
   const timeline = promoteOverdueInteractionsForRead(
     opportunityQuery.data?.interactions ?? opportunity?.interactions ?? [],
   );
-  const displayInteraction = promoteOverdueInteractionStatusForRead(selectedTimelineInteraction ?? mountedInteraction);
-  const headerStatus = displayInteraction.status;
-  const headerBadge = getInteractionBadgeMeta(displayInteraction);
+  const displayInteraction = selectedTimelineInteraction ?? mountedInteraction;
+  const headerBadge = getInteractionTimelineBadgeMeta(displayInteraction, timeline);
 
   const interactionsCountLabel = `${timeline.length} interaction${timeline.length !== 1 ? "s" : ""}`;
 
@@ -300,9 +314,11 @@ export function InteractionsDrawer({
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge value={displayInteraction.type} />
-                      <Badge value={headerStatus} tone={headerBadge.tone}>
-                        {headerBadge.label}
-                      </Badge>
+                      {headerBadge ? (
+                        <Badge value={displayInteraction.status} tone={headerBadge.tone}>
+                          {headerBadge.label}
+                        </Badge>
+                      ) : null}
                       {displayInteraction.stage ? (
                         <span className="rounded-full bg-surface-container-low px-2.5 py-1 text-[11px] font-medium text-on-surface-variant">
                           {displayInteraction.stage}
@@ -325,6 +341,16 @@ export function InteractionsDrawer({
                         </p>
                         <p className="mt-1 text-body-md text-on-background">
                           {displayInteraction.outcome}
+                        </p>
+                      </div>
+                    ) : null}
+                    {displayInteraction.followUp ? (
+                      <div className="mt-4 rounded-xl border border-outline-variant bg-white p-4">
+                        <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                          Next action
+                        </p>
+                        <p className="mt-1 text-body-md text-on-background">
+                          {displayInteraction.followUp}
                         </p>
                       </div>
                     ) : null}
@@ -404,6 +430,7 @@ export function InteractionsDrawer({
                     <InteractionTimelineItem
                       key={interaction.id}
                       interaction={interaction}
+                      interactions={timeline}
                       selected={interaction.id === displayInteraction.id}
                       onClick={() => onSelectInteraction?.(interaction.id)}
                     />

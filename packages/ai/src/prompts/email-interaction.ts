@@ -18,7 +18,11 @@ export const emailInteractionParserSkill = `
 - Never shift timezone manually if the input already includes an ISO date from calendar parsing.
 - Sender name and sender email should come from the parsed From header.
 - If sender name or email exists, do not call them unknown.
-- Keep notes and follow-up focused on the actual hiring interaction and preserve important details.
+- Keep notes focused on the actual hiring interaction and preserve important details.
+- Put the human-readable result of the interaction in outcome.
+- Put the next action, if any, in followUp.
+- Do not use status as the main story of the process.
+- Status is the interaction's scheduling/state, while outcome is what happened and followUp is what should happen next.
 
 ## Stage Rules
 
@@ -37,14 +41,17 @@ export const emailInteractionParserSkill = `
 - Assignment message => Home Assignment
 - Follow-up message => Follow-up
 - Offer => Offer
+- Rejection message => Rejection
 
 ## Status Rules
 
 - Future meeting invite => SCHEDULED
 - Past meeting summary or completed interaction => DONE
-- Explicit rejection or rejection follow-up => REJECTED
+- Explicit rejection or rejection follow-up => REJECTED.
 - Cancellation or reschedule => CANCELLED or NEEDS_FOLLOW_UP
 - When unsure, prefer NEEDS_FOLLOW_UP over inventing a completed state.
+- If a later terminal result is already present in the email/calendar thread, do not write "Waiting for response" into status; keep the result in outcome or followUp instead.
+- For explicit rejection emails, use type Rejection, set status to REJECTED, put a short rejection summary in outcome, and leave followUp null unless there is an explicit next action.
 
 ## Output Rules
 

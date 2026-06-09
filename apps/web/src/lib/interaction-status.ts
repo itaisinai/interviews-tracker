@@ -2,6 +2,7 @@ import type { Interaction } from "./types";
 import { normalizeInteractionType } from "./enum-labels";
 
 export type InteractionBadgeTone = "blue" | "green" | "red" | "muted" | "warning";
+export type OpportunityProcessBadgeTone = InteractionBadgeTone | "violet";
 
 const overdueInteractionTypes = [
   "Interview",
@@ -29,8 +30,57 @@ function hasAny(text: string, patterns: RegExp[]) {
   return patterns.some((pattern) => pattern.test(text));
 }
 
-function interactionContextText(interaction: Pick<Interaction, "type" | "stage" | "outcome" | "followUp">) {
+function interactionContextText(interaction: Pick<Interaction, "type" | "outcome" | "followUp"> & { stage?: string | null }) {
   return [interaction.type, interaction.stage, interaction.outcome, interaction.followUp].filter(Boolean).join(" ").toLowerCase();
+}
+
+function isTerminalInteraction(interaction: Pick<Interaction, "type" | "status" | "outcome" | "followUp">) {
+  const normalizedType = normalizeInteractionType(interaction.type);
+  if (normalizedType === "Rejection" || normalizedType === "Offer") {
+    return true;
+  }
+
+  if (interaction.status === "REJECTED") {
+    return true;
+  }
+
+  const text = interactionContextText(interaction);
+  return hasAny(text, [
+    /reject/,
+    /declin/,
+    /not.*moving forward/,
+    /moving on/,
+    /not a fit/,
+    /no longer/,
+    /withdrawn?/,
+    /not relevant/,
+    /לא מתקדמים/,
+    /דחייה/,
+    /נדחה/,
+    /offer/,
+    /הצעה/
+  ]);
+}
+
+function hasLaterTerminalInteraction(
+  interaction: Pick<Interaction, "id" | "date" | "type" | "status" | "outcome" | "followUp">,
+  interactions: readonly Pick<Interaction, "id" | "date" | "type" | "status" | "outcome" | "followUp">[]
+) {
+  const orderedInteractions = [...interactions].sort((left, right) => {
+    const leftTime = new Date(left.date).getTime();
+    const rightTime = new Date(right.date).getTime();
+    if (leftTime !== rightTime) {
+      return leftTime - rightTime;
+    }
+    return left.id.localeCompare(right.id);
+  });
+
+  const currentIndex = orderedInteractions.findIndex((item) => item.id === interaction.id);
+  if (currentIndex === -1) {
+    return false;
+  }
+
+  return orderedInteractions.slice(currentIndex + 1).some((item) => isTerminalInteraction(item));
 }
 
 export function promoteOverdueInteractionStatusForRead<T extends Pick<Interaction, "date" | "type" | "status">>(interaction: T, now = new Date()) {
@@ -49,8 +99,23 @@ export function promoteOverdueInteractionStatusForRead<T extends Pick<Interactio
   };
 }
 
-export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "date" | "type" | "status">>(interactions: readonly T[], now = new Date()) {
-  return interactions.map((interaction) => promoteOverdueInteractionStatusForRead(interaction, now));
+export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "id" | "date" | "type" | "status" | "stage" | "outcome" | "followUp">>(interactions: readonly T[], now = new Date()) {
+  const orderedInteractions = [...interactions].sort((left, right) => {
+    const leftTime = new Date(left.date).getTime();
+    const rightTime = new Date(right.date).getTime();
+    if (leftTime !== rightTime) {
+      return leftTime - rightTime;
+    }
+    return left.id.localeCompare(right.id);
+  });
+
+  return orderedInteractions.map((interaction) => {
+    if (hasLaterTerminalInteraction(interaction, orderedInteractions)) {
+      return interaction;
+    }
+
+    return promoteOverdueInteractionStatusForRead(interaction, now);
+  });
 }
 
 export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | "status" | "type" | "stage" | "outcome" | "followUp">) {
@@ -78,4 +143,65 @@ export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | 
   }
 
   return { label: "Waiting for response", tone: "warning" as const };
+}
+
+export function getInteractionTimelineBadgeMeta(
+  interaction: Pick<Interaction, "id" | "date" | "status" | "type" | "stage" | "outcome" | "followUp">,
+  interactions: readonly Pick<Interaction, "id" | "date" | "status" | "type" | "stage" | "outcome" | "followUp">[],
+) {
+  const normalizedType = normalizeInteractionType(interaction.type);
+
+  if (normalizedType === "Rejection" || normalizedType === "Offer") {
+    return null;
+  }
+
+  if (hasLaterTerminalInteraction(interaction, interactions)) {
+    return null;
+  }
+
+  const promoted = promoteOverdueInteractionStatusForRead(interaction);
+  return getInteractionBadgeMeta(promoted);
+}
+
+type OpportunityProcessSource = Pick<NonNullable<Interaction["jobOpportunity"]>, "status" | "pipelineType">;
+
+export function getOpportunityProcessBadgeMeta(
+  opportunity: OpportunityProcessSource | null | undefined,
+  interactions: readonly Pick<Interaction, "type" | "status" | "outcome" | "followUp">[]
+) {
+  const interactionText = interactions
+    .flatMap((interaction) => [interaction.type, interaction.outcome, interaction.followUp])
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const hasRejectedInteraction =
+    opportunity?.status === "REJECTED" ||
+    interactions.some((interaction) => interaction.status === "REJECTED" || normalizeInteractionType(interaction.type) === "Rejection");
+
+  if (hasRejectedInteraction || /reject|declin|not.*moving forward|moving on|not a fit|no longer|withdrawn?|לא מתקדמים|דחייה|נדחה/.test(interactionText)) {
+    return { label: "Rejected", tone: "red" as const };
+  }
+
+  const hasOfferSignal =
+    opportunity?.status === "OFFER" ||
+    interactions.some((interaction) => normalizeInteractionType(interaction.type) === "Offer" || /offer|contract|agreement|חתימה|הצעה/.test(`${interaction.type} ${interaction.outcome ?? ""} ${interaction.followUp ?? ""}`.toLowerCase()));
+
+  if (hasOfferSignal) {
+    return { label: "Contract", tone: "violet" as const };
+  }
+
+  if (opportunity?.pipelineType === "ACTIVE_PROCESS" || interactions.length > 0) {
+    return { label: "In process", tone: "green" as const };
+  }
+
+  if (opportunity?.pipelineType === "POTENTIAL") {
+    return { label: "Potential", tone: "blue" as const };
+  }
+
+  if (opportunity?.pipelineType === "ARCHIVED") {
+    return { label: "Archived", tone: "muted" as const };
+  }
+
+  return null;
 }

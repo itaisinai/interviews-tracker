@@ -8,6 +8,7 @@ test("email interaction prompt prefers explicit phone call types", () => {
   assert.match(prompt, /Type must be exactly one of:/);
   assert.match(prompt, /Phone Call/);
   assert.match(prompt, /Follow-up/);
+  assert.match(prompt, /Put the human-readable result of the interaction in outcome/);
   assert.match(prompt, /type must be Phone Call/);
   assert.match(prompt, /do not collapse it into a generic Interview/i);
 });

@@ -22,7 +22,11 @@ export const interactionTextParserSkill = `
 - If there is no explicit date, use the fallback timestamp from the prompt and mention that the date was not explicit.
 - Never upgrade a generic interview to Final Interview or Technical Interview unless the text says so.
 - If stage is not explicit, use Interview or null; do not invent a more advanced stage.
-- Preserve useful raw details in notes and followUp.
+- Preserve useful raw details in notes.
+- Put the human-readable result of the interaction in outcome.
+- Put the next action, if any, in followUp.
+- Do not use status as the main narrative field.
+- Status is for the scheduling/state of this interaction only.
 - Sender/person names should be taken from the text only if explicit.
 - Type must be exactly one of: ${interactionTypeSchema.options.join(", ")}.
 - If the message looks like a recruiter outreach, use type Email.
@@ -31,14 +35,17 @@ export const interactionTextParserSkill = `
 - If it is a home assignment, use type Home Assignment.
 - If it is a follow-up, use type Follow-up.
 - If it is an offer, use type Offer.
+- If it is a rejection, use type Rejection.
 
 ## Status Rules
 
 - Future interview or invite => SCHEDULED
 - Completed meeting or post-interview note => DONE
-- Explicit rejection or rejection follow-up => REJECTED
+- Explicit rejection or rejection follow-up => REJECTED.
 - Cancellation or reschedule => CANCELLED or NEEDS_FOLLOW_UP
 - If the text is ambiguous, prefer NEEDS_FOLLOW_UP over guessing completion.
+- If the text already contains a later terminal result, do not put "Waiting for response" into status; keep the response in outcome or followUp instead.
+- For explicit rejection emails, use type Rejection, set status to REJECTED, put a short rejection summary in outcome, and leave followUp null unless there is an explicit action to take.
 
 ## Output Rules
 
