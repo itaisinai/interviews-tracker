@@ -17,14 +17,27 @@ export function initials(name: string) {
     .join("");
 }
 
+function isSameLocalDay(value: Date, reference = new Date()) {
+  return (
+    value.getFullYear() === reference.getFullYear() &&
+    value.getMonth() === reference.getMonth() &&
+    value.getDate() === reference.getDate()
+  );
+}
+
 export function formatDate(value?: string | null) {
   if (!value) return "-";
-  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const date = new Date(value);
+  const formatted = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return isSameLocalDay(date) ? `Today · ${formatted}` : formatted;
 }
 
 export function formatDateTime(value?: string | null) {
   if (!value) return "-";
-  return new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const date = new Date(value);
+  const formattedDate = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const formattedTime = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+  return isSameLocalDay(date) ? `Today · ${formattedDate} · ${formattedTime}` : `${formattedDate} · ${formattedTime}`;
 }
 
 export function statusTone(status: JobStatus | string) {
