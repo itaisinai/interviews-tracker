@@ -26,5 +26,5 @@ webhooksRouter.post("/telegram", asyncHandler(async (request, response) => {
     return;
   }
 
-  response.json(await telegramWebhookHandler(request));
+  response.status(202).json(telegramWebhookHandler(request));
 }));
