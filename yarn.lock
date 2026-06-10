@@ -676,6 +676,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@interviews-tracker/logger@workspace:packages/logger":
+  version: 0.0.0-use.local
+  resolution: "@interviews-tracker/logger@workspace:packages/logger"
+  languageName: unknown
+  linkType: soft
+
 "@isaacs/cliui@npm:^8.0.2":
   version: 8.0.2
   resolution: "@isaacs/cliui@npm:8.0.2"
