@@ -244,6 +244,44 @@ OPENAI_MODEL=gpt-4o-mini
 
 Local environment variables should live in the repository root `.env` file. Vite reads that file through `envDir`, so the frontend can see the `VITE_*` Auth0 variables there without duplicating them under `apps/web`.
 
+
+## Telegram Opportunity Import
+
+The API exposes two unauthenticated-by-Auth0 webhook endpoints protected by shared-secret headers:
+
+- `POST /webhooks/telegram`: receives Telegram bot updates. Telegram should send the `X-Telegram-Bot-Api-Secret-Token` header, and the value must match `TELEGRAM_WEBHOOK_SECRET_TOKEN`.
+- `POST /webhooks/opportunities/telegram`: receives normalized opportunity text from the Telegram handler. Callers must send `X-Opportunity-Webhook-Secret`, and the value must match `OPPORTUNITY_WEBHOOK_SECRET`.
+
+When a Telegram text message arrives, the Telegram webhook forwards the message text to `TELEGRAM_BACKEND_WEBHOOK_URL`. The backend webhook validates the body, parses the free text with the existing OpenAI job parser, maps the parsed result into the existing opportunity input schema, and creates the record through the same create-opportunity service used by `POST /api/opportunities`. The bot replies in Telegram with a success or failure message.
+
+Set these environment variables in the repository root `.env` and in production:
+
+```env
+TELEGRAM_BOT_TOKEN=123456:bot-token-from-botfather
+TELEGRAM_WEBHOOK_SECRET_TOKEN=random-telegram-secret-token
+TELEGRAM_BACKEND_WEBHOOK_URL=http://localhost:4000/webhooks/opportunities/telegram
+OPPORTUNITY_WEBHOOK_SECRET=random-shared-backend-secret
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+```
+
+For local manual testing, start the API and post directly to the backend webhook:
+
+```sh
+curl -X POST http://localhost:4000/webhooks/opportunities/telegram \
+  -H 'Content-Type: application/json' \
+  -H "X-Opportunity-Webhook-Secret: $OPPORTUNITY_WEBHOOK_SECRET" \
+  -d '{"text":"Recruiter reached out from ExampleCo for a Senior Backend Engineer role. Stack Node.js and PostgreSQL. Next step is to reply with availability."}'
+```
+
+To connect Telegram, expose the API publicly and register the bot webhook with Telegram using the same secret token:
+
+```sh
+curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+  -H 'Content-Type: application/json' \
+  -d "{\"url\":\"https://your-api.example.com/webhooks/telegram\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET_TOKEN\"}"
+```
+
 ## Available Companies
 
 The `Companies` page aggregates every company mentioned in job opportunities and interactions. It is derived from PostgreSQL records, not demo data. Click a company to view:
