@@ -3,6 +3,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests/visual",
   fullyParallel: false,
+  snapshotPathTemplate: "./tests/visual/{testFileName}-snapshots/{arg}{ext}",
   use: {
     baseURL: process.env.STORYBOOK_URL ?? "http://127.0.0.1:6006",
     viewport: { width: 1280, height: 960 },
