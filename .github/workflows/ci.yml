@@ -32,3 +32,12 @@ jobs:
 
       - name: Build
         run: yarn build
+
+      - name: Build Storybook
+        run: yarn build:storybook
+
+      - name: Install Playwright Chromium
+        run: yarn exec playwright install --with-deps chromium
+
+      - name: Visual tests
+        run: yarn test:visual

@@ -1,21 +1,74 @@
 import type { ReactNode } from "react";
-import { pipelineTone, priorityTone, statusTone, titleize } from "../lib/format";
-import { displayLabelForEnumValue } from "../lib/enum-labels";
+import {
+  Badge as DesignBadge,
+  type BadgeTone,
+} from "@interviews-tracker/design-system";
+import {
+  displayLabelForEnumValue,
+  offerStatusLabels,
+  pipelineTypeLabels,
+  priorityLabels,
+  taskStatusLabels,
+  interactionStatusLabels,
+  jobStatusLabels,
+} from "../lib/enum-labels";
+import { pipelineTone, priorityTone, statusTone } from "../lib/format";
 
-const colors: Record<string, string> = {
-  active: "bg-[#2f7d57] text-white",
-  potential: "bg-[#dfeaf4] text-[#365062]",
-  green: "bg-[#2f7d57] text-white",
-  blue: "bg-[#d9e3f7] text-[#365062]",
-  violet: "bg-[#d7cef8] text-[#4e3e99]",
-  red: "bg-[#f6ddd8] text-[#a64231]",
-  neutral: "bg-[#e7ecef] text-[#43535d]",
-  muted: "bg-[#e9eeec] text-[#43535d]",
-  warning: "bg-[#f4e8d7] text-[#8a5d17]"
+type BadgeProps = {
+  value?: string | null;
+  children?: ReactNode;
+  tone?: BadgeTone;
+  className?: string;
 };
 
-export function Badge({ value, children, tone }: { value: string; children?: ReactNode; tone?: keyof typeof colors }) {
-  const inferred = tone ?? (["ACTIVE_PROCESS", "POTENTIAL", "ARCHIVED"].includes(value) ? pipelineTone(value) : ["HIGH", "MEDIUM", "LOW", "MAYBE"].includes(value) ? priorityTone(value) : statusTone(value));
-  const display = children ?? displayLabelForEnumValue(value) ?? titleize(value);
-  return <span className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 font-label-md text-[11px] leading-none ${colors[inferred] ?? colors.neutral}`}>{display}</span>;
+function toneForValue(value?: string | null): BadgeTone | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value in priorityLabels) {
+    return priorityTone(value);
+  }
+
+  if (value in pipelineTypeLabels) {
+    const tone = pipelineTone(value);
+    if (tone === "active") {
+      return "green";
+    }
+    if (tone === "potential") {
+      return "blue";
+    }
+    return tone;
+  }
+
+  if (value in jobStatusLabels || value in taskStatusLabels || value in interactionStatusLabels) {
+    return statusTone(value);
+  }
+
+  if (value in offerStatusLabels) {
+    if (value === "ACCEPTED" || value === "VERBAL_OFFER" || value === "WRITTEN_OFFER") {
+      return "green";
+    }
+
+    if (value === "DECLINED") {
+      return "red";
+    }
+
+    return "violet";
+  }
+
+  return undefined;
 }
+
+export function Badge({ value, children, tone, className }: BadgeProps) {
+  const content = children ?? displayLabelForEnumValue(value ?? "") ?? value ?? "";
+  const resolvedTone = tone ?? toneForValue(value);
+
+  return (
+    <DesignBadge tone={resolvedTone} className={className}>
+      {content}
+    </DesignBadge>
+  );
+}
+
+export type { BadgeTone };

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type KeyboardEvent, type MouseEvent } from "react";
 
 import { Badge } from "../badge";
 import { LoadingButton } from "../loading-state";
@@ -76,7 +76,7 @@ export function Timeline({
                   ? () => onSelectInteraction(item.id)
                   : undefined
               }
-              onKeyDown={(event) => {
+              onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
                 if (!onSelectInteraction) return;
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
@@ -137,7 +137,7 @@ export function Timeline({
                       isDeletingInteraction(item.id),
                     )
                   }
-                  onClick={(event) => {
+                  onClick={(event: MouseEvent<HTMLButtonElement>) => {
                     event.stopPropagation();
                     if (window.confirm("Delete this interaction?")) {
                       onDeleteInteraction(item.id);
