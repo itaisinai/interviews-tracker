@@ -186,6 +186,12 @@ Recommended Vercel settings:
 
 The repo also ships a root `vercel.json` that pins the install command to Corepack + Yarn 4, so Vercel and CI use the same package manager.
 
+If you need to debug a Yarn/Corepack mismatch locally or in CI, run:
+
+```sh
+node scripts/debug-yarn-env.mjs
+```
+
 Set this Vercel environment variable:
 
 ```env
