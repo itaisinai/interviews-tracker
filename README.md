@@ -111,6 +111,8 @@ yarn build
 
 `yarn build` regenerates Prisma Client, compiles internal workspace packages to `packages/*/dist`, compiles the Express API to `dist/api`, and builds the Vite frontend to `dist/web`. Package exports point at compiled JS and declarations, so production Node does not load `packages/*/src/*.ts`.
 
+For an API-only deployment, `yarn build:api` is safe to run directly: it regenerates Prisma Client, builds the internal workspace packages first, then compiles the Express API.
+
 For a production database, run migrations with:
 
 ```sh
@@ -150,7 +152,7 @@ Create a Render Web Service for the Express API.
 Recommended Render settings:
 
 - Runtime: Node
-- Build command: `yarn install --immutable && yarn build`
+- Build command: `yarn install --immutable && yarn build:api`
 - Start command: `yarn start:api`
 - Health check path: `/health`
 
@@ -317,7 +319,9 @@ Create an OAuth client in Google Cloud, enable the Gmail API, and add the callba
 ## Scripts
 
 - `yarn dev`: start API and web app.
-- `yarn build`: generate Prisma Client, build API, and build frontend.
+- `yarn build`: generate Prisma Client, build internal packages, build API, and build frontend.
+- `yarn build:api`: generate Prisma Client, build internal packages, and compile the API for API-only deploys.
+- `yarn build:api:compile`: compile only the API after internal package `dist` outputs already exist.
 - `yarn typecheck`: TypeScript validation.
 - `yarn prisma:generate`: generate Prisma Client.
 - `yarn db:migrate`: run Prisma migrations.
