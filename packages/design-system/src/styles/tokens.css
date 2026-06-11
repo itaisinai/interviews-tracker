@@ -1,0 +1,24 @@
+:root {
+  --color-background-app: 244 242 236;
+  --color-background-surface: 247 245 239;
+  --color-background-muted: 231 225 214;
+  --color-background-elevated: 254 253 248;
+  --color-text-primary: 16 32 43;
+  --color-text-secondary: 77 87 81;
+  --color-text-tertiary: 151 161 154;
+  --color-border-default: 188 199 187;
+  --color-border-strong: 152 163 155;
+  --color-action-primary: 0 107 69;
+  --color-action-primary-foreground: 255 255 255;
+  --color-action-secondary: 80 117 99;
+  --color-status-success: 47 125 87;
+  --color-status-warning: 194 139 44;
+  --color-status-danger: 193 73 67;
+  --color-status-info: 95 121 185;
+  --radius-sm: 0.45rem;
+  --radius-md: 0.65rem;
+  --radius-lg: 0.9rem;
+  --radius-xl: 1.1rem;
+  --shadow-sm: 0 1px 2px rgb(16 32 43 / 0.04);
+  --shadow-md: 0 8px 28px rgb(16 32 43 / 0.08);
+}

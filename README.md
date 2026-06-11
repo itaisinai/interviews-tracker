@@ -64,6 +64,8 @@ yarn db:migrate
 yarn dev
 ```
 
+`yarn dev` first builds the internal workspace packages to `packages/*/dist`, then keeps those package builds running in watch mode while `tsx` runs the API and Vite runs the web app. Vite still aliases workspace imports to package source for fast frontend development; the API imports the compiled package outputs that match production Node resolution.
+
 The API runs on `http://localhost:4000/api` and the web app runs on `http://localhost:5173`. Health checks are available at:
 
 ```sh
@@ -79,6 +81,25 @@ Do not use `apps/web/.env` unless you intentionally want to override the normal 
 
 Run `yarn env:check` after editing env vars. Restart `yarn dev` after env changes so both processes reload the updated values.
 
+## Visual Testing
+
+Storybook visual regression tests run inside the same Playwright Docker image in local development and CI.
+
+Use these commands:
+
+```sh
+yarn test:visual
+yarn test:visual:update
+```
+
+Both commands automatically launch the Docker-backed runner. Do not update snapshots directly on macOS if you want CI to match local output. For debugging only, there is also:
+
+```sh
+yarn test:visual:local
+```
+
+CI uploads `test-results/`, `playwright-report/`, and visual diff images when the suite fails.
+
 ## Production Build
 
 Run validation and build:
@@ -88,7 +109,7 @@ yarn typecheck
 yarn build
 ```
 
-`yarn build` regenerates Prisma Client, compiles the Express API to `dist/api`, and builds the Vite frontend to `dist/web`.
+`yarn build` regenerates Prisma Client, compiles internal workspace packages to `packages/*/dist`, compiles the Express API to `dist/api`, and builds the Vite frontend to `dist/web`. Package exports point at compiled JS and declarations, so production Node does not load `packages/*/src/*.ts`.
 
 For a production database, run migrations with:
 
@@ -164,6 +185,16 @@ Recommended Vercel settings:
 - Framework preset: Vite
 - Build command: `yarn build:web`
 - Output directory: `dist/web`
+
+The repo also ships a root `vercel.json` that pins the install and build commands to Corepack + Yarn 4, so Vercel and CI use the same package manager.
+
+If you need to debug a Yarn/Corepack mismatch locally or in CI, run:
+
+```sh
+node scripts/debug-yarn-env.mjs
+```
+
+If Vercel ever resolves Yarn 1 again, check the deployment log for the install command. It must invoke `corepack yarn ...` explicitly; `corepack prepare` alone is not enough when the platform has a global Yarn 1 binary on PATH.
 
 Set this Vercel environment variable:
 
