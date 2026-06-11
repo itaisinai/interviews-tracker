@@ -45,3 +45,16 @@ jobs:
         env:
           HOME: /tmp/storybook-home
         run: yarn test:visual
+
+      - name: Upload visual test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-test-artifacts
+          if-no-files-found: ignore
+          path: |
+            test-results/**
+            playwright-report/**
+            **/*-actual.png
+            **/*-expected.png
+            **/*-diff.png
