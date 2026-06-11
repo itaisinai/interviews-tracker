@@ -37,7 +37,11 @@ jobs:
         run: yarn build:storybook
 
       - name: Install Playwright Chromium
+        env:
+          HOME: /tmp/storybook-home
         run: yarn exec playwright install --with-deps chromium
 
       - name: Visual tests
+        env:
+          HOME: /tmp/storybook-home
         run: yarn test:visual
