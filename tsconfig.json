@@ -15,12 +15,15 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@interviews-tracker/core": ["packages/core/src/index.ts"],
       "@interviews-tracker/ai": ["packages/ai/src/index.ts"],
       "@interviews-tracker/integrations": ["packages/integrations/src/index.ts"],
-      "@interviews-tracker/api-client": ["packages/api-client/src/index.ts"]
+      "@interviews-tracker/api-client": ["packages/api-client/src/index.ts"],
+      "@interviews-tracker/design-system": ["packages/design-system/src/index.ts"],
+      "@interviews-tracker/design-system/*": ["packages/design-system/src/*"]
     }
   },
   "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "prisma/**/*.ts"]

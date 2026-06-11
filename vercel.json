@@ -1,8 +1,5 @@
 {
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "installCommand": "corepack enable && corepack prepare yarn@4.9.2 --activate && corepack yarn install --immutable",
+  "buildCommand": "corepack yarn build:web",
+  "outputDirectory": "dist/web"
 }

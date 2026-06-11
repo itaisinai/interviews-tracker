@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 const builtCandidates = [
   "dist/api/server.js",
   "dist/api/src/server.js",
+  "dist/api/apps/api/src/server.js",
   "dist/server.js",
   "apps/api/dist/server.js",
   "apps/api/dist/src/server.js"

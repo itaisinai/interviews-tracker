@@ -1,5 +1,11 @@
 node_modules/
 dist/
+storybook-static/
+test-results/
+.playwright/
+playwright-report/
+packages/**/src/**/*.js
+packages/**/src/**/*.js.map
 .env
 .pnp.*
 .yarn/install-state.gz

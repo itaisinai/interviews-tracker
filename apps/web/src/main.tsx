@@ -16,6 +16,7 @@ import { TasksPage } from "./pages/tasks-page";
 import { CompensationPage } from "./pages/compensation-page";
 import { SettingsPage } from "./pages/settings-page";
 import { ParseJobPage } from "./pages/parse-job-page";
+import "@interviews-tracker/design-system/styles/tokens.css";
 import "./styles.css";
 
 function App() {
