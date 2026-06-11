@@ -184,13 +184,15 @@ Recommended Vercel settings:
 - Build command: `yarn build:web`
 - Output directory: `dist/web`
 
-The repo also ships a root `vercel.json` that pins the install command to Corepack + Yarn 4, so Vercel and CI use the same package manager.
+The repo also ships a root `vercel.json` that pins the install and build commands to Corepack + Yarn 4, so Vercel and CI use the same package manager.
 
 If you need to debug a Yarn/Corepack mismatch locally or in CI, run:
 
 ```sh
 node scripts/debug-yarn-env.mjs
 ```
+
+If Vercel ever resolves Yarn 1 again, check the deployment log for the install command. It must invoke `corepack yarn ...` explicitly; `corepack prepare` alone is not enough when the platform has a global Yarn 1 binary on PATH.
 
 Set this Vercel environment variable:
 
