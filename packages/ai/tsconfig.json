@@ -1,12 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": false,
-    "rootDir": "../../packages",
-    "outDir": "../../dist/ai"
+    "noEmit": true
   },
   "include": ["src/**/*.ts", "../core/src/**/*.ts"]
 }

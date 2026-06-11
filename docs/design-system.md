@@ -105,16 +105,36 @@ Write stories that cover:
 
 ## Visual snapshots
 
-Visual regression tests use Storybook screenshots via Playwright.
+Visual regression tests use Storybook screenshots via Playwright inside the same Linux Docker image used in CI.
 
 Scripts:
 
 - `yarn test:visual`
 - `yarn test:visual:update`
+- `yarn test:visual:local`
 
-The visual test runner serves the built Storybook output and captures screenshots for the stories.
+`yarn test:visual` and `yarn test:visual:update` are the canonical commands. They run the tests inside the Playwright Docker image automatically. Do not generate or update snapshots directly on macOS if you want the snapshots that CI will use.
 
-Run `yarn test:visual:update` only when you intentionally change component visuals.
+`yarn test:visual:local` runs the same Storybook/Playwright test logic without Docker. It is useful for debugging, but it is not the canonical snapshot path and it should not be used to update committed PNGs.
+
+When the visual suite fails in CI, GitHub Actions uploads:
+
+- `test-results/**`
+- `playwright-report/**`
+- `**/*-actual.png`
+- `**/*-expected.png`
+- `**/*-diff.png`
+
+Snapshot policy:
+
+- Update snapshots only with `yarn test:visual:update`.
+- That command also runs inside Docker automatically.
+- Commit the updated PNGs only after reviewing the diffs.
+
+Troubleshooting:
+
+- If Docker is unavailable locally, the runner fails with a clear message.
+- If the Playwright Docker image drifts from the installed `@playwright/test` version, CI fails with a version-mismatch error.
 
 ## Migration approach
 
