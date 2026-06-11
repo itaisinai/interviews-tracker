@@ -630,11 +630,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@interviews-tracker/ai@npm:0.0.0, @interviews-tracker/ai@workspace:packages/ai":
+"@interviews-tracker/ai@workspace:*, @interviews-tracker/ai@workspace:packages/ai":
   version: 0.0.0-use.local
   resolution: "@interviews-tracker/ai@workspace:packages/ai"
   dependencies:
-    "@interviews-tracker/core": "npm:0.0.0"
+    "@interviews-tracker/core": "workspace:*"
     zod: "npm:^3.25.76"
   languageName: unknown
   linkType: soft
@@ -643,13 +643,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@interviews-tracker/api-client@workspace:packages/api-client"
   dependencies:
-    "@interviews-tracker/ai": "npm:0.0.0"
-    "@interviews-tracker/core": "npm:0.0.0"
-    "@interviews-tracker/integrations": "npm:0.0.0"
+    "@interviews-tracker/ai": "workspace:*"
+    "@interviews-tracker/core": "workspace:*"
+    "@interviews-tracker/integrations": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@interviews-tracker/core@npm:0.0.0, @interviews-tracker/core@workspace:packages/core":
+"@interviews-tracker/core@workspace:*, @interviews-tracker/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@interviews-tracker/core@workspace:packages/core"
   dependencies:
@@ -667,11 +667,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@interviews-tracker/integrations@npm:0.0.0, @interviews-tracker/integrations@workspace:packages/integrations":
+"@interviews-tracker/integrations@workspace:*, @interviews-tracker/integrations@workspace:packages/integrations":
   version: 0.0.0-use.local
   resolution: "@interviews-tracker/integrations@workspace:packages/integrations"
   dependencies:
-    "@interviews-tracker/core": "npm:0.0.0"
+    "@interviews-tracker/core": "workspace:*"
     zod: "npm:^3.25.76"
   languageName: unknown
   linkType: soft

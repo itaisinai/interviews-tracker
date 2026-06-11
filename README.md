@@ -64,6 +64,8 @@ yarn db:migrate
 yarn dev
 ```
 
+`yarn dev` first builds the internal workspace packages to `packages/*/dist`, then keeps those package builds running in watch mode while `tsx` runs the API and Vite runs the web app. Vite still aliases workspace imports to package source for fast frontend development; the API imports the compiled package outputs that match production Node resolution.
+
 The API runs on `http://localhost:4000/api` and the web app runs on `http://localhost:5173`. Health checks are available at:
 
 ```sh
@@ -107,7 +109,7 @@ yarn typecheck
 yarn build
 ```
 
-`yarn build` regenerates Prisma Client, compiles the Express API to `dist/api`, and builds the Vite frontend to `dist/web`.
+`yarn build` regenerates Prisma Client, compiles internal workspace packages to `packages/*/dist`, compiles the Express API to `dist/api`, and builds the Vite frontend to `dist/web`. Package exports point at compiled JS and declarations, so production Node does not load `packages/*/src/*.ts`.
 
 For a production database, run migrations with:
 

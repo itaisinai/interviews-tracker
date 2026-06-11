@@ -3,12 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node ../../scripts/copy-package-assets.mjs .",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
+  },
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
-    "./styles/tokens.css": "./src/styles/tokens.css"
+    "./styles/tokens.css": "./dist/styles/tokens.css"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
