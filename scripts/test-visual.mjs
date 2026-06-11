@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 
 const updateSnapshots = process.env.UPDATE_SNAPSHOTS === "1";
-const storybookHome = "/private/tmp/storybook-home";
+const storybookHome = "/tmp/storybook-home";
 const storybookStaticDir = path.resolve("storybook-static");
 
 await mkdir(storybookHome, { recursive: true });
