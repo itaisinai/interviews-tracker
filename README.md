@@ -184,6 +184,8 @@ Recommended Vercel settings:
 - Build command: `yarn build:web`
 - Output directory: `dist/web`
 
+The repo also ships a root `vercel.json` that pins the install command to Corepack + Yarn 4, so Vercel and CI use the same package manager.
+
 Set this Vercel environment variable:
 
 ```env
