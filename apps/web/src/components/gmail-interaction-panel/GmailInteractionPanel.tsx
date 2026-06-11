@@ -22,6 +22,12 @@ type GmailInteractionPanelProps = {
   onSaved?: (interaction?: Interaction) => void;
 };
 
+type TrackedGmailEmail = {
+  id: string;
+  subject: string;
+  date: string;
+};
+
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -57,6 +63,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
   const [draft, setDraft] = useState<GmailInteractionDraft | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [clearingEmailId, setClearingEmailId] = useState<string | null>(null);
   const [lastAction, setLastAction] = useState<"connect" | "search" | "parse" | null>(null);
   const activeRunIdRef = useRef(0);
 
@@ -102,6 +109,12 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       setDraft(null);
     }
   }, [statusQuery.data?.connected]);
+
+  const gmailMessageStatesQuery = useQuery({
+    queryKey: ["gmail-message-states", opportunityId],
+    queryFn: () => api.gmailMessageStates(opportunityId),
+    enabled: Boolean(statusQuery.data?.connected && opportunityId)
+  });
 
   const searchHint = useMemo(() => `Searching Gmail for "${companyName}" from the last 180 days.`, [companyName]);
 
@@ -198,6 +211,14 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       setSelectedEmail(response.email);
       setAnalysis(response.analysis);
       setDraft({ ...response.interaction, type: normalizeInteractionType(response.interaction.type) });
+      setSearchResults((results) => results.filter((candidate) => candidate.id !== email.id));
+      queryClient.setQueryData<{ removedEmails: TrackedGmailEmail[]; pickedEmails: TrackedGmailEmail[] }>(["gmail-message-states", opportunityId], (current) => ({
+        removedEmails: current?.removedEmails ?? [],
+        pickedEmails: [
+          { id: email.id, subject: email.subject, date: email.date },
+          ...(current?.pickedEmails.filter((pickedEmail) => pickedEmail.id !== email.id) ?? [])
+        ]
+      }));
       setFlowState("ready_for_review");
       setMessage("Ready for review.");
     } catch (caughtError) {
@@ -208,6 +229,51 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       setError(getErrorMessage(caughtError));
       setFlowState("failed");
       setMessage("Gmail email parsing failed.");
+    }
+  }
+
+  async function clearEmail(email: GmailSearchCandidate) {
+    setClearingEmailId(email.id);
+    setError(null);
+    setSaveError(null);
+
+    try {
+      await api.gmailHideEmail(opportunityId, email.id);
+      setSearchResults((results) => results.filter((candidate) => candidate.id !== email.id));
+      queryClient.setQueryData<{ removedEmails: TrackedGmailEmail[]; pickedEmails: TrackedGmailEmail[] }>(["gmail-message-states", opportunityId], (current) => ({
+        removedEmails: [
+          { id: email.id, subject: email.subject, date: email.date },
+          ...(current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? [])
+        ],
+        pickedEmails: current?.pickedEmails ?? []
+      }));
+      setMessage("Email cleared from future Gmail searches.");
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError));
+      setFlowState("failed");
+      setMessage("Could not clear email.");
+    } finally {
+      setClearingEmailId(null);
+    }
+  }
+
+  async function restoreEmail(email: TrackedGmailEmail) {
+    setClearingEmailId(email.id);
+    setError(null);
+
+    try {
+      await api.gmailRestoreEmail(opportunityId, email.id);
+      queryClient.setQueryData<{ removedEmails: TrackedGmailEmail[]; pickedEmails: TrackedGmailEmail[] }>(["gmail-message-states", opportunityId], (current) => ({
+        removedEmails: current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? [],
+        pickedEmails: current?.pickedEmails ?? []
+      }));
+      setMessage("Email restored.");
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError));
+      setFlowState("failed");
+      setMessage("Could not restore email.");
+    } finally {
+      setClearingEmailId(null);
     }
   }
 
@@ -270,6 +336,8 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
 
   const connected = statusQuery.data?.connected ?? false;
   const configured = statusQuery.data?.configured ?? false;
+  const removedEmails = gmailMessageStatesQuery.data?.removedEmails ?? [];
+  const pickedEmails = gmailMessageStatesQuery.data?.pickedEmails ?? [];
 
   return (
     <section className="panel border border-outline-variant p-6">
@@ -351,20 +419,31 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
               {searchResults.map((email) => {
                 const isSelected = selectedCandidate?.id === email.id;
                 const isParsing = isSelected && (flowState === "fetching_email" || flowState === "parsing_email");
+                const actionDisabled = flowState === "connecting_gmail" || flowState === "searching_emails" || flowState === "fetching_email" || flowState === "parsing_email" || Boolean(draft);
 
                 return (
-                  <button
+                  <div
                     key={email.id}
-                    className={`w-full rounded-xl border p-4 text-left transition-colors ${isSelected ? "border-primary bg-primary/5" : "border-outline-variant bg-white hover:bg-surface-container-low"}`}
-                    disabled={flowState === "connecting_gmail" || flowState === "searching_emails" || flowState === "fetching_email" || flowState === "parsing_email" || Boolean(draft)}
-                    onClick={() => void parseEmail(email)}
+                    className={`rounded-xl border p-4 transition-colors ${isSelected ? "border-primary bg-primary/5" : "border-outline-variant bg-white"}`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-semibold text-on-background">{email.subject}</p>
                         <p className="mt-1 text-body-md text-on-surface-variant">{email.from}</p>
                       </div>
-                      <p className="shrink-0 text-body-md text-on-surface-variant">{new Date(email.date).toLocaleDateString()}</p>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <p className="text-body-md text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                        <LoadingButton
+                          className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-50"
+                          disabled={actionDisabled}
+                          loading={clearingEmailId === email.id}
+                          loadingLabel=""
+                          icon="delete"
+                          onClick={() => void clearEmail(email)}
+                        >
+                          <span className="sr-only">Clear email</span>
+                        </LoadingButton>
+                      </div>
                     </div>
                     <p className="mt-3 text-body-md text-on-surface-variant">{email.snippet}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -381,7 +460,19 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                         <InlineLoadingState label={flowState === "fetching_email" ? "Fetching" : "Parsing"} />
                       </div>
                     ) : null}
-                  </button>
+                    <div className="mt-4 flex justify-end">
+                      <LoadingButton
+                        className="btn btn-primary"
+                        disabled={actionDisabled}
+                        loading={isParsing}
+                        loadingLabel="Parsing..."
+                        icon="auto_awesome"
+                        onClick={() => void parseEmail(email)}
+                      >
+                        Parse email
+                      </LoadingButton>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -390,6 +481,58 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
               No candidate emails loaded yet. Search Gmail to start.
             </div>
           ) : null}
+          <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Removed emails</p>
+              {gmailMessageStatesQuery.isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+            </div>
+            {removedEmails.length > 0 ? (
+              <div className="mt-3 divide-y divide-outline-variant">
+                {removedEmails.map((email) => (
+                  <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-body-md text-body-md font-semibold text-on-background">{email.subject}</p>
+                      <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                    </div>
+                    <LoadingButton
+                      className="btn btn-secondary"
+                      loading={clearingEmailId === email.id}
+                      loadingLabel="Restoring..."
+                      icon="undo"
+                      onClick={() => void restoreEmail(email)}
+                    >
+                      Undo
+                    </LoadingButton>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-body-md text-on-surface-variant">No removed emails.</p>
+            )}
+          </div>
+          <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Picked emails</p>
+              {gmailMessageStatesQuery.isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+            </div>
+            {pickedEmails.length > 0 ? (
+              <div className="mt-3 divide-y divide-outline-variant">
+                {pickedEmails.map((email) => (
+                  <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-body-md text-body-md font-semibold text-on-background">{email.subject}</p>
+                      <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                    </div>
+                    <span className="rounded-full bg-primary-container px-3 py-1 text-label-sm text-on-primary-container">
+                      Picked
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-body-md text-on-surface-variant">No picked emails.</p>
+            )}
+          </div>
         </div>
       ) : null}
 

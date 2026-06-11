@@ -591,6 +591,13 @@ function buildCompanySearchVariants(companyName: string) {
   return [...variants];
 }
 
+function buildCompanySearchTokens(companyName: string) {
+  return buildCompanySearchVariants(companyName)
+    .flatMap((variant) => variant.toLowerCase().split(/[^a-z0-9]+/i))
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3 && !["inc", "ltd", "llc", "com", "co", "io", "ai"].includes(token));
+}
+
 export function buildGmailSearchQueries(companyName: string, roleTitle?: string | null) {
   const companyVariants = buildCompanySearchVariants(companyName);
   const queries = new Set<string>();
@@ -606,6 +613,62 @@ export function buildGmailSearchQueries(companyName: string, roleTitle?: string 
   }
 
   return [...queries];
+}
+
+export function buildRelatedSenderDomainSearchQueries(companyName: string, senderDomains: Array<string | null | undefined>) {
+  const companyTokens = buildCompanySearchTokens(companyName);
+  const queries = new Set<string>();
+
+  if (companyTokens.length === 0) {
+    return [];
+  }
+
+  for (const senderDomain of senderDomains) {
+    const domain = senderDomain?.toLowerCase().replace(/[>,;]+$/g, "").trim();
+
+    if (!domain || !companyTokens.some((token) => domain.includes(token))) {
+      continue;
+    }
+
+    const domainRoot = domain.split(".")[0]?.trim();
+
+    if (domainRoot && domainRoot.length >= 3) {
+      queries.add(`${domainRoot} newer_than:365d`);
+    }
+
+    queries.add(`"${domain}" newer_than:365d`);
+    queries.add(`from:${domain} newer_than:365d`);
+  }
+
+  return [...queries];
+}
+
+export function sortGmailSearchCandidatesByDate<T extends { date: string }>(candidates: T[]) {
+  return candidates.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+function cleanMeetingUrl(value: string) {
+  return value
+    .replace(/\\n/g, "")
+    .replace(/\\\//g, "/")
+    .replace(/[),.;\]]+$/g, "")
+    .trim();
+}
+
+export function extractMeetingUrlFromStructuredEmail(email: GmailStructuredEmail) {
+  const sources = [
+    email.calendar?.location,
+    email.calendar?.description,
+    email.plainText,
+    email.htmlText,
+    email.calendarText
+  ].filter(Boolean).join("\n");
+  const urlMatches = sources.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
+  const meetingUrl = urlMatches
+    .map(cleanMeetingUrl)
+    .find((url) => /(?:^https?:\/\/)?(?:[\w-]+\.)?(?:zoom\.us|meet\.google\.com)\b/i.test(url));
+
+  return meetingUrl ?? null;
 }
 
 export function extractStructuredEmailMeetingDate(email: GmailStructuredEmail) {
@@ -641,10 +704,12 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
   const stage = inferStageFromEmailText(text);
   const status = inferStatusFromEmail(email, meeting.date);
   const agenda = email.calendar?.summary || null;
+  const meetingUrl = extractMeetingUrlFromStructuredEmail(email);
   const notesParts = [
     `Subject: ${email.subject}`,
     `From: ${email.fromRaw}`,
     email.calendar?.location ? `Location: ${email.calendar.location}` : null,
+    meetingUrl ? `Meeting link: ${meetingUrl}` : null,
     email.calendar?.start ? `Calendar start: ${email.calendar.start}` : null,
     email.calendar?.end ? `Calendar end: ${email.calendar.end}` : null,
     email.dateHeader ? `Date header: ${email.dateHeader}` : null,
@@ -681,12 +746,18 @@ export function classifySearchCandidateFallback(input: {
   snippet: string;
   date: string;
   senderDomain?: string | null;
+  searchQuery?: string | null;
 }): GmailSearchCandidateClassification {
   const text = `${input.subject}\n${input.from}\n${input.snippet}`.toLowerCase();
   const company = input.companyName.toLowerCase();
   const role = input.roleTitle?.toLowerCase() ?? "";
-  const related = text.includes(company) || (role ? text.includes(role) : false);
-  const interview = /interview|screening|onsite|phone screen|recruiter|assignment|offer|rejection|follow[- ]up/.test(text);
+  const senderDomain = input.senderDomain?.toLowerCase() ?? "";
+  const searchQuery = input.searchQuery?.toLowerCase() ?? "";
+  const companyTokens = buildCompanySearchTokens(input.companyName);
+  const domainRelated = companyTokens.some((token) => senderDomain.includes(token));
+  const queryRelated = companyTokens.some((token) => searchQuery.includes(token));
+  const related = text.includes(company) || (role ? text.includes(role) : false) || domainRelated || queryRelated;
+  const interview = /interview|screening|onsite|phone screen|recruiter|assignment|offer|rejection|follow[- ]up|invitation|meeting|calendar/.test(text);
   const relevant = related || interview;
   const confidence = relevant ? (related && interview ? 0.88 : 0.72) : 0.22;
 
@@ -694,17 +765,29 @@ export function classifySearchCandidateFallback(input: {
   if (/offer/.test(text)) emailType = "OFFER";
   else if (/rejection|sorry|not.*moving forward/.test(text)) emailType = "REJECTION";
   else if (/assignment|take-home|take home/.test(text)) emailType = "FOLLOW_UP";
-  else if (/interview|screening|onsite|phone screen/.test(text)) emailType = "INTERVIEW_INVITATION";
+  else if (/interview|screening|onsite|phone screen|invitation|meeting|calendar/.test(text)) emailType = "INTERVIEW_INVITATION";
   else if (/follow[- ]up|checking in|next steps|reschedule|schedule/.test(text)) emailType = "FOLLOW_UP";
   else if (/recruiter|talent acquisition|hiring manager|human resources|hr/.test(text)) emailType = "RECRUITER_MESSAGE";
 
-  const reason = relevant
-    ? related && interview
-      ? `Mentions ${company} and hiring-process language.`
-      : related
-        ? `Directly mentions ${company}.`
-        : "Contains hiring-process language relevant to the opportunity."
-    : "No strong company or hiring-process signal found.";
+  let reason = "No strong company or hiring-process signal found.";
+
+  if (relevant) {
+    if (queryRelated && interview) {
+      reason = `Matched a related sender-domain search for ${company} and hiring-process language.`;
+    } else if (domainRelated && interview) {
+      reason = `Sender domain matches ${company} and hiring-process language.`;
+    } else if (related && interview) {
+      reason = `Mentions ${company} and hiring-process language.`;
+    } else if (domainRelated) {
+      reason = `Sender domain matches ${company}.`;
+    } else if (queryRelated) {
+      reason = `Matched a related sender-domain search for ${company}.`;
+    } else if (related) {
+      reason = `Directly mentions ${company}.`;
+    } else {
+      reason = "Contains hiring-process language relevant to the opportunity.";
+    }
+  }
 
   return {
     messageId: input.messageId,

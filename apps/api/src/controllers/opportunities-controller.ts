@@ -5,7 +5,7 @@ import { interactionInputSchema, noteInputSchema, taskInputSchema, opportunityIn
 import { getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord, createOpportunityNoteRecord, createOpportunityTaskRecord } from "../repositories/opportunity-repository.js";
 import { createOpportunity, deleteOpportunity, getOpportunity, listOpportunities, updateOpportunity } from "../services/opportunities/opportunity-service.js";
 import { createInteraction as createInteractionRecord } from "../services/interactions/interaction-service.js";
-import { parseGmailEmailToInteraction, searchGmailMessages } from "../services/gmail/gmail-service.js";
+import { hideGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages } from "../services/gmail/gmail-service.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
 
 type AuthenticatedRequest = Request & { auth?: { email?: string | null } };
@@ -68,6 +68,19 @@ export async function searchOpportunityGmailHandler(request: AuthenticatedReques
   return result;
 }
 
+export async function listTrackedOpportunityGmailMessagesHandler(request: AuthenticatedRequest) {
+  const opportunity = await getOpportunitySummaryRecord(request.params.id);
+
+  if (!opportunity) {
+    return null;
+  }
+
+  return listTrackedGmailMessages({
+    auth0Email: request.auth?.email ?? "",
+    jobOpportunityId: request.params.id
+  });
+}
+
 export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRequest) {
   const opportunity = await getOpportunitySummaryRecord(request.params.id);
 
@@ -81,10 +94,44 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
     auth0Email: request.auth?.email ?? "",
     companyName: opportunity.companyName,
     roleTitle: opportunity.roleTitle,
-    messageId
+    messageId,
+    jobOpportunityId: request.params.id
   });
   timer.end({ company: opportunity.companyName });
   return result;
+}
+
+export async function hideOpportunityGmailMessageHandler(request: AuthenticatedRequest) {
+  const opportunity = await getOpportunitySummaryRecord(request.params.id);
+
+  if (!opportunity) {
+    return null;
+  }
+
+  const { messageId } = z.object({ messageId: z.string().min(1) }).parse(request.params);
+  await hideGmailMessage({
+    auth0Email: request.auth?.email ?? "",
+    messageId,
+    jobOpportunityId: request.params.id
+  });
+
+  return { ok: true };
+}
+
+export async function restoreOpportunityGmailMessageHandler(request: AuthenticatedRequest) {
+  const opportunity = await getOpportunitySummaryRecord(request.params.id);
+
+  if (!opportunity) {
+    return null;
+  }
+
+  const { messageId } = z.object({ messageId: z.string().min(1) }).parse(request.params);
+  await restoreHiddenGmailMessage({
+    auth0Email: request.auth?.email ?? "",
+    messageId
+  });
+
+  return { ok: true };
 }
 
 export async function parseOpportunityInteractionTextHandler(request: AuthenticatedRequest) {
