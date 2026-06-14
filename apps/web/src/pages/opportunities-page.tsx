@@ -166,7 +166,7 @@ export function OpportunitiesPage() {
           {data.map((item) => {
             const state = mobileOpportunityState(item);
             return (
-              <Link key={item.id} to={`/opportunities/${item.id}`} className={`block rounded-xl border bg-surface-container-lowest p-4 shadow-sm ${state.border}`}>
+              <Link key={item.id} to={`/opportunities/${item.slug || item.id}`} className={`block rounded-xl border bg-surface-container-lowest p-4 shadow-sm ${state.border}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate font-title-md text-title-md font-bold text-on-background">{item.companyName}</h3>
@@ -240,12 +240,12 @@ export function OpportunitiesPage() {
                 onClick: (event) => {
                   const target = event.target as HTMLElement;
                   if (target.closest("a,button,input,select,textarea")) return;
-                  navigate(`/opportunities/${row.id}`);
+                  navigate(`/opportunities/${row.slug || row.id}`);
                 },
                 onKeyDown: (event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    navigate(`/opportunities/${row.id}`);
+                    navigate(`/opportunities/${row.slug || row.id}`);
                   }
                 }
               })}

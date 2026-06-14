@@ -5,12 +5,8 @@ import {
   PageLoadingState,
 } from "../components/loading-state";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  labelForPipelineType,
-  offerStatusOptions,
-} from "../lib/enum-labels";
-import { initials } from "../lib/format";
-import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
+import { labelForPipelineType, offerStatusOptions } from "../lib/enum-labels";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Badge } from "../components/badge";
@@ -21,16 +17,17 @@ import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
 import { Timeline } from "../components/timeline";
 import { api } from "../lib/api";
-import { useEffect, useMemo, useState } from "react";
+import { initials } from "../lib/format";
+import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 
 export function OpportunityDetailPage() {
-  const { id = "" } = useParams();
+  const { slugOrId = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["opportunity", id],
-    queryFn: () => api.opportunity(id),
-    enabled: Boolean(id),
+    queryKey: ["opportunity", slugOrId],
+    queryFn: () => api.opportunity(slugOrId),
+    enabled: Boolean(slugOrId),
   });
   const [note, setNote] = useState({
     title: "",
@@ -51,23 +48,29 @@ export function OpportunityDetailPage() {
     offerStatus: "NOT_DISCUSSED",
     negotiationNotes: "",
   });
-  const [selectedInteractionId, setSelectedInteractionId] = useState<string | null>(null);
+
+  const opportunityId = data?.id ?? slugOrId;
+  const canonicalSlug = data?.slug ?? null;
+  const [selectedInteractionId, setSelectedInteractionId] = useState<
+    string | null
+  >(null);
   const refresh = () =>
-    void queryClient.invalidateQueries({ queryKey: ["opportunity", id] });
+    void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
   const addNote = useMutation({
-    mutationFn: () => api.createOpportunityNote(id, note),
+    mutationFn: () => api.createOpportunityNote(opportunityId, note),
     onSuccess: refresh,
   });
   const addTask = useMutation({
-    mutationFn: () => api.createOpportunityTask(id, task),
+    mutationFn: () => api.createOpportunityTask(opportunityId, task),
     onSuccess: refresh,
   });
   const saveComp = useMutation({
-    mutationFn: () => api.upsertCompensation({ ...comp, jobOpportunityId: id }),
+    mutationFn: () =>
+      api.upsertCompensation({ ...comp, jobOpportunityId: opportunityId }),
     onSuccess: refresh,
   });
   const deleteOpportunity = useMutation({
-    mutationFn: () => api.deleteOpportunity(id),
+    mutationFn: () => api.deleteOpportunity(opportunityId),
     onSuccess: () => navigate("/opportunities"),
   });
   const deleteInteraction = useMutation({
@@ -89,8 +92,7 @@ export function OpportunityDetailPage() {
   });
 
   const displayedInteractions = useMemo(
-    () =>
-      data ? promoteOverdueInteractionsForRead(data.interactions) : [],
+    () => (data ? promoteOverdueInteractionsForRead(data.interactions) : []),
     [data],
   );
   const selectedInteraction = useMemo(
@@ -108,6 +110,12 @@ export function OpportunityDetailPage() {
       setSelectedInteractionId(null);
     }
   }, [displayedInteractions, selectedInteractionId]);
+
+  useEffect(() => {
+    if (canonicalSlug && canonicalSlug !== slugOrId) {
+      navigate(`/opportunities/${canonicalSlug}`, { replace: true });
+    }
+  }, [canonicalSlug, navigate, slugOrId]);
 
   if (isLoading || !data) {
     return (
