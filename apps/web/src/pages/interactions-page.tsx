@@ -6,6 +6,7 @@ import { OpportunityInteractionTimeline } from "../components/interactions-timel
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { MaterialIcon } from "../components/material-icon";
+import { labelForInteractionType } from "../lib/enum-labels";
 import { api } from "../lib/api";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 import type { Interaction } from "../lib/types";
@@ -77,6 +78,7 @@ export function InteractionsPage() {
   const displayInteractions = useMemo(() => promoteOverdueInteractionsForRead(data), [data]);
   const opportunityGroups = useMemo(() => buildOpportunityGroups(displayInteractions), [displayInteractions]);
   const visibleOpportunityGroups = useMemo(() => opportunityGroups.filter((group) => filterOpportunityGroup(group, filter)), [filter, opportunityGroups]);
+  const upcomingCalendar = useMemo(() => buildNextMonthCalendar(displayInteractions), [displayInteractions]);
   const gmailOpportunity = useMemo(() => opportunities.find((item) => item.id === gmailOpportunityId) ?? null, [gmailOpportunityId, opportunities]);
   const deleteInteraction = useMutation({
     mutationFn: (id: string) => api.deleteInteraction(id),
@@ -318,6 +320,7 @@ export function InteractionsPage() {
             </div>
           </section>
           <aside className="space-y-6 lg:col-span-4">
+            <NextMonthCalendar calendar={upcomingCalendar} />
             <div className="rounded-xl border border-outline-variant bg-white p-6 shadow-sm">
               <h3 className="mb-3 font-title-md text-title-md font-bold">Interaction Health</h3>
               <div className="mb-6 rounded-xl bg-surface-container-low p-4">
@@ -345,6 +348,171 @@ export function InteractionsPage() {
         onSelectInteraction={(interactionId) => setSelectedInteractionId(interactionId)}
       />
     </>
+  );
+}
+
+const dayFormatter = new Intl.DateTimeFormat(undefined, { day: "numeric" });
+const monthFormatter = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
+const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
+const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+type CalendarMeeting = {
+  id: string;
+  title: string;
+  time: string;
+  timestamp: number;
+};
+
+type CalendarDay = {
+  key: string;
+  date: Date;
+  meetings: CalendarMeeting[];
+};
+
+type NextMonthCalendarModel = {
+  label: string;
+  leadingBlankDays: number;
+  days: CalendarDay[];
+  totalMeetings: number;
+};
+
+function buildNextMonthCalendar(interactions: readonly Interaction[]): NextMonthCalendarModel {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+  const meetingsByDay = new Map<string, CalendarMeeting[]>();
+
+  for (const interaction of interactions) {
+    const date = new Date(interaction.date);
+
+    if (date < monthStart || date > new Date(monthEnd.getFullYear(), monthEnd.getMonth(), monthEnd.getDate(), 23, 59, 59, 999)) {
+      continue;
+    }
+
+    const key = formatCalendarKey(date);
+    const titleParts = [interaction.jobOpportunity?.companyName, interaction.stage || labelForInteractionType(interaction.type), interaction.personName].filter(Boolean);
+    const title = titleParts.length > 0 ? titleParts.join(" · ") : labelForInteractionType(interaction.type);
+    const meetings = meetingsByDay.get(key) ?? [];
+
+    meetings.push({
+      id: interaction.id,
+      title,
+      time: timeFormatter.format(date),
+      timestamp: date.getTime()
+    });
+    meetingsByDay.set(key, meetings);
+  }
+
+  const days: CalendarDay[] = Array.from({ length: monthEnd.getDate() }, (_, index) => {
+    const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), index + 1);
+    const key = formatCalendarKey(date);
+    const meetings = [...(meetingsByDay.get(key) ?? [])].sort((left, right) => left.timestamp - right.timestamp);
+
+    return { key, date, meetings };
+  });
+
+  return {
+    label: monthFormatter.format(monthStart),
+    leadingBlankDays: monthStart.getDay(),
+    days,
+    totalMeetings: days.reduce((total, day) => total + day.meetings.length, 0)
+  };
+}
+
+function formatCalendarKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function dotClassName(meetingCount: number) {
+  if (meetingCount > 1) return "bg-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.18)]";
+  if (meetingCount === 1) return "bg-primary shadow-[0_0_0_3px_rgba(0,121,83,0.14)]";
+  return "bg-outline-variant";
+}
+
+function NextMonthCalendar({ calendar }: { calendar: NextMonthCalendarModel }) {
+  return (
+    <section className="rounded-xl border border-outline-variant bg-white p-6 shadow-sm">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="font-label-md text-label-md uppercase tracking-[0.18em] text-primary">Next month</p>
+          <h3 className="mt-1 font-title-md text-title-md font-bold text-on-background">{calendar.label}</h3>
+        </div>
+        <div className="rounded-full bg-surface-container-low px-3 py-1 font-label-md text-label-md text-on-surface-variant">
+          {calendar.totalMeetings} {calendar.totalMeetings === 1 ? "meeting" : "meetings"}
+        </div>
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-3 text-label-sm font-medium text-on-surface-variant">
+        <CalendarLegendDot className="bg-outline-variant" label="Empty" />
+        <CalendarLegendDot className="bg-primary" label="1 meeting" />
+        <CalendarLegendDot className="bg-amber-400" label="Multiple" />
+      </div>
+
+      <div className="grid grid-cols-7 gap-1.5 text-center">
+        {weekdayLabels.map((day) => (
+          <div key={day} className="py-1 font-label-sm text-label-sm text-on-surface-variant">
+            {day}
+          </div>
+        ))}
+        {Array.from({ length: calendar.leadingBlankDays }, (_, index) => (
+          <div key={`blank-${index}`} aria-hidden="true" />
+        ))}
+        {calendar.days.map((day) => (
+          <CalendarDayCell key={day.key} day={day} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CalendarLegendDot({ className, label }: { className: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-2.5 w-2.5 rounded-full ${className}`} />
+      {label}
+    </span>
+  );
+}
+
+function CalendarDayCell({ day }: { day: CalendarDay }) {
+  const hasMeetings = day.meetings.length > 0;
+  const accessibleLabel = hasMeetings
+    ? `${day.date.toLocaleDateString(undefined, { month: "long", day: "numeric" })}: ${day.meetings.map((meeting) => `${meeting.time} ${meeting.title}`).join(", ")}`
+    : `${day.date.toLocaleDateString(undefined, { month: "long", day: "numeric" })}: no meetings`;
+
+  return (
+    <div className="group relative">
+      <div
+        className={`flex min-h-12 flex-col items-center justify-center rounded-xl border transition-all ${
+          hasMeetings
+            ? "border-primary/15 bg-primary/5 text-on-background hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/10 hover:shadow-sm"
+            : "border-transparent bg-surface-container-low/60 text-on-surface-variant hover:bg-surface-container-low"
+        }`}
+        aria-label={accessibleLabel}
+        tabIndex={0}
+      >
+        <span className="font-label-md text-label-md">{dayFormatter.format(day.date)}</span>
+        <span className={`mt-1 h-2 w-2 rounded-full ${dotClassName(day.meetings.length)}`} />
+      </div>
+
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-3 hidden w-64 -translate-x-1/2 rounded-xl border border-outline-variant bg-white p-3 text-left shadow-xl group-hover:block group-focus-within:block">
+        <p className="mb-2 font-label-md text-label-md text-on-background">
+          {day.date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+        </p>
+        {hasMeetings ? (
+          <ul className="space-y-2">
+            {day.meetings.map((meeting) => (
+              <li key={meeting.id} className="flex gap-2 text-body-sm text-on-surface-variant">
+                <span className="font-label-sm text-label-sm text-primary">{meeting.time}</span>
+                <span className="min-w-0 flex-1">{meeting.title}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-body-sm text-on-surface-variant">No meetings scheduled.</p>
+        )}
+      </div>
+    </div>
   );
 }
 
