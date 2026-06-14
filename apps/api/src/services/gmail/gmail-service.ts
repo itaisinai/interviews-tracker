@@ -552,7 +552,10 @@ async function getSuppressedGmailMessageIds(input: { auth0Email: string; jobOppo
     where: {
       auth0Email: input.auth0Email,
       status: { in: ["USED", "HIDDEN"] },
-      jobOpportunityId: input.jobOpportunityId
+      OR: [
+        { jobOpportunityId: input.jobOpportunityId },
+        { jobOpportunityId: null }
+      ]
     },
     select: { messageId: true }
   });

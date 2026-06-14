@@ -174,7 +174,7 @@ const gmailEmailClassificationBatchJsonSchema = {
 const interactionDraftJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["date", "type", "stage", "status", "personName", "personRole", "agenda", "notes", "outcome", "followUp"],
+  required: ["date", "type", "stage", "status", "personName", "personRole", "agenda", "meetingLink", "notes", "outcome", "followUp"],
   properties: {
     date: { type: "string" },
     type: { type: "string", enum: [...interactionTypeSchema.options] },
@@ -183,6 +183,7 @@ const interactionDraftJsonSchema = {
     personName: { type: ["string", "null"] },
     personRole: { type: ["string", "null"] },
     agenda: { type: ["string", "null"] },
+    meetingLink: { type: ["string", "null"] },
     notes: { type: ["string", "null"] },
     outcome: { type: ["string", "null"] },
     followUp: { type: ["string", "null"] }
