@@ -31,6 +31,7 @@ export function CompanyDetailPage() {
   const domains = [...new Set(data.opportunities.flatMap((item) => item.domains.map((domain) => domain.domain.label)))];
   const linkedInUrl = data.opportunities.find((item) => Boolean(item.linkedinUrl?.trim()))?.linkedinUrl ?? primary?.linkedinUrl ?? null;
   const researchExistingData = {
+    companySearchName: data.opportunities.find((item) => Boolean(item.companySearchName?.trim()))?.companySearchName ?? null,
     linkedinUrl: linkedInUrl,
     funding: data.opportunities.find((item) => Boolean(item.funding?.trim()))?.funding ?? null,
     customersTraction: data.opportunities.find((item) => Boolean(item.customersTraction?.trim()))?.customersTraction ?? null,
@@ -60,12 +61,18 @@ export function CompanyDetailPage() {
         companyName={data.companyName}
         knownContext={`Roles: ${data.opportunities.length} · Interactions: ${data.interactions.length} · Domains: ${domains.join(", ") || "None"}`}
         existingCompanyData={researchExistingData}
+        onSaved={(research) => {
+          if (research.companyName !== data.companyName) {
+            navigate(`/companies/${encodeURIComponent(research.companyName)}`, { replace: true });
+          }
+        }}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <section className="panel p-6 lg:col-span-4">
           <h3 className="font-title-md text-title-md font-bold">Company Profile</h3>
           <Detail label="LinkedIn" value={linkedInUrl} />
+          <Detail label="English Search Name" value={primary?.companySearchName} />
           <Detail label="Domains" value={domains.join(", ")} />
           <Detail label="Size" value={primary?.employeesRange?.label} />
           <Detail label="Stage" value={primary?.companyStage?.label} />
@@ -118,7 +125,19 @@ export function CompanyDetailPage() {
                 <span className="font-semibold">{item.type}</span>
                 <Badge value={item.status} />
               </div>
-              <p className="text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"} · {item.personName ?? "No person"}</p>
+              <p className="text-body-md text-on-surface-variant">
+                {item.jobOpportunity ? (
+                  <Link className="font-semibold text-primary hover:underline" to={`/opportunities/${item.jobOpportunity.id}`}>
+                    {item.jobOpportunity.roleTitle}
+                  </Link>
+                ) : (
+                  <span className="font-semibold">Unknown opportunity</span>
+                )}
+                {" · "}
+                {item.stage ?? "No stage"}
+                {" · "}
+                {item.personName ?? "No person"}
+              </p>
               {item.agenda ? <p className="mt-3 text-body-md">{item.agenda}</p> : null}
               {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic">"{item.followUp}"</p> : null}
               <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>

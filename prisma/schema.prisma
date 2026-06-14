@@ -71,6 +71,7 @@ model JobOpportunity {
   id                     String                  @id @default(cuid())
   slug                   String                  @unique
   companyName            String
+  companySearchName      String?
   roleTitle              String
   pipelineType           PipelineType
   status                 JobStatus
@@ -119,6 +120,8 @@ model Interaction {
   personName       String?
   personRole       String?
   agenda           String?
+  meetingLink      String?
+  gmailMessageId   String?
   notes            String?
   outcome          String?
   followUp         String?

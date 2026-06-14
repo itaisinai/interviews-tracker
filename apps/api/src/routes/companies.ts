@@ -152,6 +152,8 @@ companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request
     where: targetOpportunityId ? { id: targetOpportunityId } : { companyName },
     select: {
       id: true,
+      companyName: true,
+      companySearchName: true,
       funding: true,
       employeesRangeId: true,
       location: true,
@@ -181,7 +183,9 @@ companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request
     await prisma.jobOpportunity.update({
       where: { id: opportunity.id },
       data: {
+        companyName: isPresent(research.companyName) ? research.companyName : opportunity.companyName,
         funding: isPresent(opportunity.funding) ? opportunity.funding : research.funding,
+        companySearchName: isPresent(opportunity.companySearchName) ? opportunity.companySearchName : research.companySearchName,
         employeesRangeId: opportunity.employeesRangeId ?? employeesRange?.id ?? null,
         location: isPresent(opportunity.location) ? opportunity.location : research.location,
         linkedinUrl: isPresent(opportunity.linkedinUrl) ? opportunity.linkedinUrl : research.linkedinUrl,

@@ -1,5 +1,3 @@
-import { Router } from "express";
-import { asyncHandler } from "../lib/http.js";
 import {
   createOpportunityHandler,
   createOpportunityInteractionHandler,
@@ -7,16 +5,20 @@ import {
   createOpportunityTaskHandler,
   deleteOpportunityHandler,
   getOpportunityHandler,
-  listOpportunityInteractionsHandler,
+  hideOpportunityGmailMessageHandler,
   listOpportunitiesHandler,
+  listOpportunityInteractionsHandler,
   listTrackedOpportunityGmailMessagesHandler,
-  parseOpportunityInteractionTextHandler,
   parseOpportunityGmailEmailHandler,
+  parseOpportunityInteractionTextHandler,
   restoreOpportunityGmailMessageHandler,
   searchOpportunityGmailHandler,
-  hideOpportunityGmailMessageHandler,
+  unpickOpportunityGmailMessageHandler,
   updateOpportunityHandler
 } from "../controllers/opportunities-controller.js";
+
+import { Router } from "express";
+import { asyncHandler } from "../lib/http.js";
 
 export const opportunitiesRouter = Router();
 
@@ -133,4 +135,14 @@ opportunitiesRouter.post("/:slugOrId/interactions/parse-text", asyncHandler(asyn
   }
 
   response.json(result);
+}));
+
+opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/used", asyncHandler(async (request, response) => {
+  const result = await unpickOpportunityGmailMessageHandler(request);
+  if (!result) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  response.status(204).end();
 }));
