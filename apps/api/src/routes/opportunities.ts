@@ -13,6 +13,7 @@ import {
   parseOpportunityInteractionTextHandler,
   parseOpportunityGmailEmailHandler,
   restoreOpportunityGmailMessageHandler,
+  unpickOpportunityGmailMessageHandler,
   searchOpportunityGmailHandler,
   hideOpportunityGmailMessageHandler,
   updateOpportunityHandler
@@ -99,6 +100,16 @@ opportunitiesRouter.post("/:id/gmail/messages/:messageId/hide", asyncHandler(asy
 
 opportunitiesRouter.delete("/:id/gmail/messages/:messageId/hide", asyncHandler(async (request, response) => {
   const result = await restoreOpportunityGmailMessageHandler(request);
+  if (!result) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  response.status(204).end();
+}));
+
+opportunitiesRouter.delete("/:id/gmail/messages/:messageId/used", asyncHandler(async (request, response) => {
+  const result = await unpickOpportunityGmailMessageHandler(request);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;

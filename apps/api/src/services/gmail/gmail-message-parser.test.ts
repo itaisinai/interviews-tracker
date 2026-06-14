@@ -19,6 +19,7 @@ test("parses Unframe interview email with calendar-safe date and generic intervi
   assert.equal(derived.type, "Interview");
   assert.equal(derived.stage, "Interview");
   assert.ok(["SCHEDULED", "DONE"].includes(derived.status));
+  assert.equal(derived.meetingLink, null);
   assert.match(derived.notes ?? "", /Interview with Unframe/);
   assert.match(derived.notes ?? "", /Noam Shchori/);
 });
@@ -98,6 +99,7 @@ test("adds Google Meet link from calendar location to derived notes", () => {
 
   const derived = deriveInteractionFromStructuredEmail(email);
 
+  assert.equal(derived.meetingLink, "https://meet.google.com/abc-defg-hij");
   assert.match(derived.notes ?? "", /Meeting link: https:\/\/meet\.google\.com\/abc-defg-hij/);
 });
 
@@ -122,6 +124,7 @@ test("adds Zoom link from email body to derived notes", () => {
 
   const derived = deriveInteractionFromStructuredEmail(email);
 
+  assert.equal(derived.meetingLink, "https://us02web.zoom.us/j/123456789?pwd=secret");
   assert.match(derived.notes ?? "", /Meeting link: https:\/\/us02web\.zoom\.us\/j\/123456789\?pwd=secret/);
 });
 
