@@ -50,6 +50,7 @@ export function OpportunityDetailPage() {
   });
 
   const opportunityId = data?.id ?? slugOrId;
+  const canonicalSlug = data?.slug ?? null;
   const [selectedInteractionId, setSelectedInteractionId] = useState<
     string | null
   >(null);
@@ -109,6 +110,12 @@ export function OpportunityDetailPage() {
       setSelectedInteractionId(null);
     }
   }, [displayedInteractions, selectedInteractionId]);
+
+  useEffect(() => {
+    if (canonicalSlug && canonicalSlug !== slugOrId) {
+      navigate(`/opportunities/${canonicalSlug}`, { replace: true });
+    }
+  }, [canonicalSlug, navigate, slugOrId]);
 
   if (isLoading || !data) {
     return (
