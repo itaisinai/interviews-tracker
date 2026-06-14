@@ -122,8 +122,10 @@ yarn db:migrate:deploy
 Start the compiled API with:
 
 ```sh
-yarn start:api
+node scripts/start-api.mjs
 ```
+
+`yarn start:api` runs the same Node script for local convenience, but Render can call Node directly to avoid a runtime Corepack/Yarn download.
 
 The Vite frontend is a static build in `dist/web`. For a local production preview:
 
@@ -153,7 +155,7 @@ Recommended Render settings:
 
 - Runtime: Node
 - Build command: `yarn install --immutable && yarn build:api`
-- Start command: `yarn start:api`
+- Start command: `node scripts/start-api.mjs`
 - Health check path: `/health`
 
 Set these Render environment variables:

@@ -13,8 +13,29 @@ type CompanyResearchPanelProps = {
   knownContext?: string | null;
   existingCompanyData?: CompanyResearchExistingData | null;
   targetOpportunityId?: string | null;
-  onSaved?: () => void;
+  onSaved?: (research: CompanyResearchResult) => void;
 };
+
+type EditableResearchField = keyof Pick<
+  CompanyResearchResult,
+  | "companyName"
+  | "companySearchName"
+  | "linkedinUrl"
+  | "funding"
+  | "totalRaised"
+  | "latestRound"
+  | "investmentRounds"
+  | "employees"
+  | "location"
+  | "customersTraction"
+  | "companyDescription"
+  | "productDescription"
+>;
+
+type EditableResearchListField = keyof Pick<
+  CompanyResearchResult,
+  "investors" | "domains" | "sourceUrls" | "rawImportantNotes"
+>;
 
 export function CompanyResearchPanel({ companyName, roleTitle, knownContext, existingCompanyData, targetOpportunityId, onSaved }: CompanyResearchPanelProps) {
   const queryClient = useQueryClient();
@@ -27,6 +48,7 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [editingField, setEditingField] = useState<string | null>(null);
   const activeRunIdRef = useRef(0);
 
   const isRunning = runState === "searching_web" || runState === "reading_sources" || runState === "extracting_facts";
@@ -143,7 +165,7 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
       if (targetOpportunityId) {
         void queryClient.invalidateQueries({ queryKey: ["opportunity", targetOpportunityId] });
       }
-      onSaved?.();
+      onSaved?.(research);
     } catch (caughtError) {
       setSaveError(caughtError instanceof Error ? caughtError.message : "Unable to save research");
     } finally {
@@ -151,7 +173,40 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
     }
   }
 
+  function cancelResearch() {
+    setResearch(null);
+    setError(null);
+    setSaveError(null);
+    setSaveMessage(null);
+    setEditingField(null);
+    setStageIndex(0);
+    setRunState("idle");
+    setProgress(0);
+  }
+
   const loadingTone = companyResearchRunMeta[runState].tone;
+
+  function updateResearchField(field: EditableResearchField, value: string | null) {
+    setResearch((current) => current ? { ...current, [field]: value } : current);
+  }
+
+  function updateResearchListField(field: EditableResearchListField, value: string) {
+    setResearch((current) => current ? { ...current, [field]: splitListInput(value) } : current);
+  }
+
+  function updateResearchRoundsCount(value: string | null) {
+    setResearch((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const parsed = value ? Number.parseInt(value, 10) : Number.NaN;
+      return {
+        ...current,
+        roundsCount: Number.isNaN(parsed) ? null : parsed
+      };
+    });
+  }
 
   return (
     <section className="panel border border-outline-variant p-6">
@@ -249,6 +304,10 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
               <h4 className="font-title-md text-title-md font-bold">Extracted company research</h4>
             </div>
             <div className="flex items-center gap-2">
+              <button className="btn btn-secondary text-error hover:bg-error-container" onClick={cancelResearch}>
+                <MaterialIcon name="close" />
+                Cancel
+              </button>
               <span className="rounded-full bg-primary-container px-3 py-1 font-label-md text-label-md text-on-primary-container">{research.confidence} confidence</span>
               <LoadingButton className="btn btn-primary" loading={isSaving} loadingLabel="Saving..." icon="save" onClick={() => void saveResearch()}>
                 Save research
@@ -260,43 +319,30 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
           {saveError ? <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-body-md text-on-error-container">{saveError}</p> : null}
 
           <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Detail label="LinkedIn URL" value={research.linkedinUrl} status={diffStatus(null, research.linkedinUrl)} />
-            <Detail label="Funding" value={research.funding} status={diffStatus(existingCompanyData?.funding ?? null, research.funding)} />
-            <Detail label="Total raised" value={research.totalRaised} status={diffStatus(null, research.totalRaised)} />
-            <Detail label="Rounds count" value={research.roundsCount != null ? String(research.roundsCount) : null} status={diffStatus(null, research.roundsCount != null ? String(research.roundsCount) : null)} />
-            <Detail label="Latest round" value={research.latestRound} status={diffStatus(null, research.latestRound)} />
-            <Detail label="Investors" value={research.investors.length > 0 ? research.investors.join(", ") : null} status={diffStatus(null, research.investors.length > 0 ? research.investors.join(", ") : null)} />
-            <Detail label="Investment rounds" value={research.investmentRounds} status={diffStatus(existingCompanyData?.investmentRounds ?? null, research.investmentRounds)} />
-            <Detail label="Employees" value={research.employees} status={diffStatus(existingCompanyData?.employees ?? null, research.employees)} />
-            <Detail label="Location" value={research.location} status={diffStatus(existingCompanyData?.location ?? null, research.location)} />
-            <Detail label="Domains" value={research.domains.length > 0 ? research.domains.join(", ") : null} status={diffStatus(null, research.domains.length > 0 ? research.domains.join(", ") : null)} />
-            <Detail label="Customers / traction" value={research.customersTraction} status={diffStatus(existingCompanyData?.customersTraction ?? null, research.customersTraction)} />
-            <Detail label="Company description" value={research.companyDescription} status={diffStatus(existingCompanyData?.companyDescription ?? null, research.companyDescription)} />
-            <Detail label="Product description" value={research.productDescription} status={diffStatus(existingCompanyData?.productDescription ?? null, research.productDescription)} />
+            <EditableDetail label="Company title" value={research.companyName} editing={editingField === "companyName"} onEdit={() => setEditingField("companyName")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("companyName", value || companyName)} status={diffStatus(companyName, research.companyName)} />
+            <EditableDetail label="English search name" value={research.companySearchName} editing={editingField === "companySearchName"} onEdit={() => setEditingField("companySearchName")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("companySearchName", value)} status={diffStatus(existingCompanyData?.companySearchName ?? null, research.companySearchName)} />
+            <EditableDetail label="LinkedIn URL" value={research.linkedinUrl} editing={editingField === "linkedinUrl"} onEdit={() => setEditingField("linkedinUrl")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("linkedinUrl", value)} status={diffStatus(null, research.linkedinUrl)} />
+            <EditableDetail label="Funding" value={research.funding} editing={editingField === "funding"} onEdit={() => setEditingField("funding")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("funding", value)} status={diffStatus(existingCompanyData?.funding ?? null, research.funding)} multiline />
+            <EditableDetail label="Total raised" value={research.totalRaised} editing={editingField === "totalRaised"} onEdit={() => setEditingField("totalRaised")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("totalRaised", value)} status={diffStatus(null, research.totalRaised)} />
+            <EditableDetail label="Rounds count" value={research.roundsCount != null ? String(research.roundsCount) : null} editing={editingField === "roundsCount"} onEdit={() => setEditingField("roundsCount")} onDone={() => setEditingField(null)} onChange={updateResearchRoundsCount} status={diffStatus(null, research.roundsCount != null ? String(research.roundsCount) : null)} />
+            <EditableDetail label="Latest round" value={research.latestRound} editing={editingField === "latestRound"} onEdit={() => setEditingField("latestRound")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("latestRound", value)} status={diffStatus(null, research.latestRound)} />
+            <EditableDetail label="Investors" value={research.investors.length > 0 ? research.investors.join(", ") : null} editing={editingField === "investors"} onEdit={() => setEditingField("investors")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchListField("investors", value ?? "")} status={diffStatus(null, research.investors.length > 0 ? research.investors.join(", ") : null)} multiline />
+            <EditableDetail label="Investment rounds" value={research.investmentRounds} editing={editingField === "investmentRounds"} onEdit={() => setEditingField("investmentRounds")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("investmentRounds", value)} status={diffStatus(existingCompanyData?.investmentRounds ?? null, research.investmentRounds)} multiline />
+            <EditableDetail label="Employees" value={research.employees} editing={editingField === "employees"} onEdit={() => setEditingField("employees")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("employees", value)} status={diffStatus(existingCompanyData?.employees ?? null, research.employees)} />
+            <EditableDetail label="Location" value={research.location} editing={editingField === "location"} onEdit={() => setEditingField("location")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("location", value)} status={diffStatus(existingCompanyData?.location ?? null, research.location)} />
+            <EditableDetail label="Domains" value={research.domains.length > 0 ? research.domains.join(", ") : null} editing={editingField === "domains"} onEdit={() => setEditingField("domains")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchListField("domains", value ?? "")} status={diffStatus(null, research.domains.length > 0 ? research.domains.join(", ") : null)} />
+            <EditableDetail label="Customers / traction" value={research.customersTraction} editing={editingField === "customersTraction"} onEdit={() => setEditingField("customersTraction")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("customersTraction", value)} status={diffStatus(existingCompanyData?.customersTraction ?? null, research.customersTraction)} multiline />
+            <EditableDetail label="Company description" value={research.companyDescription} editing={editingField === "companyDescription"} onEdit={() => setEditingField("companyDescription")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("companyDescription", value)} status={diffStatus(existingCompanyData?.companyDescription ?? null, research.companyDescription)} multiline />
+            <EditableDetail label="Product description" value={research.productDescription} editing={editingField === "productDescription"} onEdit={() => setEditingField("productDescription")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("productDescription", value)} status={diffStatus(existingCompanyData?.productDescription ?? null, research.productDescription)} multiline />
           </div>
 
           <div className="mt-5">
-            <p className="label">Source URLs</p>
-            <div className="mt-2 flex flex-col gap-2">
-              {research.sourceUrls.length > 0 ? research.sourceUrls.map((url) => (
-                <a key={url} className="inline-flex items-center gap-2 text-body-md text-primary hover:underline" href={url} target="_blank" rel="noreferrer">
-                  <MaterialIcon name="open_in_new" className="text-[16px]" />
-                  {url}
-                </a>
-              )) : <p className="text-body-md text-on-surface-variant">No source URLs available.</p>}
-            </div>
+            <EditableDetail label="Source URLs" value={research.sourceUrls.join("\n")} editing={editingField === "sourceUrls"} onEdit={() => setEditingField("sourceUrls")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchListField("sourceUrls", value ?? "")} multiline />
           </div>
 
-          {research.rawImportantNotes.length > 0 ? (
-            <div className="mt-5">
-              <p className="label">Important notes</p>
-              <ul className="mt-2 space-y-2">
-                {research.rawImportantNotes.map((note) => (
-                  <li key={note} className="rounded-lg bg-white px-3 py-2 text-body-md text-on-surface-variant">{note}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+          <div className="mt-5">
+            <EditableDetail label="Important notes" value={research.rawImportantNotes.join("\n")} editing={editingField === "rawImportantNotes"} onEdit={() => setEditingField("rawImportantNotes")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchListField("rawImportantNotes", value ?? "")} multiline />
+          </div>
         </div>
       ) : null}
     </section>
@@ -324,6 +370,13 @@ function normalizeComparable(value: string | null | undefined) {
   return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? "";
 }
 
+function splitListInput(value: string) {
+  return value
+    .split(/\n|,/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
 function Detail({ label, value, status }: { label: string; value: string | null; status?: DiffStatus }) {
   const isUrl = typeof value === "string" && /^https?:\/\//i.test(value);
 
@@ -334,6 +387,79 @@ function Detail({ label, value, status }: { label: string; value: string | null;
         {status ? <Badge value={status} tone={status === "NEW" ? "green" : "violet"} /> : null}
       </div>
       {isUrl && value ? (
+        <a
+          className="mt-1 inline-flex max-w-full items-center gap-2 break-all text-body-md text-primary hover:underline"
+          href={value}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <MaterialIcon name="open_in_new" className="text-[16px]" />
+          <span>{value}</span>
+        </a>
+      ) : (
+        <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{value || "-"}</p>
+      )}
+    </div>
+  );
+}
+
+function EditableDetail({
+  label,
+  value,
+  status,
+  editing,
+  multiline = false,
+  onEdit,
+  onDone,
+  onChange
+}: {
+  label: string;
+  value: string | null;
+  status?: DiffStatus;
+  editing: boolean;
+  multiline?: boolean;
+  onEdit: () => void;
+  onDone: () => void;
+  onChange: (value: string | null) => void;
+}) {
+  const isUrl = typeof value === "string" && /^https?:\/\//i.test(value);
+
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <p className="label">{label}</p>
+        {status ? <Badge value={status} tone={status === "NEW" ? "green" : "violet"} /> : null}
+        <button
+          type="button"
+          className="rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-background"
+          aria-label={`Edit ${label}`}
+          title={`Edit ${label}`}
+          onClick={onEdit}
+        >
+          <MaterialIcon name="edit" className="text-[16px]" />
+        </button>
+      </div>
+      {editing ? (
+        <div className="mt-2 space-y-2">
+          {multiline ? (
+            <textarea
+              className="input min-h-24"
+              value={value ?? ""}
+              onChange={(event) => onChange(event.target.value || null)}
+            />
+          ) : (
+            <input
+              className="input"
+              value={value ?? ""}
+              onChange={(event) => onChange(event.target.value || null)}
+            />
+          )}
+          <button type="button" className="btn btn-secondary" onClick={onDone}>
+            <MaterialIcon name="check" />
+            Save
+          </button>
+        </div>
+      ) : isUrl && value ? (
         <a
           className="mt-1 inline-flex max-w-full items-center gap-2 break-all text-body-md text-primary hover:underline"
           href={value}

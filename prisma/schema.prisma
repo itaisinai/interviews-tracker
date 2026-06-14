@@ -62,9 +62,15 @@ enum OfferStatus {
   DECLINED
 }
 
+enum GmailMessageStateStatus {
+  USED
+  HIDDEN
+}
+
 model JobOpportunity {
   id                     String                  @id @default(cuid())
   companyName            String
+  companySearchName      String?
   roleTitle              String
   pipelineType           PipelineType
   status                 JobStatus
@@ -113,6 +119,8 @@ model Interaction {
   personName       String?
   personRole       String?
   agenda           String?
+  meetingLink      String?
+  gmailMessageId   String?
   notes            String?
   outcome          String?
   followUp         String?
@@ -231,4 +239,18 @@ model GmailConnection {
   scope                 String?
   connectedAt           DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+model GmailMessageState {
+  id               String                  @id @default(cuid())
+  auth0Email       String
+  messageId        String
+  jobOpportunityId String?
+  status           GmailMessageStateStatus
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  @@unique([auth0Email, messageId])
+  @@index([auth0Email, status])
+  @@index([jobOpportunityId])
 }
