@@ -102,8 +102,12 @@ export type GmailSearchResponse = {
 export type GmailStatus = {
   configured: boolean;
   connected: boolean;
+  needsReconnect: boolean;
   googleEmail: string | null;
+  lastError?: string | null;
+  lastConnectedAt?: string | null;
   updatedAt: string | null;
+  scopes?: string[];
 };
 
 export type GmailConnectRequest = {
@@ -194,8 +198,12 @@ export const gmailSearchCandidateSchema = gmailMessageCandidateSchema.extend({
 export const gmailStatusSchema = z.object({
   configured: z.boolean(),
   connected: z.boolean(),
+  needsReconnect: z.boolean(),
   googleEmail: z.string().nullable(),
-  updatedAt: z.string().nullable()
+  lastError: z.string().nullable().optional(),
+  lastConnectedAt: z.string().nullable().optional(),
+  updatedAt: z.string().nullable(),
+  scopes: z.array(z.string()).optional()
 });
 
 export const gmailConnectRequestSchema = z.object({

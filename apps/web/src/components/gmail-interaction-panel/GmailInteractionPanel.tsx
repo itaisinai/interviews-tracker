@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ApiError } from "@interviews-tracker/api-client";
 import { api } from "../../lib/api";
 import { interactionStatusOptions, interactionTypeOptions, normalizeInteractionType } from "../../lib/enum-labels";
 import { getErrorMessage } from "../../lib/error";
@@ -140,11 +141,23 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
     () => new Set()
   );
   const [lastAction, setLastAction] = useState<"connect" | "search" | "parse" | null>(null);
+  const [needsReconnect, setNeedsReconnect] = useState(false);
   const activeRunIdRef = useRef(0);
   const isAttachMode = Boolean(attachToInteractionId);
 
   const isBusy = flowState === "connecting_gmail" || flowState === "searching_emails" || flowState === "fetching_email" || flowState === "parsing_email";
   const currentMeta = gmailFlowMeta[flowState];
+
+  function handleGmailActionError(caughtError: unknown, fallbackMessage: string) {
+    const reconnectRequired = caughtError instanceof ApiError && caughtError.code === "GMAIL_RECONNECT_REQUIRED";
+    setNeedsReconnect(reconnectRequired);
+    setError(reconnectRequired ? "Your Gmail connection expired or was revoked. Please reconnect Gmail." : getErrorMessage(caughtError));
+    setFlowState("failed");
+    setMessage(reconnectRequired ? "Gmail reconnect required." : fallbackMessage);
+    if (reconnectRequired) {
+      void queryClient.invalidateQueries({ queryKey: ["gmail-status"] });
+    }
+  }
 
   useEffect(() => {
     if (!isBusy) {
@@ -243,6 +256,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
   const hasParsedInteractionChanges = changedInteractionFields.size > 0;
 
   async function connectGmail() {
+    setNeedsReconnect(false);
     const runId = activeRunIdRef.current + 1;
     activeRunIdRef.current = runId;
     setError(null);
@@ -264,13 +278,12 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
         return;
       }
 
-      setError(getErrorMessage(caughtError));
-      setFlowState("failed");
-      setMessage("Gmail connection failed.");
+      handleGmailActionError(caughtError, "Gmail connection failed.");
     }
   }
 
   async function searchEmails() {
+    setNeedsReconnect(false);
     const runId = activeRunIdRef.current + 1;
     activeRunIdRef.current = runId;
     setError(null);
@@ -301,13 +314,12 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
         return;
       }
 
-      setError(getErrorMessage(caughtError));
-      setFlowState("failed");
-      setMessage("Gmail search failed.");
+      handleGmailActionError(caughtError, "Gmail search failed.");
     }
   }
 
   async function parseEmail(email: GmailSearchCandidate) {
+    setNeedsReconnect(false);
     const runId = activeRunIdRef.current + 1;
     activeRunIdRef.current = runId;
     setError(null);
@@ -362,9 +374,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
         return;
       }
 
-      setError(getErrorMessage(caughtError));
-      setFlowState("failed");
-      setMessage("Gmail email parsing failed.");
+      handleGmailActionError(caughtError, "Gmail email parsing failed.");
     }
   }
 
@@ -546,8 +556,10 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
     );
   }
 
+  const statusNeedsReconnect = statusQuery.data?.needsReconnect ?? false;
   const connected = statusQuery.data?.connected ?? false;
   const configured = statusQuery.data?.configured ?? false;
+  const shouldReconnect = needsReconnect || statusNeedsReconnect;
   const removedEmails = gmailMessageStatesQuery.data?.removedEmails ?? [];
   const pickedEmails = gmailMessageStatesQuery.data?.pickedEmails ?? [];
   return (
@@ -573,12 +585,15 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
         <div className="flex flex-wrap items-center gap-3">
           {statusQuery.isFetching ? <InlineLoadingState label="Refreshing" /> : null}
           {connected ? (
-            <LoadingButton className="btn btn-primary" loading={flowState === "searching_emails"} loadingLabel="Searching..." icon="search" onClick={() => void searchEmails()}>
-              Add interaction from Gmail
-            </LoadingButton>
+            <>
+              <span className="rounded-full bg-primary-container px-3 py-1 text-label-md text-on-primary-container">Gmail connected</span>
+              <LoadingButton className="btn btn-primary" loading={flowState === "searching_emails"} loadingLabel="Searching..." icon="search" onClick={() => void searchEmails()}>
+                Add interaction from Gmail
+              </LoadingButton>
+            </>
           ) : configured ? (
             <LoadingButton className="btn btn-primary" loading={flowState === "connecting_gmail"} loadingLabel="Connecting..." icon="link" onClick={() => void connectGmail()}>
-              Connect Gmail
+              {shouldReconnect ? "Reconnect Gmail" : "Connect Gmail"}
             </LoadingButton>
           ) : (
             <div className="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-body-md text-on-error-container">
@@ -603,9 +618,15 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
           <p className="font-body-md text-body-md font-semibold">Gmail action failed</p>
           <p className="mt-1 font-body-md text-body-md">{error}</p>
           <div className="mt-3">
-            <LoadingButton className="btn btn-secondary" loading={false} icon="refresh" onClick={() => void retryLastAction()}>
-              Retry
-            </LoadingButton>
+            {needsReconnect ? (
+              <LoadingButton className="btn btn-primary" loading={false} icon="link" onClick={() => void connectGmail()}>
+                Reconnect Gmail
+              </LoadingButton>
+            ) : (
+              <LoadingButton className="btn btn-secondary" loading={false} icon="refresh" onClick={() => void retryLastAction()}>
+                Retry
+              </LoadingButton>
+            )}
           </div>
         </div>
       ) : null}
