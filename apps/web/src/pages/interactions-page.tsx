@@ -1,11 +1,20 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  Calendar,
+  type CalendarEvent,
+} from "@interviews-tracker/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GmailInteractionPanel } from "../components/gmail-interaction-panel";
 import { InteractionsDrawer } from "../components/interactions-drawer";
 import { OpportunityInteractionTimeline } from "../components/interactions-timeline";
 import { PageIntro } from "../components/app-shell";
-import { InlineLoadingState, PageErrorState, PageLoadingState } from "../components/loading-state";
+import {
+  InlineLoadingState,
+  PageErrorState,
+  PageLoadingState,
+} from "../components/loading-state";
 import { MaterialIcon } from "../components/material-icon";
+import { labelForInteractionType } from "../lib/enum-labels";
 import { api } from "../lib/api";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 import type { Interaction } from "../lib/types";
@@ -28,10 +37,11 @@ function buildOpportunityGroups(interactions: readonly Interaction[]) {
     if (!existing) {
       groups.set(interaction.jobOpportunityId, {
         opportunityId: interaction.jobOpportunityId,
-        companyName: interaction.jobOpportunity?.companyName ?? "Unknown company",
+        companyName:
+          interaction.jobOpportunity?.companyName ?? "Unknown company",
         roleTitle: interaction.jobOpportunity?.roleTitle ?? "Unknown role",
         interactions: [interaction],
-        latestTimestamp: timestamp
+        latestTimestamp: timestamp,
       });
       continue;
     }
@@ -45,11 +55,17 @@ function buildOpportunityGroups(interactions: readonly Interaction[]) {
       return right.latestTimestamp - left.latestTimestamp;
     }
 
-    return left.companyName.localeCompare(right.companyName) || left.roleTitle.localeCompare(right.roleTitle);
+    return (
+      left.companyName.localeCompare(right.companyName) ||
+      left.roleTitle.localeCompare(right.roleTitle)
+    );
   });
 }
 
-function filterOpportunityGroup(group: InteractionOpportunityGroup, filter: string) {
+function filterOpportunityGroup(
+  group: InteractionOpportunityGroup,
+  filter: string,
+) {
   if (filter === "upcoming") {
     return group.interactions.some((item) => new Date(item.date) >= new Date());
   }
@@ -59,7 +75,10 @@ function filterOpportunityGroup(group: InteractionOpportunityGroup, filter: stri
   }
 
   if (filter === "followup") {
-    return group.interactions.some((item) => item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim()));
+    return group.interactions.some(
+      (item) =>
+        item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim()),
+    );
   }
 
   return true;
@@ -69,49 +88,139 @@ export function InteractionsPage() {
   const [filter, setFilter] = useState("upcoming");
   const [showGmailImport, setShowGmailImport] = useState(false);
   const [gmailOpportunityId, setGmailOpportunityId] = useState("");
-  const [selectedInteractionId, setSelectedInteractionId] = useState<string | null>(null);
+  const [calendarMonth, setCalendarMonth] = useState(() => getNextMonth());
+  const [selectedInteractionId, setSelectedInteractionId] = useState<
+    string | null
+  >(null);
   const queryClient = useQueryClient();
-  const { data = [], isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
-  const opportunitiesQuery = useQuery({ queryKey: ["opportunities", "gmail-import"], queryFn: () => api.opportunities("?summary=1"), staleTime: 30_000 });
+  const {
+    data = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
+  const opportunitiesQuery = useQuery({
+    queryKey: ["opportunities", "gmail-import"],
+    queryFn: () => api.opportunities("?summary=1"),
+    staleTime: 30_000,
+  });
   const { data: opportunities = [] } = opportunitiesQuery;
-  const displayInteractions = useMemo(() => promoteOverdueInteractionsForRead(data), [data]);
-  const opportunityGroups = useMemo(() => buildOpportunityGroups(displayInteractions), [displayInteractions]);
-  const visibleOpportunityGroups = useMemo(() => opportunityGroups.filter((group) => filterOpportunityGroup(group, filter)), [filter, opportunityGroups]);
-  const gmailOpportunity = useMemo(() => opportunities.find((item) => item.id === gmailOpportunityId) ?? null, [gmailOpportunityId, opportunities]);
+  const displayInteractions = useMemo(
+    () => promoteOverdueInteractionsForRead(data),
+    [data],
+  );
+  const opportunityGroups = useMemo(
+    () => buildOpportunityGroups(displayInteractions),
+    [displayInteractions],
+  );
+  const visibleOpportunityGroups = useMemo(
+    () =>
+      opportunityGroups.filter((group) =>
+        filterOpportunityGroup(group, filter),
+      ),
+    [filter, opportunityGroups],
+  );
+  const nextMonthCalendarEvents = useMemo(
+    () => buildNextMonthCalendarEvents(displayInteractions),
+    [displayInteractions],
+  );
+  const gmailOpportunity = useMemo(
+    () => opportunities.find((item) => item.id === gmailOpportunityId) ?? null,
+    [gmailOpportunityId, opportunities],
+  );
   const deleteInteraction = useMutation({
     mutationFn: (id: string) => api.deleteInteraction(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-    }
+    },
   });
-  const selectedInteraction = useMemo(() => displayInteractions.find((item) => item.id === selectedInteractionId) ?? null, [displayInteractions, selectedInteractionId]);
-  const followUpCount = displayInteractions.filter((item) => item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim())).length;
-  const followUpPercent = displayInteractions.length > 0 ? Math.round((followUpCount / displayInteractions.length) * 100) : 0;
+  const selectedInteraction = useMemo(
+    () =>
+      displayInteractions.find((item) => item.id === selectedInteractionId) ??
+      null,
+    [displayInteractions, selectedInteractionId],
+  );
+  const followUpCount = displayInteractions.filter(
+    (item) =>
+      item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim()),
+  ).length;
+  const followUpPercent =
+    displayInteractions.length > 0
+      ? Math.round((followUpCount / displayInteractions.length) * 100)
+      : 0;
 
   useEffect(() => {
-    if (selectedInteractionId && !displayInteractions.some((item) => item.id === selectedInteractionId)) {
+    if (
+      selectedInteractionId &&
+      !displayInteractions.some((item) => item.id === selectedInteractionId)
+    ) {
       setSelectedInteractionId(null);
     }
   }, [displayInteractions, selectedInteractionId]);
 
   function openGmailImport() {
-    const initialOpportunityId = gmailOpportunityId || opportunities[0]?.id || "";
+    const initialOpportunityId =
+      gmailOpportunityId || opportunities[0]?.id || "";
     setGmailOpportunityId(initialOpportunityId);
     setShowGmailImport(true);
   }
 
+  function goToPreviousMonth() {
+    setCalendarMonth((current) =>
+      new Date(current.getFullYear(), current.getMonth() - 1, 1),
+    );
+  }
+
+  function goToNextMonth() {
+    setCalendarMonth((current) =>
+      new Date(current.getFullYear(), current.getMonth() + 1, 1),
+    );
+  }
+
+  function goToToday() {
+    const now = new Date();
+    setCalendarMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+  }
+
   if (isLoading || opportunitiesQuery.isLoading) {
-    return <PageLoadingState title="Interactions" description="Loading interactions and available opportunities." />;
+    return (
+      <PageLoadingState
+        title="Interactions"
+        description="Loading interactions and available opportunities."
+      />
+    );
   }
 
   if (isError) {
-    return <PageErrorState title="Interactions" description={error instanceof Error ? error.message : "Unable to load interactions."} onRetry={() => void refetch()} />;
+    return (
+      <PageErrorState
+        title="Interactions"
+        description={
+          error instanceof Error
+            ? error.message
+            : "Unable to load interactions."
+        }
+        onRetry={() => void refetch()}
+      />
+    );
   }
 
   if (opportunitiesQuery.isError) {
-    return <PageErrorState title="Interactions" description={opportunitiesQuery.error instanceof Error ? opportunitiesQuery.error.message : "Unable to load opportunities for the form."} onRetry={() => void opportunitiesQuery.refetch()} />;
+    return (
+      <PageErrorState
+        title="Interactions"
+        description={
+          opportunitiesQuery.error instanceof Error
+            ? opportunitiesQuery.error.message
+            : "Unable to load opportunities for the form."
+        }
+        onRetry={() => void opportunitiesQuery.refetch()}
+      />
+    );
   }
 
   return (
@@ -120,13 +229,22 @@ export function InteractionsPage() {
         <section className="mb-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Interactions</h1>
-              <p className="font-body-md text-on-surface-variant">Track networking and interview progress.</p>
+              <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-background">
+                Interactions
+              </h1>
+              <p className="font-body-md text-on-surface-variant">
+                Track networking and interview progress.
+              </p>
             </div>
             {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className={`rounded-full px-4 py-2 font-label-md text-label-md ${showGmailImport ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"}`} onClick={() => (showGmailImport ? setShowGmailImport(false) : openGmailImport())}>
+            <button
+              className={`rounded-full px-4 py-2 font-label-md text-label-md ${showGmailImport ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"}`}
+              onClick={() =>
+                showGmailImport ? setShowGmailImport(false) : openGmailImport()
+              }
+            >
               <MaterialIcon name="mail" />
               {showGmailImport ? "Hide Gmail" : "Gmail"}
             </button>
@@ -139,12 +257,14 @@ export function InteractionsPage() {
               ["upcoming", "Upcoming"],
               ["done", "Passed"],
               ["followup", "Waiting for response"],
-              ["all", "All"]
+              ["all", "All"],
             ].map(([key, label]) => (
               <button
                 key={key}
                 className={`whitespace-nowrap rounded-full px-4 py-2 font-label-md text-label-md transition-all ${
-                  filter === key ? "bg-primary text-on-primary" : "border border-outline-variant bg-white text-on-surface-variant"
+                  filter === key
+                    ? "bg-primary text-on-primary"
+                    : "border border-outline-variant bg-white text-on-surface-variant"
                 }`}
                 onClick={() => setFilter(key)}
               >
@@ -154,12 +274,24 @@ export function InteractionsPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
-              <div className="font-label-md text-label-md uppercase text-on-surface-variant">Upcoming</div>
-              <div className="mt-2 font-headline-md text-headline-md font-bold">{displayInteractions.filter((item) => new Date(item.date) >= new Date()).length}</div>
+              <div className="font-label-md text-label-md uppercase text-on-surface-variant">
+                Upcoming
+              </div>
+              <div className="mt-2 font-headline-md text-headline-md font-bold">
+                {
+                  displayInteractions.filter(
+                    (item) => new Date(item.date) >= new Date(),
+                  ).length
+                }
+              </div>
             </div>
             <div className="rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
-              <div className="font-label-md text-label-md uppercase text-on-surface-variant">Waiting for response</div>
-              <div className="mt-2 font-headline-md text-headline-md font-bold">{followUpPercent}%</div>
+              <div className="font-label-md text-label-md uppercase text-on-surface-variant">
+                Waiting for response
+              </div>
+              <div className="mt-2 font-headline-md text-headline-md font-bold">
+                {followUpPercent}%
+              </div>
             </div>
           </div>
         </section>
@@ -167,11 +299,19 @@ export function InteractionsPage() {
         {showGmailImport ? (
           <section className="mb-5 rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
             <div className="mb-4">
-              <h3 className="font-title-md text-title-md font-bold">Add interaction from Gmail</h3>
-              <p className="mt-1 text-body-md text-on-surface-variant">Pick an opportunity, search Gmail, then review before saving.</p>
+              <h3 className="font-title-md text-title-md font-bold">
+                Add interaction from Gmail
+              </h3>
+              <p className="mt-1 text-body-md text-on-surface-variant">
+                Pick an opportunity, search Gmail, then review before saving.
+              </p>
             </div>
             <Field label="Opportunity">
-              <select className="input" value={gmailOpportunityId} onChange={(event) => setGmailOpportunityId(event.target.value)}>
+              <select
+                className="input"
+                value={gmailOpportunityId}
+                onChange={(event) => setGmailOpportunityId(event.target.value)}
+              >
                 <option value="">Select company / role</option>
                 {opportunities.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -201,8 +341,12 @@ export function InteractionsPage() {
 
         <section className="mb-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-title-md text-title-md font-bold">Opportunity timelines</h2>
-            <span className="font-label-md text-label-md text-on-surface-variant">{visibleOpportunityGroups.length}</span>
+            <h2 className="font-title-md text-title-md font-bold">
+              Opportunity timelines
+            </h2>
+            <span className="font-label-md text-label-md text-on-surface-variant">
+              {visibleOpportunityGroups.length}
+            </span>
           </div>
           <div className="space-y-4">
             {visibleOpportunityGroups.map((group) => (
@@ -213,8 +357,13 @@ export function InteractionsPage() {
                 interactions={group.interactions}
                 selectedInteractionId={selectedInteractionId}
                 onSelectInteraction={setSelectedInteractionId}
-                onDeleteInteraction={(interactionId) => deleteInteraction.mutate(interactionId)}
-                isDeletingInteraction={(interactionId) => deleteInteraction.isPending && deleteInteraction.variables === interactionId}
+                onDeleteInteraction={(interactionId) =>
+                  deleteInteraction.mutate(interactionId)
+                }
+                isDeletingInteraction={(interactionId) =>
+                  deleteInteraction.isPending &&
+                  deleteInteraction.variables === interactionId
+                }
               />
             ))}
           </div>
@@ -228,9 +377,18 @@ export function InteractionsPage() {
           actions={
             <>
               {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
-              <button className="btn btn-secondary" onClick={() => (showGmailImport ? setShowGmailImport(false) : openGmailImport())}>
+              <button
+                className="btn btn-secondary"
+                onClick={() =>
+                  showGmailImport
+                    ? setShowGmailImport(false)
+                    : openGmailImport()
+                }
+              >
                 <MaterialIcon name="mail" />
-                {showGmailImport ? "Hide Gmail Import" : "Add interaction from Gmail"}
+                {showGmailImport
+                  ? "Hide Gmail Import"
+                  : "Add interaction from Gmail"}
               </button>
             </>
           }
@@ -242,13 +400,24 @@ export function InteractionsPage() {
                 <MaterialIcon name="mail" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-title-md text-title-md font-bold">Add interaction from Gmail</h3>
-                <p className="text-body-md text-on-surface-variant">Pick an opportunity, search Gmail for recent emails, then review the parsed interaction before saving.</p>
+                <h3 className="font-title-md text-title-md font-bold">
+                  Add interaction from Gmail
+                </h3>
+                <p className="text-body-md text-on-surface-variant">
+                  Pick an opportunity, search Gmail for recent emails, then
+                  review the parsed interaction before saving.
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
               <Field label="Opportunity">
-                <select className="input" value={gmailOpportunityId} onChange={(event) => setGmailOpportunityId(event.target.value)}>
+                <select
+                  className="input"
+                  value={gmailOpportunityId}
+                  onChange={(event) =>
+                    setGmailOpportunityId(event.target.value)
+                  }
+                >
                   <option value="">Select company / role</option>
                   {opportunities.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -258,7 +427,10 @@ export function InteractionsPage() {
                 </select>
               </Field>
               <div className="flex items-center gap-3">
-                <button className="btn btn-secondary" onClick={() => setShowGmailImport(false)}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowGmailImport(false)}
+                >
                   <MaterialIcon name="close" />
                   Close
                 </button>
@@ -287,8 +459,16 @@ export function InteractionsPage() {
             ["upcoming", "Upcoming"],
             ["done", "Passed"],
             ["followup", "Waiting for response"],
-            ["all", "All"]
-          ].map(([key, label]) => <button key={key} className={`rounded-full px-4 py-1.5 font-label-md text-label-md transition-all ${filter === key ? "bg-primary-container text-on-primary-container" : "border border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low"}`} onClick={() => setFilter(key)}>{label}</button>)}
+            ["all", "All"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              className={`rounded-full px-4 py-1.5 font-label-md text-label-md transition-all ${filter === key ? "bg-primary-container text-on-primary-container" : "border border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low"}`}
+              onClick={() => setFilter(key)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           <section className="space-y-6 lg:col-span-8">
@@ -297,8 +477,12 @@ export function InteractionsPage() {
                 <MaterialIcon name="event" filled />
               </div>
               <div className="min-w-0">
-                <h3 className="font-title-md text-title-md font-bold">Opportunity timelines</h3>
-                <p className="text-body-md text-on-surface-variant">Each opportunity is grouped into its own timeline.</p>
+                <h3 className="font-title-md text-title-md font-bold">
+                  Opportunity timelines
+                </h3>
+                <p className="text-body-md text-on-surface-variant">
+                  Each opportunity is grouped into its own timeline.
+                </p>
               </div>
             </div>
 
@@ -311,28 +495,59 @@ export function InteractionsPage() {
                   interactions={group.interactions}
                   selectedInteractionId={selectedInteractionId}
                   onSelectInteraction={setSelectedInteractionId}
-                  onDeleteInteraction={(interactionId) => deleteInteraction.mutate(interactionId)}
-                  isDeletingInteraction={(interactionId) => deleteInteraction.isPending && deleteInteraction.variables === interactionId}
+                  onDeleteInteraction={(interactionId) =>
+                    deleteInteraction.mutate(interactionId)
+                  }
+                  isDeletingInteraction={(interactionId) =>
+                    deleteInteraction.isPending &&
+                    deleteInteraction.variables === interactionId
+                  }
                 />
               ))}
             </div>
           </section>
           <aside className="space-y-6 lg:col-span-4">
+            <Calendar
+              eyebrow="Calendar"
+              month={calendarMonth}
+              events={nextMonthCalendarEvents}
+              onPreviousMonth={goToPreviousMonth}
+              onNextMonth={goToNextMonth}
+              onToday={goToToday}
+            />
             <div className="rounded-xl border border-outline-variant bg-white p-6 shadow-sm">
-              <h3 className="mb-3 font-title-md text-title-md font-bold">Interaction Health</h3>
+              <h3 className="mb-3 font-title-md text-title-md font-bold">
+                Interaction Health
+              </h3>
               <div className="mb-6 rounded-xl bg-surface-container-low p-4">
-                <p className="font-label-md text-label-md text-on-surface-variant">Needs Follow-up</p>
+                <p className="font-label-md text-label-md text-on-surface-variant">
+                  Needs Follow-up
+                </p>
                 <div className="mt-2 flex items-end justify-between">
-                  <span className="font-headline-md text-headline-md font-bold">{followUpPercent}%</span>
+                  <span className="font-headline-md text-headline-md font-bold">
+                    {followUpPercent}%
+                  </span>
                 </div>
                 <div className="mt-3 h-2 rounded-full bg-surface-container-high">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${followUpPercent}%` }} />
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${followUpPercent}%` }}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <StatCard label="Total" value={data.length} />
-                <StatCard label="Upcoming" value={data.filter((item) => new Date(item.date) >= new Date()).length} />
-                <StatCard label="Passed" value={data.filter((item) => item.status === "DONE").length} />
+                <StatCard
+                  label="Upcoming"
+                  value={
+                    data.filter((item) => new Date(item.date) >= new Date())
+                      .length
+                  }
+                />
+                <StatCard
+                  label="Passed"
+                  value={data.filter((item) => item.status === "DONE").length}
+                />
                 <StatCard label="Waiting" value={followUpCount} />
               </div>
             </div>
@@ -342,16 +557,57 @@ export function InteractionsPage() {
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
         onClose={() => setSelectedInteractionId(null)}
-        onSelectInteraction={(interactionId) => setSelectedInteractionId(interactionId)}
+        onSelectInteraction={(interactionId) =>
+          setSelectedInteractionId(interactionId)
+        }
       />
     </>
   );
 }
 
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+type InteractionCalendarEvent = CalendarEvent & {
+  date: string;
+};
+
+function getNextMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+}
+
+function buildNextMonthCalendarEvents(
+  interactions: readonly Interaction[],
+): InteractionCalendarEvent[] {
+  return interactions.map((interaction) => {
+    const date = new Date(interaction.date);
+    const titleParts = [
+      interaction.jobOpportunity?.companyName,
+      interaction.stage || labelForInteractionType(interaction.type),
+      interaction.personName,
+    ].filter(Boolean);
+
+    return {
+      id: interaction.id,
+      date: interaction.date,
+      title:
+        titleParts.length > 0
+          ? titleParts.join(" · ")
+          : labelForInteractionType(interaction.type),
+      time: timeFormatter.format(date),
+    };
+  });
+}
+
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">{label}</span>
+      <span className="mb-2 block font-label-md text-label-md uppercase text-on-surface-variant">
+        {label}
+      </span>
       {children}
     </label>
   );
@@ -360,8 +616,12 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl bg-surface-container-low p-4 text-center">
-      <div className="font-headline-md text-headline-md font-bold text-on-background">{value}</div>
-      <div className="mt-1 font-label-md text-label-md text-on-surface-variant">{label}</div>
+      <div className="font-headline-md text-headline-md font-bold text-on-background">
+        {value}
+      </div>
+      <div className="mt-1 font-label-md text-label-md text-on-surface-variant">
+        {label}
+      </div>
     </div>
   );
 }
