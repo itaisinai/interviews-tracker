@@ -11,6 +11,7 @@ import { notesRouter } from "./routes/notes.js";
 import { opportunitiesRouter } from "./routes/opportunities.js";
 import { optionsRouter } from "./routes/options.js";
 import { tasksRouter } from "./routes/tasks.js";
+import { webhooksRouter } from "./routes/webhooks.js";
 import { requireAuth } from "./lib/auth.js";
 import { errorHandler } from "./lib/http.js";
 import { apiRequestLogger } from "./lib/request-logging.js";
@@ -37,7 +38,7 @@ const corsOptions: cors.CorsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Opportunity-Webhook-Secret", "X-Telegram-Bot-Api-Secret-Token"],
   optionsSuccessStatus: 204
 };
 
@@ -79,6 +80,7 @@ app.get("/api/gmail/callback", async (request, response, next) => {
     response.redirect(redirect.toString());
   }
 });
+app.use("/webhooks", webhooksRouter);
 app.use("/api", requireAuth);
 app.use("/api/gmail", gmailRouter);
 app.use("/api/integrations/gmail", gmailRouter);
