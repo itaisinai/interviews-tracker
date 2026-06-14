@@ -305,7 +305,7 @@ The tool only searches fields that are missing. If funding already exists on the
 
 ## Gmail Interaction Import
 
-The Opportunity page includes an `Add interaction from Gmail` flow. It uses a separate Gmail OAuth consent screen with read-only access and does not reuse the Auth0 login token.
+The Opportunity page includes an `Add interaction from Gmail` flow. It uses a separate Google OAuth consent screen with read-only Gmail access and does not reuse the Auth0 login token. Gmail connections are per Auth0 email address and are stored in the `GmailConnection` table. The refresh token is encrypted with AES-256-GCM using `GMAIL_TOKEN_ENCRYPTION_KEY`; full tokens and client secrets must never be logged.
 
 Set these local environment variables in the repository root `.env`:
 
@@ -316,7 +316,11 @@ GMAIL_REDIRECT_URI=http://localhost:4000/api/gmail/callback
 GMAIL_TOKEN_ENCRYPTION_KEY=...
 ```
 
-Create an OAuth client in Google Cloud, enable the Gmail API, and add the callback URL above to the authorized redirect URIs. The callback stores the refresh token encrypted in Postgres and the app uses it to search recent emails for the selected company.
+For local development, add `http://localhost:4000/api/gmail/callback` to the Google Cloud OAuth client's authorized redirect URIs. In production, set `GMAIL_REDIRECT_URI` to the deployed API callback, for example `https://api.example.com/api/gmail/callback`, and add that exact URI to the same OAuth client. Enable the Gmail API in Google Cloud.
+
+The flow starts with `POST /api/gmail/connect`, which returns a Google authorization URL with `access_type=offline`, `prompt=consent`, and `include_granted_scopes=true` so reconnects can receive a fresh refresh token. Google redirects back to `GET /api/gmail/callback`, where the API exchanges the code for tokens, fetches the Gmail profile, stores the encrypted refresh token, saves the granted scope string, and clears any previous reconnect-required state. The app checks `GET /api/gmail/status` before Gmail actions; that endpoint returns whether Gmail is configured, connected, needs reconnect, the connected Google email, last error, last connected timestamp, and scopes.
+
+`invalid_grant` means Google rejected the stored refresh token. Common causes are the user revoked access, the Google OAuth client changed, the app was in testing mode and the token aged out, the account password/security posture changed, or the refresh token was superseded. When this happens during token refresh, the backend marks the connection as `needsReconnect`, maps the error to `GMAIL_RECONNECT_REQUIRED`, and the UI shows “Your Gmail connection expired or was revoked. Please reconnect Gmail.” with a `Reconnect Gmail` button instead of making retry the primary action. Reconnecting restarts the OAuth consent flow and replaces the stored refresh token when Google returns one.
 
 ## Scripts
 

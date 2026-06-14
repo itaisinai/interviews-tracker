@@ -6,7 +6,7 @@ import {
   parseStructuredGmailEmail,
   sortGmailSearchCandidatesByDate
 } from "./gmail-message-parser.js";
-import { createTimer, logInfo } from "../../lib/logger.js";
+import { createTimer, logError, logInfo } from "../../lib/logger.js";
 import {
   gmailEmailClassificationSchema,
   gmailEmailExtractionAnalysisSchema,
@@ -41,7 +41,7 @@ type GmailTokenResponse = {
 
 type GmailOAuthTokenBundle = {
   access_token: string;
-  refresh_token: string;
+  refresh_token?: string;
   scope?: string;
 };
 
@@ -94,9 +94,26 @@ type GmailStatePayload = {
 export type GmailStatus = {
   configured: boolean;
   connected: boolean;
+  needsReconnect: boolean;
   googleEmail: string | null;
+  lastError?: string | null;
+  lastConnectedAt?: string | null;
   updatedAt: string | null;
+  scopes?: string[];
 };
+
+export const GMAIL_RECONNECT_REQUIRED_CODE = "GMAIL_RECONNECT_REQUIRED";
+export const GMAIL_RECONNECT_REQUIRED_MESSAGE = "Your Gmail connection expired or was revoked. Please reconnect Gmail.";
+
+export class GmailReconnectRequiredError extends Error {
+  code = GMAIL_RECONNECT_REQUIRED_CODE;
+  statusCode = 401;
+
+  constructor(message = GMAIL_RECONNECT_REQUIRED_MESSAGE) {
+    super(message);
+    this.name = "GmailReconnectRequiredError";
+  }
+}
 
 export type GmailMessageCandidate = z.infer<typeof gmailMessageCandidateSchema>;
 
@@ -253,11 +270,55 @@ function normalizeReturnTo(returnTo?: string) {
   return "/";
 }
 
+type GoogleErrorBody = {
+  error?: string;
+  error_description?: string;
+};
+
+class GmailApiRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly googleError?: string,
+    readonly googleErrorDescription?: string
+  ) {
+    super(message);
+    this.name = "GmailApiRequestError";
+  }
+}
+
+function clientIdFingerprint(clientId: string) {
+  if (clientId.length <= 8) {
+    return { clientIdPrefix: clientId, clientIdSuffix: clientId };
+  }
+
+  return {
+    clientIdPrefix: clientId.slice(0, 4),
+    clientIdSuffix: clientId.slice(-4)
+  };
+}
+
+async function parseGoogleError(response: Response) {
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text) as GoogleErrorBody;
+  } catch {
+    return { error_description: text };
+  }
+}
+
 async function fetchJson<T>(url: string, init?: RequestInit) {
   const response = await fetch(url, init);
 
   if (!response.ok) {
-    throw new Error(`Gmail API request failed: ${response.status} ${await response.text()}`);
+    const body = await parseGoogleError(response);
+    throw new GmailApiRequestError(
+      `Gmail API request failed: ${response.status}`,
+      response.status,
+      body.error,
+      body.error_description
+    );
   }
 
   return response.json() as Promise<T>;
@@ -276,8 +337,8 @@ async function exchangeCodeForTokens(code: string, settings: GmailSettings): Pro
     })
   });
 
-  if (!response.access_token || !response.refresh_token) {
-    throw new Error("Gmail OAuth did not return a refresh token.");
+  if (!response.access_token) {
+    throw new Error("Gmail OAuth did not return an access token.");
   }
 
   return {
@@ -287,25 +348,51 @@ async function exchangeCodeForTokens(code: string, settings: GmailSettings): Pro
   };
 }
 
-async function refreshAccessToken(refreshToken: string, settings: GmailSettings): Promise<string> {
-  const response = await fetchJson<GmailTokenResponse>("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      refresh_token: refreshToken,
-      client_id: settings.clientId,
-      client_secret: settings.clientSecret,
-      grant_type: "refresh_token"
-    })
+async function refreshAccessToken(input: { auth0Email: string; googleEmail?: string | null; refreshToken: string; settings: GmailSettings }): Promise<string> {
+  const { auth0Email, googleEmail, refreshToken, settings } = input;
+  logInfo("gmail", "refreshing access token", {
+    auth0Email,
+    googleEmail: googleEmail ?? null,
+    hasRefreshToken: Boolean(refreshToken),
+    refreshTokenLength: refreshToken.length,
+    ...clientIdFingerprint(settings.clientId)
   });
 
-  const accessToken = response.access_token;
+  try {
+    const response = await fetchJson<GmailTokenResponse>("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        refresh_token: refreshToken,
+        client_id: settings.clientId,
+        client_secret: settings.clientSecret,
+        grant_type: "refresh_token"
+      })
+    });
 
-  if (!accessToken) {
-    throw new Error("Unable to refresh Gmail access token.");
+    const accessToken = response.access_token;
+
+    if (!accessToken) {
+      throw new Error("Unable to refresh Gmail access token.");
+    }
+
+    return accessToken;
+  } catch (error) {
+    if (error instanceof GmailApiRequestError) {
+      logError("gmail", "access token refresh failed", {
+        auth0Email,
+        googleEmail: googleEmail ?? null,
+        hasRefreshToken: Boolean(refreshToken),
+        refreshTokenLength: refreshToken.length,
+        ...clientIdFingerprint(settings.clientId),
+        status: error.status,
+        errorCode: error.googleError ?? null,
+        errorDescription: error.googleErrorDescription ?? null
+      });
+    }
+
+    throw error;
   }
-
-  return accessToken;
 }
 
 async function fetchGmailProfile(accessToken: string) {
@@ -328,9 +415,34 @@ async function getAccessTokenForEmail(auth0Email: string, settings = requireSett
   }
 
   const refreshToken = decryptText(connection.refreshTokenEncrypted, settings.encryptionSecret);
-  const accessToken = await refreshAccessToken(refreshToken, settings);
 
-  return { accessToken, connection };
+  try {
+    const accessToken = await refreshAccessToken({
+      auth0Email,
+      googleEmail: connection.googleEmail,
+      refreshToken,
+      settings
+    });
+
+    if (connection.needsReconnect || connection.lastError) {
+      await prisma.gmailConnection.update({
+        where: { auth0Email },
+        data: { needsReconnect: false, lastError: null }
+      });
+    }
+
+    return { accessToken, connection };
+  } catch (error) {
+    if (error instanceof GmailApiRequestError && error.googleError === "invalid_grant") {
+      await prisma.gmailConnection.update({
+        where: { auth0Email },
+        data: { needsReconnect: true, lastError: GMAIL_RECONNECT_REQUIRED_MESSAGE }
+      });
+      throw new GmailReconnectRequiredError();
+    }
+
+    throw error;
+  }
 }
 
 function headerValue(headers: GmailMessageHeader[] | undefined, name: string) {
@@ -703,8 +815,12 @@ export async function getGmailStatus(auth0Email: string): Promise<GmailStatus> {
     return {
       configured: false,
       connected: false,
+      needsReconnect: false,
       googleEmail: null,
-      updatedAt: null
+      lastError: null,
+      lastConnectedAt: null,
+      updatedAt: null,
+      scopes: []
     };
   }
 
@@ -712,9 +828,13 @@ export async function getGmailStatus(auth0Email: string): Promise<GmailStatus> {
 
   return {
     configured: true,
-    connected: Boolean(connection),
+    connected: Boolean(connection && !connection.needsReconnect),
+    needsReconnect: connection?.needsReconnect ?? false,
     googleEmail: connection?.googleEmail ?? null,
-    updatedAt: connection?.updatedAt?.toISOString() ?? null
+    lastError: connection?.lastError ?? null,
+    lastConnectedAt: connection?.connectedAt?.toISOString() ?? null,
+    updatedAt: connection?.updatedAt?.toISOString() ?? null,
+    scopes: connection?.scope?.split(/\s+/).filter(Boolean) ?? []
   };
 }
 
@@ -724,7 +844,19 @@ export async function completeGmailOAuth(code: string, state: string) {
   try {
     const parsedState = verifyState(state, settings.encryptionSecret);
     const tokens = await exchangeCodeForTokens(code, settings);
-    const refreshToken = tokens.refresh_token;
+    const existingConnection = await prisma.gmailConnection.findUnique({
+      where: { auth0Email: parsedState.auth0Email }
+    });
+    const refreshToken = tokens.refresh_token ?? (
+      existingConnection
+        ? decryptText(existingConnection.refreshTokenEncrypted, settings.encryptionSecret)
+        : null
+    );
+
+    if (!refreshToken) {
+      throw new Error("Gmail OAuth did not return a refresh token.");
+    }
+
     const profile = await fetchGmailProfile(tokens.access_token);
 
     await prisma.gmailConnection.upsert({
@@ -733,12 +865,17 @@ export async function completeGmailOAuth(code: string, state: string) {
         auth0Email: parsedState.auth0Email,
         googleEmail: profile.emailAddress ?? null,
         refreshTokenEncrypted: encryptText(refreshToken, settings.encryptionSecret),
-        scope: tokens.scope ?? GMAIL_SCOPE
+        scope: tokens.scope ?? GMAIL_SCOPE,
+        lastError: null,
+        needsReconnect: false
       },
       update: {
         googleEmail: profile.emailAddress ?? null,
         refreshTokenEncrypted: encryptText(refreshToken, settings.encryptionSecret),
-        scope: tokens.scope ?? GMAIL_SCOPE
+        scope: tokens.scope ?? GMAIL_SCOPE,
+        lastError: null,
+        needsReconnect: false,
+        connectedAt: new Date()
       }
     });
 
