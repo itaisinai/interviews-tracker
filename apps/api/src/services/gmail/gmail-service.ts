@@ -546,11 +546,15 @@ function mapMessageCandidate(message: GmailMessageResponse): GmailMessageCandida
   });
 }
 
-async function getSuppressedGmailMessageIds(auth0Email: string) {
+async function getSuppressedGmailMessageIds(input: { auth0Email: string; jobOpportunityId: string }) {
   const states = await prisma.gmailMessageState.findMany({
     where: {
-      auth0Email,
-      status: { in: ["USED", "HIDDEN"] }
+      auth0Email: input.auth0Email,
+      status: { in: ["USED", "HIDDEN"] },
+      OR: [
+        { jobOpportunityId: input.jobOpportunityId },
+        { jobOpportunityId: null }
+      ]
     },
     select: { messageId: true }
   });
@@ -726,7 +730,7 @@ export async function completeGmailOAuth(code: string, state: string) {
   }
 }
 
-export async function searchGmailMessages(input: { auth0Email: string; companyName: string; roleTitle?: string | null }) {
+export async function searchGmailMessages(input: { auth0Email: string; jobOpportunityId: string; companyName: string; roleTitle?: string | null }) {
   const settings = requireSettings();
   const access = await getAccessTokenForEmail(input.auth0Email, settings);
 
@@ -738,7 +742,10 @@ export async function searchGmailMessages(input: { auth0Email: string; companyNa
   const queries = buildGmailSearchQueries(input.companyName, input.roleTitle);
   try {
     const messageMap = new Map<string, GmailMessageResponse & { query: string }>();
-    const suppressedMessageIds = await getSuppressedGmailMessageIds(input.auth0Email);
+    const suppressedMessageIds = await getSuppressedGmailMessageIds({
+      auth0Email: input.auth0Email,
+      jobOpportunityId: input.jobOpportunityId
+    });
 
     const fetchMessagesForQuery = async (query: string) => {
       const listResponse = await fetchJson<GmailListResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages?${new URLSearchParams({

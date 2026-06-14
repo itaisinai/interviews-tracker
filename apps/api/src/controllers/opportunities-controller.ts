@@ -61,6 +61,7 @@ export async function searchOpportunityGmailHandler(request: AuthenticatedReques
   const timer = createTimer("gmail", "search opportunity emails", { company: opportunity.companyName });
   const result = await searchGmailMessages({
     auth0Email: request.auth?.email ?? "",
+    jobOpportunityId: request.params.id,
     companyName: opportunity.companyName,
     roleTitle: opportunity.roleTitle
   });
