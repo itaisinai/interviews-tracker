@@ -73,6 +73,7 @@ export const compensationInputSchema = z.object({
 
 export type Opportunity = {
   id: string;
+  slug: string;
   companyName: string;
   roleTitle: string;
   pipelineType: PipelineType;

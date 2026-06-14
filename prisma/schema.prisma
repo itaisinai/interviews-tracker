@@ -69,6 +69,7 @@ enum GmailMessageStateStatus {
 
 model JobOpportunity {
   id                     String                  @id @default(cuid())
+  slug                   String                  @unique
   companyName            String
   roleTitle              String
   pipelineType           PipelineType

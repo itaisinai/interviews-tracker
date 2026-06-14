@@ -23,13 +23,13 @@ import { api } from "../lib/api";
 import { useState } from "react";
 
 export function OpportunityDetailPage() {
-  const { id = "" } = useParams();
+  const { slugOrId = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["opportunity", id],
-    queryFn: () => api.opportunity(id),
-    enabled: Boolean(id),
+    queryKey: ["opportunity", slugOrId],
+    queryFn: () => api.opportunity(slugOrId),
+    enabled: Boolean(slugOrId),
   });
   const [note, setNote] = useState({
     title: "",
@@ -50,22 +50,23 @@ export function OpportunityDetailPage() {
     offerStatus: "NOT_DISCUSSED",
     negotiationNotes: "",
   });
+  const opportunityId = data?.id ?? slugOrId;
   const refresh = () =>
-    void queryClient.invalidateQueries({ queryKey: ["opportunity", id] });
+    void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
   const addNote = useMutation({
-    mutationFn: () => api.createOpportunityNote(id, note),
+    mutationFn: () => api.createOpportunityNote(opportunityId, note),
     onSuccess: refresh,
   });
   const addTask = useMutation({
-    mutationFn: () => api.createOpportunityTask(id, task),
+    mutationFn: () => api.createOpportunityTask(opportunityId, task),
     onSuccess: refresh,
   });
   const saveComp = useMutation({
-    mutationFn: () => api.upsertCompensation({ ...comp, jobOpportunityId: id }),
+    mutationFn: () => api.upsertCompensation({ ...comp, jobOpportunityId: opportunityId }),
     onSuccess: refresh,
   });
   const deleteOpportunity = useMutation({
-    mutationFn: () => api.deleteOpportunity(id),
+    mutationFn: () => api.deleteOpportunity(opportunityId),
     onSuccess: () => navigate("/opportunities"),
   });
   const deleteInteraction = useMutation({
