@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Calendar, type CalendarEvent } from "@interviews-tracker/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GmailInteractionPanel } from "../components/gmail-interaction-panel";
 import { InteractionsDrawer } from "../components/interactions-drawer";
@@ -6,6 +7,7 @@ import { OpportunityInteractionTimeline } from "../components/interactions-timel
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { MaterialIcon } from "../components/material-icon";
+import { labelForInteractionType } from "../lib/enum-labels";
 import { api } from "../lib/api";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 import type { Interaction } from "../lib/types";
@@ -77,6 +79,7 @@ export function InteractionsPage() {
   const displayInteractions = useMemo(() => promoteOverdueInteractionsForRead(data), [data]);
   const opportunityGroups = useMemo(() => buildOpportunityGroups(displayInteractions), [displayInteractions]);
   const visibleOpportunityGroups = useMemo(() => opportunityGroups.filter((group) => filterOpportunityGroup(group, filter)), [filter, opportunityGroups]);
+  const nextMonthCalendarEvents = useMemo(() => buildNextMonthCalendarEvents(displayInteractions), [displayInteractions]);
   const gmailOpportunity = useMemo(() => opportunities.find((item) => item.id === gmailOpportunityId) ?? null, [gmailOpportunityId, opportunities]);
   const deleteInteraction = useMutation({
     mutationFn: (id: string) => api.deleteInteraction(id),
@@ -318,6 +321,7 @@ export function InteractionsPage() {
             </div>
           </section>
           <aside className="space-y-6 lg:col-span-4">
+            <Calendar eyebrow="Next month" month={getNextMonth()} events={nextMonthCalendarEvents} />
             <div className="rounded-xl border border-outline-variant bg-white p-6 shadow-sm">
               <h3 className="mb-3 font-title-md text-title-md font-bold">Interaction Health</h3>
               <div className="mb-6 rounded-xl bg-surface-container-low p-4">
@@ -346,6 +350,35 @@ export function InteractionsPage() {
       />
     </>
   );
+}
+
+const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
+
+type InteractionCalendarEvent = CalendarEvent & {
+  date: string;
+};
+
+function getNextMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+}
+
+function buildNextMonthCalendarEvents(interactions: readonly Interaction[]): InteractionCalendarEvent[] {
+  return interactions.map((interaction) => {
+    const date = new Date(interaction.date);
+    const titleParts = [
+      interaction.jobOpportunity?.companyName,
+      interaction.stage || labelForInteractionType(interaction.type),
+      interaction.personName
+    ].filter(Boolean);
+
+    return {
+      id: interaction.id,
+      date: interaction.date,
+      title: titleParts.length > 0 ? titleParts.join(" · ") : labelForInteractionType(interaction.type),
+      time: timeFormatter.format(date)
+    };
+  });
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
