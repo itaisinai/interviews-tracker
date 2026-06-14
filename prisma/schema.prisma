@@ -69,6 +69,7 @@ enum GmailMessageStateStatus {
 
 model JobOpportunity {
   id                     String                  @id @default(cuid())
+  slug                   String                  @unique
   companyName            String
   companySearchName      String?
   roleTitle              String
@@ -235,8 +236,10 @@ model GmailConnection {
   id                    String   @id @default(cuid())
   auth0Email            String   @unique
   googleEmail           String?
-  refreshTokenEncrypted  String
+  refreshTokenEncrypted String
   scope                 String?
+  lastError             String?
+  needsReconnect        Boolean  @default(false)
   connectedAt           DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }

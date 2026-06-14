@@ -29,24 +29,7 @@ function normalizeDateValue(value: string | Date) {
   return new Date(value).getTime();
 }
 
-function interactionContextText(interaction: Pick<InteractionStatusLike, "type" | "stage" | "outcome" | "followUp">) {
-  return [interaction.type, interaction.stage, interaction.outcome, interaction.followUp].filter(Boolean).join(" ").toLowerCase();
-}
-
-function isTerminalInteraction(interaction: Pick<InteractionStatusLike, "type" | "status" | "stage" | "outcome" | "followUp">) {
-  if (interaction.type === "Rejection" || interaction.type === "Offer") {
-    return true;
-  }
-
-  if (interaction.status === "REJECTED") {
-    return true;
-  }
-
-  const text = interactionContextText(interaction);
-  return /reject|declin|not.*moving forward|moving on|not a fit|no longer|withdrawn?|not relevant|offer|הצעה|דחייה|נדחה|לא מתקדמים/.test(text);
-}
-
- function hasLaterTerminalInteraction<T extends InteractionStatusLike & { id: string }>(interaction: T, interactions: readonly T[]) {
+function hasLaterInteraction<T extends InteractionStatusLike & { id: string }>(interaction: T, interactions: readonly T[]) {
   const ordered = [...interactions].sort((left, right) => {
     const leftTime = normalizeDateValue(left.date);
     const rightTime = normalizeDateValue(right.date);
@@ -62,7 +45,7 @@ function isTerminalInteraction(interaction: Pick<InteractionStatusLike, "type" |
     return false;
   }
 
-  return ordered.slice(currentIndex + 1).some((item) => isTerminalInteraction(item));
+  return ordered.slice(currentIndex + 1).length > 0;
 }
 
 export function promoteOverdueInteractionStatusForRead<T extends InteractionStatusLike>(interaction: T, now = new Date()) {
@@ -92,7 +75,7 @@ export function promoteOverdueInteractionsForRead<T extends InteractionStatusLik
   });
 
   return ordered.map((interaction) => {
-    if (hasLaterTerminalInteraction(interaction, ordered)) {
+    if (hasLaterInteraction(interaction, ordered)) {
       return interaction;
     }
 
@@ -132,32 +115,52 @@ export async function normalizeOverdueScheduledInteractionsForRead(now = new Dat
     return [];
   }
 
-  const interactionsByOpportunity = new Map<string, typeof candidates>();
+  const opportunityInteractions = await prisma.interaction.findMany({
+    where: {
+      jobOpportunityId: { in: opportunityIds }
+    },
+    select: {
+      id: true,
+      jobOpportunityId: true,
+      date: true,
+      type: true,
+      status: true,
+      stage: true,
+      outcome: true,
+      followUp: true
+    }
+  });
 
-  for (const candidate of candidates) {
-    const list = interactionsByOpportunity.get(candidate.jobOpportunityId) ?? [];
-    list.push(candidate);
-    interactionsByOpportunity.set(candidate.jobOpportunityId, list);
+  const interactionsByOpportunity = new Map<string, typeof opportunityInteractions>();
+
+  for (const interaction of opportunityInteractions) {
+    const list = interactionsByOpportunity.get(interaction.jobOpportunityId) ?? [];
+    list.push(interaction);
+    interactionsByOpportunity.set(interaction.jobOpportunityId, list);
   }
 
   const interactionIdsToPromote = new Set<string>();
+  const candidateIds = new Set(candidates.map((item) => item.id));
 
   for (const interactionList of interactionsByOpportunity.values()) {
     const ordered = [...interactionList].sort((left, right) => normalizeDateValue(left.date) - normalizeDateValue(right.date) || left.id.localeCompare(right.id));
     ordered.forEach((interaction, index) => {
-      const laterTerminalExists = ordered.slice(index + 1).some((item) => isTerminalInteraction(item));
-      if (!laterTerminalExists) {
+      const isCandidate = candidateIds.has(interaction.id);
+      const laterInteractionExists = ordered.slice(index + 1).length > 0;
+      if (isCandidate && !laterInteractionExists) {
         interactionIdsToPromote.add(interaction.id);
       }
     });
   }
 
-  await prisma.interaction.updateMany({
-    where: {
-      id: { in: [...interactionIdsToPromote] }
-    },
-    data: { status: "NEEDS_FOLLOW_UP" }
-  });
+  if (interactionIdsToPromote.size > 0) {
+    await prisma.interaction.updateMany({
+      where: {
+        id: { in: [...interactionIdsToPromote] }
+      },
+      data: { status: "NEEDS_FOLLOW_UP" }
+    });
+  }
 
   return opportunityIds;
 }
