@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { createMonthCalendar, type CalendarEvent, type CalendarEventTone } from "./calendar-utils.js";
+import { MaterialIcon } from "../material-icon/index.js";
 
 export type CalendarProps<Event extends CalendarEvent = CalendarEvent> = {
   events: readonly Event[];
@@ -11,6 +12,9 @@ export type CalendarProps<Event extends CalendarEvent = CalendarEvent> = {
   multipleEventsLabel?: string;
   eventCountLabel?: (count: number) => string;
   renderEvent?: (event: Event) => ReactNode;
+  onPreviousMonth?: () => void;
+  onNextMonth?: () => void;
+  onToday?: () => void;
   className?: string;
 };
 
@@ -42,6 +46,9 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
   multipleEventsLabel = "Multiple",
   eventCountLabel = (count) => `${count} ${count === 1 ? "meeting" : "meetings"}`,
   renderEvent,
+  onPreviousMonth,
+  onNextMonth,
+  onToday,
   className = "",
 }: CalendarProps<Event>) {
   const calendar = createMonthCalendar({ events, month });
@@ -55,8 +62,44 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
             {title ?? calendar.monthLabel}
           </h3>
         </div>
-        <div className="rounded-full bg-surface-container-low px-3 py-1 font-label-md text-label-md text-on-surface-variant">
-          {eventCountLabel(calendar.totalEvents)}
+        <div className="flex items-center gap-2">
+          {onPreviousMonth ? (
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-outline-variant bg-white text-on-surface-variant transition-colors hover:bg-surface-container-low"
+              onClick={onPreviousMonth}
+              aria-label="Previous month"
+              title="Previous month"
+            >
+              <MaterialIcon name="chevron_left" />
+            </button>
+          ) : null}
+          {onToday ? (
+            <button
+              type="button"
+              className="inline-flex h-9 items-center gap-1 rounded-full border border-outline-variant bg-white px-3 font-label-md text-label-md text-on-surface-variant transition-colors hover:bg-surface-container-low"
+              onClick={onToday}
+              aria-label="Today"
+              title="Today"
+            >
+              <MaterialIcon name="today" className="text-[18px]" />
+              Today
+            </button>
+          ) : null}
+          {onNextMonth ? (
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-outline-variant bg-white text-on-surface-variant transition-colors hover:bg-surface-container-low"
+              onClick={onNextMonth}
+              aria-label="Next month"
+              title="Next month"
+            >
+              <MaterialIcon name="chevron_right" />
+            </button>
+          ) : null}
+          <div className="rounded-full bg-surface-container-low px-3 py-1 font-label-md text-label-md text-on-surface-variant">
+            {eventCountLabel(calendar.totalEvents)}
+          </div>
         </div>
       </div>
 
@@ -82,12 +125,17 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
                 day.events.length > 0
                   ? "border-primary/15 bg-primary/5 text-on-background hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/10 hover:shadow-sm"
                   : "border-transparent bg-surface-container-low/60 text-on-surface-variant hover:bg-surface-container-low"
-              }`}
+              } ${day.isToday ? "ring-2 ring-primary ring-offset-2 ring-offset-white" : ""}`}
               aria-label={getAccessibleLabel(day.date, day.events)}
               tabIndex={0}
             >
               <span className="font-label-md text-label-md">{dayFormatter.format(day.date)}</span>
               <span className={`mt-1 h-2 w-2 rounded-full ${dotClassNames[day.tone]}`} />
+              {day.isToday ? (
+                <span className="mt-1 rounded-full bg-primary px-2 py-0.5 font-label-sm text-label-sm text-on-primary">
+                  Today
+                </span>
+              ) : null}
             </div>
 
             <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-3 hidden w-64 -translate-x-1/2 rounded-xl border border-outline-variant bg-white p-3 text-left shadow-xl group-hover:block group-focus-within:block">

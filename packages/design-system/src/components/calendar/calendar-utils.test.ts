@@ -28,3 +28,15 @@ test("calendar event tone matches empty, single, and multiple states", () => {
   assert.equal(getCalendarEventTone(1), "single");
   assert.equal(getCalendarEventTone(2), "multiple");
 });
+
+test("calendar marks the provided today date", () => {
+  const today = new Date(2026, 6, 14);
+  const calendar = createMonthCalendar({
+    month: new Date(2026, 6, 1),
+    today,
+    events: [],
+  });
+
+  assert.equal(calendar.days[13].isToday, true);
+  assert.equal(calendar.days[12].isToday, false);
+});

@@ -12,6 +12,7 @@ export type CalendarDay<Event extends CalendarEvent = CalendarEvent> = {
   date: Date;
   events: Event[];
   tone: CalendarEventTone;
+  isToday: boolean;
 };
 
 export type CalendarMonth<Event extends CalendarEvent = CalendarEvent> = {
@@ -29,9 +30,11 @@ const monthFormatter = new Intl.DateTimeFormat(undefined, {
 export function createMonthCalendar<Event extends CalendarEvent>({
   events,
   month,
+  today = new Date(),
 }: {
   events: readonly Event[];
   month: Date;
+  today?: Date;
 }): CalendarMonth<Event> {
   const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
   const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
@@ -71,6 +74,7 @@ export function createMonthCalendar<Event extends CalendarEvent>({
       date,
       events: dayEvents,
       tone: getCalendarEventTone(dayEvents.length),
+      isToday: isSameCalendarDate(date, today),
     };
   });
 
@@ -92,4 +96,12 @@ export function formatCalendarDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
     date.getDate(),
   ).padStart(2, "0")}`;
+}
+
+function isSameCalendarDate(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
 }
