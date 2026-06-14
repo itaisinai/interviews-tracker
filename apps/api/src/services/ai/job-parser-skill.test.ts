@@ -75,3 +75,51 @@ test("openai parser regression for the Alta recruiter message", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test("openai interaction parser schema includes meetingLink", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestBodies: string[] = [];
+
+  globalThis.fetch = (async (_input, init) => {
+    requestBodies.push(String(init?.body ?? ""));
+
+    return new Response(JSON.stringify({
+      output_text: JSON.stringify({
+        date: "2026-06-14T10:00:00.000Z",
+        type: "Interview",
+        stage: "Interview",
+        status: "SCHEDULED",
+        personName: null,
+        personRole: null,
+        agenda: null,
+        meetingLink: "https://meet.google.com/abc-defg-hij",
+        notes: null,
+        outcome: null,
+        followUp: null
+      })
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  }) as typeof fetch;
+
+  try {
+    const parser = new OpenAiParserService("test-api-key");
+    const parsed = await parser.parseInteractionText({
+      companyName: "Toku",
+      text: "Interview invite",
+      nowIso: "2026-06-14T10:00:00.000Z"
+    });
+
+    assert.equal(parsed.meetingLink, "https://meet.google.com/abc-defg-hij");
+
+    const request = JSON.parse(requestBodies[0] ?? "{}") as {
+      text?: { format?: { schema?: { required?: string[]; properties?: Record<string, unknown> } } };
+    };
+
+    assert.ok(request.text?.format?.schema?.required?.includes("meetingLink"));
+    assert.ok(Object.prototype.hasOwnProperty.call(request.text?.format?.schema?.properties ?? {}, "meetingLink"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

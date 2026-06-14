@@ -17,6 +17,7 @@ import {
 } from "../../lib/schemas.js";
 
 import crypto from "node:crypto";
+import type { Prisma } from "@prisma/client";
 import { getAiParserService } from "../ai/ai-parser-service.js";
 import { prisma } from "../../lib/prisma.js";
 import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
@@ -547,12 +548,25 @@ function mapMessageCandidate(message: GmailMessageResponse): GmailMessageCandida
   });
 }
 
+function buildOpportunityScopedGmailMessageStateWhere(jobOpportunityId?: string | null) {
+  if (!jobOpportunityId) {
+    return {};
+  }
+
+  return {
+    OR: [
+      { jobOpportunityId },
+      { jobOpportunityId: null }
+    ] satisfies Prisma.GmailMessageStateWhereInput[]
+  };
+}
+
 async function getSuppressedGmailMessageIds(input: { auth0Email: string; jobOpportunityId: string }) {
   const states = await prisma.gmailMessageState.findMany({
     where: {
       auth0Email: input.auth0Email,
       status: { in: ["USED", "HIDDEN"] },
-      jobOpportunityId: input.jobOpportunityId
+      ...buildOpportunityScopedGmailMessageStateWhere(input.jobOpportunityId)
     },
     select: { messageId: true }
   });
@@ -577,12 +591,13 @@ export async function hideGmailMessage(input: { auth0Email: string; messageId: s
   await markGmailMessageState({ ...input, status: "HIDDEN" });
 }
 
-export async function restoreHiddenGmailMessage(input: { auth0Email: string; messageId: string }) {
+export async function restoreHiddenGmailMessage(input: { auth0Email: string; messageId: string; jobOpportunityId?: string | null }) {
   await prisma.gmailMessageState.deleteMany({
     where: {
       auth0Email: input.auth0Email,
       messageId: input.messageId,
-      status: "HIDDEN"
+      status: "HIDDEN",
+      ...buildOpportunityScopedGmailMessageStateWhere(input.jobOpportunityId)
     }
   });
 }
@@ -593,7 +608,7 @@ export async function unmarkUsedGmailMessageState(input: { auth0Email: string; m
       auth0Email: input.auth0Email,
       messageId: input.messageId,
       status: "USED",
-      jobOpportunityId: input.jobOpportunityId ?? undefined
+      ...buildOpportunityScopedGmailMessageStateWhere(input.jobOpportunityId)
     }
   });
 }
@@ -610,7 +625,7 @@ export async function listTrackedGmailMessages(input: { auth0Email: string; jobO
     where: {
       auth0Email: input.auth0Email,
       status: { in: ["USED", "HIDDEN"] },
-      jobOpportunityId: input.jobOpportunityId
+      ...buildOpportunityScopedGmailMessageStateWhere(input.jobOpportunityId)
     },
     orderBy: { updatedAt: "desc" },
     select: { messageId: true, status: true }
