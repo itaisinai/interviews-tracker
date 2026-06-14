@@ -63,6 +63,7 @@ export async function searchOpportunityGmailHandler(request: AuthenticatedReques
     auth0Email: request.auth?.email ?? "",
     jobOpportunityId: request.params.id,
     companyName: opportunity.companyName,
+    companySearchName: opportunity.companySearchName,
     roleTitle: opportunity.roleTitle
   });
   timer.end({ candidates: result.candidates.length });

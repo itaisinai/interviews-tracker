@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const companyResearchExistingDataSchema = z.object({
+  companySearchName: z.string().nullable().optional(),
   linkedinUrl: z.string().url().nullable().optional(),
   funding: z.string().nullable().optional(),
   investmentRounds: z.string().nullable().optional(),
@@ -22,6 +23,7 @@ export const companyResearchInputSchema = z.object({
 
 export const companyResearchResultSchema = z.object({
   companyName: z.string(),
+  companySearchName: z.string().nullable(),
   linkedinUrl: z.string().url().nullable(),
   funding: z.string().nullable(),
   totalRaised: z.string().nullable(),

@@ -32,6 +32,14 @@ test("builds greedy Gmail queries for .ai company names", () => {
   assert.ok(queries.some((query) => query.includes("\"Unframe\" \"Software Engineer\" newer_than:365d")));
 });
 
+test("builds Gmail queries with an English search alias for Hebrew company names", () => {
+  const queries = buildGmailSearchQueries("טוקו", "Software Engineer", ["Toko"]);
+
+  assert.ok(queries.some((query) => query.includes("טוקו newer_than:365d")));
+  assert.ok(queries.some((query) => query.includes("Toko newer_than:365d")));
+  assert.ok(queries.some((query) => query.includes("\"Toko\" \"Software Engineer\" newer_than:365d")));
+});
+
 test("builds extra searches for sender domains that include the company token", () => {
   const queries = buildRelatedSenderDomainSearchQueries("Alta", ["altahq.com", "dialog.co.il", "gmail.com", null]);
 
@@ -39,6 +47,14 @@ test("builds extra searches for sender domains that include the company token", 
   assert.ok(queries.includes("\"altahq.com\" newer_than:365d"));
   assert.ok(queries.includes("from:altahq.com newer_than:365d"));
   assert.equal(queries.some((query) => query.includes("dialog")), false);
+});
+
+test("builds extra sender-domain searches from English aliases", () => {
+  const queries = buildRelatedSenderDomainSearchQueries("טוקו", ["toku.com"], ["Toku"]);
+
+  assert.ok(queries.includes("toku newer_than:365d"));
+  assert.ok(queries.includes("\"toku.com\" newer_than:365d"));
+  assert.ok(queries.includes("from:toku.com newer_than:365d"));
 });
 
 test("fallback classification treats matching sender domains as company-related", () => {
@@ -57,6 +73,24 @@ test("fallback classification treats matching sender domains as company-related"
   assert.equal(classification.isRelevant, true);
   assert.equal(classification.emailType, "INTERVIEW_INVITATION");
   assert.match(classification.reason, /related sender-domain search for alta/i);
+});
+
+test("fallback classification uses English aliases for Hebrew company names", () => {
+  const classification = classifySearchCandidateFallback({
+    messageId: "msg-1",
+    companyName: "טוקו",
+    companyAliases: ["Toku"],
+    roleTitle: "Full Stack",
+    subject: "Toku interview invitation",
+    from: "Recruiting <jobs@toku.com>",
+    snippet: "We would like to schedule an interview.",
+    date: "2026-06-16T09:00:00.000Z",
+    senderDomain: "toku.com",
+    searchQuery: "\"Toku\" interview newer_than:365d"
+  });
+
+  assert.equal(classification.isRelevant, true);
+  assert.equal(classification.emailType, "INTERVIEW_INVITATION");
 });
 
 test("sorts Gmail search candidates newest first", () => {

@@ -730,7 +730,7 @@ export async function completeGmailOAuth(code: string, state: string) {
   }
 }
 
-export async function searchGmailMessages(input: { auth0Email: string; jobOpportunityId: string; companyName: string; roleTitle?: string | null }) {
+export async function searchGmailMessages(input: { auth0Email: string; jobOpportunityId: string; companyName: string; companySearchName?: string | null; roleTitle?: string | null }) {
   const settings = requireSettings();
   const access = await getAccessTokenForEmail(input.auth0Email, settings);
 
@@ -739,7 +739,7 @@ export async function searchGmailMessages(input: { auth0Email: string; jobOpport
   }
 
   const timer = createTimer("gmail", "search emails", { company: input.companyName });
-  const queries = buildGmailSearchQueries(input.companyName, input.roleTitle);
+  const queries = buildGmailSearchQueries(input.companyName, input.roleTitle, [input.companySearchName]);
   try {
     const messageMap = new Map<string, GmailMessageResponse & { query: string }>();
     const suppressedMessageIds = await getSuppressedGmailMessageIds({
@@ -786,7 +786,8 @@ export async function searchGmailMessages(input: { auth0Email: string; jobOpport
 
     const relatedDomainQueries = buildRelatedSenderDomainSearchQueries(
       input.companyName,
-      Array.from(messageMap.values()).map((message) => senderDomainFromHeader(headerValue(message.payload?.headers, "From")))
+      Array.from(messageMap.values()).map((message) => senderDomainFromHeader(headerValue(message.payload?.headers, "From"))),
+      [input.companySearchName]
     ).filter((query) => !queries.includes(query));
 
     for (const query of relatedDomainQueries) {
@@ -803,6 +804,7 @@ export async function searchGmailMessages(input: { auth0Email: string; jobOpport
         relevance: classifySearchCandidateFallback({
           messageId: candidate.id,
           companyName: input.companyName,
+          companyAliases: [input.companySearchName],
           roleTitle: input.roleTitle ?? null,
           subject: candidate.subject,
           from: candidate.from,
