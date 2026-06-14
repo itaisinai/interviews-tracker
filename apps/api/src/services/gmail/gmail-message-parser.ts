@@ -571,35 +571,37 @@ export async function parseStructuredGmailEmail(input: {
   };
 }
 
-function buildCompanySearchVariants(companyName: string) {
+function buildCompanySearchVariants(companyName: string, aliases: Array<string | null | undefined> = []) {
   const variants = new Set<string>();
-  const normalized = companyName.trim();
+  const names = [companyName, ...aliases].map((name) => name?.trim()).filter((name): name is string => Boolean(name));
 
-  if (!normalized) {
+  if (names.length === 0) {
     return [];
   }
 
-  variants.add(normalized);
+  for (const normalized of names) {
+    variants.add(normalized);
 
-  if (/\.ai\b/i.test(normalized)) {
-    const withoutAiSuffix = normalized.replace(/\.ai\b/gi, "").replace(/\s+/g, " ").trim();
-    if (withoutAiSuffix) {
-      variants.add(withoutAiSuffix);
+    if (/\.ai\b/i.test(normalized)) {
+      const withoutAiSuffix = normalized.replace(/\.ai\b/gi, "").replace(/\s+/g, " ").trim();
+      if (withoutAiSuffix) {
+        variants.add(withoutAiSuffix);
+      }
     }
   }
 
   return [...variants];
 }
 
-function buildCompanySearchTokens(companyName: string) {
-  return buildCompanySearchVariants(companyName)
+function buildCompanySearchTokens(companyName: string, aliases: Array<string | null | undefined> = []) {
+  return buildCompanySearchVariants(companyName, aliases)
     .flatMap((variant) => variant.toLowerCase().split(/[^a-z0-9]+/i))
     .map((token) => token.trim())
     .filter((token) => token.length >= 3 && !["inc", "ltd", "llc", "com", "co", "io", "ai"].includes(token));
 }
 
-export function buildGmailSearchQueries(companyName: string, roleTitle?: string | null) {
-  const companyVariants = buildCompanySearchVariants(companyName);
+export function buildGmailSearchQueries(companyName: string, roleTitle?: string | null, aliases: Array<string | null | undefined> = []) {
+  const companyVariants = buildCompanySearchVariants(companyName, aliases);
   const queries = new Set<string>();
 
   for (const variant of companyVariants) {
@@ -615,8 +617,8 @@ export function buildGmailSearchQueries(companyName: string, roleTitle?: string 
   return [...queries];
 }
 
-export function buildRelatedSenderDomainSearchQueries(companyName: string, senderDomains: Array<string | null | undefined>) {
-  const companyTokens = buildCompanySearchTokens(companyName);
+export function buildRelatedSenderDomainSearchQueries(companyName: string, senderDomains: Array<string | null | undefined>, aliases: Array<string | null | undefined> = []) {
+  const companyTokens = buildCompanySearchTokens(companyName, aliases);
   const queries = new Set<string>();
 
   if (companyTokens.length === 0) {
@@ -741,6 +743,7 @@ export function guessSenderDomain(email: GmailStructuredEmail) {
 export function classifySearchCandidateFallback(input: {
   messageId: string;
   companyName: string;
+  companyAliases?: Array<string | null | undefined>;
   roleTitle?: string | null;
   subject: string;
   from: string;
@@ -750,14 +753,17 @@ export function classifySearchCandidateFallback(input: {
   searchQuery?: string | null;
 }): GmailSearchCandidateClassification {
   const text = `${input.subject}\n${input.from}\n${input.snippet}`.toLowerCase();
-  const company = input.companyName.toLowerCase();
+  const companyNames = [input.companyName, ...(input.companyAliases ?? [])]
+    .map((name) => name?.trim().toLowerCase())
+    .filter((name): name is string => Boolean(name));
+  const company = companyNames[0] ?? input.companyName.toLowerCase();
   const role = input.roleTitle?.toLowerCase() ?? "";
   const senderDomain = input.senderDomain?.toLowerCase() ?? "";
   const searchQuery = input.searchQuery?.toLowerCase() ?? "";
-  const companyTokens = buildCompanySearchTokens(input.companyName);
+  const companyTokens = buildCompanySearchTokens(input.companyName, input.companyAliases);
   const domainRelated = companyTokens.some((token) => senderDomain.includes(token));
   const queryRelated = companyTokens.some((token) => searchQuery.includes(token));
-  const related = text.includes(company) || (role ? text.includes(role) : false) || domainRelated || queryRelated;
+  const related = companyNames.some((name) => text.includes(name)) || (role ? text.includes(role) : false) || domainRelated || queryRelated;
   const interview = /interview|screening|onsite|phone screen|recruiter|assignment|offer|rejection|follow[- ]up|invitation|meeting|calendar/.test(text);
   const relevant = related || interview;
   const confidence = relevant ? (related && interview ? 0.88 : 0.72) : 0.22;

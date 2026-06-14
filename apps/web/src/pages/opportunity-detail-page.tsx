@@ -178,6 +178,7 @@ export function OpportunityDetailPage() {
         roleTitle={data.roleTitle}
         knownContext={`Status: ${data.status} · Pipeline: ${data.pipelineType} · Next step: ${data.nextStep ?? "None"}${data.notes ? ` · Notes: ${data.notes}` : ""}`}
         existingCompanyData={{
+          companySearchName: data.companySearchName ?? null,
           funding: data.funding ?? null,
           customersTraction: data.customersTraction ?? null,
           companyDescription: data.companyDescription ?? null,
@@ -203,6 +204,7 @@ export function OpportunityDetailPage() {
             Company Details
           </h3>
           <Detail label="LinkedIn" value={data.linkedinUrl} />
+          <Detail label="English Search Name" value={data.companySearchName} />
           <Detail label="Size" value={data.employeesRange?.label} />
           <Detail label="Stage" value={data.companyStage?.label} />
           <Detail
