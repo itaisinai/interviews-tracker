@@ -173,6 +173,17 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
     }
   }
 
+  function cancelResearch() {
+    setResearch(null);
+    setError(null);
+    setSaveError(null);
+    setSaveMessage(null);
+    setEditingField(null);
+    setStageIndex(0);
+    setRunState("idle");
+    setProgress(0);
+  }
+
   const loadingTone = companyResearchRunMeta[runState].tone;
 
   function updateResearchField(field: EditableResearchField, value: string | null) {
@@ -293,6 +304,10 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
               <h4 className="font-title-md text-title-md font-bold">Extracted company research</h4>
             </div>
             <div className="flex items-center gap-2">
+              <button className="btn btn-secondary text-error hover:bg-error-container" onClick={cancelResearch}>
+                <MaterialIcon name="close" />
+                Cancel
+              </button>
               <span className="rounded-full bg-primary-container px-3 py-1 font-label-md text-label-md text-on-primary-container">{research.confidence} confidence</span>
               <LoadingButton className="btn btn-primary" loading={isSaving} loadingLabel="Saving..." icon="save" onClick={() => void saveResearch()}>
                 Save research
