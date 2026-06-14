@@ -33,9 +33,10 @@ type MissingResearchFields = {
 const companyResearchResultJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["companyName", "linkedinUrl", "funding", "totalRaised", "roundsCount", "latestRound", "investors", "investmentRounds", "employees", "location", "domains", "customersTraction", "companyDescription", "productDescription", "sourceUrls", "confidence", "rawImportantNotes"],
+  required: ["companyName", "companySearchName", "linkedinUrl", "funding", "totalRaised", "roundsCount", "latestRound", "investors", "investmentRounds", "employees", "location", "domains", "customersTraction", "companyDescription", "productDescription", "sourceUrls", "confidence", "rawImportantNotes"],
   properties: {
     companyName: { type: "string" },
+    companySearchName: { type: ["string", "null"] },
     linkedinUrl: { type: ["string", "null"] },
     funding: { type: ["string", "null"] },
     totalRaised: { type: ["string", "null"] },
@@ -65,6 +66,25 @@ function isPresent(value: string | null | undefined) {
 
 function normalizeText(value: string | null | undefined) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function containsHebrew(value: string) {
+  return /[\u0590-\u05ff]/.test(value);
+}
+
+function normalizeCompanySearchName(inputCompanyName: string, candidate: string | null | undefined) {
+  const normalizedCandidate = normalizeText(candidate);
+
+  if (!normalizedCandidate) {
+    return null;
+  }
+
+  const normalizedInput = normalizeText(inputCompanyName);
+  if (normalizedCandidate.toLowerCase() === normalizedInput.toLowerCase()) {
+    return null;
+  }
+
+  return normalizedCandidate;
 }
 
 function unique(values: Array<string | null | undefined>) {
@@ -271,6 +291,7 @@ function deriveConfidence(result: CompanyResearchResult, missing: MissingResearc
 export function buildResearchNote(result: CompanyResearchResult) {
   const lines = [
     `Company research for ${result.companyName}`,
+    result.companySearchName ? `English search name: ${result.companySearchName}` : null,
     result.linkedinUrl ? `LinkedIn URL: ${result.linkedinUrl}` : null,
     result.funding ? `Funding: ${result.funding}` : null,
     result.totalRaised ? `Total raised: ${result.totalRaised}` : null,
@@ -306,6 +327,10 @@ function mergeResearchResult(input: CompanyResearchInput, extracted: CompanyRese
   const result: CompanyResearchResult = {
     ...extracted,
     companyName: normalizeText(extracted.companyName) || normalizeText(input.companyName),
+    companySearchName: normalizeCompanySearchName(
+      input.companyName,
+      existing.companySearchName ?? extracted.companySearchName
+    ),
     linkedinUrl: linkedinUrl.length > 0 ? linkedinUrl : null,
     funding,
     investmentRounds,
@@ -373,6 +398,7 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
                 text: [
                   "You extract structured company research for a job search CRM.",
                   "Use only the supplied evidence. Do not invent facts, dates, funding amounts, investors, headcount, customers, or product details.",
+                  "companyName is the canonical display name from evidence. companySearchName is only an English/Latin search alias for Gmail and web search. Use it when the input company name is Hebrew or non-Latin, or when evidence clearly shows a common English spelling. For example, טוקו can become Toko or Toku if evidence supports it. Return null if no useful alias is supported.",
                   "Prefer the most reliable sources: company site/blog, Crunchbase, TechCrunch, Calcalist, Globes, CTech, Geektime, VC portfolio pages, LinkedIn/company pages.",
                   "If the evidence includes an official LinkedIn company page URL, return it in linkedinUrl.",
                   "If evidence is weak or conflicting, be conservative, return nulls, and mention uncertainty in rawImportantNotes.",
@@ -466,6 +492,7 @@ export class CompanyResearchService {
     if (evidence.length === 0) {
       const result = mergeResearchResult(normalizedInput, {
         companyName: normalizedInput.companyName,
+        companySearchName: existing.companySearchName ?? null,
         linkedinUrl: normalizedInput.linkedinUrl ?? null,
         funding: existing.funding ?? null,
         totalRaised: null,
@@ -497,6 +524,12 @@ export class CompanyResearchService {
     });
 
     const result = mergeResearchResult(normalizedInput, extracted, evidence.flatMap((item) => item.results.map((result) => result.url)), evidence);
+    if (!result.companySearchName && containsHebrew(normalizedInput.companyName)) {
+      result.rawImportantNotes = unique([
+        ...result.rawImportantNotes,
+        "Company name is non-Latin. Add an English company search name if Gmail or web search results are weak."
+      ]);
+    }
     return result;
   }
 

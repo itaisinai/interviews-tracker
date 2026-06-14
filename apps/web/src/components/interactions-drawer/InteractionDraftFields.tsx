@@ -48,6 +48,15 @@ export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFiel
       <Field label="Agenda" help="What was discussed or planned.">
         <textarea className="input min-h-24" value={draft.agenda ?? ""} onChange={(event) => setDraft({ ...draft, agenda: event.target.value || null })} />
       </Field>
+      <Field label="Meeting link" help="Google Meet or Zoom link, if available.">
+        <input
+          className="input"
+          type="url"
+          placeholder="https://meet.google.com/..."
+          value={draft.meetingLink ?? ""}
+          onChange={(event) => setDraft({ ...draft, meetingLink: event.target.value || null })}
+        />
+      </Field>
       <Field label="Notes" help="Extra context or raw details worth keeping.">
         <textarea className="input min-h-24" value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })} />
       </Field>

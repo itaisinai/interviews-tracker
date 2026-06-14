@@ -1,5 +1,12 @@
-import crypto from "node:crypto";
-import { z } from "zod";
+import {
+  buildGmailSearchQueries,
+  buildRelatedSenderDomainSearchQueries,
+  classifySearchCandidateFallback,
+  deriveInteractionFromStructuredEmail,
+  parseStructuredGmailEmail,
+  sortGmailSearchCandidatesByDate
+} from "./gmail-message-parser.js";
+import { createTimer, logInfo } from "../../lib/logger.js";
 import {
   gmailEmailClassificationSchema,
   gmailEmailExtractionAnalysisSchema,
@@ -8,16 +15,12 @@ import {
   gmailSearchCandidateSchema,
   gmailStructuredEmailSchema
 } from "../../lib/schemas.js";
-import { prisma } from "../../lib/prisma.js";
-import { createTimer, logInfo } from "../../lib/logger.js";
-import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
+
+import crypto from "node:crypto";
 import { getAiParserService } from "../ai/ai-parser-service.js";
-import {
-  buildGmailSearchQueries,
-  classifySearchCandidateFallback,
-  deriveInteractionFromStructuredEmail,
-  parseStructuredGmailEmail
-} from "./gmail-message-parser.js";
+import { prisma } from "../../lib/prisma.js";
+import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
+import { z } from "zod";
 
 type GmailSettings = {
   clientId: string;
@@ -99,6 +102,8 @@ export type GmailMessageCandidate = z.infer<typeof gmailMessageCandidateSchema>;
 export type GmailSearchCandidate = z.infer<typeof gmailSearchCandidateSchema>;
 
 export type GmailStructuredEmail = z.infer<typeof gmailStructuredEmailSchema>;
+
+export type GmailTrackedMessage = Pick<GmailMessageCandidate, "id" | "subject" | "date">;
 
 export type GmailEmailClassification = z.infer<typeof gmailEmailClassificationSchema>;
 
@@ -542,6 +547,113 @@ function mapMessageCandidate(message: GmailMessageResponse): GmailMessageCandida
   });
 }
 
+async function getSuppressedGmailMessageIds(input: { auth0Email: string; jobOpportunityId: string }) {
+  const states = await prisma.gmailMessageState.findMany({
+    where: {
+      auth0Email: input.auth0Email,
+      status: { in: ["USED", "HIDDEN"] },
+      jobOpportunityId: input.jobOpportunityId
+    },
+    select: { messageId: true }
+  });
+
+  return new Set(states.map((state) => state.messageId));
+}
+
+async function markGmailMessageState(input: { auth0Email: string; messageId: string; status: "USED" | "HIDDEN"; jobOpportunityId?: string | null }) {
+  return prisma.gmailMessageState.upsert({
+    where: {
+      auth0Email_messageId: {
+        auth0Email: input.auth0Email,
+        messageId: input.messageId
+      }
+    },
+    create: input,
+    update: { status: input.status, jobOpportunityId: input.jobOpportunityId ?? undefined }
+  });
+}
+
+export async function hideGmailMessage(input: { auth0Email: string; messageId: string; jobOpportunityId?: string | null }) {
+  await markGmailMessageState({ ...input, status: "HIDDEN" });
+}
+
+export async function restoreHiddenGmailMessage(input: { auth0Email: string; messageId: string }) {
+  await prisma.gmailMessageState.deleteMany({
+    where: {
+      auth0Email: input.auth0Email,
+      messageId: input.messageId,
+      status: "HIDDEN"
+    }
+  });
+}
+
+export async function unmarkUsedGmailMessageState(input: { auth0Email: string; messageId: string; jobOpportunityId?: string | null }) {
+  await prisma.gmailMessageState.deleteMany({
+    where: {
+      auth0Email: input.auth0Email,
+      messageId: input.messageId,
+      status: "USED",
+      jobOpportunityId: input.jobOpportunityId ?? undefined
+    }
+  });
+}
+
+export async function listTrackedGmailMessages(input: { auth0Email: string; jobOpportunityId: string }) {
+  const settings = requireSettings();
+  const access = await getAccessTokenForEmail(input.auth0Email, settings);
+
+  if (!access) {
+    throw new Error("Gmail is not connected.");
+  }
+
+  const states = await prisma.gmailMessageState.findMany({
+    where: {
+      auth0Email: input.auth0Email,
+      status: { in: ["USED", "HIDDEN"] },
+      jobOpportunityId: input.jobOpportunityId
+    },
+    orderBy: { updatedAt: "desc" },
+    select: { messageId: true, status: true }
+  });
+  const removedEmails: GmailTrackedMessage[] = [];
+  const pickedEmails: GmailTrackedMessage[] = [];
+
+  for (const state of states) {
+    const detailParams = new URLSearchParams();
+    detailParams.set("format", "metadata");
+    detailParams.append("metadataHeaders", "Subject");
+    detailParams.append("metadataHeaders", "Date");
+
+    try {
+      const detail = await fetchJson<GmailMessageResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${state.messageId}?${detailParams.toString()}`, {
+        headers: { Authorization: `Bearer ${access.accessToken}` }
+      });
+      const candidate = mapMessageCandidate({
+        ...detail,
+        id: detail.id ?? state.messageId
+      });
+      const trackedMessage = {
+        id: candidate.id,
+        subject: candidate.subject,
+        date: candidate.date
+      };
+
+      if (state.status === "HIDDEN") {
+        removedEmails.push(trackedMessage);
+      } else {
+        pickedEmails.push(trackedMessage);
+      }
+    } catch (error) {
+      logInfo("gmail", "tracked message metadata unavailable", { messageId: state.messageId, error: error instanceof Error ? error.message : "unknown" });
+    }
+  }
+
+  return {
+    removedEmails: sortGmailSearchCandidatesByDate(removedEmails),
+    pickedEmails: sortGmailSearchCandidatesByDate(pickedEmails)
+  };
+}
+
 export function createGmailAuthUrl(auth0Email: string, returnTo?: string) {
   const settings = requireSettings();
   const state = signState(
@@ -624,7 +736,7 @@ export async function completeGmailOAuth(code: string, state: string) {
   }
 }
 
-export async function searchGmailMessages(input: { auth0Email: string; companyName: string; roleTitle?: string | null }) {
+export async function searchGmailMessages(input: { auth0Email: string; jobOpportunityId: string; companyName: string; companySearchName?: string | null; roleTitle?: string | null }) {
   const settings = requireSettings();
   const access = await getAccessTokenForEmail(input.auth0Email, settings);
 
@@ -633,11 +745,15 @@ export async function searchGmailMessages(input: { auth0Email: string; companyNa
   }
 
   const timer = createTimer("gmail", "search emails", { company: input.companyName });
-  const queries = buildGmailSearchQueries(input.companyName, input.roleTitle);
+  const queries = buildGmailSearchQueries(input.companyName, input.roleTitle, [input.companySearchName]);
   try {
     const messageMap = new Map<string, GmailMessageResponse & { query: string }>();
+    const suppressedMessageIds = await getSuppressedGmailMessageIds({
+      auth0Email: input.auth0Email,
+      jobOpportunityId: input.jobOpportunityId
+    });
 
-    for (const query of queries) {
+    const fetchMessagesForQuery = async (query: string) => {
       const listResponse = await fetchJson<GmailListResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages?${new URLSearchParams({
         q: query,
         maxResults: "10",
@@ -649,7 +765,7 @@ export async function searchGmailMessages(input: { auth0Email: string; companyNa
       const listMessages = (listResponse.messages ?? []).filter((message): message is { id: string; threadId?: string } => Boolean(message.id));
 
       for (const message of listMessages) {
-        if (messageMap.has(message.id)) {
+        if (messageMap.has(message.id) || suppressedMessageIds.has(message.id)) {
           continue;
         }
 
@@ -668,7 +784,23 @@ export async function searchGmailMessages(input: { auth0Email: string; companyNa
           query
         });
       }
+    };
+
+    for (const query of queries) {
+      await fetchMessagesForQuery(query);
     }
+
+    const relatedDomainQueries = buildRelatedSenderDomainSearchQueries(
+      input.companyName,
+      Array.from(messageMap.values()).map((message) => senderDomainFromHeader(headerValue(message.payload?.headers, "From"))),
+      [input.companySearchName]
+    ).filter((query) => !queries.includes(query));
+
+    for (const query of relatedDomainQueries) {
+      await fetchMessagesForQuery(query);
+    }
+
+    const executedQueries = [...queries, ...relatedDomainQueries];
 
     const candidates = Array.from(messageMap.values()).map((message) => {
       const candidate = mapMessageCandidate(message);
@@ -678,12 +810,14 @@ export async function searchGmailMessages(input: { auth0Email: string; companyNa
         relevance: classifySearchCandidateFallback({
           messageId: candidate.id,
           companyName: input.companyName,
+          companyAliases: [input.companySearchName],
           roleTitle: input.roleTitle ?? null,
           subject: candidate.subject,
           from: candidate.from,
           snippet: candidate.snippet,
           date: candidate.date,
-          senderDomain: senderDomainFromHeader(candidate.from)
+          senderDomain: senderDomainFromHeader(candidate.from),
+          searchQuery: message.query
         })
       };
     });
@@ -708,26 +842,16 @@ export async function searchGmailMessages(input: { auth0Email: string; companyNa
     }
 
     const classificationMap = new Map(classifications.map((item) => [item.messageId, item]));
-    const rankedCandidates = candidates.map((candidate) => ({
+    const rankedCandidates = sortGmailSearchCandidatesByDate(candidates.map((candidate) => ({
       ...candidate,
       relevance: classificationMap.get(candidate.id) ?? candidate.relevance
-    })).sort((a, b) => {
-      if (a.relevance.isRelevant !== b.relevance.isRelevant) {
-        return a.relevance.isRelevant ? -1 : 1;
-      }
+    })));
 
-      if (b.relevance.confidence !== a.relevance.confidence) {
-        return b.relevance.confidence - a.relevance.confidence;
-      }
-
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    });
-
-    timer.end({ candidates: rankedCandidates.length, queries: queries.length });
+    timer.end({ candidates: rankedCandidates.length, queries: executedQueries.length });
     return {
       companyName: input.companyName,
       roleTitle: input.roleTitle ?? null,
-      query: queries.join(" | "),
+      query: executedQueries.join(" | "),
       candidates: rankedCandidates
     };
   } catch (error) {
@@ -736,7 +860,7 @@ export async function searchGmailMessages(input: { auth0Email: string; companyNa
   }
 }
 
-export async function parseGmailEmailToInteraction(input: { auth0Email: string; companyName: string; roleTitle?: string | null; messageId: string }) {
+export async function parseGmailEmailToInteraction(input: { auth0Email: string; companyName: string; roleTitle?: string | null; messageId: string; jobOpportunityId?: string | null }) {
   const settings = requireSettings();
   const access = await getAccessTokenForEmail(input.auth0Email, settings);
 
@@ -775,6 +899,8 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
     const parsedInteraction = gmailInteractionDraftSchema.parse({
       ...aiInteraction,
       date: aiInteraction.date?.trim() ? aiInteraction.date : derived.date,
+      meetingLink: aiInteraction.meetingLink ?? derived.meetingLink,
+      gmailMessageId: input.messageId,
       notes: [derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null
     });
 
@@ -791,6 +917,8 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
         email.calendar?.start ? `Calendar start: ${email.calendar.start}` : null
       ].filter(Boolean) as string[]
     });
+
+    await markGmailMessageState({ auth0Email: input.auth0Email, messageId: input.messageId, jobOpportunityId: input.jobOpportunityId ?? null, status: "USED" });
 
     timer.end({ company: input.companyName });
     return {

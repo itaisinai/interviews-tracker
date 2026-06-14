@@ -83,7 +83,7 @@ export async function getOpportunityRecord(id: string) {
 }
 
 export async function getOpportunitySummaryRecord(id: string) {
-  return prisma.jobOpportunity.findUnique({ where: { id }, select: { companyName: true, roleTitle: true } });
+  return prisma.jobOpportunity.findUnique({ where: { id }, select: { companyName: true, companySearchName: true, roleTitle: true } });
 }
 
 export async function createOpportunityRecord(input: OpportunityInput) {

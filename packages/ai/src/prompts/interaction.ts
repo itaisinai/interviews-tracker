@@ -23,6 +23,7 @@ export const interactionTextParserSkill = `
 - Never upgrade a generic interview to Final Interview or Technical Interview unless the text says so.
 - If stage is not explicit, use Interview or null; do not invent a more advanced stage.
 - Preserve useful raw details in notes.
+- If an explicit Google Meet or Zoom URL is present, put it in meetingLink.
 - Put the human-readable result of the interaction in outcome.
 - Put the next action, if any, in followUp.
 - Do not use status as the main narrative field.
@@ -51,6 +52,7 @@ export const interactionTextParserSkill = `
 
 - Return only fields that match the interaction draft schema.
 - Keep agenda, notes, outcome, and followUp concise but complete.
+- Use meetingLink only for an explicit meeting URL. Leave it null if none is present.
 - Include helpful context in notes, such as meeting link, location, or a brief source summary when explicit.
 - Do not fabricate details that are not stated in the text.
 
