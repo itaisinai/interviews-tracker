@@ -71,7 +71,8 @@ export function filterOpportunityGroup(
   if (filter === "followup") {
     return group.interactions.some(
       (item) =>
-        item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim()),
+        isLatestInteraction(item, group.interactions) &&
+        (item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim())),
     );
   }
 
@@ -81,7 +82,8 @@ export function filterOpportunityGroup(
 export function countFollowUps(interactions: readonly Interaction[]) {
   return interactions.filter(
     (item) =>
-      item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim()),
+      isLatestInteraction(item, interactions) &&
+      (item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim())),
   ).length;
 }
 
@@ -114,5 +116,23 @@ export function buildInteractionCalendarEvents(
           : labelForInteractionType(interaction.type),
       time: timeFormatter.format(date),
     };
+  });
+}
+
+function isLatestInteraction(
+  interaction: Interaction,
+  interactions: readonly Interaction[],
+) {
+  return !interactions.some((item) => {
+    if (item.jobOpportunityId !== interaction.jobOpportunityId) {
+      return false;
+    }
+
+    const itemTime = new Date(item.date).getTime();
+    const interactionTime = new Date(interaction.date).getTime();
+    return (
+      itemTime > interactionTime ||
+      (itemTime === interactionTime && item.id.localeCompare(interaction.id) > 0)
+    );
   });
 }

@@ -62,7 +62,7 @@ function isTerminalInteraction(interaction: Pick<Interaction, "type" | "status" 
   ]);
 }
 
-function hasLaterTerminalInteraction(
+function hasLaterInteraction(
   interaction: Pick<Interaction, "id" | "date" | "type" | "status" | "outcome" | "followUp">,
   interactions: readonly Pick<Interaction, "id" | "date" | "type" | "status" | "outcome" | "followUp">[]
 ) {
@@ -80,7 +80,7 @@ function hasLaterTerminalInteraction(
     return false;
   }
 
-  return orderedInteractions.slice(currentIndex + 1).some((item) => isTerminalInteraction(item));
+  return orderedInteractions.slice(currentIndex + 1).length > 0;
 }
 
 export function promoteOverdueInteractionStatusForRead<T extends Pick<Interaction, "date" | "type" | "status">>(interaction: T, now = new Date()) {
@@ -110,7 +110,7 @@ export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "i
   });
 
   return orderedInteractions.map((interaction) => {
-    if (hasLaterTerminalInteraction(interaction, orderedInteractions)) {
+    if (hasLaterInteraction(interaction, orderedInteractions)) {
       return interaction;
     }
 
@@ -155,7 +155,7 @@ export function getInteractionTimelineBadgeMeta(
     return null;
   }
 
-  if (hasLaterTerminalInteraction(interaction, interactions)) {
+  if (hasLaterInteraction(interaction, interactions)) {
     return null;
   }
 
