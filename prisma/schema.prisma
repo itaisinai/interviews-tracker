@@ -119,6 +119,8 @@ model Interaction {
   personName       String?
   personRole       String?
   agenda           String?
+  meetingLink      String?
+  gmailMessageId   String?
   notes            String?
   outcome          String?
   followUp         String?

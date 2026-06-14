@@ -91,6 +91,7 @@ export const api = {
   gmailParseEmail: (id: string, body: { messageId: string }) => request<GmailParsedEmailResponse>(`/opportunities/${id}/gmail/parse-email`, { method: "POST", body: JSON.stringify(body) }),
   gmailHideEmail: (id: string, messageId: string) => request<void>(`/opportunities/${id}/gmail/messages/${encodeURIComponent(messageId)}/hide`, { method: "POST" }),
   gmailRestoreEmail: (id: string, messageId: string) => request<void>(`/opportunities/${id}/gmail/messages/${encodeURIComponent(messageId)}/hide`, { method: "DELETE" }),
+  gmailUnpickEmail: (id: string, messageId: string) => request<void>(`/opportunities/${id}/gmail/messages/${encodeURIComponent(messageId)}/used`, { method: "DELETE" }),
   parseOpportunityInteractionText: (id: string, body: { text: string }) => request<{ interaction: InteractionDraft }>(`/opportunities/${id}/interactions/parse-text`, { method: "POST", body: JSON.stringify(body) }),
   tasks: () => request<Task[]>("/tasks"),
   createTask: (body: unknown) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(body) }),

@@ -158,6 +158,14 @@ export function InteractionTextParserPanel({ opportunityId, companyName, roleTit
       {draft ? (
         <div className="mt-5 rounded-2xl border border-outline-variant bg-white p-5">
           <p className="font-label-md text-label-md uppercase text-on-surface-variant">Review interaction</p>
+          {draft.meetingLink ? (
+            <p className="mt-2 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md text-on-background">
+              <span className="font-semibold text-on-surface-variant">Meeting link: </span>
+              <a className="text-primary hover:underline" href={draft.meetingLink} rel="noreferrer noopener" target="_blank">
+                {draft.meetingLink}
+              </a>
+            </p>
+          ) : null}
           <InteractionDraftFields draft={draft} setDraft={setDraft} />
         </div>
       ) : null}

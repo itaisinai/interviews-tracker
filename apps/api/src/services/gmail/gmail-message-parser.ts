@@ -727,6 +727,7 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
     personName: email.senderName,
     personRole: null,
     agenda,
+    meetingLink: meetingUrl,
     notes: notesParts.join("\n"),
     outcome: null,
     followUp: /follow[- ]up|reply|confirm|let me know/i.test(text) ? "Follow up with the sender." : null

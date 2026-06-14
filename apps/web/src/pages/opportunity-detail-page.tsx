@@ -16,11 +16,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "../components/badge";
 import { CompanyResearchPanel } from "../components/company-research-panel";
 import { GmailInteractionPanel } from "../components/gmail-interaction-panel";
+import { InteractionsDrawer } from "../components/interactions-drawer";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
 import { Timeline } from "../components/timeline";
 import { api } from "../lib/api";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function OpportunityDetailPage() {
   const { id = "" } = useParams();
@@ -50,6 +51,7 @@ export function OpportunityDetailPage() {
     offerStatus: "NOT_DISCUSSED",
     negotiationNotes: "",
   });
+  const [selectedInteractionId, setSelectedInteractionId] = useState<string | null>(null);
   const refresh = () =>
     void queryClient.invalidateQueries({ queryKey: ["opportunity", id] });
   const addNote = useMutation({
@@ -86,6 +88,27 @@ export function OpportunityDetailPage() {
     onSuccess: refresh,
   });
 
+  const displayedInteractions = useMemo(
+    () =>
+      data ? promoteOverdueInteractionsForRead(data.interactions) : [],
+    [data],
+  );
+  const selectedInteraction = useMemo(
+    () =>
+      displayedInteractions.find((item) => item.id === selectedInteractionId) ??
+      null,
+    [displayedInteractions, selectedInteractionId],
+  );
+
+  useEffect(() => {
+    if (
+      selectedInteractionId &&
+      !displayedInteractions.some((item) => item.id === selectedInteractionId)
+    ) {
+      setSelectedInteractionId(null);
+    }
+  }, [displayedInteractions, selectedInteractionId]);
+
   if (isLoading || !data) {
     return (
       <PageLoadingState
@@ -106,10 +129,6 @@ export function OpportunityDetailPage() {
       />
     );
   }
-
-  const displayedInteractions = promoteOverdueInteractionsForRead(
-    data.interactions,
-  );
 
   return (
     <>
@@ -241,6 +260,8 @@ export function OpportunityDetailPage() {
         <Timeline
           className="lg:col-span-7"
           interactions={displayedInteractions}
+          selectedInteractionId={selectedInteractionId}
+          onSelectInteraction={setSelectedInteractionId}
           onDeleteInteraction={(interactionId) => {
             if (window.confirm("Delete this interaction?")) {
               deleteInteraction.mutate(interactionId);
@@ -462,6 +483,11 @@ export function OpportunityDetailPage() {
           </section>
         </aside>
       </div>
+      <InteractionsDrawer
+        selectedInteraction={selectedInteraction}
+        onClose={() => setSelectedInteractionId(null)}
+        onSelectInteraction={setSelectedInteractionId}
+      />
     </>
   );
 }

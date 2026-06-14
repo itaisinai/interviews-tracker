@@ -12,6 +12,7 @@ import type {
   GmailStructuredEmail,
   Interaction
 } from "../../lib/types";
+import { Badge } from "../badge";
 import { InlineLoadingState, LoadingButton, ProcessStateCard } from "../loading-state";
 import { MaterialIcon } from "../material-icon";
 
@@ -20,6 +21,7 @@ type GmailInteractionPanelProps = {
   companyName: string;
   roleTitle: string;
   onSaved?: (interaction?: Interaction) => void;
+  attachToInteractionId?: string | null;
 };
 
 type TrackedGmailEmail = {
@@ -28,8 +30,75 @@ type TrackedGmailEmail = {
   date: string;
 };
 
+type GmailMessageStates = {
+  removedEmails: TrackedGmailEmail[];
+  pickedEmails: TrackedGmailEmail[];
+};
+
+const interactionFieldLabels = {
+  date: "Date",
+  type: "Type",
+  stage: "Stage",
+  status: "Status",
+  personName: "Person name",
+  personRole: "Person role",
+  agenda: "Agenda",
+  meetingLink: "Meeting link",
+  notes: "Notes",
+  outcome: "Outcome",
+  followUp: "Follow-up"
+} satisfies Record<InteractionDiffField, string>;
+
+type InteractionDiffField =
+  | "date"
+  | "type"
+  | "stage"
+  | "status"
+  | "personName"
+  | "personRole"
+  | "agenda"
+  | "meetingLink"
+  | "notes"
+  | "outcome"
+  | "followUp";
+
+const interactionDiffFields = Object.keys(interactionFieldLabels) as InteractionDiffField[];
+
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function normalizeComparableValue(field: InteractionDiffField, value: string | null | undefined) {
+  if (field === "date") {
+    const timestamp = value ? new Date(value).getTime() : Number.NaN;
+    return Number.isNaN(timestamp) ? "" : String(timestamp);
+  }
+
+  return (value ?? "").trim();
+}
+
+function getChangedInteractionFields(existingInteraction: Interaction | null | undefined, draft: GmailInteractionDraft | null) {
+  if (!existingInteraction || !draft) {
+    return new Set<InteractionDiffField>();
+  }
+
+  return new Set(
+    interactionDiffFields.filter(
+      (field) =>
+        normalizeComparableValue(field, existingInteraction[field]) !==
+        normalizeComparableValue(field, draft[field])
+    )
+  );
+}
+
+function addPickedEmail(current: GmailMessageStates | undefined, email: TrackedGmailEmail): GmailMessageStates {
+  return {
+    removedEmails: current?.removedEmails ?? [],
+    pickedEmails: [
+      email,
+      ...(current?.pickedEmails.filter((pickedEmail) => pickedEmail.id !== email.id) ?? [])
+    ]
+  };
 }
 
 function toDatetimeLocalValue(value: string) {
@@ -49,7 +118,7 @@ function toDatetimeLocalValue(value: string) {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, onSaved }: GmailInteractionPanelProps) {
+export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, onSaved, attachToInteractionId = null }: GmailInteractionPanelProps) {
   const queryClient = useQueryClient();
   const statusQuery = useQuery({ queryKey: ["gmail-status"], queryFn: api.gmailStatus });
   const [flowState, setFlowState] = useState<GmailFlowState>("idle");
@@ -63,9 +132,16 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
   const [draft, setDraft] = useState<GmailInteractionDraft | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isAttaching, setIsAttaching] = useState(false);
   const [clearingEmailId, setClearingEmailId] = useState<string | null>(null);
+  const [removedEmailsExpanded, setRemovedEmailsExpanded] = useState(false);
+  const [attachTargetId, setAttachTargetId] = useState<string>("");
+  const [pendingPickedEmailIds, setPendingPickedEmailIds] = useState<Set<string>>(
+    () => new Set()
+  );
   const [lastAction, setLastAction] = useState<"connect" | "search" | "parse" | null>(null);
   const activeRunIdRef = useRef(0);
+  const isAttachMode = Boolean(attachToInteractionId);
 
   const isBusy = flowState === "connecting_gmail" || flowState === "searching_emails" || flowState === "fetching_email" || flowState === "parsing_email";
   const currentMeta = gmailFlowMeta[flowState];
@@ -116,7 +192,55 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
     enabled: Boolean(statusQuery.data?.connected && opportunityId)
   });
 
+  const opportunityQuery = useQuery({
+    queryKey: ["opportunity", opportunityId, "gmail-attach"],
+    queryFn: () => api.opportunity(opportunityId),
+    enabled: Boolean(statusQuery.data?.connected && opportunityId),
+    staleTime: 30_000
+  });
+
+  useEffect(() => {
+    const interactions = opportunityQuery.data?.interactions ?? [];
+    if (!interactions.length) {
+      setAttachTargetId("");
+      return;
+    }
+
+    setAttachTargetId((current) => {
+      if (current && interactions.some((interaction) => interaction.id === current)) {
+        return current;
+      }
+
+      return interactions[interactions.length - 1]?.id ?? "";
+    });
+  }, [opportunityQuery.data?.interactions]);
+
+  useEffect(() => {
+    if (attachToInteractionId) {
+      setAttachTargetId(attachToInteractionId);
+    }
+  }, [attachToInteractionId]);
+
   const searchHint = useMemo(() => `Searching Gmail for "${companyName}" from the last 180 days.`, [companyName]);
+  const attachTargetInteraction = useMemo(
+    () =>
+      opportunityQuery.data?.interactions.find(
+        (interaction) => interaction.id === attachTargetId
+      ) ?? null,
+    [attachTargetId, opportunityQuery.data?.interactions]
+  );
+  const changedInteractionFields = useMemo(
+    () => getChangedInteractionFields(attachTargetInteraction, draft),
+    [attachTargetInteraction, draft]
+  );
+  const changedFieldLabels = useMemo(
+    () =>
+      interactionDiffFields
+        .filter((field) => changedInteractionFields.has(field))
+        .map((field) => interactionFieldLabels[field]),
+    [changedInteractionFields]
+  );
+  const hasParsedInteractionChanges = changedInteractionFields.size > 0;
 
   async function connectGmail() {
     const runId = activeRunIdRef.current + 1;
@@ -196,6 +320,16 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
     setAnalysis(null);
     setFlowState("fetching_email");
     setMessage(`Fetching the full body for "${email.subject}".`);
+    setPendingPickedEmailIds((current) => new Set(current).add(email.id));
+    queryClient.setQueryData<GmailMessageStates>(
+      ["gmail-message-states", opportunityId],
+      (current) =>
+        addPickedEmail(current, {
+          id: email.id,
+          subject: email.subject,
+          date: email.date
+        })
+    );
 
     try {
       await sleep(180);
@@ -212,13 +346,15 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       setAnalysis(response.analysis);
       setDraft({ ...response.interaction, type: normalizeInteractionType(response.interaction.type) });
       setSearchResults((results) => results.filter((candidate) => candidate.id !== email.id));
-      queryClient.setQueryData<{ removedEmails: TrackedGmailEmail[]; pickedEmails: TrackedGmailEmail[] }>(["gmail-message-states", opportunityId], (current) => ({
-        removedEmails: current?.removedEmails ?? [],
-        pickedEmails: [
-          { id: email.id, subject: email.subject, date: email.date },
-          ...(current?.pickedEmails.filter((pickedEmail) => pickedEmail.id !== email.id) ?? [])
-        ]
-      }));
+      queryClient.setQueryData<GmailMessageStates>(
+        ["gmail-message-states", opportunityId],
+        (current) =>
+          addPickedEmail(current, {
+            id: email.id,
+            subject: email.subject,
+            date: email.date
+          })
+      );
       setFlowState("ready_for_review");
       setMessage("Ready for review.");
     } catch (caughtError) {
@@ -240,7 +376,12 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
     try {
       await api.gmailHideEmail(opportunityId, email.id);
       setSearchResults((results) => results.filter((candidate) => candidate.id !== email.id));
-      queryClient.setQueryData<{ removedEmails: TrackedGmailEmail[]; pickedEmails: TrackedGmailEmail[] }>(["gmail-message-states", opportunityId], (current) => ({
+      setPendingPickedEmailIds((current) => {
+        const next = new Set(current);
+        next.delete(email.id);
+        return next;
+      });
+      queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunityId], (current) => ({
         removedEmails: [
           { id: email.id, subject: email.subject, date: email.date },
           ...(current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? [])
@@ -263,7 +404,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
 
     try {
       await api.gmailRestoreEmail(opportunityId, email.id);
-      queryClient.setQueryData<{ removedEmails: TrackedGmailEmail[]; pickedEmails: TrackedGmailEmail[] }>(["gmail-message-states", opportunityId], (current) => ({
+      queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunityId], (current) => ({
         removedEmails: current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? [],
         pickedEmails: current?.pickedEmails ?? []
       }));
@@ -272,6 +413,70 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       setError(getErrorMessage(caughtError));
       setFlowState("failed");
       setMessage("Could not restore email.");
+    } finally {
+      setClearingEmailId(null);
+    }
+  }
+
+  async function attachToExistingInteraction() {
+    if (!draft || !selectedEmail || !attachTargetId) {
+      return;
+    }
+
+    setError(null);
+    setSaveError(null);
+    setIsAttaching(true);
+
+    try {
+      const savedInteraction = await api.updateInteraction(attachTargetId, {
+        ...draft,
+        gmailMessageId: selectedEmail.id
+      });
+
+      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      void queryClient.invalidateQueries({ queryKey: ["interactions"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+      setPendingPickedEmailIds((current) => {
+        const next = new Set(current);
+        next.delete(selectedEmail.id);
+        return next;
+      });
+      setSaveMessage("Email attached to existing interaction.");
+      setDraft(null);
+      setSelectedEmail(null);
+      setSelectedCandidate(null);
+      setAnalysis(null);
+      onSaved?.(savedInteraction);
+    } catch (caughtError) {
+      setSaveError(getErrorMessage(caughtError));
+    } finally {
+      setIsAttaching(false);
+    }
+  }
+
+  async function unpickEmail(email: TrackedGmailEmail) {
+    setClearingEmailId(email.id);
+    setError(null);
+    setSaveError(null);
+
+    try {
+      await api.gmailUnpickEmail(opportunityId, email.id);
+      setPendingPickedEmailIds((current) => {
+        const next = new Set(current);
+        next.delete(email.id);
+        return next;
+      });
+      queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunityId], (current) => ({
+        removedEmails: current?.removedEmails ?? [],
+        pickedEmails: current?.pickedEmails.filter((pickedEmail) => pickedEmail.id !== email.id) ?? []
+      }));
+      setMessage("Picked email removed from Gmail tracking.");
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError));
+      setFlowState("failed");
+      setMessage("Could not remove picked email.");
     } finally {
       setClearingEmailId(null);
     }
@@ -308,6 +513,13 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      if (selectedEmail) {
+        setPendingPickedEmailIds((current) => {
+          const next = new Set(current);
+          next.delete(selectedEmail.id);
+          return next;
+        });
+      }
       setSaveMessage("Interaction created.");
       setDraft(null);
       setSelectedEmail(null);
@@ -338,7 +550,6 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
   const configured = statusQuery.data?.configured ?? false;
   const removedEmails = gmailMessageStatesQuery.data?.removedEmails ?? [];
   const pickedEmails = gmailMessageStatesQuery.data?.pickedEmails ?? [];
-
   return (
     <section className="panel border border-outline-variant p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -484,30 +695,44 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
           <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Removed emails</p>
-              {gmailMessageStatesQuery.isFetching ? <InlineLoadingState label="Refreshing" /> : null}
-            </div>
-            {removedEmails.length > 0 ? (
-              <div className="mt-3 divide-y divide-outline-variant">
-                {removedEmails.map((email) => (
-                  <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-body-md text-body-md font-semibold text-on-background">{email.subject}</p>
-                      <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
-                    </div>
-                    <LoadingButton
-                      className="btn btn-secondary"
-                      loading={clearingEmailId === email.id}
-                      loadingLabel="Restoring..."
-                      icon="undo"
-                      onClick={() => void restoreEmail(email)}
-                    >
-                      Undo
-                    </LoadingButton>
-                  </div>
-                ))}
+              <div className="flex items-center gap-2">
+                {gmailMessageStatesQuery.isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  onClick={() => setRemovedEmailsExpanded((value) => !value)}
+                >
+                  <MaterialIcon name={removedEmailsExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} />
+                  {removedEmailsExpanded ? "Hide" : `Show (${removedEmails.length})`}
+                </button>
               </div>
+            </div>
+            {removedEmailsExpanded ? (
+              removedEmails.length > 0 ? (
+                <div className="mt-3 divide-y divide-outline-variant">
+                  {removedEmails.map((email) => (
+                    <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-body-md text-body-md font-semibold text-on-background">{email.subject}</p>
+                        <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                      </div>
+                      <LoadingButton
+                        className="btn btn-secondary"
+                        loading={clearingEmailId === email.id}
+                        loadingLabel="Restoring..."
+                        icon="undo"
+                        onClick={() => void restoreEmail(email)}
+                      >
+                        Undo
+                      </LoadingButton>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-body-md text-on-surface-variant">No removed emails.</p>
+              )
             ) : (
-              <p className="mt-3 text-body-md text-on-surface-variant">No removed emails.</p>
+              <p className="mt-3 text-body-md text-on-surface-variant">Removed emails are hidden by default.</p>
             )}
           </div>
           <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4">
@@ -520,12 +745,30 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                 {pickedEmails.map((email) => (
                   <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                     <div className="min-w-0">
-                      <p className="truncate font-body-md text-body-md font-semibold text-on-background">{email.subject}</p>
+                      <p className="truncate font-body-md text-body-md font-semibold text-on-background">
+                        {pendingPickedEmailIds.has(email.id) ? (
+                          <Badge value="Pending" tone="warning" className="mr-2">
+                            Pending
+                          </Badge>
+                        ) : null}
+                        {email.subject}
+                      </p>
                       <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
                     </div>
-                    <span className="rounded-full bg-primary-container px-3 py-1 text-label-sm text-on-primary-container">
-                      Picked
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-primary-container px-3 py-1 text-label-sm text-on-primary-container">
+                        Picked
+                      </span>
+                      <LoadingButton
+                        className="btn btn-secondary"
+                        loading={clearingEmailId === email.id}
+                        loadingLabel="Removing..."
+                        icon="delete"
+                        onClick={() => void unpickEmail(email)}
+                      >
+                        Remove
+                      </LoadingButton>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -551,14 +794,99 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
               <LoadingButton className="btn btn-secondary" disabled={saveInteraction.isPending} icon="close" onClick={() => { setDraft(null); setSelectedEmail(null); setSelectedCandidate(null); setAnalysis(null); setMessage("Ready to search Gmail again."); }}>
                 Select another email
               </LoadingButton>
-              <LoadingButton className="btn btn-primary" loading={saveInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => void saveInteraction.mutate()}>
-                Save interaction
-              </LoadingButton>
+              {!isAttachMode ? (
+                <LoadingButton className="btn btn-primary" loading={saveInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => void saveInteraction.mutate()}>
+                  Save interaction
+                </LoadingButton>
+              ) : (
+                <LoadingButton
+                  className="btn btn-primary"
+                  loading={isAttaching}
+                  loadingLabel={hasParsedInteractionChanges ? "Accepting..." : "Attaching..."}
+                  icon="link"
+                  disabled={!draft || !selectedEmail || !attachTargetId}
+                  onClick={() => void attachToExistingInteraction()}
+                >
+                  {hasParsedInteractionChanges ? "Accept changes" : "Attach email"}
+                </LoadingButton>
+              )}
             </div>
           </div>
 
           {saveMessage ? <p className="mt-4 rounded-lg bg-primary-container px-4 py-3 text-body-md text-on-primary-container">{saveMessage}</p> : null}
           {saveError ? <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-body-md text-on-error-container">{saveError}</p> : null}
+
+          {attachTargetInteraction ? (
+            <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                  Parsed changes
+                </p>
+                {hasParsedInteractionChanges ? (
+                  <Badge value="Changed" tone="warning">
+                    {changedInteractionFields.size} changed
+                  </Badge>
+                ) : (
+                  <Badge value="No changes" tone="green">
+                    No field changes
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-2 text-body-md text-on-surface-variant">
+                {hasParsedInteractionChanges
+                  ? "The parsed email has different details from the selected interaction. Review the changed badges below, then accept changes to update the interaction."
+                  : "The parsed email matches the selected interaction details. Attaching will only link the source email."}
+              </p>
+              {hasParsedInteractionChanges ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {changedFieldLabels.map((label) => (
+                    <Badge key={label} value={label} tone="warning">
+                      {label}
+                    </Badge>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!isAttachMode ? (
+            <div className="mt-5 rounded-xl border border-outline-variant bg-surface-container-low p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-label-md text-label-md uppercase text-on-surface-variant">Attach to existing</p>
+                  <p className="mt-1 text-body-md text-on-surface-variant">Update an existing interaction with this email instead of creating a new one.</p>
+                </div>
+                <LoadingButton
+                  className="btn btn-secondary"
+                  loading={isAttaching}
+                  loadingLabel={hasParsedInteractionChanges ? "Accepting..." : "Attaching..."}
+                  icon="link"
+                  disabled={!draft || !selectedEmail || !attachTargetId || saveInteraction.isPending}
+                  onClick={() => void attachToExistingInteraction()}
+                >
+                  {hasParsedInteractionChanges ? "Accept changes" : "Attach email"}
+                </LoadingButton>
+              </div>
+              {opportunityQuery.data?.interactions.length ? (
+                <label className="mt-4 block space-y-1">
+                  <span className="label">Existing interaction</span>
+                  <select
+                    className="input"
+                    value={attachTargetId}
+                    onChange={(event) => setAttachTargetId(event.target.value)}
+                  >
+                    {opportunityQuery.data.interactions.map((interaction) => (
+                      <option key={interaction.id} value={interaction.id}>
+                        {new Date(interaction.date).toLocaleString()} · {interaction.type}{interaction.personName ? ` · ${interaction.personName}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <p className="mt-4 text-body-md text-on-surface-variant">No existing interactions yet.</p>
+              )}
+            </div>
+          ) : null}
 
           <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4 text-body-md text-on-surface-variant">
             <p><span className="font-semibold text-on-background">Source email:</span> {selectedEmail.subject}</p>
@@ -566,10 +894,18 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
             <p className="mt-1"><span className="font-semibold text-on-background">Message date:</span> {new Date(selectedEmail.internalDate).toLocaleString()}</p>
             {selectedEmail.calendar?.start ? <p className="mt-1"><span className="font-semibold text-on-background">Calendar start:</span> {new Date(selectedEmail.calendar.start).toLocaleString()}</p> : null}
             {selectedEmail.calendar?.location ? <p className="mt-1"><span className="font-semibold text-on-background">Location:</span> {selectedEmail.calendar.location}</p> : null}
+            {draft?.meetingLink ? (
+              <p className="mt-1">
+                <span className="font-semibold text-on-background">Meeting link:</span>{" "}
+                <a className="text-primary hover:underline" href={draft.meetingLink} rel="noreferrer noopener" target="_blank">
+                  {draft.meetingLink}
+                </a>
+              </p>
+            ) : null}
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Field label="Date">
+            <Field label="Date" changed={changedInteractionFields.has("date")}>
               <input
                 className="input"
                 type="datetime-local"
@@ -577,7 +913,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                 onChange={(event) => setDraft({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })}
               />
             </Field>
-            <Field label="Type">
+            <Field label="Type" changed={changedInteractionFields.has("type")}>
               <select className="input" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as GmailInteractionDraft["type"] })}>
                 {interactionTypeOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -586,10 +922,10 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                 ))}
               </select>
             </Field>
-            <Field label="Stage">
+            <Field label="Stage" changed={changedInteractionFields.has("stage")}>
               <input className="input" value={draft.stage ?? ""} onChange={(event) => setDraft({ ...draft, stage: event.target.value || null })} />
             </Field>
-            <Field label="Status">
+            <Field label="Status" changed={changedInteractionFields.has("status")}>
               <select className="input" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as GmailInteractionDraft["status"] })}>
                 {interactionStatusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -598,22 +934,31 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                 ))}
               </select>
             </Field>
-            <Field label="Person name">
+            <Field label="Person name" changed={changedInteractionFields.has("personName")}>
               <input className="input" value={draft.personName ?? ""} onChange={(event) => setDraft({ ...draft, personName: event.target.value || null })} />
             </Field>
-            <Field label="Person role">
+            <Field label="Person role" changed={changedInteractionFields.has("personRole")}>
               <input className="input" value={draft.personRole ?? ""} onChange={(event) => setDraft({ ...draft, personRole: event.target.value || null })} />
             </Field>
-            <Field label="Agenda">
+            <Field label="Agenda" changed={changedInteractionFields.has("agenda")}>
               <textarea className="input min-h-24" value={draft.agenda ?? ""} onChange={(event) => setDraft({ ...draft, agenda: event.target.value || null })} />
             </Field>
-            <Field label="Notes">
+            <Field label="Meeting link" changed={changedInteractionFields.has("meetingLink")}>
+              <input
+                className="input"
+                type="url"
+                placeholder="https://meet.google.com/..."
+                value={draft.meetingLink ?? ""}
+                onChange={(event) => setDraft({ ...draft, meetingLink: event.target.value || null })}
+              />
+            </Field>
+            <Field label="Notes" changed={changedInteractionFields.has("notes")}>
               <textarea className="input min-h-24" value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })} />
             </Field>
-            <Field label="Outcome">
+            <Field label="Outcome" changed={changedInteractionFields.has("outcome")}>
               <textarea className="input min-h-24" value={draft.outcome ?? ""} onChange={(event) => setDraft({ ...draft, outcome: event.target.value || null })} />
             </Field>
-            <Field label="Follow-up">
+            <Field label="Follow-up" changed={changedInteractionFields.has("followUp")}>
               <textarea className="input min-h-24" value={draft.followUp ?? ""} onChange={(event) => setDraft({ ...draft, followUp: event.target.value || null })} />
             </Field>
           </div>
@@ -623,10 +968,25 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({
+  label,
+  changed = false,
+  children
+}: {
+  label: string;
+  changed?: boolean;
+  children: ReactNode;
+}) {
   return (
     <label className="space-y-1">
-      <span className="label">{label}</span>
+      <span className="flex flex-wrap items-center gap-2">
+        <span className="label">{label}</span>
+        {changed ? (
+          <Badge value="Changed" tone="warning">
+            Changed
+          </Badge>
+        ) : null}
+      </span>
       {children}
     </label>
   );

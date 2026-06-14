@@ -1,17 +1,3 @@
-import crypto from "node:crypto";
-import { z } from "zod";
-import {
-  gmailEmailClassificationSchema,
-  gmailEmailExtractionAnalysisSchema,
-  gmailInteractionDraftSchema,
-  gmailMessageCandidateSchema,
-  gmailSearchCandidateSchema,
-  gmailStructuredEmailSchema
-} from "../../lib/schemas.js";
-import { prisma } from "../../lib/prisma.js";
-import { createTimer, logInfo } from "../../lib/logger.js";
-import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
-import { getAiParserService } from "../ai/ai-parser-service.js";
 import {
   buildGmailSearchQueries,
   buildRelatedSenderDomainSearchQueries,
@@ -20,6 +6,21 @@ import {
   parseStructuredGmailEmail,
   sortGmailSearchCandidatesByDate
 } from "./gmail-message-parser.js";
+import { createTimer, logInfo } from "../../lib/logger.js";
+import {
+  gmailEmailClassificationSchema,
+  gmailEmailExtractionAnalysisSchema,
+  gmailInteractionDraftSchema,
+  gmailMessageCandidateSchema,
+  gmailSearchCandidateSchema,
+  gmailStructuredEmailSchema
+} from "../../lib/schemas.js";
+
+import crypto from "node:crypto";
+import { getAiParserService } from "../ai/ai-parser-service.js";
+import { prisma } from "../../lib/prisma.js";
+import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
+import { z } from "zod";
 
 type GmailSettings = {
   clientId: string;
@@ -551,10 +552,7 @@ async function getSuppressedGmailMessageIds(input: { auth0Email: string; jobOppo
     where: {
       auth0Email: input.auth0Email,
       status: { in: ["USED", "HIDDEN"] },
-      OR: [
-        { jobOpportunityId: input.jobOpportunityId },
-        { jobOpportunityId: null }
-      ]
+      jobOpportunityId: input.jobOpportunityId
     },
     select: { messageId: true }
   });
@@ -589,6 +587,17 @@ export async function restoreHiddenGmailMessage(input: { auth0Email: string; mes
   });
 }
 
+export async function unmarkUsedGmailMessageState(input: { auth0Email: string; messageId: string; jobOpportunityId?: string | null }) {
+  await prisma.gmailMessageState.deleteMany({
+    where: {
+      auth0Email: input.auth0Email,
+      messageId: input.messageId,
+      status: "USED",
+      jobOpportunityId: input.jobOpportunityId ?? undefined
+    }
+  });
+}
+
 export async function listTrackedGmailMessages(input: { auth0Email: string; jobOpportunityId: string }) {
   const settings = requireSettings();
   const access = await getAccessTokenForEmail(input.auth0Email, settings);
@@ -601,10 +610,7 @@ export async function listTrackedGmailMessages(input: { auth0Email: string; jobO
     where: {
       auth0Email: input.auth0Email,
       status: { in: ["USED", "HIDDEN"] },
-      OR: [
-        { jobOpportunityId: input.jobOpportunityId },
-        { jobOpportunityId: null }
-      ]
+      jobOpportunityId: input.jobOpportunityId
     },
     orderBy: { updatedAt: "desc" },
     select: { messageId: true, status: true }
@@ -893,6 +899,8 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
     const parsedInteraction = gmailInteractionDraftSchema.parse({
       ...aiInteraction,
       date: aiInteraction.date?.trim() ? aiInteraction.date : derived.date,
+      meetingLink: aiInteraction.meetingLink ?? derived.meetingLink,
+      gmailMessageId: input.messageId,
       notes: [derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null
     });
 

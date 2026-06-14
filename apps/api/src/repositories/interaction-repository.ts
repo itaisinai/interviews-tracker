@@ -42,7 +42,10 @@ export async function updateInteractionRecord(id: string, input: InteractionInpu
 }
 
 export async function deleteInteractionRecord(id: string) {
-  return prisma.interaction.delete({ where: { id } });
+  return prisma.interaction.delete({
+    where: { id },
+    include: { jobOpportunity: true }
+  });
 }
 
 export async function listOpportunityInteractionRecords(opportunityId: string) {

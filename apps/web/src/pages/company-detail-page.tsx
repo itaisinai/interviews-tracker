@@ -125,7 +125,19 @@ export function CompanyDetailPage() {
                 <span className="font-semibold">{item.type}</span>
                 <Badge value={item.status} />
               </div>
-              <p className="text-body-md text-on-surface-variant">{item.jobOpportunity?.roleTitle} · {item.stage ?? "No stage"} · {item.personName ?? "No person"}</p>
+              <p className="text-body-md text-on-surface-variant">
+                {item.jobOpportunity ? (
+                  <Link className="font-semibold text-primary hover:underline" to={`/opportunities/${item.jobOpportunity.id}`}>
+                    {item.jobOpportunity.roleTitle}
+                  </Link>
+                ) : (
+                  <span className="font-semibold">Unknown opportunity</span>
+                )}
+                {" · "}
+                {item.stage ?? "No stage"}
+                {" · "}
+                {item.personName ?? "No person"}
+              </p>
               {item.agenda ? <p className="mt-3 text-body-md">{item.agenda}</p> : null}
               {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic">"{item.followUp}"</p> : null}
               <LoadingButton compact aria-label="Delete interaction" className="mt-3 font-label-md text-label-md text-error" icon="delete" loading={deleteInteraction.isPending && deleteInteraction.variables === item.id} onClick={() => { if (window.confirm("Delete this interaction?")) deleteInteraction.mutate(item.id); }}>
