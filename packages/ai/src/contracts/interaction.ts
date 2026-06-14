@@ -9,6 +9,8 @@ export const interactionDraftSchema = z.object({
   personName: z.string().nullable(),
   personRole: z.string().nullable(),
   agenda: z.string().nullable(),
+  meetingLink: z.string().url().nullish(),
+  gmailMessageId: z.string().min(1).nullish(),
   notes: z.string().nullable(),
   outcome: z.string().nullable(),
   followUp: z.string().nullable()

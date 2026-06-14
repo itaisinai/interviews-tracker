@@ -14,7 +14,8 @@ import { tasksRouter } from "./routes/tasks.js";
 import { webhooksRouter } from "./routes/webhooks.js";
 import { requireAuth } from "./lib/auth.js";
 import { errorHandler } from "./lib/http.js";
-import { logInfo } from "./lib/logger.js";
+import { apiRequestLogger } from "./lib/request-logging.js";
+import { logger } from "./lib/logger.js";
 import { completeGmailOAuth } from "./services/gmail/gmail-service.js";
 
 const app = express();
@@ -43,6 +44,7 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
+app.use(apiRequestLogger);
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/health", (_request, response) => response.json({ ok: true, service: "api" }));
@@ -71,6 +73,7 @@ app.get("/api/gmail/callback", async (request, response, next) => {
     const { redirectTo } = await completeGmailOAuth(code, state);
     response.redirect(redirectTo);
   } catch (caughtError) {
+    logger.error("gmail_oauth_callback_failed", caughtError);
     const frontendOrigin = (process.env.FRONTEND_ORIGIN ?? "http://localhost:5173").split(",")[0] ?? "http://localhost:5173";
     const redirect = new URL(frontendOrigin);
     redirect.searchParams.set("gmailError", caughtError instanceof Error ? caughtError.message : "Gmail connection failed");
@@ -93,5 +96,5 @@ app.use(errorHandler);
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {
-  logInfo("server", "API listening", { port });
+  logger.info("api_listening", { port });
 });

@@ -27,7 +27,7 @@ type InteractionsDrawerProps = {
   onSelectInteraction?: (interactionId: string) => void;
 };
 
-type ComposerMode = "chooser" | "gmail" | "text" | null;
+type ComposerMode = "chooser" | "gmail" | "gmail-attach" | "text" | null;
 
 function toDraft(interaction: Interaction): InteractionDraft {
   return {
@@ -38,6 +38,8 @@ function toDraft(interaction: Interaction): InteractionDraft {
     personName: interaction.personName ?? null,
     personRole: interaction.personRole ?? null,
     agenda: interaction.agenda ?? null,
+    meetingLink: interaction.meetingLink ?? null,
+    gmailMessageId: interaction.gmailMessageId ?? null,
     notes: interaction.notes ?? null,
     outcome: interaction.outcome ?? null,
     followUp: interaction.followUp ?? null,
@@ -281,6 +283,16 @@ export function InteractionsDrawer({
                 Company
               </Link>
             ) : null}
+            {opportunity ? (
+              <Link
+                className="btn btn-secondary"
+                to={`/opportunities/${opportunity.id}`}
+                title="Open opportunity details"
+              >
+                <MaterialIcon name="folder_open" />
+                Opportunity
+              </Link>
+            ) : null}
             <button className="btn btn-secondary" onClick={onClose}>
               <MaterialIcon name="close" />
               Close
@@ -354,6 +366,40 @@ export function InteractionsDrawer({
                         </p>
                       </div>
                     ) : null}
+                    {displayInteraction.meetingLink ? (
+                      <div className="mt-4 rounded-xl border border-outline-variant bg-white p-4">
+                        <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                          Meeting link
+                        </p>
+                        <a
+                          className="mt-1 block break-all text-body-md text-primary hover:underline"
+                          href={displayInteraction.meetingLink}
+                          rel="noreferrer noopener"
+                          target="_blank"
+                        >
+                          {displayInteraction.meetingLink}
+                        </a>
+                      </div>
+                    ) : null}
+                    <div className="mt-4 rounded-xl border border-outline-variant bg-white p-4">
+                      <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                        Attached email
+                      </p>
+                      {displayInteraction.gmailMessageId ? (
+                        <p className="mt-1 text-body-md text-on-background">Attached</p>
+                      ) : (
+                        <div className="mt-1 flex flex-wrap items-center gap-3">
+                          <p className="text-body-md text-on-surface-variant">No email attached.</p>
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => setComposer("gmail-attach")}
+                          >
+                            <MaterialIcon name="link" />
+                            Attach email
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <button
@@ -515,11 +561,13 @@ export function InteractionsDrawer({
                   </div>
                 ) : null}
 
-                {composer === "gmail" ? (
+                {composer === "gmail" || composer === "gmail-attach" ? (
                   <div className="mt-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <p className="text-body-md text-on-surface-variant">
-                        Use the Gmail flow for the selected opportunity.
+                        {composer === "gmail-attach"
+                          ? "Search Gmail and attach the selected email to this interaction."
+                          : "Use the Gmail flow for the selected opportunity."}
                       </p>
                       <button
                         className="btn btn-secondary"
@@ -541,6 +589,7 @@ export function InteractionsDrawer({
                         displayInteraction.jobOpportunity?.roleTitle ??
                         ""
                       }
+                      attachToInteractionId={composer === "gmail-attach" ? displayInteraction.id : null}
                       onSaved={(savedInteraction) => {
                         refreshQueries();
                         if (savedInteraction) {

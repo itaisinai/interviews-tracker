@@ -5,7 +5,7 @@ import { interactionInputSchema, noteInputSchema, taskInputSchema, opportunityIn
 import { getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord, createOpportunityNoteRecord, createOpportunityTaskRecord } from "../repositories/opportunity-repository.js";
 import { createOpportunity, deleteOpportunity, getOpportunity, listOpportunities, updateOpportunity } from "../services/opportunities/opportunity-service.js";
 import { createInteraction as createInteractionRecord } from "../services/interactions/interaction-service.js";
-import { hideGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages } from "../services/gmail/gmail-service.js";
+import { hideGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages, unmarkUsedGmailMessageState } from "../services/gmail/gmail-service.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
 
 type AuthenticatedRequest = Request & { auth?: { email?: string | null } };
@@ -63,6 +63,7 @@ export async function searchOpportunityGmailHandler(request: AuthenticatedReques
     auth0Email: request.auth?.email ?? "",
     jobOpportunityId: request.params.id,
     companyName: opportunity.companyName,
+    companySearchName: opportunity.companySearchName,
     roleTitle: opportunity.roleTitle
   });
   timer.end({ candidates: result.candidates.length });
@@ -130,6 +131,23 @@ export async function restoreOpportunityGmailMessageHandler(request: Authenticat
   await restoreHiddenGmailMessage({
     auth0Email: request.auth?.email ?? "",
     messageId
+  });
+
+  return { ok: true };
+}
+
+export async function unpickOpportunityGmailMessageHandler(request: AuthenticatedRequest) {
+  const opportunity = await getOpportunitySummaryRecord(request.params.id);
+
+  if (!opportunity) {
+    return null;
+  }
+
+  const { messageId } = z.object({ messageId: z.string().min(1) }).parse(request.params);
+  await unmarkUsedGmailMessageState({
+    auth0Email: request.auth?.email ?? "",
+    messageId,
+    jobOpportunityId: request.params.id
   });
 
   return { ok: true };

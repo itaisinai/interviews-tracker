@@ -3,6 +3,7 @@ import { interactionStatusSchema, interactionTypeSchema, jobStatusSchema, offerS
 
 export const opportunityInputSchema = z.object({
   companyName: z.string().min(1),
+  companySearchName: z.string().nullish(),
   roleTitle: z.string().min(1),
   pipelineType: pipelineTypeSchema,
   status: jobStatusSchema,
@@ -35,6 +36,8 @@ export const interactionInputSchema = z.object({
   personName: z.string().nullish(),
   personRole: z.string().nullish(),
   agenda: z.string().nullish(),
+  meetingLink: z.string().url().nullish(),
+  gmailMessageId: z.string().min(1).nullish(),
   notes: z.string().nullish(),
   outcome: z.string().nullish(),
   followUp: z.string().nullish()
@@ -74,6 +77,7 @@ export const compensationInputSchema = z.object({
 export type Opportunity = {
   id: string;
   companyName: string;
+  companySearchName?: string | null;
   roleTitle: string;
   pipelineType: PipelineType;
   status: JobStatus;
@@ -116,6 +120,8 @@ export type Interaction = {
   personName?: string | null;
   personRole?: string | null;
   agenda?: string | null;
+  meetingLink?: string | null;
+  gmailMessageId?: string | null;
   notes?: string | null;
   outcome?: string | null;
   followUp?: string | null;

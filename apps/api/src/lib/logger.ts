@@ -1,50 +1,36 @@
-type LogContext = Record<string, string | number | boolean | null | undefined>;
+import { createConsoleLoggerFromEnv, type LogContext, type LogMetadata } from "@interviews-tracker/logger";
 
-const useColors = process.stdout.isTTY && process.env.NO_COLOR !== "1";
+export const logger = createConsoleLoggerFromEnv("interviews-tracker-api");
 
-const ansi = {
-  reset: "\u001b[0m",
-  dim: "\u001b[2m",
-  red: "\u001b[31m",
-  blue: "\u001b[34m",
-  gray: "\u001b[90m"
-} as const;
+type Timer = {
+  end(extraContext?: LogMetadata): void;
+  fail(error: unknown, extraContext?: LogMetadata): void;
+};
 
-function paint(text: string, color: keyof typeof ansi) {
-  return useColors ? `${ansi[color]}${text}${ansi.reset}` : text;
+function toEventName(message: string, suffix: "started" | "completed" | "failed") {
+  return `${message.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")}_${suffix}`;
 }
 
-function formatContext(context?: LogContext) {
-  if (!context) {
-    return "";
-  }
-
-  const parts = Object.entries(context)
-    .filter(([, value]) => value !== undefined && value !== null && `${value}`.length > 0)
-    .map(([key, value]) => `${key}=${value}`);
-
-  return parts.length > 0 ? ` ${parts.join(" ")}` : "";
+export function logInfo(scope: string, message: string, metadata?: LogMetadata) {
+  logger.info(message, metadata, { service: "interviews-tracker-api", scope });
 }
 
-export function logInfo(scope: string, message: string, context?: LogContext) {
-  console.info(`${paint(new Date().toISOString(), "dim")} ${paint(`[${scope}]`, "blue")} ${paint(message, "blue")}${formatContext(context)}`);
+export function logError(scope: string, message: string, metadata?: LogMetadata) {
+  logger.error(message, undefined, metadata, { service: "interviews-tracker-api", scope });
 }
 
-export function logError(scope: string, message: string, context?: LogContext) {
-  console.error(`${paint(new Date().toISOString(), "dim")} ${paint(`[${scope}]`, "blue")} ${paint(message, "red")}${formatContext(context)}`);
-}
-
-export function createTimer(scope: string, message: string, context?: LogContext) {
+export function createTimer(scope: string, message: string, metadata?: LogMetadata, context?: LogContext): Timer {
   const startedAt = Date.now();
-  logInfo(scope, `${message} start`, context);
+  const baseContext = { service: "interviews-tracker-api", scope, ...context };
+
+  logger.operational(toEventName(message, "started"), metadata, baseContext);
 
   return {
-    end(extraContext?: LogContext) {
-      logInfo(scope, `${message} done`, { ...context, ...extraContext, durationMs: Date.now() - startedAt });
+    end(extraContext?: LogMetadata) {
+      logger.operational(toEventName(message, "completed"), { ...metadata, ...extraContext, durationMs: Date.now() - startedAt }, baseContext);
     },
-    fail(error: unknown, extraContext?: LogContext) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      logError(scope, `${message} failed`, { ...context, ...extraContext, durationMs: Date.now() - startedAt, error: errorMessage });
+    fail(error: unknown, extraContext?: LogMetadata) {
+      logger.error(toEventName(message, "failed"), error, { ...metadata, ...extraContext, durationMs: Date.now() - startedAt }, baseContext);
     }
   };
 }

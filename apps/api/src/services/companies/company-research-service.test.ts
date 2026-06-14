@@ -86,6 +86,7 @@ test("promotes company size from evidence when the model misses it", async () =>
 
   const service = new CompanyResearchService(provider, async ({ companyName }) => ({
     companyName,
+    companySearchName: null,
     linkedinUrl: null,
     funding: null,
     totalRaised: null,
