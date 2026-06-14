@@ -1,5 +1,6 @@
 import type { interactionInputSchema } from "../../lib/schemas.js";
 import type { z } from "zod";
+import { logger } from "../../lib/logger.js";
 import {
   createInteractionRecord,
   deleteInteractionRecord,
@@ -18,6 +19,7 @@ export function listInteractions() {
 
 export async function createInteraction(input: InteractionInput & { jobOpportunityId: string }) {
   const interaction = await createInteractionRecord(input);
+  logger.operational("interaction_added", { opportunityId: input.jobOpportunityId, interactionId: interaction.id });
   await syncOpportunityStatusRecord(input.jobOpportunityId);
   return promoteOverdueInteractionStatusForRead(interaction);
 }
@@ -37,6 +39,7 @@ export async function deleteInteraction(id: string, input?: { auth0Email?: strin
       jobOpportunityId: interaction.jobOpportunityId
     });
   }
+  logger.operational("interaction_deleted", { opportunityId: interaction.jobOpportunityId, interactionId: interaction.id });
   await syncOpportunityStatusRecord(interaction.jobOpportunityId);
   return interaction;
 }

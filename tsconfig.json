@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -23,8 +27,14 @@
       "@interviews-tracker/integrations": ["packages/integrations/src/index.ts"],
       "@interviews-tracker/api-client": ["packages/api-client/src/index.ts"],
       "@interviews-tracker/design-system": ["packages/design-system/src/index.ts"],
-      "@interviews-tracker/design-system/*": ["packages/design-system/src/*"]
+      "@interviews-tracker/design-system/*": ["packages/design-system/src/*"],
+      "@interviews-tracker/logger": ["packages/logger/src/index.ts"]
     }
   },
-  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "prisma/**/*.ts"]
+  "include": [
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "packages/**/*.ts",
+    "prisma/**/*.ts"
+  ]
 }
