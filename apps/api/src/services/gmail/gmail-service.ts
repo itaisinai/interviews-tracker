@@ -848,6 +848,55 @@ export async function getGmailStatus(auth0Email: string): Promise<GmailStatus> {
   };
 }
 
+export async function resolveRefreshTokenForOAuthCallback(input: {
+  auth0Email: string;
+  tokens: GmailOAuthTokenBundle;
+  existingConnection: GmailConnectionForReconnect | null;
+  nextGoogleEmail: string | null;
+  settings: GmailSettings;
+}) {
+  const { auth0Email, tokens, existingConnection, nextGoogleEmail, settings } = input;
+
+  if (tokens.refresh_token) {
+    return tokens.refresh_token;
+  }
+
+  if (!existingConnection) {
+    throw new Error("Gmail OAuth did not return a refresh token.");
+  }
+
+  if (existingConnection.needsReconnect) {
+    throw new Error("Gmail reconnect did not return a new refresh token. Please retry Gmail reconnect and approve the Google consent screen.");
+  }
+
+  if (existingConnection.googleEmail && nextGoogleEmail && existingConnection.googleEmail !== nextGoogleEmail) {
+    throw new Error("Gmail OAuth did not return a refresh token for the selected Google account. Please retry Gmail reconnect and approve the Google consent screen.");
+  }
+
+  const existingRefreshToken = decryptText(existingConnection.refreshTokenEncrypted, settings.encryptionSecret);
+
+  try {
+    await refreshAccessToken({
+      auth0Email,
+      googleEmail: existingConnection.googleEmail,
+      refreshToken: existingRefreshToken,
+      settings
+    });
+  } catch (error) {
+    if (error instanceof GmailApiRequestError && error.googleError === "invalid_grant") {
+      await prisma.gmailConnection.update({
+        where: { auth0Email },
+        data: { needsReconnect: true, lastError: GMAIL_RECONNECT_REQUIRED_MESSAGE }
+      });
+      throw new GmailReconnectRequiredError();
+    }
+
+    throw error;
+  }
+
+  return existingRefreshToken;
+}
+
 export function getRefreshTokenForOAuthCallback(input: {
   tokens: GmailOAuthTokenBundle;
   existingConnection: GmailConnectionForReconnect | null;
@@ -885,7 +934,8 @@ export async function completeGmailOAuth(code: string, state: string) {
       where: { auth0Email: parsedState.auth0Email }
     });
     const profile = await fetchGmailProfile(tokens.access_token);
-    const refreshToken = getRefreshTokenForOAuthCallback({
+    const refreshToken = await resolveRefreshTokenForOAuthCallback({
+      auth0Email: parsedState.auth0Email,
       tokens,
       existingConnection: existingConnection as GmailConnectionForReconnect | null,
       nextGoogleEmail: profile.emailAddress ?? null,

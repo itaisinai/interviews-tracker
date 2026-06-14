@@ -302,3 +302,65 @@ test("gmail healthy callback can preserve the existing refresh token when Google
 
   assert.equal(refreshToken, "still-valid-refresh-token");
 });
+
+test("gmail callback fallback verifies the preserved refresh token before clearing reconnect state", async () => {
+  const originalFetch = globalThis.fetch;
+  const gmailConnection = prisma.gmailConnection as any;
+  const originalUpdate = gmailConnection.update;
+  const encryptedRefreshToken = encryptRefreshToken("silently-revoked-refresh-token", "gmail-test-secret");
+  const updates: Array<Record<string, unknown>> = [];
+
+  gmailConnection.update = (async (args: { data?: Record<string, unknown> }) => {
+    updates.push(args.data ?? {});
+    return {};
+  }) as typeof gmailConnection.update;
+
+  globalThis.fetch = (async (input) => {
+    const url = String(input);
+
+    if (url.includes("oauth2.googleapis.com/token")) {
+      return new Response(JSON.stringify({
+        error: "invalid_grant",
+        error_description: "Token has been expired or revoked."
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    return new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } });
+  }) as typeof fetch;
+
+  try {
+    const { resolveRefreshTokenForOAuthCallback, GmailReconnectRequiredError, GMAIL_RECONNECT_REQUIRED_MESSAGE } = await import("./gmail-service.js");
+
+    await assert.rejects(
+      () => resolveRefreshTokenForOAuthCallback({
+        auth0Email: "user@example.com",
+        tokens: { access_token: "access-token" },
+        existingConnection: {
+          refreshTokenEncrypted: encryptedRefreshToken,
+          googleEmail: "same@gmail.com",
+          needsReconnect: false
+        },
+        nextGoogleEmail: "same@gmail.com",
+        settings: {
+          clientId: "client-id-123456",
+          clientSecret: "client-secret",
+          redirectUri: "http://localhost/callback",
+          encryptionSecret: "gmail-test-secret",
+          frontendOrigin: "http://localhost:5173"
+        }
+      }),
+      (error) => error instanceof GmailReconnectRequiredError
+    );
+
+    assert.deepEqual(updates.at(-1), {
+      needsReconnect: true,
+      lastError: GMAIL_RECONNECT_REQUIRED_MESSAGE
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+    gmailConnection.update = originalUpdate;
+  }
+});
