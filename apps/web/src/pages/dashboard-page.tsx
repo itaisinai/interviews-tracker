@@ -119,7 +119,7 @@ export function DashboardPage() {
               const badgeValue = item.status === "OFFER" ? "OFFER" : item.status === "REJECTED" ? "CLOSED" : item.pipelineType === "ACTIVE_PROCESS" ? "INTERVIEWING" : "APPLIED";
 
               return (
-                <Link key={item.id} to={`/opportunities/${item.id}`} className={`block rounded-xl border bg-white p-4 shadow-sm ${item.pipelineType === "ACTIVE_PROCESS" ? "border-primary" : "border-outline-variant"}`}>
+                <Link key={item.id} to={`/opportunities/${item.slug || item.id}`} className={`block rounded-xl border bg-white p-4 shadow-sm ${item.pipelineType === "ACTIVE_PROCESS" ? "border-primary" : "border-outline-variant"}`}>
                   <div className="mb-2 flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="break-words font-title-md text-title-md font-bold text-on-background">{item.companyName}</h3>
@@ -256,7 +256,7 @@ export function DashboardPage() {
               <h3 className="mb-4 font-title-md text-title-md font-bold">Active Processes</h3>
               <div className="space-y-3">
                 {data.activeProcesses.map((item) => (
-                  <Link key={item.id} to={`/opportunities/${item.id}`} className="flex items-center justify-between rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
+                  <Link key={item.id} to={`/opportunities/${item.slug || item.id}`} className="flex items-center justify-between rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
                     <div>
                       <p className="font-semibold">{item.companyName}</p>
                       <p className="text-body-md text-on-surface-variant">{item.roleTitle}</p>
@@ -271,7 +271,7 @@ export function DashboardPage() {
               <h3 className="mb-4 font-title-md text-title-md font-bold">High Priority Potential</h3>
               <div className="space-y-3">
                 {data.highPriorityPotential.map((item) => (
-                  <Link key={item.id} to={`/opportunities/${item.id}`} className="flex items-center justify-between rounded-lg border border-outline-variant bg-white p-4 hover:bg-surface-container-low">
+                  <Link key={item.id} to={`/opportunities/${item.slug || item.id}`} className="flex items-center justify-between rounded-lg border border-outline-variant bg-white p-4 hover:bg-surface-container-low">
                     <span className="font-medium">{item.companyName}</span>
                     <Badge value={item.priority} />
                   </Link>

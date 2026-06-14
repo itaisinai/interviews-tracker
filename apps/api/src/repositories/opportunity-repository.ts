@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { compareJobStatuses, deriveOpportunityStatusFromInteractions } from "@interviews-tracker/core";
+import { appendSlugCollisionSuffix, compareJobStatuses, createOpportunitySlug, deriveOpportunityStatusFromInteractions } from "@interviews-tracker/core";
 import { prisma } from "../lib/prisma.js";
 import { noteInputSchema, opportunityInputSchema, taskInputSchema } from "../lib/schemas.js";
 import type { z } from "zod";
@@ -21,7 +21,7 @@ export const opportunityInclude = {
   compensation: true
 } satisfies Prisma.JobOpportunityInclude;
 
-function toWrite(input: OpportunityInput): Prisma.JobOpportunityCreateInput {
+function toWrite(input: OpportunityInput): Omit<Prisma.JobOpportunityCreateInput, "slug"> {
   const { domainIds, employeesRangeId, companyStageId, workModelId, ...rest } = input;
   return {
     ...rest,
@@ -44,6 +44,35 @@ function toWrite(input: OpportunityInput): Prisma.JobOpportunityCreateInput {
     workModel: workModelId ? { connect: { id: workModelId } } : undefined,
     domains: { create: domainIds.map((domainId) => ({ domain: { connect: { id: domainId } } })) }
   };
+}
+
+async function createUniqueOpportunitySlug(input: Pick<OpportunityInput, "companyName" | "roleTitle">, tx: Prisma.TransactionClient = prisma, excludeId?: string) {
+  const baseSlug = createOpportunitySlug(input.companyName, input.roleTitle);
+  const existing = await tx.jobOpportunity.findMany({
+    where: {
+      slug: { startsWith: baseSlug },
+      id: excludeId ? { not: excludeId } : undefined
+    },
+    select: { slug: true }
+  });
+  const usedSlugs = new Set(existing.map((item) => item.slug));
+
+  for (let index = 1; ; index += 1) {
+    const candidate = appendSlugCollisionSuffix(baseSlug, index);
+    if (!usedSlugs.has(candidate)) {
+      return candidate;
+    }
+  }
+}
+
+export async function resolveOpportunityId(slugOrId: string) {
+  const byId = await prisma.jobOpportunity.findUnique({ where: { id: slugOrId }, select: { id: true } });
+  if (byId) {
+    return byId.id;
+  }
+
+  const bySlug = await prisma.jobOpportunity.findUnique({ where: { slug: slugOrId }, select: { id: true } });
+  return bySlug?.id ?? null;
 }
 
 export async function listOpportunityRecords(query: Record<string, string | undefined>) {
@@ -72,7 +101,12 @@ export async function listOpportunityRecords(query: Record<string, string | unde
   return opportunities.map((opportunity) => promoteOpportunityInteractionsForRead(opportunity));
 }
 
-export async function getOpportunityRecord(id: string) {
+export async function getOpportunityRecord(slugOrId: string) {
+  const id = await resolveOpportunityId(slugOrId);
+  if (!id) {
+    throw new Error("Opportunity not found");
+  }
+
   const opportunityIds = await normalizeOverdueScheduledInteractionsForRead();
   if (opportunityIds.includes(id)) {
     await syncOpportunityStatusRecord(id);
@@ -82,26 +116,38 @@ export async function getOpportunityRecord(id: string) {
   return promoteOpportunityInteractionsForRead(opportunity);
 }
 
-export async function getOpportunitySummaryRecord(id: string) {
-  return prisma.jobOpportunity.findUnique({ where: { id }, select: { companyName: true, companySearchName: true, roleTitle: true } });
+export async function getOpportunitySummaryRecord(slugOrId: string) {
+  const id = await resolveOpportunityId(slugOrId);
+  if (!id) {
+    return null;
+  }
+
+  return prisma.jobOpportunity.findUnique({ where: { id }, select: { id: true, companyName: true, companySearchName: true, roleTitle: true } });
 }
 
 export async function createOpportunityRecord(input: OpportunityInput) {
-  const opportunity = await prisma.jobOpportunity.create({ data: toWrite(input), include: opportunityInclude });
+  const slug = await createUniqueOpportunitySlug(input);
+  const opportunity = await prisma.jobOpportunity.create({ data: { ...toWrite(input), slug }, include: opportunityInclude });
   return promoteOpportunityInteractionsForRead(opportunity);
 }
 
-export async function updateOpportunityRecord(id: string, input: OpportunityInput) {
+export async function updateOpportunityRecord(slugOrId: string, input: OpportunityInput) {
+  const id = await resolveOpportunityId(slugOrId);
+  if (!id) throw new Error("Opportunity not found");
   const data = toWrite(input);
   const opportunity = await prisma.$transaction(async (tx) => {
+    const existing = await tx.jobOpportunity.findUnique({ where: { id }, select: { slug: true } });
+    const slug = existing?.slug || await createUniqueOpportunitySlug(input, tx, id);
     await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id } });
-    return tx.jobOpportunity.update({ where: { id }, data, include: opportunityInclude });
+    return tx.jobOpportunity.update({ where: { id }, data: { ...data, slug }, include: opportunityInclude });
   });
 
   return promoteOpportunityInteractionsForRead(opportunity);
 }
 
-export async function deleteOpportunityRecord(id: string) {
+export async function deleteOpportunityRecord(slugOrId: string) {
+  const id = await resolveOpportunityId(slugOrId);
+  if (!id) throw new Error("Opportunity not found");
   return prisma.jobOpportunity.delete({ where: { id } });
 }
 
@@ -148,7 +194,9 @@ export async function syncOpportunityStatusRecord(id: string) {
   return nextStatus;
 }
 
-export async function listOpportunityInteractionsRecord(opportunityId: string) {
+export async function listOpportunityInteractionsRecord(slugOrId: string) {
+  const opportunityId = await resolveOpportunityId(slugOrId);
+  if (!opportunityId) return [];
   const interactions = await prisma.interaction.findMany({
     where: { jobOpportunityId: opportunityId },
     orderBy: { date: "asc" }
