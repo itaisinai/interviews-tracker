@@ -9,9 +9,12 @@ import {
   getOpportunityHandler,
   listOpportunityInteractionsHandler,
   listOpportunitiesHandler,
+  listTrackedOpportunityGmailMessagesHandler,
   parseOpportunityInteractionTextHandler,
   parseOpportunityGmailEmailHandler,
+  restoreOpportunityGmailMessageHandler,
   searchOpportunityGmailHandler,
+  hideOpportunityGmailMessageHandler,
   updateOpportunityHandler
 } from "../controllers/opportunities-controller.js";
 
@@ -64,6 +67,16 @@ opportunitiesRouter.get("/:id/gmail/search", asyncHandler(async (request, respon
   response.json(result);
 }));
 
+opportunitiesRouter.get("/:id/gmail/message-states", asyncHandler(async (request, response) => {
+  const result = await listTrackedOpportunityGmailMessagesHandler(request);
+  if (!result) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  response.json(result);
+}));
+
 opportunitiesRouter.post("/:id/gmail/parse-email", asyncHandler(async (request, response) => {
   const result = await parseOpportunityGmailEmailHandler(request);
   if (!result) {
@@ -72,6 +85,26 @@ opportunitiesRouter.post("/:id/gmail/parse-email", asyncHandler(async (request, 
   }
 
   response.json(result);
+}));
+
+opportunitiesRouter.post("/:id/gmail/messages/:messageId/hide", asyncHandler(async (request, response) => {
+  const result = await hideOpportunityGmailMessageHandler(request);
+  if (!result) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  response.status(204).end();
+}));
+
+opportunitiesRouter.delete("/:id/gmail/messages/:messageId/hide", asyncHandler(async (request, response) => {
+  const result = await restoreOpportunityGmailMessageHandler(request);
+  if (!result) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  response.status(204).end();
 }));
 
 opportunitiesRouter.post("/:id/interactions/parse-text", asyncHandler(async (request, response) => {
