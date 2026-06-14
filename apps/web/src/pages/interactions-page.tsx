@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  Calendar,
-  type CalendarEvent,
-} from "@interviews-tracker/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AppCalendar, type CalendarEvent } from "../components/calendar";
 import { GmailInteractionPanel } from "../components/gmail-interaction-panel";
 import { InteractionsDrawer } from "../components/interactions-drawer";
 import { OpportunityInteractionTimeline } from "../components/interactions-timeline";
@@ -88,7 +85,6 @@ export function InteractionsPage() {
   const [filter, setFilter] = useState("upcoming");
   const [showGmailImport, setShowGmailImport] = useState(false);
   const [gmailOpportunityId, setGmailOpportunityId] = useState("");
-  const [calendarMonth, setCalendarMonth] = useState(() => getNextMonth());
   const [selectedInteractionId, setSelectedInteractionId] = useState<
     string | null
   >(null);
@@ -122,8 +118,8 @@ export function InteractionsPage() {
       ),
     [filter, opportunityGroups],
   );
-  const nextMonthCalendarEvents = useMemo(
-    () => buildNextMonthCalendarEvents(displayInteractions),
+  const calendarEvents = useMemo(
+    () => buildInteractionCalendarEvents(displayInteractions),
     [displayInteractions],
   );
   const gmailOpportunity = useMemo(
@@ -167,23 +163,6 @@ export function InteractionsPage() {
       gmailOpportunityId || opportunities[0]?.id || "";
     setGmailOpportunityId(initialOpportunityId);
     setShowGmailImport(true);
-  }
-
-  function goToPreviousMonth() {
-    setCalendarMonth((current) =>
-      new Date(current.getFullYear(), current.getMonth() - 1, 1),
-    );
-  }
-
-  function goToNextMonth() {
-    setCalendarMonth((current) =>
-      new Date(current.getFullYear(), current.getMonth() + 1, 1),
-    );
-  }
-
-  function goToToday() {
-    const now = new Date();
-    setCalendarMonth(new Date(now.getFullYear(), now.getMonth(), 1));
   }
 
   if (isLoading || opportunitiesQuery.isLoading) {
@@ -471,7 +450,7 @@ export function InteractionsPage() {
           ))}
         </div>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <section className="space-y-6 lg:col-span-8">
+          <section className="space-y-6 lg:col-span-7">
             <div className="relative z-10 flex items-center gap-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary shadow-sm">
                 <MaterialIcon name="event" filled />
@@ -506,14 +485,10 @@ export function InteractionsPage() {
               ))}
             </div>
           </section>
-          <aside className="space-y-6 lg:col-span-4">
-            <Calendar
+          <aside className="space-y-6 lg:col-span-5">
+            <AppCalendar
               eyebrow="Calendar"
-              month={calendarMonth}
-              events={nextMonthCalendarEvents}
-              onPreviousMonth={goToPreviousMonth}
-              onNextMonth={goToNextMonth}
-              onToday={goToToday}
+              events={calendarEvents}
             />
             <div className="rounded-xl border border-outline-variant bg-white p-6 shadow-sm">
               <h3 className="mb-3 font-title-md text-title-md font-bold">
@@ -574,12 +549,7 @@ type InteractionCalendarEvent = CalendarEvent & {
   date: string;
 };
 
-function getNextMonth() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
-}
-
-function buildNextMonthCalendarEvents(
+function buildInteractionCalendarEvents(
   interactions: readonly Interaction[],
 ): InteractionCalendarEvent[] {
   return interactions.map((interaction) => {
