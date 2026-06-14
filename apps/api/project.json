@@ -1,0 +1,28 @@
+{
+  "name": "api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/api/src",
+  "implicitDependencies": ["core", "ai", "integrations", "logger"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/api"],
+      "options": {
+        "command": "yarn prisma:generate && node scripts/clean-api-build.mjs && tsc -p apps/api/tsconfig.json && node scripts/clean-package-js.mjs && node scripts/check-runtime-package-exports.mjs"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/api/tsconfig.json --noEmit"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx watch apps/api/src/server.ts"
+      }
+    }
+  }
+}
