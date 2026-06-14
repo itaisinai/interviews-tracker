@@ -38,6 +38,18 @@ try {
   } else if (args[0] === "run-many") {
     const target = parseOption("-t=") ?? args[args.indexOf("-t") + 1];
     const selected = args.includes("--all") ? [...projects.keys()].filter((name) => name !== "nx") : (parseOption("--projects=") ?? "").split(",").filter(Boolean);
+    if (target === "dev") {
+      const commands = selected.flatMap((name) => {
+        const project = projects.get(name);
+        if (!project) throw new Error(`Unknown Nx project: ${name}`);
+        const command = project.targets?.[target]?.options.command;
+        return command ? [command] : [];
+      });
+      if (commands.length === 0) process.exit(0);
+      const quotedCommands = commands.map((command) => JSON.stringify(command)).join(" ");
+      runCommand(`concurrently ${quotedCommands}`);
+      process.exit(0);
+    }
     for (const name of selected) runTarget(name, target);
   } else {
     throw new Error(`Unsupported local Nx command: ${args.join(" ")}`);

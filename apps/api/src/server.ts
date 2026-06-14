@@ -81,6 +81,7 @@ app.get("/api/gmail/callback", async (request, response, next) => {
 });
 app.use("/api", requireAuth);
 app.use("/api/gmail", gmailRouter);
+app.use("/api/integrations/gmail", gmailRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/opportunities", opportunitiesRouter);
 app.use("/api/interactions", interactionsRouter);

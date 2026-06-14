@@ -96,7 +96,7 @@ export function CompanyDetailPage() {
           <h3 className="mb-4 font-title-md text-title-md font-bold">Opportunities</h3>
           <div className="space-y-3">
             {data.opportunities.map((item) => (
-              <Link key={item.id} className="block rounded-lg bg-surface-container-low p-4 hover:bg-surface-container" to={`/opportunities/${item.id}`}>
+              <Link key={item.id} className="block rounded-lg bg-surface-container-low p-4 hover:bg-surface-container" to={`/opportunities/${item.slug || item.id}`}>
                 <div className="flex items-center justify-between gap-3"><p className="font-semibold">{item.roleTitle}</p><div className="flex items-center gap-2"><Badge value={item.status} /><LoadingButton compact aria-label={`Delete ${item.roleTitle}`} className="text-error" icon="delete" loading={deleteOpportunity.isPending && deleteOpportunity.variables === item.id} onClick={(event: MouseEvent<HTMLButtonElement>) => { event.preventDefault(); if (window.confirm(`Delete ${item.roleTitle}?`)) deleteOpportunity.mutate(item.id); }} /></div></div>
                 <p className="mt-1 text-body-md text-on-surface-variant">{titleize(item.pipelineType)} · {item.nextStep ?? "No next step"}</p>
                 {item.jobUrl ? (

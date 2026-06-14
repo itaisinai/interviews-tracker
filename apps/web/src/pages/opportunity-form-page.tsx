@@ -135,7 +135,7 @@ export function OpportunityFormPage() {
     },
     onSuccess: (saved) => {
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      navigate(`/opportunities/${saved.id}`);
+      navigate(`/opportunities/${saved.slug || saved.id}`);
     }
   });
 
