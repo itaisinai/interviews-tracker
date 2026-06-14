@@ -76,7 +76,7 @@ export function ParseJobPage() {
     },
     onSuccess: (saved) => {
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      navigate(`/opportunities/${saved.id}`);
+      navigate(`/opportunities/${saved.slug || saved.id}`);
     }
   });
 
