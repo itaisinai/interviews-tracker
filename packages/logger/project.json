@@ -1,0 +1,11 @@
+{
+  "name": "logger",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/logger/src",
+  "targets": {
+    "build": { "executor": "nx:run-commands", "outputs": ["{projectRoot}/dist"], "options": { "command": "tsc -p packages/logger/tsconfig.json" } },
+    "typecheck": { "executor": "nx:run-commands", "options": { "command": "tsc -p packages/logger/tsconfig.json --noEmit" } },
+    "dev": { "executor": "nx:run-commands", "options": { "command": "tsc -p packages/logger/tsconfig.json --watch --preserveWatchOutput" } }
+  }
+}

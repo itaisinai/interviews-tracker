@@ -2952,6 +2952,7 @@ __metadata:
     express: "npm:^4.21.2"
     jose: "npm:^6.2.3"
     lucide-react: "npm:^0.468.0"
+    nx: "workspace:*"
     postcss: "npm:^8.5.6"
     prisma: "npm:5.22.0"
     react: "npm:^18.3.1"
@@ -3453,6 +3454,14 @@ __metadata:
   checksum: 10c0/e008c8142bcc335b5e38cf0d63cfd39d6cf2d97480af9abdbe9a439221fd4d749763bab492a8ee708ce7a194bb00c9da6d0a115018672310850489137b3da046
   languageName: node
   linkType: hard
+
+"nx@workspace:*, nx@workspace:packages/nx":
+  version: 0.0.0-use.local
+  resolution: "nx@workspace:packages/nx"
+  bin:
+    nx: bin/nx.mjs
+  languageName: unknown
+  linkType: soft
 
 "oauth4webapi@npm:^3.8.5":
   version: 3.8.6
