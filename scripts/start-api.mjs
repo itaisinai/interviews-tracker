@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { spawn } from "node:child_process";
 
 const builtCandidates = [
   "dist/api/server.js",
@@ -27,6 +27,11 @@ const apiRuntimePackages = [
     name: "@interviews-tracker/integrations",
     tsconfig: "packages/integrations/tsconfig.json",
     entrypoint: "packages/integrations/dist/index.js"
+  },
+  {
+    name: "@interviews-tracker/logger",
+    tsconfig: "packages/logger/tsconfig.json",
+    entrypoint: "packages/logger/dist/index.js"
   }
 ];
 
