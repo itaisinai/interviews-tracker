@@ -35,6 +35,8 @@ export const interactionInputSchema = z.object({
   personName: z.string().nullish(),
   personRole: z.string().nullish(),
   agenda: z.string().nullish(),
+  meetingLink: z.string().url().nullish(),
+  gmailMessageId: z.string().min(1).nullish(),
   notes: z.string().nullish(),
   outcome: z.string().nullish(),
   followUp: z.string().nullish()
@@ -116,6 +118,8 @@ export type Interaction = {
   personName?: string | null;
   personRole?: string | null;
   agenda?: string | null;
+  meetingLink?: string | null;
+  gmailMessageId?: string | null;
   notes?: string | null;
   outcome?: string | null;
   followUp?: string | null;

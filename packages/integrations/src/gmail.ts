@@ -65,6 +65,7 @@ export type GmailDerivedInteraction = {
   personName: string | null;
   personRole: string | null;
   agenda: string | null;
+  meetingLink: string | null;
   notes: string | null;
   outcome: string | null;
   followUp: string | null;

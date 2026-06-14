@@ -18,5 +18,5 @@ export function updateInteractionHandler(request: Request) {
 }
 
 export function deleteInteractionHandler(request: Request) {
-  return deleteInteraction(request.params.id);
+  return deleteInteraction(request.params.id, { auth0Email: (request as Request & { auth?: { email?: string | null } }).auth?.email });
 }
