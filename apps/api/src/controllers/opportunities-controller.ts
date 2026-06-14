@@ -136,7 +136,8 @@ export async function restoreOpportunityGmailMessageHandler(request: Authenticat
   const { messageId } = z.object({ messageId: z.string().min(1) }).parse(request.params);
   await restoreHiddenGmailMessage({
     auth0Email: request.auth?.email ?? "",
-    messageId
+    messageId,
+    jobOpportunityId: request.params.id
   });
 
   return { ok: true };
