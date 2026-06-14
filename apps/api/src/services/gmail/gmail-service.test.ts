@@ -139,3 +139,166 @@ test("gmail tracked states include legacy null-scoped rows and can clear them", 
     process.env.GMAIL_TOKEN_ENCRYPTION_KEY = originalEnv.GMAIL_TOKEN_ENCRYPTION_KEY;
   }
 });
+
+test("gmail invalid_grant marks connection as reconnect required and maps cleanly", async () => {
+  const originalEnv = {
+    GMAIL_CLIENT_ID: process.env.GMAIL_CLIENT_ID,
+    GMAIL_CLIENT_SECRET: process.env.GMAIL_CLIENT_SECRET,
+    GMAIL_REDIRECT_URI: process.env.GMAIL_REDIRECT_URI,
+    GMAIL_TOKEN_ENCRYPTION_KEY: process.env.GMAIL_TOKEN_ENCRYPTION_KEY
+  };
+  const originalFetch = globalThis.fetch;
+  const gmailConnection = prisma.gmailConnection as any;
+  const originalFindUnique = gmailConnection.findUnique;
+  const originalUpdate = gmailConnection.update;
+  const secret = "gmail-test-secret";
+  const encryptedRefreshToken = encryptRefreshToken("revoked-refresh-token", secret);
+  const updates: Array<Record<string, unknown>> = [];
+
+  process.env.GMAIL_CLIENT_ID = "client-id-123456";
+  process.env.GMAIL_CLIENT_SECRET = "client-secret";
+  process.env.GMAIL_REDIRECT_URI = "http://localhost/callback";
+  process.env.GMAIL_TOKEN_ENCRYPTION_KEY = secret;
+
+  gmailConnection.findUnique = (async () => ({
+    auth0Email: "user@example.com",
+    refreshTokenEncrypted: encryptedRefreshToken,
+    googleEmail: "gmail@example.com",
+    scope: "https://www.googleapis.com/auth/gmail.readonly",
+    needsReconnect: false,
+    lastError: null,
+    connectedAt: new Date(),
+    updatedAt: new Date()
+  })) as typeof gmailConnection.findUnique;
+
+  gmailConnection.update = (async (args: { data?: Record<string, unknown> }) => {
+    updates.push(args.data ?? {});
+    return {};
+  }) as typeof gmailConnection.update;
+
+  globalThis.fetch = (async (input) => {
+    const url = String(input);
+
+    if (url.includes("oauth2.googleapis.com/token")) {
+      return new Response(JSON.stringify({
+        error: "invalid_grant",
+        error_description: "Token has been expired or revoked."
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    return new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } });
+  }) as typeof fetch;
+
+  try {
+    const { searchGmailMessages, GmailReconnectRequiredError, GMAIL_RECONNECT_REQUIRED_MESSAGE } = await import("./gmail-service.js");
+
+    await assert.rejects(
+      () => searchGmailMessages({
+        auth0Email: "user@example.com",
+        jobOpportunityId: "opportunity-1",
+        companyName: "Example Corp"
+      }),
+      (error) => error instanceof GmailReconnectRequiredError
+    );
+
+    assert.deepEqual(updates.at(-1), {
+      needsReconnect: true,
+      lastError: GMAIL_RECONNECT_REQUIRED_MESSAGE
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+    gmailConnection.findUnique = originalFindUnique;
+    gmailConnection.update = originalUpdate;
+    process.env.GMAIL_CLIENT_ID = originalEnv.GMAIL_CLIENT_ID;
+    process.env.GMAIL_CLIENT_SECRET = originalEnv.GMAIL_CLIENT_SECRET;
+    process.env.GMAIL_REDIRECT_URI = originalEnv.GMAIL_REDIRECT_URI;
+    process.env.GMAIL_TOKEN_ENCRYPTION_KEY = originalEnv.GMAIL_TOKEN_ENCRYPTION_KEY;
+  }
+});
+
+test("gmail status reports reconnect-required state", async () => {
+  const originalEnv = {
+    GMAIL_CLIENT_ID: process.env.GMAIL_CLIENT_ID,
+    GMAIL_CLIENT_SECRET: process.env.GMAIL_CLIENT_SECRET,
+    GMAIL_REDIRECT_URI: process.env.GMAIL_REDIRECT_URI,
+    GMAIL_TOKEN_ENCRYPTION_KEY: process.env.GMAIL_TOKEN_ENCRYPTION_KEY
+  };
+  const gmailConnection = prisma.gmailConnection as any;
+  const originalFindUnique = gmailConnection.findUnique;
+  const connectedAt = new Date("2026-06-14T10:00:00.000Z");
+  const updatedAt = new Date("2026-06-14T10:05:00.000Z");
+
+  process.env.GMAIL_CLIENT_ID = "client-id";
+  process.env.GMAIL_CLIENT_SECRET = "client-secret";
+  process.env.GMAIL_REDIRECT_URI = "http://localhost/callback";
+  process.env.GMAIL_TOKEN_ENCRYPTION_KEY = "gmail-test-secret";
+
+  gmailConnection.findUnique = (async () => ({
+    auth0Email: "user@example.com",
+    googleEmail: "gmail@example.com",
+    scope: "scope-a scope-b",
+    needsReconnect: true,
+    lastError: "Your Gmail connection expired or was revoked. Please reconnect Gmail.",
+    connectedAt,
+    updatedAt
+  })) as typeof gmailConnection.findUnique;
+
+  try {
+    const { getGmailStatus } = await import("./gmail-service.js");
+    const status = await getGmailStatus("user@example.com");
+
+    assert.equal(status.configured, true);
+    assert.equal(status.connected, false);
+    assert.equal(status.needsReconnect, true);
+    assert.equal(status.lastError, "Your Gmail connection expired or was revoked. Please reconnect Gmail.");
+    assert.equal(status.lastConnectedAt, connectedAt.toISOString());
+    assert.deepEqual(status.scopes, ["scope-a", "scope-b"]);
+    assert.equal(status.updatedAt, updatedAt.toISOString());
+  } finally {
+    gmailConnection.findUnique = originalFindUnique;
+    process.env.GMAIL_CLIENT_ID = originalEnv.GMAIL_CLIENT_ID;
+    process.env.GMAIL_CLIENT_SECRET = originalEnv.GMAIL_CLIENT_SECRET;
+    process.env.GMAIL_REDIRECT_URI = originalEnv.GMAIL_REDIRECT_URI;
+    process.env.GMAIL_TOKEN_ENCRYPTION_KEY = originalEnv.GMAIL_TOKEN_ENCRYPTION_KEY;
+  }
+});
+
+test("gmail reconnect callback requires a newly returned refresh token before clearing reconnect state", async () => {
+  const { getRefreshTokenForOAuthCallback } = await import("./gmail-service.js");
+  const encryptedRefreshToken = encryptRefreshToken("old-revoked-refresh-token", "gmail-test-secret");
+
+  assert.throws(
+    () => getRefreshTokenForOAuthCallback({
+      tokens: { access_token: "access-token" },
+      existingConnection: {
+        refreshTokenEncrypted: encryptedRefreshToken,
+        googleEmail: "old@gmail.com",
+        needsReconnect: true
+      },
+      nextGoogleEmail: "old@gmail.com",
+      settings: { encryptionSecret: "gmail-test-secret" }
+    }),
+    /did not return a new refresh token/
+  );
+});
+
+test("gmail healthy callback can preserve the existing refresh token when Google omits one for the same account", async () => {
+  const { getRefreshTokenForOAuthCallback } = await import("./gmail-service.js");
+  const encryptedRefreshToken = encryptRefreshToken("still-valid-refresh-token", "gmail-test-secret");
+
+  const refreshToken = getRefreshTokenForOAuthCallback({
+    tokens: { access_token: "access-token" },
+    existingConnection: {
+      refreshTokenEncrypted: encryptedRefreshToken,
+      googleEmail: "same@gmail.com",
+      needsReconnect: false
+    },
+    nextGoogleEmail: "same@gmail.com",
+    settings: { encryptionSecret: "gmail-test-secret" }
+  });
+
+  assert.equal(refreshToken, "still-valid-refresh-token");
+});

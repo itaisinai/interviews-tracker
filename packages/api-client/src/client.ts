@@ -1,7 +1,7 @@
 import type { CompanyDetail, CompanySummary, Compensation, Interaction, Opportunity, OptionsResponse, Task } from "@interviews-tracker/core";
 import type { CompanyEnrichment, CompanyResearchApplyResponse, CompanyResearchInput, CompanyResearchResult, InteractionDraft, ParsedJobDescription } from "@interviews-tracker/ai";
 import type { GmailConnectResponse, GmailSearchResponse, GmailStatus, GmailStructuredEmail } from "@interviews-tracker/integrations";
-import { getApiErrorMessage } from "./error.js";
+import { getApiError } from "./error.js";
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -44,7 +44,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(await getApiErrorMessage(response));
+    throw await getApiError(response);
   }
 
   if (response.status === 204) {
@@ -86,6 +86,7 @@ export const api = {
   deleteCompany: (companyName: string) => request<void>(`/companies/${encodeURIComponent(companyName)}`, { method: "DELETE" }),
   gmailStatus: () => request<GmailStatus>("/gmail/status"),
   gmailConnect: (body: { returnTo?: string }) => request<GmailConnectResponse>("/gmail/connect", { method: "POST", body: JSON.stringify(body) }),
+  gmailDisconnect: () => request<void>("/gmail/connection", { method: "DELETE" }),
   gmailSearch: (id: string) => request<GmailSearchResponse>(`/opportunities/${id}/gmail/search`),
   gmailMessageStates: (id: string) => request<{ removedEmails: Array<{ id: string; subject: string; date: string }>; pickedEmails: Array<{ id: string; subject: string; date: string }> }>(`/opportunities/${id}/gmail/message-states`),
   gmailParseEmail: (id: string, body: { messageId: string }) => request<GmailParsedEmailResponse>(`/opportunities/${id}/gmail/parse-email`, { method: "POST", body: JSON.stringify(body) }),
