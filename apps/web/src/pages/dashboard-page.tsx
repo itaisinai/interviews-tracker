@@ -1,23 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Badge } from "../components/badge";
+import { AppCalendar, type CalendarEvent } from "../components/calendar";
+import { InteractionsDrawer } from "../components/interactions-drawer";
 import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
 import { InlineLoadingState, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
+import { labelForInteractionType } from "../lib/enum-labels";
 import { formatDateTime } from "../lib/format";
-
-const cardMeta = [
-  ["activeProcesses", "Active Processes", "sync", "text-primary", "bg-primary/10"],
-  ["potential", "Potential", "explore", "text-secondary", "bg-secondary/10"],
-  ["upcomingInteractions", "Interactions", "event", "text-tertiary", "bg-tertiary/10"],
-  ["offers", "Offers", "payments", "text-primary", "bg-primary/10"],
-  ["rejections", "Rejections", "block", "text-error", "bg-error/10"],
-  ["highPriority", "High Priority", "priority_high", "text-tertiary", "bg-tertiary/10"],
-  ["tasksDueSoon", "Tasks Due Soon", "assignment_turned_in", "text-secondary", "bg-secondary/10"]
-] as const;
+import type { Interaction } from "../lib/types";
 
 function splitMonthDay(value: string) {
   const date = new Date(value);
@@ -29,6 +23,8 @@ function splitMonthDay(value: string) {
 
 export function DashboardPage() {
   const { user } = useAuth0();
+  const [selectedInteraction, setSelectedInteraction] =
+    useState<Interaction | null>(null);
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
   const displayName = user?.name ?? user?.email?.split("@")[0] ?? "Alex";
 
@@ -46,6 +42,11 @@ export function DashboardPage() {
       return true;
     }).slice(0, 2);
   }, [data]);
+
+  const calendarEvents = useMemo(
+    () => (data ? buildCalendarEvents(data.upcomingInteractions) : []),
+    [data],
+  );
 
   const pipelineHealth = Math.round(((data?.counts.activeProcesses ?? 0) / Math.max((data?.counts.activeProcesses ?? 0) + (data?.counts.potential ?? 0), 1)) * 100);
 
@@ -152,7 +153,13 @@ export function DashboardPage() {
             {data.upcomingInteractions.map((item, index) => {
               const parts = splitMonthDay(item.date);
               return (
-                <div key={item.id} className={`flex items-center gap-3 p-4 ${index > 0 ? "border-t border-outline-variant/40" : ""}`}>
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary ${index > 0 ? "border-t border-outline-variant/40" : ""}`}
+                  aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
+                  onClick={() => setSelectedInteraction(item)}
+                >
                   <div className="w-10 shrink-0 text-center">
                     <div className="font-label-sm text-label-sm text-primary">{parts.month}</div>
                     <div className="font-headline-md text-headline-md font-semibold text-on-background">{parts.day}</div>
@@ -162,7 +169,7 @@ export function DashboardPage() {
                     <p className="truncate font-body-md text-body-md text-on-surface-variant">{item.agenda ?? item.followUp ?? item.type}</p>
                   </div>
                   <MaterialIcon name={item.type.toLowerCase().includes("email") ? "mail" : "video_call"} className="text-on-surface-variant" />
-                </div>
+                </button>
               );
             })}
             {data.upcomingInteractions.length === 0 ? <p className="p-4 text-body-md text-on-surface-variant">No upcoming interactions.</p> : null}
@@ -213,20 +220,6 @@ export function DashboardPage() {
           }
         />
 
-        <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-7">
-          {cardMeta.map(([key, label, icon, textClass, bgClass]) => (
-            <div key={key} className="group rounded-xl border border-outline-variant bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-all hover:shadow-lg">
-              <div className="mb-2 flex items-start justify-between">
-                <div className={`rounded-lg p-2 ${bgClass} ${textClass}`}>
-                  <MaterialIcon name={icon} />
-                </div>
-                <span className={`font-headline-md text-headline-md font-bold ${textClass}`}>{data.counts[key] ?? 0}</span>
-              </div>
-              <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">{label}</p>
-            </div>
-          ))}
-        </div>
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <section className="panel p-6 lg:col-span-7">
             <div className="mb-4 flex items-center justify-between">
@@ -235,7 +228,13 @@ export function DashboardPage() {
             </div>
             <div className="space-y-4">
               {data.upcomingInteractions.map((item) => (
-                <div key={item.id} className="rounded-xl border-2 border-primary bg-white p-5 shadow-sm">
+                <button
+                  key={item.id}
+                  type="button"
+                  className="w-full rounded-xl border border-outline-variant bg-white p-5 text-left shadow-sm transition-all hover:border-primary/40 hover:bg-surface-container-low hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
+                  onClick={() => setSelectedInteraction(item)}
+                >
                   <div className="mb-2 flex items-center gap-2">
                     <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
                     <span className="h-1 w-1 rounded-full bg-outline-variant" />
@@ -245,13 +244,18 @@ export function DashboardPage() {
                   <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.companyName}</h4>
                   <p className="mt-1 text-body-md text-on-surface-variant">{item.agenda}</p>
                   {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic text-on-background">{item.followUp}</p> : null}
-                </div>
+                </button>
               ))}
               {data.upcomingInteractions.length === 0 ? <p className="text-body-md text-on-surface-variant">No upcoming interactions.</p> : null}
             </div>
           </section>
 
           <aside className="space-y-6 lg:col-span-5">
+            <AppCalendar
+              eyebrow="Calendar"
+              events={calendarEvents}
+            />
+
             <section className="panel p-6">
               <h3 className="mb-4 font-title-md text-title-md font-bold">Active Processes</h3>
               <div className="space-y-3">
@@ -302,6 +306,43 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+      <InteractionsDrawer
+        selectedInteraction={selectedInteraction}
+        onClose={() => setSelectedInteraction(null)}
+        onSelectInteraction={() => undefined}
+      />
     </>
   );
+}
+
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+type InteractionCalendarEvent = CalendarEvent & {
+  date: string;
+};
+
+function buildCalendarEvents(
+  interactions: readonly Interaction[],
+): InteractionCalendarEvent[] {
+  return interactions.map((interaction) => {
+    const date = new Date(interaction.date);
+    const titleParts = [
+      interaction.jobOpportunity?.companyName,
+      interaction.stage || labelForInteractionType(interaction.type),
+      interaction.personName,
+    ].filter(Boolean);
+
+    return {
+      id: interaction.id,
+      date: interaction.date,
+      title:
+        titleParts.length > 0
+          ? titleParts.join(" · ")
+          : labelForInteractionType(interaction.type),
+      time: timeFormatter.format(date),
+    };
+  });
 }
