@@ -6,7 +6,7 @@ import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { NotificationsContext, type NotificationsContextValue } from "../components/notifications/notifications-context.js";
 import type { AppNotification } from "../lib/notifications.js";
-import { NotificationsPage } from "./notifications-page.js";
+import { filterNotifications, NotificationsPage } from "./notifications-page.js";
 
 const notification: AppNotification = {
   id: "unlinked-interactions:alta",
@@ -20,6 +20,16 @@ const notification: AppNotification = {
   status: "unread",
   createdAt: "2026-06-15T12:00:00.000Z",
   updatedAt: "2026-06-15T12:00:00.000Z",
+};
+
+const readNotification: AppNotification = {
+  ...notification,
+  id: "unlinked-interactions:reevol",
+  key: "unlinked-interactions:reevol",
+  opportunityId: "reevol",
+  opportunityName: "Reevol",
+  title: "Reevol has 2 interactions not linked to emails",
+  status: "read",
 };
 
 test("notifications page renders filters, mark all as read, and list", () => {
@@ -43,4 +53,12 @@ test("notifications page renders filters, mark all as read, and list", () => {
   assert.match(html, /Mark all as read/);
   assert.match(html, /Alta has 1 interaction not linked to emails/);
   assert.match(html, /No more notifications/);
+});
+
+test("notification page filters update the displayed collection", () => {
+  const notifications = [notification, readNotification];
+  assert.deepEqual(filterNotifications(notifications, "Unread").map((item) => item.key), ["unlinked-interactions:alta"]);
+  assert.deepEqual(filterNotifications(notifications, "Interactions").map((item) => item.key), ["unlinked-interactions:alta", "unlinked-interactions:reevol"]);
+  assert.equal(filterNotifications(notifications, "Opportunities").length, 0);
+  assert.equal(filterNotifications(notifications, "System").length, 0);
 });
