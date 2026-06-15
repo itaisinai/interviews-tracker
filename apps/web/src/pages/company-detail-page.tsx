@@ -3,9 +3,8 @@ import type { MouseEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Badge } from "../components/badge";
 import { CompanyResearchPanel } from "../components/company-research-panel";
-import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
-import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
+import { InlineLoadingState, LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 import { api } from "../lib/api";
 import { formatDateTime, titleize } from "../lib/format";
 

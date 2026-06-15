@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "../components/badge";
-import { DataTable } from "../components/data-table";
-import { MaterialIcon } from "../components/material-icon";
+import { DataTable, MaterialIcon } from "@interviews-tracker/design-system";
 import { PageIntro } from "../components/app-shell";
-import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
+import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 import { api } from "../lib/api";
 
 export function CompensationPage() {

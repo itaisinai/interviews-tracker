@@ -1,20 +1,14 @@
-import {
-  InlineLoadingState,
-  LoadingButton,
-  PageErrorState,
-  PageLoadingState,
-} from "../components/loading-state";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { InteractionsDrawer } from "../components/interactions-drawer";
-import { MaterialIcon } from "../components/material-icon";
 import { CompanyDataSection, OpportunitySidePanel } from "../components/opportunity-detail";
 import { PageIntro } from "../components/app-shell";
 import { Timeline } from "../components/timeline";
 import { api } from "../lib/api";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
+import { InlineLoadingState, LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 export function OpportunityDetailPage() {
   const { slugOrId = "" } = useParams();

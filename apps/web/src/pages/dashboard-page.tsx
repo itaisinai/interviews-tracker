@@ -5,13 +5,12 @@ import { Link } from "react-router-dom";
 import { Badge } from "../components/badge";
 import { AppCalendar } from "../components/calendar";
 import { InteractionsDrawer } from "../components/interactions-drawer";
-import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
-import { InlineLoadingState, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { buildInteractionCalendarEvents } from "../components/interactions-flow";
 import { api } from "../lib/api";
 import { formatDateTime } from "../lib/format";
 import type { Interaction } from "../lib/types";
+import { InlineLoadingState, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 function splitMonthDay(value: string) {
   const date = new Date(value);
@@ -25,18 +24,8 @@ export function DashboardPage() {
   const { user } = useAuth0();
   const [selectedInteraction, setSelectedInteraction] =
     useState<Interaction | null>(null);
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
-  const { data: interactions = [] } = useQuery({
-    queryKey: ["interactions"],
-    queryFn: api.interactions,
-  });
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
+  const { data: interactions = [] } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
   const displayName = user?.name ?? user?.email?.split("@")[0] ?? "Alex";
 
   const mobilePriorityItems = useMemo(() => {

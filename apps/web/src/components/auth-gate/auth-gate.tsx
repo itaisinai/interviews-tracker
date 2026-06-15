@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
-import { MaterialIcon } from "./material-icon";
-import { setAccessTokenGetter } from "../lib/api";
+import { MaterialIcon } from "@interviews-tracker/design-system";
+import { setAccessTokenGetter } from "../../lib/api";
 
 const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN as string | undefined;
 const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID as

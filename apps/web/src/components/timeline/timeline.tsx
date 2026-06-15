@@ -1,8 +1,6 @@
 import { useMemo, type KeyboardEvent, type MouseEvent } from "react";
 
 import { Badge } from "../badge";
-import { LoadingButton } from "../loading-state";
-import { MaterialIcon } from "../material-icon";
 import { formatDateTime } from "../../lib/format";
 import {
   displayLabelForEnumValue,
@@ -10,6 +8,7 @@ import {
 } from "../../lib/enum-labels";
 import { getInteractionTimelineBadgeMeta } from "../../lib/interaction-status";
 import type { Interaction } from "../../lib/types";
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 type TimelineProps = {
   title?: string;
@@ -57,7 +56,10 @@ export function Timeline({
 
       <div className="ml-10 space-y-4">
         {orderedInteractions.map((item) => {
-          const badge = getInteractionTimelineBadgeMeta(item, orderedInteractions);
+          const badge = getInteractionTimelineBadgeMeta(
+            item,
+            orderedInteractions,
+          );
           const selected = selectedInteractionId === item.id;
           const isClickable = Boolean(onSelectInteraction);
 
@@ -131,12 +133,9 @@ export function Timeline({
                   aria-label="Delete interaction"
                   className="mt-3 font-label-md text-label-md text-error"
                   icon="delete"
-                  loading={
-                    Boolean(
-                      isDeletingInteraction &&
-                      isDeletingInteraction(item.id),
-                    )
-                  }
+                  loading={Boolean(
+                    isDeletingInteraction && isDeletingInteraction(item.id),
+                  )}
                   onClick={(event: MouseEvent<HTMLButtonElement>) => {
                     event.stopPropagation();
                     if (window.confirm("Delete this interaction?")) {

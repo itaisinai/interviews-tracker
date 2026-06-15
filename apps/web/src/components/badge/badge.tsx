@@ -11,8 +11,8 @@ import {
   taskStatusLabels,
   interactionStatusLabels,
   jobStatusLabels,
-} from "../lib/enum-labels";
-import { pipelineTone, priorityTone, statusTone } from "../lib/format";
+} from "../../lib/enum-labels";
+import { pipelineTone, priorityTone, statusTone } from "../../lib/format";
 
 type BadgeProps = {
   value?: string | null;
@@ -41,12 +41,20 @@ function toneForValue(value?: string | null): BadgeTone | undefined {
     return tone;
   }
 
-  if (value in jobStatusLabels || value in taskStatusLabels || value in interactionStatusLabels) {
+  if (
+    value in jobStatusLabels ||
+    value in taskStatusLabels ||
+    value in interactionStatusLabels
+  ) {
     return statusTone(value);
   }
 
   if (value in offerStatusLabels) {
-    if (value === "ACCEPTED" || value === "VERBAL_OFFER" || value === "WRITTEN_OFFER") {
+    if (
+      value === "ACCEPTED" ||
+      value === "VERBAL_OFFER" ||
+      value === "WRITTEN_OFFER"
+    ) {
       return "green";
     }
 

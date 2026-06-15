@@ -1,10 +1,23 @@
-import { MaterialIcon } from "./material-icon";
-import type { ParserRunState } from "../lib/parser-run";
-import { parserRunStateMeta } from "../lib/parser-run";
+import { MaterialIcon } from "@interviews-tracker/design-system";
+import type { ParserRunState } from "../../lib/parser-run";
+import { parserRunStateMeta } from "../../lib/parser-run";
 
-export function ParserLoadingState({ state, message, progress }: { state: Exclude<ParserRunState, "idle">; message?: string; progress: number }) {
+export function ParserLoadingState({
+  state,
+  message,
+  progress,
+}: {
+  state: Exclude<ParserRunState, "idle">;
+  message?: string;
+  progress: number;
+}) {
   const meta = parserRunStateMeta[state];
-  const fillClass = state === "failed" ? "bg-error" : state === "completed" ? "bg-primary" : "bg-secondary";
+  const fillClass =
+    state === "failed"
+      ? "bg-error"
+      : state === "completed"
+        ? "bg-primary"
+        : "bg-secondary";
 
   return (
     <section className="panel border border-outline-variant bg-white p-5">
@@ -19,9 +32,15 @@ export function ParserLoadingState({ state, message, progress }: { state: Exclud
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-label-md text-label-md uppercase text-on-surface-variant">Parser run</p>
-          <h4 className="mt-1 font-title-md text-title-md font-bold">{meta.label}</h4>
-          <p className="mt-1 font-body-md text-body-md text-on-surface-variant">{message ?? meta.description}</p>
+          <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+            Parser run
+          </p>
+          <h4 className="mt-1 font-title-md text-title-md font-bold">
+            {meta.label}
+          </h4>
+          <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
+            {message ?? meta.description}
+          </p>
         </div>
       </div>
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-container-high">

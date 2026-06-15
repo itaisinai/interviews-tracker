@@ -14,8 +14,7 @@ import type {
   Interaction
 } from "../../lib/types";
 import { Badge } from "../badge";
-import { InlineLoadingState, LoadingButton, ProcessStateCard } from "../loading-state";
-import { MaterialIcon } from "../material-icon";
+import { InlineLoadingState, LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
 
 type GmailInteractionPanelProps = {
   opportunityId: string;

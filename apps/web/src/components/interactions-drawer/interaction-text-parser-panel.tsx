@@ -3,9 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
 import type { Interaction, InteractionDraft } from "../../lib/types";
-import { MaterialIcon } from "../material-icon";
-import { LoadingButton, ProcessStateCard } from "../loading-state";
-import { InteractionDraftFields } from "./InteractionDraftFields";
+import { InteractionDraftFields } from "./interaction-draft-fields";
+import { LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
 
 type InteractionTextParserPanelProps = {
   opportunityId: string;
