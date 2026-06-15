@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type {
   Interaction,
@@ -16,10 +16,6 @@ import { InteractionDrawerHeader } from "./interaction-drawer-header";
 import { InteractionComposerPanel } from "./interaction-composer-panel";
 import { InteractionSummaryPanel } from "./interaction-summary-panel";
 import { InteractionTimelinePanel } from "./interaction-timeline-panel";
-import {
-  PageErrorState,
-  ProcessStateCard,
-} from "@interviews-tracker/design-system";
 
 type InteractionsDrawerProps = {
   selectedInteraction: Interaction | null;
@@ -64,12 +60,6 @@ export function InteractionsDrawer({
   const openFrameRef = useRef<number | null>(null);
 
   const opportunityId = mountedInteraction?.jobOpportunityId ?? "";
-  const opportunityQuery = useQuery({
-    queryKey: ["opportunity", opportunityId],
-    queryFn: () => api.opportunity(opportunityId),
-    enabled: Boolean(opportunityId) && !selectedOpportunity,
-    staleTime: 30_000,
-  });
 
   useEffect(() => {
     if (closeTimerRef.current) {
@@ -119,7 +109,6 @@ export function InteractionsDrawer({
 
   const opportunity =
     selectedOpportunity ??
-    opportunityQuery.data ??
     mountedInteraction?.jobOpportunity ??
     null;
 
@@ -178,9 +167,6 @@ export function InteractionsDrawer({
   }
 
   const displayInteraction = selectedTimelineInteraction ?? mountedInteraction;
-  const isOpportunityLoading =
-    !selectedOpportunity && opportunityQuery.isLoading;
-  const isOpportunityError = !selectedOpportunity && opportunityQuery.isError;
 
   return (
     <div className="fixed inset-0 z-[60]">
@@ -200,87 +186,67 @@ export function InteractionsDrawer({
         />
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          {isOpportunityLoading ? (
-            <ProcessStateCard
-              title="Loading drawer"
-              message="Fetching the opportunity timeline."
-              description="This loads only when you open an interaction."
-              tone="busy"
-              progress={20}
-            />
-          ) : isOpportunityError ? (
-            <PageErrorState
-              title="Interaction drawer"
-              description={
-                opportunityQuery.error instanceof Error
-                  ? opportunityQuery.error.message
-                  : "Unable to load opportunity details."
+          <div className="space-y-4">
+            <InteractionSummaryPanel
+              interaction={displayInteraction}
+              headerBadge={headerBadge}
+              isEditing={isEditing}
+              draft={draft}
+              onToggleEditing={() => {
+                setComposer(null);
+                setIsEditing((current) => !current);
+              }}
+              onCancelEditing={() => {
+                setIsEditing(false);
+                setDraft(toDraft(displayInteraction));
+              }}
+              onDraftChange={setDraft}
+              onSave={() => void updateInteraction.mutate()}
+              isSaving={updateInteraction.isPending}
+              onDelete={() => {
+                if (window.confirm("Delete this interaction?")) {
+                  deleteInteraction.mutate(displayInteraction.id);
+                }
+              }}
+              isDeleting={
+                deleteInteraction.isPending &&
+                deleteInteraction.variables === displayInteraction.id
               }
-              onRetry={() => void opportunityQuery.refetch()}
+              onAttachEmail={() => setComposer("gmail-attach")}
             />
-          ) : (
-            <div className="space-y-4">
-              <InteractionSummaryPanel
-                interaction={displayInteraction}
-                headerBadge={headerBadge}
-                isEditing={isEditing}
-                draft={draft}
-                onToggleEditing={() => {
-                  setComposer(null);
-                  setIsEditing((current) => !current);
-                }}
-                onCancelEditing={() => {
-                  setIsEditing(false);
-                  setDraft(toDraft(displayInteraction));
-                }}
-                onDraftChange={setDraft}
-                onSave={() => void updateInteraction.mutate()}
-                isSaving={updateInteraction.isPending}
-                onDelete={() => {
-                  if (window.confirm("Delete this interaction?")) {
-                    deleteInteraction.mutate(displayInteraction.id);
-                  }
-                }}
-                isDeleting={
-                  deleteInteraction.isPending &&
-                  deleteInteraction.variables === displayInteraction.id
-                }
-                onAttachEmail={() => setComposer("gmail-attach")}
-              />
 
-              <InteractionTimelinePanel
-                companyName={opportunity?.companyName ?? "Timeline"}
-                interactions={timeline}
-                selectedInteractionId={displayInteraction.id}
-                onSelectInteraction={onSelectInteraction}
-              />
+            <InteractionTimelinePanel
+              companyName={opportunity?.companyName ?? "Timeline"}
+              interactions={timeline}
+              selectedInteractionId={displayInteraction.id}
+              onSelectInteraction={onSelectInteraction}
+            />
 
-              <InteractionComposerPanel
-                opportunityId={opportunityId}
-                companyName={
-                  opportunity?.companyName ??
-                  displayInteraction.jobOpportunity?.companyName ??
-                  ""
+            <InteractionComposerPanel
+              opportunityId={opportunityId}
+              companyName={
+                opportunity?.companyName ??
+                displayInteraction.jobOpportunity?.companyName ??
+                ""
+              }
+              roleTitle={
+                opportunity?.roleTitle ??
+                displayInteraction.jobOpportunity?.roleTitle ??
+                ""
+              }
+              attachToInteractionId={
+                composer === "gmail-attach" ? displayInteraction.id : null
+              }
+              composer={composer}
+              onComposerChange={setComposer}
+              onSaved={(savedInteraction) => {
+                refreshQueries();
+                if (savedInteraction) {
+                  onSelectInteraction?.(savedInteraction.id);
                 }
-                roleTitle={
-                  opportunity?.roleTitle ??
-                  displayInteraction.jobOpportunity?.roleTitle ??
-                  ""
-                }
-                attachToInteractionId={
-                  composer === "gmail-attach" ? displayInteraction.id : null
-                }
-                composer={composer}
-                onComposerChange={setComposer}
-                onSaved={(savedInteraction) => {
-                  refreshQueries();
-                  if (savedInteraction) {
-                    onSelectInteraction?.(savedInteraction.id);
-                  }
-                }}
-              />
-            </div>
-          )}
+              }}
+            />
+          </div>
         </div>
       </aside>
     </div>

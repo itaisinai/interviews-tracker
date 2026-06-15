@@ -48,6 +48,7 @@ const reevolHeaderBadge = getInteractionTimelineBadgeMeta(
   reevolSelectedInteraction,
   reevolInteractions,
 );
+const storyReferenceDate = new Date("2026-06-15T12:00:00.000Z");
 
 const meta: Meta<typeof OpportunityInteractionTimeline> = {
   title: "Interactions/Opportunity Timeline",
@@ -75,6 +76,7 @@ export const ExpandedPage: Story = {
     interactions: reevolInteractions,
     selectedInteractionId: reevolSelectedInteraction.id,
     defaultCollapsed: false,
+    referenceDate: storyReferenceDate,
   },
   render: (args) => (
     <div className="min-h-screen bg-[#f7f5ef] p-6">
@@ -96,9 +98,10 @@ export const DrawerOpen: Story = {
         />
         <div className="space-y-4 p-5">
           <InteractionSummaryPanel
-            interaction={reevolSelectedInteraction}
-            headerBadge={reevolHeaderBadge}
-            isEditing={false}
+          interaction={reevolSelectedInteraction}
+          headerBadge={reevolHeaderBadge}
+          referenceDate={storyReferenceDate}
+          isEditing={false}
             draft={null}
             onToggleEditing={() => void 0}
             onCancelEditing={() => void 0}
@@ -110,11 +113,12 @@ export const DrawerOpen: Story = {
             onAttachEmail={() => void 0}
           />
           <InteractionTimelinePanel
-            companyName={reevolOpportunity.companyName}
-            interactions={reevolInteractions}
-            selectedInteractionId={reevolSelectedInteraction.id}
-            onSelectInteraction={() => void 0}
-          />
+          companyName={reevolOpportunity.companyName}
+          interactions={reevolInteractions}
+          selectedInteractionId={reevolSelectedInteraction.id}
+          referenceDate={storyReferenceDate}
+          onSelectInteraction={() => void 0}
+        />
           <InteractionComposerPanel
             opportunityId={reevolOpportunity.id}
             companyName={reevolOpportunity.companyName}
@@ -141,6 +145,7 @@ export const CombinedState: Story = {
             interactions={reevolInteractions}
             selectedInteractionId={reevolSelectedInteraction.id}
             defaultCollapsed={false}
+            referenceDate={storyReferenceDate}
             onSelectInteraction={() => void 0}
           />
           <OpportunityInteractionTimeline
@@ -179,6 +184,7 @@ export const CombinedState: Story = {
               <InteractionSummaryPanel
                 interaction={reevolSelectedInteraction}
                 headerBadge={reevolHeaderBadge}
+                referenceDate={storyReferenceDate}
                 isEditing={false}
                 draft={null}
                 onToggleEditing={() => void 0}
@@ -194,6 +200,7 @@ export const CombinedState: Story = {
                 companyName={reevolOpportunity.companyName}
                 interactions={reevolInteractions}
                 selectedInteractionId={reevolSelectedInteraction.id}
+                referenceDate={storyReferenceDate}
                 onSelectInteraction={() => void 0}
               />
             </div>

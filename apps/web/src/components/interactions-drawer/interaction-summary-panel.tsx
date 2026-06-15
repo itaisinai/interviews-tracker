@@ -25,6 +25,7 @@ type InteractionSummaryPanelProps = {
     label: string;
     tone: "blue" | "green" | "red" | "muted" | "warning";
   } | null;
+  referenceDate?: Date;
   isEditing: boolean;
   draft: InteractionDraft | null;
   onToggleEditing: () => void;
@@ -40,6 +41,7 @@ type InteractionSummaryPanelProps = {
 export function InteractionSummaryPanel({
   interaction,
   headerBadge,
+  referenceDate = new Date(),
   isEditing,
   draft,
   onToggleEditing,
@@ -73,7 +75,7 @@ export function InteractionSummaryPanel({
             ) : null}
           </div>
           <p className="mt-3 font-headline-md text-headline-md font-bold">
-            {formatDateTime(interaction.date)}
+            {formatDateTime(interaction.date, referenceDate)}
           </p>
           <p className="mt-1 flex items-center gap-2 text-body-md text-on-surface-variant">
             <UserRound className="h-4 w-4" />
@@ -103,6 +105,16 @@ export function InteractionSummaryPanel({
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3">
+        {interaction.outcome ? (
+          <DetailRow
+            label="Outcome"
+            value={
+              <span className="text-body-md text-on-background">
+                {interaction.outcome}
+              </span>
+            }
+          />
+        ) : null}
         {interaction.meetingLink ? (
           <DetailRow
             label="Meeting link"

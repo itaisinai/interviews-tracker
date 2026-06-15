@@ -15,6 +15,7 @@ type OpportunityInteractionTimelineProps = {
   onDeleteInteraction?: (interactionId: string) => void;
   isDeletingInteraction?: (interactionId: string) => boolean;
   defaultCollapsed?: boolean;
+  referenceDate?: Date;
 };
 
 export function OpportunityInteractionTimeline({
@@ -23,7 +24,10 @@ export function OpportunityInteractionTimeline({
   interactions,
   selectedInteractionId,
   onSelectInteraction,
+  onDeleteInteraction,
+  isDeletingInteraction,
   defaultCollapsed = true,
+  referenceDate = new Date(),
 }: OpportunityInteractionTimelineProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const orderedInteractions = useMemo(() => {
@@ -138,6 +142,9 @@ export function OpportunityInteractionTimeline({
           showHeader={false}
           selectedInteractionId={selectedInteractionId}
           onSelectInteraction={onSelectInteraction}
+          onDeleteInteraction={onDeleteInteraction}
+          isDeletingInteraction={isDeletingInteraction}
+          referenceDate={referenceDate}
         />
       )}
     </section>

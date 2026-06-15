@@ -6,6 +6,9 @@ type InteractionTimelinePanelProps = {
   interactions: readonly Interaction[];
   selectedInteractionId: string | null;
   onSelectInteraction?: (interactionId: string) => void;
+  onDeleteInteraction?: (interactionId: string) => void;
+  isDeletingInteraction?: (interactionId: string) => boolean;
+  referenceDate?: Date;
 };
 
 export function InteractionTimelinePanel({
@@ -13,6 +16,9 @@ export function InteractionTimelinePanel({
   interactions,
   selectedInteractionId,
   onSelectInteraction,
+  onDeleteInteraction,
+  isDeletingInteraction,
+  referenceDate = new Date(),
 }: InteractionTimelinePanelProps) {
   return (
     <section className="rounded-2xl border border-outline-variant bg-white p-5">
@@ -38,6 +44,9 @@ export function InteractionTimelinePanel({
           showHeader={false}
           selectedInteractionId={selectedInteractionId}
           onSelectInteraction={onSelectInteraction}
+          onDeleteInteraction={onDeleteInteraction}
+          isDeletingInteraction={isDeletingInteraction}
+          referenceDate={referenceDate}
         />
       </div>
     </section>

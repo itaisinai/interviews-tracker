@@ -7,6 +7,7 @@ import {
   Mail,
   PhoneCall,
   Reply,
+  Trash2,
 } from "lucide-react";
 
 import { Badge } from "../badge";
@@ -27,6 +28,7 @@ type TimelineProps = {
   onSelectInteraction?: (interactionId: string) => void;
   onDeleteInteraction?: (interactionId: string) => void;
   isDeletingInteraction?: (interactionId: string) => boolean;
+  referenceDate?: Date;
 };
 
 export function Timeline({
@@ -36,6 +38,9 @@ export function Timeline({
   showHeader = true,
   selectedInteractionId = null,
   onSelectInteraction,
+  onDeleteInteraction,
+  isDeletingInteraction,
+  referenceDate = new Date(),
 }: TimelineProps) {
   const orderedInteractions = useMemo(() => {
     return [...interactions].sort((left, right) => {
@@ -76,8 +81,9 @@ export function Timeline({
               orderedInteractions,
             );
             const isSelected = selectedInteractionId === item.id;
-            const isUpcoming = new Date(item.date).getTime() > Date.now();
+            const isUpcoming = new Date(item.date).getTime() > referenceDate.getTime();
             const isClickable = Boolean(onSelectInteraction);
+            const isDeleting = isDeletingInteraction?.(item.id) ?? false;
 
             return (
               <li
@@ -117,7 +123,7 @@ export function Timeline({
                       <div className="space-y-2 px-4 py-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">
-                            {formatDateTime(item.date)}
+                            {formatDateTime(item.date, referenceDate)}
                           </span>
                           {isUpcoming ? (
                             <Badge value="Upcoming" tone="warning">
@@ -158,6 +164,23 @@ export function Timeline({
                           Next action:{" "}
                         </span>
                         {item.followUp}
+                      </div>
+                    ) : null}
+                    {onDeleteInteraction ? (
+                      <div className="mt-3 flex items-center justify-end">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-2 rounded-full border border-outline-variant bg-white px-3 py-1.5 text-label-md text-error transition-colors hover:bg-error-container"
+                          aria-label="Delete interaction"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onDeleteInteraction(item.id);
+                          }}
+                          disabled={isDeleting}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span>{isDeleting ? "Deleting" : "Delete"}</span>
+                        </button>
                       </div>
                     ) : null}
                   </div>
