@@ -600,7 +600,12 @@ function buildCompanySearchTokens(companyName: string, aliases: Array<string | n
     .filter((token) => token.length >= 3 && !["inc", "ltd", "llc", "com", "co", "io", "ai"].includes(token));
 }
 
-export function buildGmailSearchQueries(companyName: string, roleTitle?: string | null, aliases: Array<string | null | undefined> = []) {
+export function buildGmailSearchQueries(
+  companyName: string,
+  roleTitle?: string | null,
+  aliases: Array<string | null | undefined> = [],
+  senderDomains: Array<string | null | undefined> = [],
+) {
   const companyVariants = buildCompanySearchVariants(companyName, aliases);
   const queries = new Set<string>();
 
@@ -612,6 +617,10 @@ export function buildGmailSearchQueries(companyName: string, roleTitle?: string 
     if (roleTitle?.trim()) {
       queries.add(`"${variant}" "${roleTitle.trim()}" newer_than:365d`);
     }
+  }
+
+  for (const query of buildRelatedSenderDomainSearchQueries(companyName, senderDomains, aliases)) {
+    queries.add(query);
   }
 
   return [...queries];

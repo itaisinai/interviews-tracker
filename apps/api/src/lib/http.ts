@@ -15,7 +15,8 @@ export function errorHandler(error: unknown, request: Request, response: Respons
   }
 
   if (error instanceof GmailReconnectRequiredError) {
-    return response.status(error.statusCode).json({ code: error.code, message: error.message });
+    const gmailError = error as GmailReconnectRequiredError;
+    return response.status(gmailError.statusCode).json({ code: gmailError.code, message: gmailError.message });
   }
 
   if (error instanceof Error) {

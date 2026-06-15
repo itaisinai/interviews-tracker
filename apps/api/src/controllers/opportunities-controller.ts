@@ -71,7 +71,8 @@ export async function searchOpportunityGmailHandler(request: AuthenticatedReques
     jobOpportunityId: opportunity.id,
     companyName: opportunity.companyName,
     companySearchName: opportunity.companySearchName,
-    roleTitle: opportunity.roleTitle
+    roleTitle: opportunity.roleTitle,
+    companyDomains: opportunity.domains.map((item) => item.domain.label)
   });
   timer.end({ candidates: result.candidates.length });
   return result;
