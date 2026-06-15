@@ -88,10 +88,10 @@ export function DesktopInteractionsFlow({
         />
       ) : null}
       <FilterTabs filter={filter} onChange={onFilterChange} variant="desktop" />
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        <section className="space-y-6 lg:col-span-7">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <section className="space-y-4 lg:col-span-7">
           <TimelineHeading />
-          <div className="space-y-6">
+          <div className="space-y-4">
             {visibleGroups.map((group) => (
               <OpportunityInteractionTimeline
                 key={group.opportunityId}
@@ -106,7 +106,7 @@ export function DesktopInteractionsFlow({
             ))}
           </div>
         </section>
-        <aside className="space-y-6 lg:col-span-5">
+        <aside className="space-y-4 lg:col-span-5">
           <AppCalendar eyebrow="Calendar" events={calendarEvents} />
           <InteractionHealthPanel
             interactions={interactions}
