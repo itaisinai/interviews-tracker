@@ -56,7 +56,10 @@ export function Timeline({
 
       <div className="ml-10 space-y-4">
         {orderedInteractions.map((item) => {
-          const badge = getInteractionTimelineBadgeMeta(item, orderedInteractions);
+          const badge = getInteractionTimelineBadgeMeta(
+            item,
+            orderedInteractions,
+          );
           const selected = selectedInteractionId === item.id;
           const isClickable = Boolean(onSelectInteraction);
 
@@ -130,12 +133,9 @@ export function Timeline({
                   aria-label="Delete interaction"
                   className="mt-3 font-label-md text-label-md text-error"
                   icon="delete"
-                  loading={
-                    Boolean(
-                      isDeletingInteraction &&
-                      isDeletingInteraction(item.id),
-                    )
-                  }
+                  loading={Boolean(
+                    isDeletingInteraction && isDeletingInteraction(item.id),
+                  )}
                   onClick={(event: MouseEvent<HTMLButtonElement>) => {
                     event.stopPropagation();
                     if (window.confirm("Delete this interaction?")) {
