@@ -60,6 +60,24 @@ test("opening an interaction drawer builds selected opportunity from already-loa
   );
 });
 
+test("rebuilding selected opportunity reflects updated loaded interactions after refetch", () => {
+  const updatedInteraction = {
+    ...interactionA,
+    outcome: "Advanced after onsite",
+  } as Interaction;
+
+  const selectedOpportunity = buildSelectedOpportunityForInteraction(
+    updatedInteraction,
+    [updatedInteraction, interactionB],
+    [],
+  );
+
+  assert.equal(
+    selectedOpportunity?.interactions[0]?.outcome,
+    "Advanced after onsite",
+  );
+});
+
 test("interactions drawer does not fetch opportunity data just because it opened", () => {
   const source = readFileSync(
     new URL(

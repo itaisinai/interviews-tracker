@@ -12,7 +12,6 @@ import {
   type InteractionFilter,
 } from "../components/interactions-flow";
 import { api } from "../lib/api";
-import type { Interaction, Opportunity } from "../lib/types";
 import { buildSelectedOpportunityForInteraction } from "./interactions-page-selection";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 import {
@@ -24,10 +23,9 @@ export function InteractionsPage() {
   const [filter, setFilter] = useState<InteractionFilter>("upcoming");
   const [showGmailImport, setShowGmailImport] = useState(false);
   const [gmailOpportunityId, setGmailOpportunityId] = useState("");
-  const [selectedInteraction, setSelectedInteraction] =
-    useState<Interaction | null>(null);
-  const [selectedOpportunity, setSelectedOpportunity] =
-    useState<Opportunity | null>(null);
+  const [selectedInteractionId, setSelectedInteractionId] = useState<
+    string | null
+  >(null);
   const queryClient = useQueryClient();
 
   const interactionsQuery = useQuery({
@@ -65,6 +63,23 @@ export function InteractionsPage() {
     () => opportunities.find((item) => item.id === gmailOpportunityId) ?? null,
     [gmailOpportunityId, opportunities],
   );
+  const selectedInteraction = useMemo(
+    () =>
+      displayInteractions.find((item) => item.id === selectedInteractionId) ??
+      null,
+    [displayInteractions, selectedInteractionId],
+  );
+  const selectedOpportunity = useMemo(
+    () =>
+      selectedInteraction
+        ? buildSelectedOpportunityForInteraction(
+            selectedInteraction,
+            displayInteractions,
+            opportunities,
+          )
+        : null,
+    [displayInteractions, opportunities, selectedInteraction],
+  );
   const followUpCount = countFollowUps(displayInteractions);
   const followUpPercent = calculatePercent(
     followUpCount,
@@ -82,37 +97,15 @@ export function InteractionsPage() {
 
   useEffect(() => {
     if (
-      selectedInteraction &&
-      !displayInteractions.some((item) => item.id === selectedInteraction.id)
+      selectedInteractionId &&
+      !displayInteractions.some((item) => item.id === selectedInteractionId)
     ) {
-      setSelectedInteraction(null);
-      setSelectedOpportunity(null);
+      setSelectedInteractionId(null);
     }
-  }, [displayInteractions, selectedInteraction]);
-
-  function selectInteractionFromLoadedData(interactionId: string) {
-    const interaction =
-      displayInteractions.find((item) => item.id === interactionId) ?? null;
-
-    if (!interaction) {
-      setSelectedInteraction(null);
-      setSelectedOpportunity(null);
-      return;
-    }
-
-    setSelectedInteraction(interaction);
-    setSelectedOpportunity(
-      buildSelectedOpportunityForInteraction(
-        interaction,
-        displayInteractions,
-        opportunities,
-      ),
-    );
-  }
+  }, [displayInteractions, selectedInteractionId]);
 
   function closeInteractionDrawer() {
-    setSelectedInteraction(null);
-    setSelectedOpportunity(null);
+    setSelectedInteractionId(null);
   }
 
   function openGmailImport() {
@@ -170,12 +163,12 @@ export function InteractionsPage() {
     opportunities,
     gmailOpportunityId,
     gmailOpportunity,
-    selectedInteractionId: selectedInteraction?.id ?? null,
+    selectedInteractionId,
     followUpPercent,
     onFilterChange: setFilter,
     onSelectGmailOpportunity: setGmailOpportunityId,
     onGmailSaved: closeGmailImport,
-    onSelectInteraction: selectInteractionFromLoadedData,
+    onSelectInteraction: setSelectedInteractionId,
     onDeleteInteraction: (interactionId: string) =>
       deleteInteraction.mutate(interactionId),
     isDeletingInteraction: (interactionId: string) =>
@@ -202,7 +195,7 @@ export function InteractionsPage() {
         selectedInteraction={selectedInteraction}
         selectedOpportunity={selectedOpportunity}
         onClose={closeInteractionDrawer}
-        onSelectInteraction={selectInteractionFromLoadedData}
+        onSelectInteraction={setSelectedInteractionId}
       />
     </>
   );
