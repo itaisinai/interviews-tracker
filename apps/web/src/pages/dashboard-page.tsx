@@ -9,7 +9,7 @@ import { PageIntro } from "../components/app-shell";
 import { buildInteractionCalendarEvents } from "../components/interactions-flow";
 import { api } from "../lib/api";
 import { formatDateTime } from "../lib/format";
-import type { Interaction } from "../lib/types";
+import type { Interaction, Opportunity } from "../lib/types";
 import { InlineLoadingState, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 function splitMonthDay(value: string) {
@@ -24,9 +24,33 @@ export function DashboardPage() {
   const { user } = useAuth0();
   const [selectedInteraction, setSelectedInteraction] =
     useState<Interaction | null>(null);
+  const [selectedOpportunity, setSelectedOpportunity] =
+    useState<Opportunity | null>(null);
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
   const { data: interactions = [] } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
   const displayName = user?.name ?? user?.email?.split("@")[0] ?? "Alex";
+
+  function selectInteraction(interaction: Interaction | null) {
+    setSelectedInteraction(interaction);
+    if (!interaction) {
+      setSelectedOpportunity(null);
+      return;
+    }
+
+    const baseOpportunity = interaction.jobOpportunity ?? null;
+    setSelectedOpportunity(
+      baseOpportunity
+        ? {
+            ...baseOpportunity,
+            interactions: interactions.filter((item) => item.jobOpportunityId === interaction.jobOpportunityId)
+          }
+        : null
+    );
+  }
+
+  function selectInteractionById(interactionId: string) {
+    selectInteraction(interactions.find((item) => item.id === interactionId) ?? null);
+  }
 
   const mobilePriorityItems = useMemo(() => {
     if (!data) {
@@ -158,7 +182,7 @@ export function DashboardPage() {
                   type="button"
                   className={`flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary ${index > 0 ? "border-t border-outline-variant/40" : ""}`}
                   aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
-                  onClick={() => setSelectedInteraction(item)}
+                  onClick={() => selectInteraction(item)}
                 >
                   <div className="w-10 shrink-0 text-center">
                     <div className="font-label-sm text-label-sm text-primary">{parts.month}</div>
@@ -233,7 +257,7 @@ export function DashboardPage() {
                   type="button"
                   className="w-full rounded-xl border border-outline-variant bg-white p-5 text-left shadow-sm transition-all hover:border-primary/40 hover:bg-surface-container-low hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
-                  onClick={() => setSelectedInteraction(item)}
+                  onClick={() => selectInteraction(item)}
                 >
                   <div className="mb-2 flex items-center gap-2">
                     <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
@@ -308,8 +332,9 @@ export function DashboardPage() {
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
-        onClose={() => setSelectedInteraction(null)}
-        onSelectInteraction={() => undefined}
+        selectedOpportunity={selectedOpportunity}
+        onClose={() => selectInteraction(null)}
+        onSelectInteraction={selectInteractionById}
       />
     </>
   );
