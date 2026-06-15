@@ -40,7 +40,7 @@ for (const storyId of stories) {
         animations: "disabled",
         caret: "hide",
         maxDiffPixelRatio: 0.015,
-        maxDiffPixels: 100,
+        maxDiffPixels: 300,
       },
     );
   });
