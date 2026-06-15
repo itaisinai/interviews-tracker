@@ -3,7 +3,10 @@ import { fileURLToPath } from "node:url";
 import { mergeConfig } from "vite";
 
 const config: StorybookConfig = {
-  stories: ["../../../packages/design-system/src/components/**/*.stories.@(ts|tsx)"],
+  stories: [
+    "../../../packages/design-system/src/components/**/*.stories.@(ts|tsx)",
+    "../src/components/**/*.stories.@(ts|tsx)",
+  ],
   addons: ["@storybook/addon-essentials"],
   framework: {
     name: "@storybook/react-vite",

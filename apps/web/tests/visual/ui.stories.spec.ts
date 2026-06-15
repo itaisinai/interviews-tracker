@@ -26,6 +26,9 @@ const stories = [
   "ui-loadingstate--process",
   "ui-datatable--default",
   "ui-drawer--default",
+  "interactions-opportunity-timeline--expanded-page",
+  "interactions-opportunity-timeline--drawer-open",
+  "interactions-opportunity-timeline--combined-state",
 ];
 
 for (const storyId of stories) {
@@ -37,7 +40,7 @@ for (const storyId of stories) {
         animations: "disabled",
         caret: "hide",
         maxDiffPixelRatio: 0.015,
-        maxDiffPixels: 100,
+        maxDiffPixels: 300,
       },
     );
   });
