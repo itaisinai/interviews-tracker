@@ -53,12 +53,39 @@ export function OpportunityInteractionTimeline({
     latestInteraction?.outcome?.trim() ||
     latestInteraction?.type?.trim() ||
     null;
+  const openLatestInteraction = () => {
+    if (latestInteraction) {
+      onSelectInteraction(latestInteraction.id);
+    }
+  };
 
   return (
-    <section className="panel overflow-hidden">
+    <section className="panel overflow-hidden transition-colors hover:border-primary/20 hover:bg-primary/5">
       <div className="border-b border-outline-variant px-4 py-3 md:px-5 md:py-4">
         <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1">
+          <div
+            role={latestInteraction ? "button" : undefined}
+            tabIndex={latestInteraction ? 0 : undefined}
+            aria-label={
+              latestInteraction
+                ? `Open ${companyName} ${roleTitle} interaction drawer`
+                : undefined
+            }
+            className={`min-w-0 flex-1 rounded-xl px-2 py-1 transition-colors ${
+              latestInteraction ? "cursor-pointer" : ""
+            }`}
+            onClick={openLatestInteraction}
+            onKeyDown={(event) => {
+              if (!latestInteraction) {
+                return;
+              }
+
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openLatestInteraction();
+              }
+            }}
+          >
             <div className="flex min-h-9 flex-wrap items-center gap-3">
               <h3 className="truncate font-title-md text-title-md font-bold text-on-background">
                 {companyName}
@@ -90,7 +117,10 @@ export function OpportunityInteractionTimeline({
             className="inline-flex h-9 w-9 shrink-0 self-start items-center justify-center rounded-full border border-outline-variant bg-white text-on-surface-variant transition-colors hover:bg-surface-container-low"
             aria-label={collapsed ? "Expand timeline" : "Collapse timeline"}
             title={collapsed ? "Expand timeline" : "Collapse timeline"}
-            onClick={() => setCollapsed((value) => !value)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setCollapsed((value) => !value);
+            }}
           >
             <MaterialIcon name={collapsed ? "expand_less" : "expand_more"} />
           </button>
