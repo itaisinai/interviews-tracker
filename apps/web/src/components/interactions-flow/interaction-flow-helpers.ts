@@ -10,10 +10,12 @@ export type InteractionOpportunityGroup = {
   roleTitle: string;
   interactions: Interaction[];
   latestTimestamp: number;
+  closestTimestamp: number;
 };
 
 export type InteractionCalendarEvent = CalendarEvent & {
   date: string;
+  isFuture: boolean;
 };
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, {
@@ -23,6 +25,7 @@ const timeFormatter = new Intl.DateTimeFormat(undefined, {
 
 export function buildOpportunityGroups(interactions: readonly Interaction[]) {
   const groups = new Map<string, InteractionOpportunityGroup>();
+  const now = Date.now();
 
   for (const interaction of interactions) {
     const existing = groups.get(interaction.jobOpportunityId);
@@ -36,20 +39,37 @@ export function buildOpportunityGroups(interactions: readonly Interaction[]) {
         roleTitle: interaction.jobOpportunity?.roleTitle ?? "Unknown role",
         interactions: [interaction],
         latestTimestamp: timestamp,
+        closestTimestamp: timestamp,
       });
       continue;
     }
 
     existing.interactions.push(interaction);
     existing.latestTimestamp = Math.max(existing.latestTimestamp, timestamp);
+    existing.closestTimestamp = getClosestTimestamp(
+      existing.closestTimestamp,
+      timestamp,
+      now,
+    );
   }
 
   return [...groups.values()].sort((left, right) => {
-    if (left.latestTimestamp !== right.latestTimestamp) {
-      return right.latestTimestamp - left.latestTimestamp;
+    const leftDistance = Math.abs(left.closestTimestamp - now);
+    const rightDistance = Math.abs(right.closestTimestamp - now);
+
+    if (leftDistance !== rightDistance) {
+      return leftDistance - rightDistance;
+    }
+
+    const leftIsFuture = left.closestTimestamp >= now;
+    const rightIsFuture = right.closestTimestamp >= now;
+
+    if (leftIsFuture !== rightIsFuture) {
+      return leftIsFuture ? -1 : 1;
     }
 
     return (
+      left.closestTimestamp - right.closestTimestamp ||
       left.companyName.localeCompare(right.companyName) ||
       left.roleTitle.localeCompare(right.roleTitle)
     );
@@ -101,6 +121,7 @@ export function buildInteractionCalendarEvents(
 ): InteractionCalendarEvent[] {
   return interactions.map((interaction) => {
     const date = new Date(interaction.date);
+    const isFuture = date.getTime() > Date.now();
     const titleParts = [
       interaction.jobOpportunity?.companyName,
       interaction.stage || labelForInteractionType(interaction.type),
@@ -115,6 +136,7 @@ export function buildInteractionCalendarEvents(
           ? titleParts.join(" · ")
           : labelForInteractionType(interaction.type),
       time: timeFormatter.format(date),
+      isFuture,
     };
   });
 }
@@ -135,4 +157,26 @@ function isLatestInteraction(
       (itemTime === interactionTime && item.id.localeCompare(interaction.id) > 0)
     );
   });
+}
+
+function getClosestTimestamp(current: number, next: number, now: number) {
+  const currentDistance = Math.abs(current - now);
+  const nextDistance = Math.abs(next - now);
+
+  if (nextDistance < currentDistance) {
+    return next;
+  }
+
+  if (nextDistance > currentDistance) {
+    return current;
+  }
+
+  const currentIsFuture = current >= now;
+  const nextIsFuture = next >= now;
+
+  if (nextIsFuture && !currentIsFuture) {
+    return next;
+  }
+
+  return current;
 }
