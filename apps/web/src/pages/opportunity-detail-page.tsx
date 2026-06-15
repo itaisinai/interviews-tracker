@@ -219,6 +219,7 @@ export function OpportunityDetailPage() {
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
+        selectedOpportunity={data ? { ...data, interactions: displayedInteractions } : null}
         onClose={() => setSelectedInteractionId(null)}
         onSelectInteraction={setSelectedInteractionId}
       />

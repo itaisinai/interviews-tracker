@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { Interaction, InteractionDraft } from "../../lib/types";
+import type {
+  Interaction,
+  InteractionDraft,
+  Opportunity,
+} from "../../lib/types";
 import { api } from "../../lib/api";
 import { normalizeInteractionType } from "../../lib/enum-labels";
 import {
@@ -19,6 +23,7 @@ import {
 
 type InteractionsDrawerProps = {
   selectedInteraction: Interaction | null;
+  selectedOpportunity: Opportunity | null;
   onClose: () => void;
   onSelectInteraction?: (interactionId: string) => void;
 };
@@ -44,6 +49,7 @@ function toDraft(interaction: Interaction): InteractionDraft {
 
 export function InteractionsDrawer({
   selectedInteraction,
+  selectedOpportunity,
   onClose,
   onSelectInteraction,
 }: InteractionsDrawerProps) {
@@ -112,14 +118,15 @@ export function InteractionsDrawer({
   }, [mountedInteraction?.id]);
 
   const opportunity =
-    opportunityQuery.data ?? mountedInteraction?.jobOpportunity ?? null;
+    selectedOpportunity ??
+    opportunityQuery.data ??
+    mountedInteraction?.jobOpportunity ??
+    null;
 
   const timeline = useMemo(
     () =>
-      promoteOverdueInteractionsForRead(
-        opportunityQuery.data?.interactions ?? opportunity?.interactions ?? [],
-      ),
-    [opportunity?.interactions, opportunityQuery.data?.interactions],
+      promoteOverdueInteractionsForRead(opportunity?.interactions ?? []),
+    [opportunity?.interactions],
   );
 
   const selectedTimelineInteraction = useMemo(() => {
@@ -171,6 +178,7 @@ export function InteractionsDrawer({
   }
 
   const displayInteraction = selectedTimelineInteraction ?? mountedInteraction;
+
   return (
     <div className="fixed inset-0 z-[60]">
       <button
