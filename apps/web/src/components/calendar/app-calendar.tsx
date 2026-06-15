@@ -20,6 +20,7 @@ type AppCalendarEvent = CalendarEvent & {
 
 export function AppCalendar<Event extends CalendarEvent = CalendarEvent>({
   initialMonth,
+  renderEvent,
   ...calendarProps
 }: AppCalendarProps<Event>) {
   const navigation = useCalendarNavigation(initialMonth);
@@ -27,7 +28,10 @@ export function AppCalendar<Event extends CalendarEvent = CalendarEvent>({
   return (
     <Calendar
       {...calendarProps}
-      renderEvent={(event) => renderAppCalendarEvent(event as AppCalendarEvent)}
+      renderEvent={
+        renderEvent ??
+        ((event) => renderAppCalendarEvent(event as AppCalendarEvent))
+      }
       month={navigation.month}
       onPreviousMonth={navigation.onPreviousMonth}
       onNextMonth={navigation.onNextMonth}
