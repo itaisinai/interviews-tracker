@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthGate } from "./components/auth-gate";
 import { AppShell } from "./components/app-shell";
+import { NotificationsProvider } from "./components/notifications";
 import { PageLoadingState } from "@interviews-tracker/design-system";
 import { queryClient } from "./lib/query-client";
 import "@interviews-tracker/design-system/styles/tokens.css";
@@ -57,6 +58,11 @@ const SettingsPage = lazy(() =>
     default: module.SettingsPage,
   })),
 );
+const NotificationsPage = lazy(() =>
+  import("./pages/notifications-page").then((module) => ({
+    default: module.NotificationsPage,
+  })),
+);
 const ParseJobPage = lazy(() =>
   import("./pages/parse-job-page").then((module) => ({
     default: module.ParseJobPage,
@@ -67,28 +73,31 @@ function App() {
   return (
     <AuthGate>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter
-          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-        >
-          <Suspense fallback={<PageLoadingState title="Loading" description="Loading page..." />}>
-            <Routes>
-              <Route element={<AppShell />}>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/companies" element={<CompaniesPage />} />
-                <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
-                <Route path="/opportunities" element={<OpportunitiesPage />} />
-                <Route path="/opportunities/new" element={<OpportunityFormPage />} />
-                <Route path="/opportunities/:slugOrId" element={<OpportunityDetailPage />} />
-                <Route path="/opportunities/:slugOrId/edit" element={<Navigate to="/opportunities/:slugOrId" replace />} />
-                <Route path="/interactions" element={<InteractionsPage />} />
-                <Route path="/tasks" element={<TasksPage />} />
-                <Route path="/compensation" element={<CompensationPage />} />
-                <Route path="/parse" element={<ParseJobPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Route>
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+        <NotificationsProvider>
+          <BrowserRouter
+            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+          >
+            <Suspense fallback={<PageLoadingState title="Loading" description="Loading page..." />}>
+              <Routes>
+                <Route element={<AppShell />}>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/companies" element={<CompaniesPage />} />
+                  <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
+                  <Route path="/opportunities" element={<OpportunitiesPage />} />
+                  <Route path="/opportunities/new" element={<OpportunityFormPage />} />
+                  <Route path="/opportunities/:slugOrId" element={<OpportunityDetailPage />} />
+                  <Route path="/opportunities/:slugOrId/edit" element={<Navigate to="/opportunities/:slugOrId" replace />} />
+                  <Route path="/interactions" element={<InteractionsPage />} />
+                  <Route path="/tasks" element={<TasksPage />} />
+                  <Route path="/compensation" element={<CompensationPage />} />
+                  <Route path="/parse" element={<ParseJobPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Route>
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </NotificationsProvider>
       </QueryClientProvider>
     </AuthGate>
   );
