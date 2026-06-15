@@ -22,11 +22,32 @@ function splitMonthDay(value: string) {
 
 export function DashboardPage() {
   const { user } = useAuth0();
-  const [selectedInteraction, setSelectedInteraction] =
-    useState<Interaction | null>(null);
+  const [selectedInteractionId, setSelectedInteractionId] = useState<
+    string | null
+  >(null);
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
   const { data: interactions = [] } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
   const displayName = user?.name ?? user?.email?.split("@")[0] ?? "Alex";
+
+  const selectedInteraction = useMemo(
+    () =>
+      interactions.find((item) => item.id === selectedInteractionId) ??
+      data?.upcomingInteractions.find((item) => item.id === selectedInteractionId) ??
+      null,
+    [data?.upcomingInteractions, interactions, selectedInteractionId],
+  );
+  const selectedOpportunity = useMemo(() => {
+    if (!selectedInteraction?.jobOpportunity) {
+      return null;
+    }
+
+    return {
+      ...selectedInteraction.jobOpportunity,
+      interactions: interactions.filter(
+        (item) => item.jobOpportunityId === selectedInteraction.jobOpportunityId,
+      ),
+    };
+  }, [interactions, selectedInteraction]);
 
   const mobilePriorityItems = useMemo(() => {
     if (!data) {
@@ -158,7 +179,7 @@ export function DashboardPage() {
                   type="button"
                   className={`flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary ${index > 0 ? "border-t border-outline-variant/40" : ""}`}
                   aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
-                  onClick={() => setSelectedInteraction(item)}
+                  onClick={() => setSelectedInteractionId(item.id)}
                 >
                   <div className="w-10 shrink-0 text-center">
                     <div className="font-label-sm text-label-sm text-primary">{parts.month}</div>
@@ -233,7 +254,7 @@ export function DashboardPage() {
                   type="button"
                   className="w-full rounded-xl border border-outline-variant bg-white p-5 text-left shadow-sm transition-all hover:border-primary/40 hover:bg-surface-container-low hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
-                  onClick={() => setSelectedInteraction(item)}
+                  onClick={() => setSelectedInteractionId(item.id)}
                 >
                   <div className="mb-2 flex items-center gap-2">
                     <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
@@ -308,8 +329,9 @@ export function DashboardPage() {
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
-        onClose={() => setSelectedInteraction(null)}
-        onSelectInteraction={() => undefined}
+        selectedOpportunity={selectedOpportunity}
+        onClose={() => setSelectedInteractionId(null)}
+        onSelectInteraction={setSelectedInteractionId}
       />
     </>
   );
