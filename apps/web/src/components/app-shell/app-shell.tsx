@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MaterialIcon } from "@interviews-tracker/design-system";
+import { NotificationsBell } from "../notifications";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
@@ -126,9 +127,7 @@ export function AppShell() {
             </div>
           </div>
           <div className="flex items-center gap-3 md:gap-4">
-            <button className="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant">
-              <MaterialIcon name="notifications" />
-            </button>
+            <NotificationsBell />
             <button className="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant">
               <MaterialIcon name="help_outline" />
             </button>
