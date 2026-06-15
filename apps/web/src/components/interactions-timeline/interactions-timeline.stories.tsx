@@ -39,6 +39,7 @@ const reevolInteractions = promoteOverdueInteractionsForRead([
     status: "SCHEDULED",
     personName: "Asaf Halfon",
     personRole: "Interview",
+    outcome: "Advanced to final round",
     jobOpportunity: reevolOpportunity,
   },
 ] satisfies Interaction[]);
