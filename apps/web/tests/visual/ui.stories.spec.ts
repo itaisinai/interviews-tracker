@@ -26,6 +26,9 @@ const stories = [
   "ui-loadingstate--process",
   "ui-datatable--default",
   "ui-drawer--default",
+  "interactions-opportunity-timeline--expanded-page",
+  "interactions-opportunity-timeline--drawer-open",
+  "interactions-opportunity-timeline--combined-state",
 ];
 
 for (const storyId of stories) {

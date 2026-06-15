@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { Badge } from "../badge";
 import { Timeline } from "../timeline";
 import { getOpportunityProcessBadgeMeta } from "../../lib/interaction-status";
 import type { Interaction } from "../../lib/types";
-import { MaterialIcon } from "@interviews-tracker/design-system";
 
 type OpportunityInteractionTimelineProps = {
   companyName: string;
@@ -12,8 +12,9 @@ type OpportunityInteractionTimelineProps = {
   interactions: Interaction[];
   selectedInteractionId: string | null;
   onSelectInteraction: (interactionId: string) => void;
-  onDeleteInteraction: (interactionId: string) => void;
-  isDeletingInteraction: (interactionId: string) => boolean;
+  onDeleteInteraction?: (interactionId: string) => void;
+  isDeletingInteraction?: (interactionId: string) => boolean;
+  defaultCollapsed?: boolean;
 };
 
 export function OpportunityInteractionTimeline({
@@ -22,10 +23,9 @@ export function OpportunityInteractionTimeline({
   interactions,
   selectedInteractionId,
   onSelectInteraction,
-  onDeleteInteraction,
-  isDeletingInteraction,
+  defaultCollapsed = true,
 }: OpportunityInteractionTimelineProps) {
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const orderedInteractions = useMemo(() => {
     return [...interactions].sort((left, right) => {
       const leftTime = new Date(left.date).getTime();
@@ -122,7 +122,11 @@ export function OpportunityInteractionTimeline({
               setCollapsed((value) => !value);
             }}
           >
-            <MaterialIcon name={collapsed ? "expand_less" : "expand_more"} />
+            {collapsed ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </button>
         </div>
       </div>
@@ -134,8 +138,6 @@ export function OpportunityInteractionTimeline({
           showHeader={false}
           selectedInteractionId={selectedInteractionId}
           onSelectInteraction={onSelectInteraction}
-          onDeleteInteraction={onDeleteInteraction}
-          isDeletingInteraction={isDeletingInteraction}
         />
       )}
     </section>
