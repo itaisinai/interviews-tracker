@@ -1,15 +1,22 @@
-import type { Interaction, InteractionDraft } from "../../lib/types";
+import type {
+  Interaction,
+  InteractionDraft,
+  Opportunity,
+} from "../../lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { Badge } from "../badge";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
-import { LoadingButton, PageErrorState, ProcessStateCard } from "@interviews-tracker/design-system";
+import { LoadingButton } from "@interviews-tracker/design-system";
 import { InteractionDraftFields } from "./interaction-draft-fields";
 import { InteractionTextParserPanel } from "./interaction-text-parser-panel";
 import { api } from "../../lib/api";
-import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
+import {
+  displayLabelForEnumValue,
+  normalizeInteractionType,
+} from "../../lib/enum-labels";
 import {
   getInteractionTimelineBadgeMeta,
   promoteOverdueInteractionsForRead,
@@ -19,6 +26,7 @@ import { MaterialIcon } from "@interviews-tracker/design-system";
 
 type InteractionsDrawerProps = {
   selectedInteraction: Interaction | null;
+  selectedOpportunity: Opportunity | null;
   onClose: () => void;
   onSelectInteraction?: (interactionId: string) => void;
 };
@@ -92,7 +100,10 @@ function InteractionTimelineItem({
         ) : null}
       </div>
       <div className="mt-2 flex items-center gap-2">
-        <MaterialIcon name={interactionTypeIcon(interaction.type)} className="text-primary" />
+        <MaterialIcon
+          name={interactionTypeIcon(interaction.type)}
+          className="text-primary"
+        />
         <span className="font-semibold text-on-background">
           {displayLabelForEnumValue(interaction.type) ?? interaction.type}
         </span>
@@ -110,7 +121,9 @@ function InteractionTimelineItem({
       ) : null}
       {interaction.followUp ? (
         <p className="mt-3 rounded-lg border border-outline-variant bg-white p-3 text-body-md text-on-background">
-          <span className="font-medium text-on-surface-variant">Next action: </span>
+          <span className="font-medium text-on-surface-variant">
+            Next action:{" "}
+          </span>
           {interaction.followUp}
         </p>
       ) : null}
@@ -120,6 +133,7 @@ function InteractionTimelineItem({
 
 export function InteractionsDrawer({
   selectedInteraction,
+  selectedOpportunity,
   onClose,
   onSelectInteraction,
 }: InteractionsDrawerProps) {
@@ -134,12 +148,6 @@ export function InteractionsDrawer({
   const openFrameRef = useRef<number | null>(null);
 
   const opportunityId = mountedInteraction?.jobOpportunityId ?? "";
-  const opportunityQuery = useQuery({
-    queryKey: ["opportunity", opportunityId],
-    queryFn: () => api.opportunity(opportunityId),
-    enabled: Boolean(opportunityId),
-    staleTime: 30_000,
-  });
 
   useEffect(() => {
     if (closeTimerRef.current) {
@@ -188,16 +196,18 @@ export function InteractionsDrawer({
   }, [mountedInteraction?.id]);
 
   const selectedTimelineInteraction = useMemo(() => {
-    const timelineInteraction = opportunityQuery.data?.interactions.find(
+    const timelineInteraction = selectedOpportunity?.interactions.find(
       (item) => item.id === mountedInteraction?.id,
     );
     return timelineInteraction ?? mountedInteraction ?? null;
-  }, [opportunityQuery.data?.interactions, mountedInteraction]);
+  }, [selectedOpportunity?.interactions, mountedInteraction]);
 
   const refreshQueries = () => {
-    void queryClient.invalidateQueries({
-      queryKey: ["opportunity", opportunityId],
-    });
+    if (opportunityId) {
+      void queryClient.invalidateQueries({
+        queryKey: ["opportunity", opportunityId],
+      });
+    }
     void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
     void queryClient.invalidateQueries({ queryKey: ["interactions"] });
     void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -232,12 +242,15 @@ export function InteractionsDrawer({
   }
 
   const opportunity =
-    opportunityQuery.data ?? mountedInteraction.jobOpportunity ?? null;
+    selectedOpportunity ?? mountedInteraction.jobOpportunity ?? null;
   const timeline = promoteOverdueInteractionsForRead(
-    opportunityQuery.data?.interactions ?? opportunity?.interactions ?? [],
+    selectedOpportunity?.interactions ?? opportunity?.interactions ?? [],
   );
   const displayInteraction = selectedTimelineInteraction ?? mountedInteraction;
-  const headerBadge = getInteractionTimelineBadgeMeta(displayInteraction, timeline);
+  const headerBadge = getInteractionTimelineBadgeMeta(
+    displayInteraction,
+    timeline,
+  );
 
   const interactionsCountLabel = `${timeline.length} interaction${timeline.length !== 1 ? "s" : ""}`;
 
@@ -297,346 +310,335 @@ export function InteractionsDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          {opportunityQuery.isLoading ? (
-            <ProcessStateCard
-              title="Loading drawer"
-              message="Fetching the opportunity timeline."
-              description="This loads only when you open an interaction."
-              tone="busy"
-              progress={20}
-            />
-          ) : opportunityQuery.isError ? (
-            <PageErrorState
-              title="Interaction drawer"
-              description={
-                opportunityQuery.error instanceof Error
-                  ? opportunityQuery.error.message
-                  : "Unable to load opportunity details."
-              }
-              onRetry={() => void opportunityQuery.refetch()}
-            />
-          ) : (
-            <div className="space-y-6">
-              <section className="rounded-2xl border border-outline-variant bg-white p-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge value={displayInteraction.type} />
-                      {headerBadge ? (
-                        <Badge value={displayInteraction.status} tone={headerBadge.tone}>
-                          {headerBadge.label}
-                        </Badge>
-                      ) : null}
-                      {displayInteraction.stage ? (
-                        <span className="rounded-full bg-surface-container-low px-2.5 py-1 text-[11px] font-medium text-on-surface-variant">
-                          {displayInteraction.stage}
-                        </span>
-                      ) : null}
+          <div className="space-y-6">
+            <section className="rounded-2xl border border-outline-variant bg-white p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge value={displayInteraction.type} />
+                    {headerBadge ? (
+                      <Badge
+                        value={displayInteraction.status}
+                        tone={headerBadge.tone}
+                      >
+                        {headerBadge.label}
+                      </Badge>
+                    ) : null}
+                    {displayInteraction.stage ? (
+                      <span className="rounded-full bg-surface-container-low px-2.5 py-1 text-[11px] font-medium text-on-surface-variant">
+                        {displayInteraction.stage}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-3 font-headline-md text-headline-md font-bold">
+                    {formatDateTime(displayInteraction.date)}
+                  </p>
+                  <p className="mt-1 text-body-md text-on-surface-variant">
+                    {displayInteraction.personName ?? "No person"}
+                    {displayInteraction.personRole
+                      ? ` · ${displayInteraction.personRole}`
+                      : ""}
+                  </p>
+                  {displayInteraction.outcome ? (
+                    <div className="mt-4 rounded-xl border border-outline-variant bg-surface-container-low p-4">
+                      <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                        Outcome
+                      </p>
+                      <p className="mt-1 text-body-md text-on-background">
+                        {displayInteraction.outcome}
+                      </p>
                     </div>
-                    <p className="mt-3 font-headline-md text-headline-md font-bold">
-                      {formatDateTime(displayInteraction.date)}
-                    </p>
-                    <p className="mt-1 text-body-md text-on-surface-variant">
-                      {displayInteraction.personName ?? "No person"}
-                      {displayInteraction.personRole
-                        ? ` · ${displayInteraction.personRole}`
-                        : ""}
-                    </p>
-                    {displayInteraction.outcome ? (
-                      <div className="mt-4 rounded-xl border border-outline-variant bg-surface-container-low p-4">
-                        <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                          Outcome
-                        </p>
-                        <p className="mt-1 text-body-md text-on-background">
-                          {displayInteraction.outcome}
-                        </p>
-                      </div>
-                    ) : null}
-                    {displayInteraction.followUp ? (
-                      <div className="mt-4 rounded-xl border border-outline-variant bg-white p-4">
-                        <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                          Next action
-                        </p>
-                        <p className="mt-1 text-body-md text-on-background">
-                          {displayInteraction.followUp}
-                        </p>
-                      </div>
-                    ) : null}
-                    {displayInteraction.meetingLink ? (
-                      <div className="mt-4 rounded-xl border border-outline-variant bg-white p-4">
-                        <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                          Meeting link
-                        </p>
-                        <a
-                          className="mt-1 block break-all text-body-md text-primary hover:underline"
-                          href={displayInteraction.meetingLink}
-                          rel="noreferrer noopener"
-                          target="_blank"
-                        >
-                          {displayInteraction.meetingLink}
-                        </a>
-                      </div>
-                    ) : null}
+                  ) : null}
+                  {displayInteraction.followUp ? (
                     <div className="mt-4 rounded-xl border border-outline-variant bg-white p-4">
                       <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                        Attached email
+                        Next action
                       </p>
-                      {displayInteraction.gmailMessageId ? (
-                        <p className="mt-1 text-body-md text-on-background">Attached</p>
-                      ) : (
-                        <div className="mt-1 flex flex-wrap items-center gap-3">
-                          <p className="text-body-md text-on-surface-variant">No email attached.</p>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => setComposer("gmail-attach")}
-                          >
-                            <MaterialIcon name="link" />
-                            Attach email
-                          </button>
-                        </div>
-                      )}
+                      <p className="mt-1 text-body-md text-on-background">
+                        {displayInteraction.followUp}
+                      </p>
                     </div>
+                  ) : null}
+                  {displayInteraction.meetingLink ? (
+                    <div className="mt-4 rounded-xl border border-outline-variant bg-white p-4">
+                      <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                        Meeting link
+                      </p>
+                      <a
+                        className="mt-1 block break-all text-body-md text-primary hover:underline"
+                        href={displayInteraction.meetingLink}
+                        rel="noreferrer noopener"
+                        target="_blank"
+                      >
+                        {displayInteraction.meetingLink}
+                      </a>
+                    </div>
+                  ) : null}
+                  <div className="mt-4 rounded-xl border border-outline-variant bg-white p-4">
+                    <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                      Attached email
+                    </p>
+                    {displayInteraction.gmailMessageId ? (
+                      <p className="mt-1 text-body-md text-on-background">
+                        Attached
+                      </p>
+                    ) : (
+                      <div className="mt-1 flex flex-wrap items-center gap-3">
+                        <p className="text-body-md text-on-surface-variant">
+                          No email attached.
+                        </p>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => setComposer("gmail-attach")}
+                        >
+                          <MaterialIcon name="link" />
+                          Attach email
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setComposer(null);
+                      setIsEditing((current) => !current);
+                    }}
+                  >
+                    <MaterialIcon name="edit" />
+                    {isEditing ? "Close edit" : "Edit interaction"}
+                  </button>
+                  <LoadingButton
+                    className="btn btn-secondary text-error hover:bg-error-container"
+                    icon="delete"
+                    loading={
+                      deleteInteraction.isPending &&
+                      deleteInteraction.variables === displayInteraction.id
+                    }
+                    onClick={() => {
+                      if (window.confirm("Delete this interaction?")) {
+                        deleteInteraction.mutate(displayInteraction.id);
+                      }
+                    }}
+                  >
+                    Delete interaction
+                  </LoadingButton>
+                </div>
+              </div>
+
+              {isEditing && draft ? (
+                <div className="mt-5 rounded-2xl border border-outline-variant bg-surface-container-low p-4">
+                  <InteractionDraftFields draft={draft} setDraft={setDraft} />
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <LoadingButton
+                      className="btn btn-primary"
+                      loading={updateInteraction.isPending}
+                      loadingLabel="Saving..."
+                      icon="save"
+                      onClick={() => void updateInteraction.mutate()}
+                    >
+                      Save interaction
+                    </LoadingButton>
                     <button
                       className="btn btn-secondary"
                       onClick={() => {
-                        setComposer(null);
-                        setIsEditing((current) => !current);
+                        setIsEditing(false);
+                        setDraft(toDraft(displayInteraction));
                       }}
                     >
-                      <MaterialIcon name="edit" />
-                      {isEditing ? "Close edit" : "Edit interaction"}
+                      Cancel
                     </button>
-                    <LoadingButton
-                      className="btn btn-secondary text-error hover:bg-error-container"
-                      icon="delete"
-                      loading={
-                        deleteInteraction.isPending &&
-                        deleteInteraction.variables === displayInteraction.id
-                      }
-                      onClick={() => {
-                        if (window.confirm("Delete this interaction?")) {
-                          deleteInteraction.mutate(displayInteraction.id);
-                        }
-                      }}
-                    >
-                      Delete interaction
-                    </LoadingButton>
                   </div>
                 </div>
+              ) : null}
+            </section>
 
-                {isEditing && draft ? (
-                  <div className="mt-5 rounded-2xl border border-outline-variant bg-surface-container-low p-4">
-                    <InteractionDraftFields draft={draft} setDraft={setDraft} />
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <LoadingButton
-                        className="btn btn-primary"
-                        loading={updateInteraction.isPending}
-                        loadingLabel="Saving..."
-                        icon="save"
-                        onClick={() => void updateInteraction.mutate()}
-                      >
-                        Save interaction
-                      </LoadingButton>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          setIsEditing(false);
-                          setDraft(toDraft(displayInteraction));
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
+            <section className="rounded-2xl border border-outline-variant bg-white p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                    Opportunity timeline
+                  </p>
+                  <h4 className="font-title-md text-title-md font-bold">
+                    {opportunity?.companyName ?? "Timeline"}
+                  </h4>
+                </div>
+                <span className="font-label-md text-label-md text-on-surface-variant">
+                  {interactionsCountLabel}
+                </span>
+              </div>
+              <div className="mt-4 space-y-3">
+                {timeline.map((interaction) => (
+                  <InteractionTimelineItem
+                    key={interaction.id}
+                    interaction={interaction}
+                    interactions={timeline}
+                    selected={interaction.id === displayInteraction.id}
+                    onClick={() => onSelectInteraction?.(interaction.id)}
+                  />
+                ))}
+                {timeline.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-4 text-body-md text-on-surface-variant">
+                    No interactions found for this opportunity yet.
                   </div>
                 ) : null}
-              </section>
+              </div>
+            </section>
 
-              <section className="rounded-2xl border border-outline-variant bg-white p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                      Opportunity timeline
-                    </p>
-                    <h4 className="font-title-md text-title-md font-bold">
-                      {opportunity?.companyName ?? "Timeline"}
-                    </h4>
-                  </div>
-                  <span className="font-label-md text-label-md text-on-surface-variant">
-                    {interactionsCountLabel}
-                  </span>
+            <section className="rounded-2xl border border-outline-variant bg-white p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                    Selected interaction
+                  </p>
+                  <h4 className="font-title-md text-title-md font-bold">
+                    {displayInteraction.type}
+                  </h4>
                 </div>
-                <div className="mt-4 space-y-3">
-                  {timeline.map((interaction) => (
-                    <InteractionTimelineItem
-                      key={interaction.id}
-                      interaction={interaction}
-                      interactions={timeline}
-                      selected={interaction.id === displayInteraction.id}
-                      onClick={() => onSelectInteraction?.(interaction.id)}
-                    />
-                  ))}
-                  {timeline.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-4 text-body-md text-on-surface-variant">
-                      No interactions found for this opportunity yet.
+                {composer === null ? (
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setComposer("chooser")}
+                  >
+                    <MaterialIcon name="add" />
+                    Add interaction
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setComposer(null)}
+                  >
+                    <MaterialIcon name="close" />
+                    Hide add flow
+                  </button>
+                )}
+              </div>
+
+              {composer === "chooser" ? (
+                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <button
+                    className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 text-left transition-colors hover:border-primary hover:bg-primary/5"
+                    onClick={() => setComposer("gmail")}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <MaterialIcon name="mail" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-on-background">
+                          Import from Gmail
+                        </p>
+                        <p className="text-body-md text-on-surface-variant">
+                          Search related emails, parse one, and review before
+                          saving.
+                        </p>
+                      </div>
                     </div>
-                  ) : null}
+                  </button>
+                  <button
+                    className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 text-left transition-colors hover:border-primary hover:bg-primary/5"
+                    onClick={() => setComposer("text")}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <MaterialIcon name="edit_note" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-on-background">
+                          Paste free text
+                        </p>
+                        <p className="text-body-md text-on-surface-variant">
+                          Parse recruiter messages, notes, or calendar text into
+                          a draft.
+                        </p>
+                      </div>
+                    </div>
+                  </button>
                 </div>
-              </section>
+              ) : null}
 
-              <section className="rounded-2xl border border-outline-variant bg-white p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                      Selected interaction
+              {composer === "gmail" || composer === "gmail-attach" ? (
+                <div className="mt-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-body-md text-on-surface-variant">
+                      {composer === "gmail-attach"
+                        ? "Search Gmail and attach the selected email to this interaction."
+                        : "Use the Gmail flow for the selected opportunity."}
                     </p>
-                    <h4 className="font-title-md text-title-md font-bold">
-                      {displayInteraction.type}
-                    </h4>
-                  </div>
-                  {composer === null ? (
                     <button
                       className="btn btn-secondary"
                       onClick={() => setComposer("chooser")}
                     >
-                      <MaterialIcon name="add" />
-                      Add interaction
+                      <MaterialIcon name="arrow_back" />
+                      Back
                     </button>
-                  ) : (
+                  </div>
+                  <GmailInteractionPanel
+                    opportunityId={opportunityId}
+                    companyName={
+                      opportunity?.companyName ??
+                      displayInteraction.jobOpportunity?.companyName ??
+                      ""
+                    }
+                    roleTitle={
+                      opportunity?.roleTitle ??
+                      displayInteraction.jobOpportunity?.roleTitle ??
+                      ""
+                    }
+                    attachToInteractionId={
+                      composer === "gmail-attach" ? displayInteraction.id : null
+                    }
+                    onSaved={(savedInteraction) => {
+                      refreshQueries();
+                      if (savedInteraction) {
+                        onSelectInteraction?.(savedInteraction.id);
+                      }
+                      setComposer(null);
+                    }}
+                  />
+                </div>
+              ) : null}
+
+              {composer === "text" ? (
+                <div className="mt-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-body-md text-on-surface-variant">
+                      Paste raw text and let the AI turn it into an interaction
+                      draft.
+                    </p>
                     <button
                       className="btn btn-secondary"
-                      onClick={() => setComposer(null)}
+                      onClick={() => setComposer("chooser")}
                     >
-                      <MaterialIcon name="close" />
-                      Hide add flow
+                      <MaterialIcon name="arrow_back" />
+                      Back
                     </button>
-                  )}
+                  </div>
+                  <InteractionTextParserPanel
+                    opportunityId={opportunityId}
+                    companyName={
+                      opportunity?.companyName ??
+                      displayInteraction.jobOpportunity?.companyName ??
+                      ""
+                    }
+                    roleTitle={
+                      opportunity?.roleTitle ??
+                      displayInteraction.jobOpportunity?.roleTitle ??
+                      ""
+                    }
+                    onSaved={(savedInteraction) => {
+                      refreshQueries();
+                      if (savedInteraction) {
+                        onSelectInteraction?.(savedInteraction.id);
+                      }
+                      setComposer(null);
+                    }}
+                  />
                 </div>
-
-                {composer === "chooser" ? (
-                  <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <button
-                      className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 text-left transition-colors hover:border-primary hover:bg-primary/5"
-                      onClick={() => setComposer("gmail")}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                          <MaterialIcon name="mail" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-on-background">
-                            Import from Gmail
-                          </p>
-                          <p className="text-body-md text-on-surface-variant">
-                            Search related emails, parse one, and review before
-                            saving.
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 text-left transition-colors hover:border-primary hover:bg-primary/5"
-                      onClick={() => setComposer("text")}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                          <MaterialIcon name="edit_note" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-on-background">
-                            Paste free text
-                          </p>
-                          <p className="text-body-md text-on-surface-variant">
-                            Parse recruiter messages, notes, or calendar text
-                            into a draft.
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                ) : null}
-
-                {composer === "gmail" || composer === "gmail-attach" ? (
-                  <div className="mt-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-body-md text-on-surface-variant">
-                        {composer === "gmail-attach"
-                          ? "Search Gmail and attach the selected email to this interaction."
-                          : "Use the Gmail flow for the selected opportunity."}
-                      </p>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => setComposer("chooser")}
-                      >
-                        <MaterialIcon name="arrow_back" />
-                        Back
-                      </button>
-                    </div>
-                    <GmailInteractionPanel
-                      opportunityId={opportunityId}
-                      companyName={
-                        opportunity?.companyName ??
-                        displayInteraction.jobOpportunity?.companyName ??
-                        ""
-                      }
-                      roleTitle={
-                        opportunity?.roleTitle ??
-                        displayInteraction.jobOpportunity?.roleTitle ??
-                        ""
-                      }
-                      attachToInteractionId={composer === "gmail-attach" ? displayInteraction.id : null}
-                      onSaved={(savedInteraction) => {
-                        refreshQueries();
-                        if (savedInteraction) {
-                          onSelectInteraction?.(savedInteraction.id);
-                        }
-                        setComposer(null);
-                      }}
-                    />
-                  </div>
-                ) : null}
-
-                {composer === "text" ? (
-                  <div className="mt-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-body-md text-on-surface-variant">
-                        Paste raw text and let the AI turn it into an
-                        interaction draft.
-                      </p>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => setComposer("chooser")}
-                      >
-                        <MaterialIcon name="arrow_back" />
-                        Back
-                      </button>
-                    </div>
-                    <InteractionTextParserPanel
-                      opportunityId={opportunityId}
-                      companyName={
-                        opportunity?.companyName ??
-                        displayInteraction.jobOpportunity?.companyName ??
-                        ""
-                      }
-                      roleTitle={
-                        opportunity?.roleTitle ??
-                        displayInteraction.jobOpportunity?.roleTitle ??
-                        ""
-                      }
-                      onSaved={(savedInteraction) => {
-                        refreshQueries();
-                        if (savedInteraction) {
-                          onSelectInteraction?.(savedInteraction.id);
-                        }
-                        setComposer(null);
-                      }}
-                    />
-                  </div>
-                ) : null}
-              </section>
-            </div>
-          )}
+              ) : null}
+            </section>
+          </div>
         </div>
       </aside>
     </div>
