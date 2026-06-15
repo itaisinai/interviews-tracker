@@ -67,7 +67,7 @@ export function InteractionsDrawer({
   const opportunityQuery = useQuery({
     queryKey: ["opportunity", opportunityId],
     queryFn: () => api.opportunity(opportunityId),
-    enabled: Boolean(opportunityId),
+    enabled: Boolean(opportunityId) && !selectedOpportunity,
     staleTime: 30_000,
   });
 
@@ -178,6 +178,9 @@ export function InteractionsDrawer({
   }
 
   const displayInteraction = selectedTimelineInteraction ?? mountedInteraction;
+  const isOpportunityLoading =
+    !selectedOpportunity && opportunityQuery.isLoading;
+  const isOpportunityError = !selectedOpportunity && opportunityQuery.isError;
 
   return (
     <div className="fixed inset-0 z-[60]">
@@ -197,7 +200,7 @@ export function InteractionsDrawer({
         />
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          {opportunityQuery.isLoading ? (
+          {isOpportunityLoading ? (
             <ProcessStateCard
               title="Loading drawer"
               message="Fetching the opportunity timeline."
@@ -205,7 +208,7 @@ export function InteractionsDrawer({
               tone="busy"
               progress={20}
             />
-          ) : opportunityQuery.isError ? (
+          ) : isOpportunityError ? (
             <PageErrorState
               title="Interaction drawer"
               description={
