@@ -1,7 +1,7 @@
 import type { Task } from "../../lib/types";
 import type { TaskDraft } from "./opportunity-detail-types";
 import { Badge } from "../badge";
-import { LoadingButton } from "../loading-state";
+import { LoadingButton } from "@interviews-tracker/design-system";
 
 type TasksPanelProps = {
   tasks: Task[];

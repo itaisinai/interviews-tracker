@@ -3,8 +3,7 @@ import type { Opportunity } from "../../lib/types";
 import { Badge } from "../badge";
 import { CompanyResearchPanel } from "../company-research-panel";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
-import { LoadingButton } from "../loading-state";
-import { MaterialIcon } from "../material-icon";
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 type CompanyDataSectionProps = {
   opportunity: Opportunity;

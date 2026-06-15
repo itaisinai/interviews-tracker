@@ -3,15 +3,14 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Badge } from "../components/badge";
-import { AppCalendar, type CalendarEvent } from "../components/calendar";
+import { AppCalendar } from "../components/calendar";
 import { InteractionsDrawer } from "../components/interactions-drawer";
-import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
-import { InlineLoadingState, PageErrorState, PageLoadingState } from "../components/loading-state";
+import { buildInteractionCalendarEvents } from "../components/interactions-flow";
 import { api } from "../lib/api";
-import { labelForInteractionType } from "../lib/enum-labels";
 import { formatDateTime } from "../lib/format";
 import type { Interaction } from "../lib/types";
+import { InlineLoadingState, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 function splitMonthDay(value: string) {
   const date = new Date(value);
@@ -26,6 +25,7 @@ export function DashboardPage() {
   const [selectedInteraction, setSelectedInteraction] =
     useState<Interaction | null>(null);
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
+  const { data: interactions = [] } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
   const displayName = user?.name ?? user?.email?.split("@")[0] ?? "Alex";
 
   const mobilePriorityItems = useMemo(() => {
@@ -44,8 +44,8 @@ export function DashboardPage() {
   }, [data]);
 
   const calendarEvents = useMemo(
-    () => (data ? buildCalendarEvents(data.upcomingInteractions) : []),
-    [data],
+    () => buildInteractionCalendarEvents(interactions),
+    [interactions],
   );
 
   const pipelineHealth = Math.round(((data?.counts.activeProcesses ?? 0) / Math.max((data?.counts.activeProcesses ?? 0) + (data?.counts.potential ?? 0), 1)) * 100);
@@ -313,36 +313,4 @@ export function DashboardPage() {
       />
     </>
   );
-}
-
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-type InteractionCalendarEvent = CalendarEvent & {
-  date: string;
-};
-
-function buildCalendarEvents(
-  interactions: readonly Interaction[],
-): InteractionCalendarEvent[] {
-  return interactions.map((interaction) => {
-    const date = new Date(interaction.date);
-    const titleParts = [
-      interaction.jobOpportunity?.companyName,
-      interaction.stage || labelForInteractionType(interaction.type),
-      interaction.personName,
-    ].filter(Boolean);
-
-    return {
-      id: interaction.id,
-      date: interaction.date,
-      title:
-        titleParts.length > 0
-          ? titleParts.join(" · ")
-          : labelForInteractionType(interaction.type),
-      time: timeFormatter.format(date),
-    };
-  });
 }

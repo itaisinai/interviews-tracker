@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
-import { MaterialIcon } from "./material-icon";
-import { setAccessTokenGetter } from "../lib/api";
+import { MaterialIcon } from "@interviews-tracker/design-system";
+import { setAccessTokenGetter } from "../../lib/api";
 
 const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN as string | undefined;
 const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID as
@@ -37,7 +37,7 @@ function AuthPanel({
   );
 }
 
-function AuthenticatedOnly({ children }: { children: ReactNode }) {
+export function AuthGate({ children }: { children: ReactNode }) {
   const {
     error,
     getAccessTokenSilently,
@@ -217,38 +217,4 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
   }
 
   return <>{children}</>;
-}
-
-export function AuthGate({ children }: { children: ReactNode }) {
-  if (!auth0Domain || !auth0ClientId || !auth0Audience || !allowedEmail) {
-    return (
-      <AuthPanel
-        title="Auth0 Not Configured"
-        description="Set VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID, VITE_AUTH0_AUDIENCE, and VITE_ALLOWED_EMAIL to use the app."
-      />
-    );
-  }
-
-  return (
-    <Auth0Provider
-      domain={auth0Domain}
-      clientId={auth0ClientId}
-      cacheLocation="localstorage"
-      useRefreshTokens
-      authorizationParams={{
-        audience: auth0Audience,
-        redirect_uri: window.location.origin,
-        scope: "openid profile email",
-      }}
-      onRedirectCallback={(appState) => {
-        window.history.replaceState(
-          {},
-          document.title,
-          appState?.returnTo ?? window.location.pathname,
-        );
-      }}
-    >
-      <AuthenticatedOnly>{children}</AuthenticatedOnly>
-    </Auth0Provider>
-  );
 }

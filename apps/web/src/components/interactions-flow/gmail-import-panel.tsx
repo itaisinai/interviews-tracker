@@ -1,7 +1,7 @@
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
-import { MaterialIcon } from "../material-icon";
 import type { Opportunity } from "../../lib/types";
 import { Field } from "./field";
+import { MaterialIcon } from "@interviews-tracker/design-system";
 
 type GmailImportPanelProps = {
   opportunities: Opportunity[];

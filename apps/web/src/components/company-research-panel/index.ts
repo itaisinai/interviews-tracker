@@ -1,1 +1,1 @@
-export { CompanyResearchPanel } from "./CompanyResearchPanel";
+export { CompanyResearchPanel } from "./company-research-panel";

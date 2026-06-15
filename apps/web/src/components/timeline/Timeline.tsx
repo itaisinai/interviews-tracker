@@ -1,8 +1,6 @@
 import { useMemo, type KeyboardEvent, type MouseEvent } from "react";
 
 import { Badge } from "../badge";
-import { LoadingButton } from "../loading-state";
-import { MaterialIcon } from "../material-icon";
 import { formatDateTime } from "../../lib/format";
 import {
   displayLabelForEnumValue,
@@ -10,6 +8,7 @@ import {
 } from "../../lib/enum-labels";
 import { getInteractionTimelineBadgeMeta } from "../../lib/interaction-status";
 import type { Interaction } from "../../lib/types";
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 type TimelineProps = {
   title?: string;

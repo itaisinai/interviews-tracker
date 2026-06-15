@@ -2,8 +2,6 @@ import { AppCalendar } from "../calendar";
 import { FilterTabs } from "./filter-tabs";
 import { GmailImportPanel } from "./gmail-import-panel";
 import { InteractionHealthPanel } from "./interaction-health-panel";
-import { InlineLoadingState } from "../loading-state";
-import { MaterialIcon } from "../material-icon";
 import { OpportunityInteractionTimeline } from "../interactions-timeline";
 import { PageIntro } from "../app-shell";
 import type { Interaction, Opportunity } from "../../lib/types";
@@ -12,6 +10,7 @@ import type {
   InteractionFilter,
   InteractionOpportunityGroup,
 } from "./interaction-flow-helpers";
+import { InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
 
 type DesktopInteractionsFlowProps = {
   filter: InteractionFilter;

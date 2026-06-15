@@ -1,7 +1,5 @@
 import { GmailImportPanel } from "./gmail-import-panel";
 import { FilterTabs } from "./filter-tabs";
-import { InlineLoadingState } from "../loading-state";
-import { MaterialIcon } from "../material-icon";
 import { OpportunityInteractionTimeline } from "../interactions-timeline";
 import type { Interaction, Opportunity } from "../../lib/types";
 import {
@@ -9,6 +7,7 @@ import {
   type InteractionFilter,
   type InteractionOpportunityGroup,
 } from "./interaction-flow-helpers";
+import { InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
 
 type MobileInteractionsFlowProps = {
   filter: InteractionFilter;

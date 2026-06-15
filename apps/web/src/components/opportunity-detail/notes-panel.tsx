@@ -1,5 +1,5 @@
 import type { Note } from "../../lib/types";
-import { LoadingButton } from "../loading-state";
+import { LoadingButton } from "@interviews-tracker/design-system";
 
 type NotesPanelProps = {
   notes: Note[];

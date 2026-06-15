@@ -3,9 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { Badge } from "../badge";
 import type { CompanyResearchExistingData, CompanyResearchResult } from "../../lib/types";
-import { MaterialIcon } from "../material-icon";
 import { companyResearchLogTone, companyResearchRunMeta, companyResearchStepMessages, type CompanyResearchRunState } from "../../lib/company-research";
-import { LoadingButton } from "../loading-state";
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 type CompanyResearchPanelProps = {
   companyName: string;

@@ -11,9 +11,9 @@ import {
   filterOpportunityGroup,
   type InteractionFilter,
 } from "../components/interactions-flow";
-import { PageErrorState, PageLoadingState } from "../components/loading-state";
 import { api } from "../lib/api";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
+import { PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 export function InteractionsPage() {
   const [filter, setFilter] = useState<InteractionFilter>("upcoming");

@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { MaterialIcon } from "../components/material-icon";
 import { ParserLoadingState } from "../components/parser-loading-state";
 import { PageIntro } from "../components/app-shell";
-import { LoadingButton } from "../components/loading-state";
 import { api } from "../lib/api";
 import type { ParserRunState } from "../lib/parser-run";
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 type ParsedJobDescription = Awaited<ReturnType<typeof api.parseJob>>;
 

@@ -1,1 +1,1 @@
-export * from "./GmailInteractionPanel";
+export * from "./gmail-interaction-panel";

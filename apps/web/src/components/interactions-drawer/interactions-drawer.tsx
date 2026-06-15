@@ -1,18 +1,13 @@
 import type { Interaction, InteractionDraft } from "../../lib/types";
-import {
-  LoadingButton,
-  PageErrorState,
-  ProcessStateCard,
-} from "../loading-state";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { Badge } from "../badge";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
-import { InteractionDraftFields } from "./InteractionDraftFields";
-import { InteractionTextParserPanel } from "./InteractionTextParserPanel";
-import { MaterialIcon } from "../material-icon";
+import { LoadingButton, PageErrorState, ProcessStateCard } from "@interviews-tracker/design-system";
+import { InteractionDraftFields } from "./interaction-draft-fields";
+import { InteractionTextParserPanel } from "./interaction-text-parser-panel";
 import { api } from "../../lib/api";
 import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
 import {
@@ -20,6 +15,7 @@ import {
   promoteOverdueInteractionsForRead,
 } from "../../lib/interaction-status";
 import { formatDateTime } from "../../lib/format";
+import { MaterialIcon } from "@interviews-tracker/design-system";
 
 type InteractionsDrawerProps = {
   selectedInteraction: Interaction | null;
