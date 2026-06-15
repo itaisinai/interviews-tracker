@@ -122,7 +122,16 @@ export async function getOpportunitySummaryRecord(slugOrId: string) {
     return null;
   }
 
-  return prisma.jobOpportunity.findUnique({ where: { id }, select: { id: true, companyName: true, companySearchName: true, roleTitle: true } });
+  return prisma.jobOpportunity.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      companyName: true,
+      companySearchName: true,
+      roleTitle: true,
+      domains: { select: { domain: { select: { label: true } } } }
+    }
+  });
 }
 
 export async function createOpportunityRecord(input: OpportunityInput) {

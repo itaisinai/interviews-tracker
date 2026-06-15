@@ -971,7 +971,7 @@ export async function completeGmailOAuth(code: string, state: string) {
   }
 }
 
-export async function searchGmailMessages(input: { auth0Email: string; jobOpportunityId: string; companyName: string; companySearchName?: string | null; roleTitle?: string | null }) {
+export async function searchGmailMessages(input: { auth0Email: string; jobOpportunityId: string; companyName: string; companySearchName?: string | null; roleTitle?: string | null; companyDomains?: Array<string | null | undefined> }) {
   const settings = requireSettings();
   const access = await getAccessTokenForEmail(input.auth0Email, settings);
 
@@ -980,7 +980,7 @@ export async function searchGmailMessages(input: { auth0Email: string; jobOpport
   }
 
   const timer = createTimer("gmail", "search emails", { company: input.companyName });
-  const queries = buildGmailSearchQueries(input.companyName, input.roleTitle, [input.companySearchName]);
+  const queries = buildGmailSearchQueries(input.companyName, input.roleTitle, [input.companySearchName], input.companyDomains ?? []);
   try {
     const messageMap = new Map<string, GmailMessageResponse & { query: string }>();
     const suppressedMessageIds = await getSuppressedGmailMessageIds({
