@@ -16,6 +16,7 @@ const sectionLabels = { companies: "Companies", opportunities: "Opportunities", 
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initial = searchParams.get("q") ?? "";
+  const urlQuery = searchParams.get("q") ?? "";
   const [query, setQuery] = useState(initial);
   const [debouncedQuery, setDebouncedQuery] = useState(initial);
   const [filter, setFilter] = useState<(typeof filters)[number]["key"]>("all");
@@ -26,9 +27,14 @@ export function SearchPage() {
   const interactions = useQuery({ queryKey: ["interactions"], queryFn: api.interactions, enabled });
 
   useEffect(() => {
+    setQuery(urlQuery);
+    setDebouncedQuery(urlQuery);
+  }, [urlQuery]);
+
+  useEffect(() => {
     const handle = window.setTimeout(() => {
       const value = query.trim();
-      setDebouncedQuery(query);
+      setDebouncedQuery(value);
       setSearchParams(value ? { q: value } : {}, { replace: true });
     }, SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(handle);
