@@ -29,6 +29,7 @@ const stories = [
   "interactions-opportunity-timeline--expanded-page",
   "interactions-opportunity-timeline--drawer-open",
   "interactions-opportunity-timeline--combined-state",
+  "company-detail-view--reevol-overview",
 ];
 
 for (const storyId of stories) {
