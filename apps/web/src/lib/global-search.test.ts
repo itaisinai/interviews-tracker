@@ -3,11 +3,11 @@ import test from "node:test";
 import { buildGlobalSearchResults, countSearchResults, flattenSearchResults, SEARCH_DEBOUNCE_MS } from "./global-search.js";
 import type { CompanySummary, Interaction, Opportunity } from "./types.js";
 
-const company = { companyName: "Reevol", domains: ["Fintech"], location: "Tel Aviv, Israel", rolesCount: 1, activeProcesses: 1, potentialOpportunities: 0, interactionsCount: 2, priority: "HIGH", status: "IN_PROCESS" } as CompanySummary;
-const opportunity = { id: "opp-1", slug: "reevol-senior", companyName: "Reevol", roleTitle: "Senior Full Stack Developer", status: "IN_PROCESS", pipelineType: "ACTIVE_PROCESS", priority: "HIGH", updatedAt: "2026-06-16T00:00:00.000Z", interactions: [], notesList: [], tasks: [], domains: [] } as Opportunity;
+const company = { companyName: "Reevol", domains: ["Fintech"], location: "Tel Aviv, Israel", rolesCount: 1, activeProcesses: 1, potentialOpportunities: 0, interactionsCount: 2, priority: "HIGH", status: "RESEARCH_LEAD" } as CompanySummary;
+const opportunity = { id: "opp-1", slug: "reevol-senior", companyName: "Reevol", roleTitle: "Senior Full Stack Developer", status: "APPLIED", pipelineType: "ACTIVE_PROCESS", priority: "HIGH", updatedAt: "2026-06-16T00:00:00.000Z", interactions: [], notesList: [], tasks: [], domains: [] } as Opportunity;
 const interactions = [
-  { id: "int-1", jobOpportunityId: "opp-1", type: "INTERVIEW", status: "SCHEDULED", date: "2026-06-17T14:00:00.000Z", jobOpportunity: opportunity },
-  { id: "int-2", jobOpportunityId: "opp-1", type: "PHONE_CALL", status: "SCHEDULED", date: "2026-06-16T12:30:00.000Z", jobOpportunity: opportunity },
+  { id: "int-1", jobOpportunityId: "opp-1", type: "Interview", status: "SCHEDULED", date: "2026-06-17T14:00:00.000Z", jobOpportunity: opportunity },
+  { id: "int-2", jobOpportunityId: "opp-1", type: "Phone Call", status: "SCHEDULED", date: "2026-06-16T12:30:00.000Z", jobOpportunity: opportunity },
 ] as Interaction[];
 
 test("global search debounce delay stays in the requested range", () => {
