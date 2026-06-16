@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronUp } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Badge } from "../badge";
 import { Timeline } from "../timeline";
@@ -14,6 +15,7 @@ type OpportunityInteractionTimelineProps = {
   onSelectInteraction: (interactionId: string) => void;
   onDeleteInteraction?: (interactionId: string) => void;
   isDeletingInteraction?: (interactionId: string) => boolean;
+  opportunityHref?: string;
   defaultCollapsed?: boolean;
   referenceDate?: Date;
 };
@@ -26,6 +28,7 @@ export function OpportunityInteractionTimeline({
   onSelectInteraction,
   onDeleteInteraction,
   isDeletingInteraction,
+  opportunityHref,
   defaultCollapsed = true,
   referenceDate = new Date(),
 }: OpportunityInteractionTimelineProps) {
@@ -116,6 +119,17 @@ export function OpportunityInteractionTimeline({
             {orderedInteractions.length}{" "}
             {orderedInteractions.length === 1 ? "interaction" : "interactions"}
           </div>
+          {opportunityHref ? (
+            <Link
+              to={opportunityHref}
+              className="inline-flex h-9 w-9 shrink-0 self-start items-center justify-center rounded-full border border-outline-variant bg-white text-on-surface-variant transition-colors hover:bg-surface-container-low"
+              aria-label={`Open ${companyName} opportunity page`}
+              title={`Open ${companyName} opportunity page`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          ) : null}
           <button
             type="button"
             className="inline-flex h-9 w-9 shrink-0 self-start items-center justify-center rounded-full border border-outline-variant bg-white text-on-surface-variant transition-colors hover:bg-surface-container-low"
