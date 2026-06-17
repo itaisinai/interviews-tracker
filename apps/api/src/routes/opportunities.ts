@@ -152,8 +152,6 @@ opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/used", asyncHan
 opportunitiesRouter.get("/:slugOrId/contacts", asyncHandler(async (request, response) => {
   const { slugOrId } = request.params;
 
-  console.log("Getting contacts for opportunity:", slugOrId);
-
   const opportunity = await prisma.jobOpportunity.findFirst({
     where: {
       OR: [
@@ -164,20 +162,15 @@ opportunitiesRouter.get("/:slugOrId/contacts", asyncHandler(async (request, resp
   });
 
   if (!opportunity) {
-    console.log("Opportunity not found");
     response.status(404).json({ error: "Opportunity not found" });
     return;
   }
-
-  console.log("Found opportunity:", opportunity.id, opportunity.companyName);
 
   const contacts = await prisma.person.findMany({
     where: { jobOpportunityId: opportunity.id },
     include: { research: true },
     orderBy: { updatedAt: "desc" }
   });
-
-  console.log("Found", contacts.length, "contacts");
 
   response.json(contacts);
 }));

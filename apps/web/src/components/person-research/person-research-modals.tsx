@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Modal, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Modal, LoadingButton, MaterialIcon, JobHistoryTimeline } from "@interviews-tracker/design-system";
+import type { CompanyExperience } from "@interviews-tracker/design-system";
 import type { PersonResearchResult } from "../../lib/types";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -182,6 +183,27 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
   const [showAllExperience, setShowAllExperience] = useState(false);
   const [showAllEducation, setShowAllEducation] = useState(false);
 
+  // Transform experience data to match JobHistoryTimeline format
+  const experienceData: CompanyExperience[] = (research.experience || []).map((exp: any) => {
+    const positions = (exp.positions || []).map((pos: any) => {
+      const [startDate = "", endDate = ""] = (pos.dates || "").split(" - ");
+      return {
+        title: pos.title,
+        startDate: startDate.trim(),
+        endDate: endDate.trim() || "Present",
+        duration: pos.duration || "",
+        description: pos.description,
+      };
+    });
+
+    return {
+      companyName: exp.company,
+      companyUrl: exp.companyUrl,
+      totalDuration: exp.totalDuration || "",
+      positions,
+    };
+  });
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Review research result" size="lg">
       <div className="space-y-5">
@@ -223,80 +245,13 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
           </div>
         ) : null}
 
-        {research.experience && research.experience.length > 0 ? (
+        {experienceData.length > 0 ? (
           <div>
-            <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Experience</h3>
-            <div className="mt-4 space-y-4">
-              {research.experience.slice(0, 3).map((exp: { company: string; companyUrl?: string; title: string; dates?: string; duration?: string }, index: number) => (
-                <div key={index} className="flex gap-4 border-b border-outline-variant pb-4 last:border-0 last:pb-0 transition-colors duration-200">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <MaterialIcon name="work" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    {exp.companyUrl ? (
-                      <a
-                        href={exp.companyUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 font-title-sm text-title-sm font-bold text-primary transition-colors hover:text-primary/80"
-                      >
-                        <span className="underline">{exp.company}</span>
-                        <MaterialIcon name="open_in_new" className="flex-shrink-0 text-[18px]" />
-                      </a>
-                    ) : (
-                      <p className="font-title-sm text-title-sm font-bold text-on-surface">{exp.company}</p>
-                    )}
-                    <p className="mt-1 text-body-md text-on-surface">{exp.title}</p>
-                    {exp.dates || exp.duration ? (
-                      <p className="mt-1.5 text-body-sm text-on-surface-variant">
-                        {exp.dates}
-                        {exp.dates && exp.duration ? " · " : ""}
-                        {exp.duration}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-              <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                  showAllExperience ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
-                }`}
-              >
-                <div className="space-y-4">
-                  {research.experience.slice(3).map((exp: { company: string; companyUrl?: string; title: string; dates?: string; duration?: string }, index: number) => (
-                    <div key={index + 3} className="flex gap-4 border-b border-outline-variant pb-4 last:border-0 last:pb-0 transition-colors duration-200">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <MaterialIcon name="work" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        {exp.companyUrl ? (
-                          <a
-                            href={exp.companyUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 font-title-sm text-title-sm font-bold text-primary transition-colors hover:text-primary/80"
-                          >
-                            <span className="underline">{exp.company}</span>
-                            <MaterialIcon name="open_in_new" className="flex-shrink-0 text-[18px]" />
-                          </a>
-                        ) : (
-                          <p className="font-title-sm text-title-sm font-bold text-on-surface">{exp.company}</p>
-                        )}
-                        <p className="mt-1 text-body-md text-on-surface">{exp.title}</p>
-                        {exp.dates || exp.duration ? (
-                          <p className="mt-1.5 text-body-sm text-on-surface-variant">
-                            {exp.dates}
-                            {exp.dates && exp.duration ? " · " : ""}
-                            {exp.duration}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {research.experience.length > 3 ? (
+            <h3 className="mb-4 font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Experience</h3>
+            <JobHistoryTimeline
+              companies={showAllExperience ? experienceData : experienceData.slice(0, 2)}
+            />
+            {experienceData.length > 2 ? (
               <button
                 type="button"
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-surface-container-lowest px-4 py-2.5 text-body-md font-medium text-on-surface transition-all duration-200 hover:bg-surface-container"
@@ -305,7 +260,7 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
                 <span className={`transition-transform duration-300 ${showAllExperience ? "rotate-180" : "rotate-0"}`}>
                   <ChevronDown className="h-4 w-4" />
                 </span>
-                {showAllExperience ? "Show less" : `Show ${research.experience.length - 3} more`}
+                {showAllExperience ? "Show less" : `Show ${experienceData.length - 2} more`}
               </button>
             ) : null}
           </div>

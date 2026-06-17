@@ -67,8 +67,6 @@ peopleRouter.get("/:personId", asyncHandler(async (request, response) => {
 peopleRouter.post("/", asyncHandler(async (request, response) => {
   const { name, email, linkedinUrl, title, company, avatarUrl, jobOpportunityId } = request.body;
 
-  console.log("Creating person with jobOpportunityId:", jobOpportunityId);
-
   // Try to find existing person by email or linkedinUrl
   let person = null;
 
@@ -94,7 +92,6 @@ peopleRouter.post("/", asyncHandler(async (request, response) => {
       },
       include: { research: true }
     });
-    console.log("Created person:", person.id, "with opportunityId:", person.jobOpportunityId);
   } else if (jobOpportunityId && !person.jobOpportunityId) {
     // Update existing person with jobOpportunityId if not set
     person = await prisma.person.update({
@@ -102,7 +99,6 @@ peopleRouter.post("/", asyncHandler(async (request, response) => {
       data: { jobOpportunityId },
       include: { research: true }
     });
-    console.log("Updated person:", person.id, "with opportunityId:", person.jobOpportunityId);
   }
 
   response.json(person);

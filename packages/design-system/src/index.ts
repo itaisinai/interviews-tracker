@@ -28,3 +28,5 @@ export { Textarea } from "./components/textarea/index.js";
 export type { TextareaProps } from "./components/textarea/index.js";
 export { Modal } from "./components/modal/modal.js";
 export type { ModalProps } from "./components/modal/modal.js";
+export { JobHistoryTimeline } from "./components/job-history-timeline/index.js";
+export type { JobHistoryTimelineProps, CompanyExperience, JobPosition } from "./components/job-history-timeline/index.js";

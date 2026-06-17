@@ -1,11 +1,17 @@
 import { z } from "zod";
 
+export const personResearchPositionSchema = z.object({
+  title: z.string(),
+  dates: z.string().optional(),
+  duration: z.string().optional(),
+  description: z.string().optional()
+});
+
 export const personResearchExperienceSchema = z.object({
   company: z.string(),
   companyUrl: z.string().url().optional(),
-  title: z.string(),
-  dates: z.string().optional(),
-  duration: z.string().optional()
+  totalDuration: z.string().optional(),
+  positions: z.array(personResearchPositionSchema)
 });
 
 export const personResearchEducationSchema = z.object({

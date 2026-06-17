@@ -1,4 +1,5 @@
-import { MaterialIcon, Modal } from "@interviews-tracker/design-system";
+import { MaterialIcon, Modal, JobHistoryTimeline } from "@interviews-tracker/design-system";
+import type { CompanyExperience } from "@interviews-tracker/design-system";
 
 import type { Person } from "../../lib/types";
 import { useState } from "react";
@@ -19,14 +20,44 @@ export function PersonDetailModal({
   const [showAllExperience, setShowAllExperience] = useState(false);
   const [showAllEducation, setShowAllEducation] = useState(false);
 
-  const experience =
-    (person.research?.experience as Array<{
-      company: string;
-      companyUrl?: string;
+  // Transform experience data to match JobHistoryTimeline component format
+  const rawExperience = person.research?.experience as Array<{
+    company: string;
+    companyUrl?: string;
+    totalDuration?: string;
+    positions: Array<{
       title: string;
       dates?: string;
       duration?: string;
-    }>) || [];
+      description?: string;
+    }>;
+  }> | undefined;
+
+  console.log("Raw experience data:", rawExperience);
+
+  const experienceData: CompanyExperience[] = (rawExperience || []).map((exp) => {
+    const positions = (exp.positions || []).map((pos) => {
+      // Split dates into start and end
+      const [startDate = "", endDate = ""] = (pos.dates || "").split(" - ");
+
+      return {
+        title: pos.title,
+        startDate: startDate.trim(),
+        endDate: endDate.trim() || "Present",
+        duration: pos.duration || "",
+        description: pos.description,
+      };
+    });
+
+    return {
+      companyName: exp.company,
+      companyUrl: exp.companyUrl,
+      totalDuration: exp.totalDuration || "",
+      positions,
+    };
+  });
+
+  console.log("Transformed experience data:", experienceData);
 
   const education =
     (person.research?.education as Array<{
@@ -82,20 +113,20 @@ export function PersonDetailModal({
               )}
 
               {/* Experience */}
-              {experience.length > 0 && (
+              {experienceData.length > 0 && (
                 <div>
-                  <div className="mb-3 flex items-center justify-between">
+                  <div className="mb-4 flex items-center justify-between">
                     <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">
                       Experience
                     </h3>
-                    {experience.length > 3 && (
+                    {experienceData.length > 2 && (
                       <button
                         onClick={() => setShowAllExperience(!showAllExperience)}
                         className="flex items-center gap-1 text-body-sm font-medium text-primary transition-colors hover:text-primary/80"
                       >
                         {showAllExperience
                           ? "Show less"
-                          : `Show all (${experience.length})`}
+                          : `Show all (${experienceData.length})`}
                         <MaterialIcon
                           name={
                             showAllExperience ? "expand_less" : "expand_more"
@@ -106,51 +137,11 @@ export function PersonDetailModal({
                     )}
                   </div>
 
-                  <div className="space-y-4">
-                    {experience
-                      .slice(0, showAllExperience ? undefined : 3)
-                      .map((exp, index) => (
-                        <div key={index} className="flex gap-3">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-surface-container">
-                            <MaterialIcon
-                              name="work"
-                              className="text-[20px] text-on-surface-variant"
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            {exp.companyUrl ? (
-                              <a
-                                href={exp.companyUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 font-title-sm text-title-sm font-bold text-primary transition-colors hover:text-primary/80"
-                              >
-                                <span className="underline">{exp.company}</span>
-                                <MaterialIcon
-                                  name="open_in_new"
-                                  className="flex-shrink-0 text-[18px]"
-                                />
-                              </a>
-                            ) : (
-                              <p className="font-title-sm text-title-sm font-bold text-on-surface">
-                                {exp.company}
-                              </p>
-                            )}
-                            <p className="mt-0.5 text-body-md text-on-surface-variant">
-                              {exp.title}
-                            </p>
-                            {(exp.dates || exp.duration) && (
-                              <p className="mt-1 text-body-sm text-on-surface-variant">
-                                {exp.dates}
-                                {exp.duration && ` · ${exp.duration}`}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
+                  <JobHistoryTimeline
+                    companies={experienceData.slice(0, showAllExperience ? undefined : 2)}
+                  />
 
-                  {!showAllExperience && experience.length > 3 && (
+                  {!showAllExperience && experienceData.length > 2 && (
                     <div
                       className="overflow-hidden transition-all duration-300 ease-in-out"
                       style={{ maxHeight: 0, opacity: 0 }}
