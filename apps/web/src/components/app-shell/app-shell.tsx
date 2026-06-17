@@ -82,7 +82,7 @@ export function AppShell() {
           width: `${sidebarWidth}px`
         }}
       >
-        <div className={`flex h-16 items-center justify-between border-b border-outline-variant px-4 ${sidebarCollapsed ? 'flex-col gap-2' : ''}`}>
+        <div className="flex h-16 items-center justify-between border-b border-outline-variant px-4">
           {!sidebarCollapsed && (
             <div>
               <h1 className="font-headline-md text-headline-md font-bold text-on-background">
@@ -95,10 +95,10 @@ export function AppShell() {
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low"
+            className={`rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low ${sidebarCollapsed ? 'mx-auto' : ''}`}
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <MaterialIcon name={sidebarCollapsed ? "chevron_right" : "chevron_left"} />
+            <MaterialIcon name={sidebarCollapsed ? "menu" : "menu_open"} />
           </button>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto py-2">
