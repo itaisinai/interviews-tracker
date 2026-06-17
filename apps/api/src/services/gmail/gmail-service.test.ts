@@ -266,6 +266,54 @@ test("gmail status reports reconnect-required state", async () => {
   }
 });
 
+test("gmail status reports disconnected when oauth is unconfigured even with a stale row", async () => {
+  const originalEnv = {
+    GMAIL_CLIENT_ID: process.env.GMAIL_CLIENT_ID,
+    GMAIL_CLIENT_SECRET: process.env.GMAIL_CLIENT_SECRET,
+    GMAIL_REDIRECT_URI: process.env.GMAIL_REDIRECT_URI,
+    GMAIL_TOKEN_ENCRYPTION_KEY: process.env.GMAIL_TOKEN_ENCRYPTION_KEY
+  };
+  const gmailConnection = prisma.gmailConnection as any;
+  const originalFindUnique = gmailConnection.findUnique;
+  const connectedAt = new Date("2026-06-14T10:00:00.000Z");
+  const updatedAt = new Date("2026-06-14T10:05:00.000Z");
+
+  delete process.env.GMAIL_CLIENT_ID;
+  delete process.env.GMAIL_CLIENT_SECRET;
+  delete process.env.GMAIL_REDIRECT_URI;
+  delete process.env.GMAIL_TOKEN_ENCRYPTION_KEY;
+
+  gmailConnection.findUnique = (async () => ({
+    auth0Email: "user@example.com",
+    googleEmail: "gmail@example.com",
+    scope: "scope-a scope-b",
+    needsReconnect: false,
+    lastError: null,
+    connectedAt,
+    updatedAt
+  })) as typeof gmailConnection.findUnique;
+
+  try {
+    const { getGmailStatus } = await import("./gmail-service.js");
+    const status = await getGmailStatus("user@example.com");
+
+    assert.equal(status.configured, false);
+    assert.equal(status.connected, false);
+    assert.equal(status.needsReconnect, false);
+    assert.equal(status.googleEmail, null);
+    assert.equal(status.lastError, null);
+    assert.equal(status.lastConnectedAt, null);
+    assert.deepEqual(status.scopes, []);
+    assert.equal(status.updatedAt, null);
+  } finally {
+    gmailConnection.findUnique = originalFindUnique;
+    process.env.GMAIL_CLIENT_ID = originalEnv.GMAIL_CLIENT_ID;
+    process.env.GMAIL_CLIENT_SECRET = originalEnv.GMAIL_CLIENT_SECRET;
+    process.env.GMAIL_REDIRECT_URI = originalEnv.GMAIL_REDIRECT_URI;
+    process.env.GMAIL_TOKEN_ENCRYPTION_KEY = originalEnv.GMAIL_TOKEN_ENCRYPTION_KEY;
+  }
+});
+
 test("gmail reconnect callback requires a newly returned refresh token before clearing reconnect state", async () => {
   const { getRefreshTokenForOAuthCallback } = await import("./gmail-service.js");
   const encryptedRefreshToken = encryptRefreshToken("old-revoked-refresh-token", "gmail-test-secret");
