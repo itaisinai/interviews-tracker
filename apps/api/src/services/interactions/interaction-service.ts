@@ -13,25 +13,25 @@ import { unmarkUsedGmailMessageState } from "../gmail/gmail-service.js";
 
 type InteractionInput = z.infer<typeof interactionInputSchema>;
 
-export function listInteractions() {
-  return listInteractionRecords();
+export function listInteractions(ownerEmail: string) {
+  return listInteractionRecords(ownerEmail);
 }
 
-export async function createInteraction(input: InteractionInput & { jobOpportunityId: string }) {
-  const interaction = await createInteractionRecord(input);
+export async function createInteraction(input: InteractionInput & { jobOpportunityId: string }, ownerEmail: string) {
+  const interaction = await createInteractionRecord(input, ownerEmail);
   logger.operational("interaction_added", { opportunityId: input.jobOpportunityId, interactionId: interaction.id });
-  await syncOpportunityStatusRecord(input.jobOpportunityId);
+  await syncOpportunityStatusRecord(input.jobOpportunityId, ownerEmail);
   return promoteOverdueInteractionStatusForRead(interaction);
 }
 
-export async function updateInteraction(id: string, input: InteractionInput) {
-  const interaction = await updateInteractionRecord(id, input);
-  await syncOpportunityStatusRecord(interaction.jobOpportunityId);
+export async function updateInteraction(id: string, input: InteractionInput, ownerEmail: string) {
+  const interaction = await updateInteractionRecord(id, input, ownerEmail);
+  await syncOpportunityStatusRecord(interaction.jobOpportunityId, ownerEmail);
   return promoteOverdueInteractionStatusForRead(interaction);
 }
 
-export async function deleteInteraction(id: string, input?: { auth0Email?: string | null }) {
-  const interaction = await deleteInteractionRecord(id);
+export async function deleteInteraction(id: string, ownerEmail: string, input?: { auth0Email?: string | null }) {
+  const interaction = await deleteInteractionRecord(id, ownerEmail);
   if (interaction.gmailMessageId && input?.auth0Email) {
     await unmarkUsedGmailMessageState({
       auth0Email: input.auth0Email,
@@ -40,6 +40,6 @@ export async function deleteInteraction(id: string, input?: { auth0Email?: strin
     });
   }
   logger.operational("interaction_deleted", { opportunityId: interaction.jobOpportunityId, interactionId: interaction.id });
-  await syncOpportunityStatusRecord(interaction.jobOpportunityId);
+  await syncOpportunityStatusRecord(interaction.jobOpportunityId, ownerEmail);
   return interaction;
 }

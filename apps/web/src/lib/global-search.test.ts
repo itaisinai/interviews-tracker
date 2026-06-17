@@ -4,10 +4,10 @@ import { buildGlobalSearchResults, countSearchResults, flattenSearchResults, SEA
 import type { CompanySummary, Interaction, Opportunity } from "./types.js";
 
 const company = { companyName: "Reevol", domains: ["Fintech"], location: "Tel Aviv, Israel", rolesCount: 1, activeProcesses: 1, potentialOpportunities: 0, interactionsCount: 2, priority: "HIGH", status: "RESEARCH_LEAD" } as CompanySummary;
-const opportunity = { id: "opp-1", slug: "reevol-senior", companyName: "Reevol", roleTitle: "Senior Full Stack Developer", status: "APPLIED", pipelineType: "ACTIVE_PROCESS", priority: "HIGH", updatedAt: "2026-06-16T00:00:00.000Z", interactions: [], notesList: [], tasks: [], domains: [] } as Opportunity;
+const opportunity = { id: "opp-1", slug: "reevol-senior", companyName: "Reevol", roleTitle: "Senior Full Stack Developer", status: "APPLIED", pipelineType: "ACTIVE_PROCESS", priority: "HIGH", updatedAt: "2026-06-16T00:00:00.000Z", interactions: [], notesList: [], tasks: [], domains: [], ownerEmail: "test@example.com" } as Opportunity;
 const interactions = [
-  { id: "int-1", jobOpportunityId: "opp-1", type: "Interview", status: "SCHEDULED", date: "2026-06-17T14:00:00.000Z", jobOpportunity: opportunity },
-  { id: "int-2", jobOpportunityId: "opp-1", type: "Phone Call", status: "SCHEDULED", date: "2026-06-16T12:30:00.000Z", jobOpportunity: opportunity },
+  { id: "int-1", ownerEmail: "test@example.com", jobOpportunityId: "opp-1", type: "Interview", status: "SCHEDULED", date: "2026-06-17T14:00:00.000Z", jobOpportunity: opportunity },
+  { id: "int-2", ownerEmail: "test@example.com", jobOpportunityId: "opp-1", type: "Phone Call", status: "SCHEDULED", date: "2026-06-16T12:30:00.000Z", jobOpportunity: opportunity },
 ] as Interaction[];
 
 test("global search debounce delay stays in the requested range", () => {

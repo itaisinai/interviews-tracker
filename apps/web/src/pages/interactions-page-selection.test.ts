@@ -18,10 +18,12 @@ const baseOpportunity = {
   interactions: [],
   notesList: [],
   tasks: [],
+  ownerEmail: "test@example.com",
 } as Opportunity;
 
 const interactionA = {
   id: "interaction-a",
+  ownerEmail: "test@example.com",
   jobOpportunityId: "opp-1",
   date: "2026-06-11T10:00:00.000Z",
   type: "Phone Call",
@@ -31,6 +33,7 @@ const interactionA = {
 
 const interactionB = {
   id: "interaction-b",
+  ownerEmail: "test@example.com",
   jobOpportunityId: "opp-1",
   date: "2026-06-12T10:00:00.000Z",
   type: "Interview",
@@ -40,6 +43,7 @@ const interactionB = {
 
 const otherInteraction = {
   id: "interaction-c",
+  ownerEmail: "test@example.com",
   jobOpportunityId: "opp-2",
   date: "2026-06-13T10:00:00.000Z",
   type: "Email",

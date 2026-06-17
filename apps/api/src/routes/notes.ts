@@ -1,16 +1,19 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { asyncHandler } from "../lib/http.js";
 import { noteInputSchema } from "../lib/schemas.js";
 import { prisma } from "../lib/prisma.js";
 
+type AuthenticatedRequest = Request & { auth: { email: string } };
+
 export const notesRouter = Router();
 
-notesRouter.get("/", asyncHandler(async (_request, response) => {
-  response.json(await prisma.note.findMany({ include: { jobOpportunity: true, interaction: true }, orderBy: { updatedAt: "desc" } }));
+notesRouter.get("/", asyncHandler(async (request, response) => {
+  response.json(await prisma.note.findMany({ where: { ownerEmail: (request as AuthenticatedRequest).auth.email }, include: { jobOpportunity: true, interaction: true }, orderBy: { updatedAt: "desc" } }));
 }));
 
 notesRouter.post("/", asyncHandler(async (request, response) => {
-  response.status(201).json(await prisma.note.create({ data: noteInputSchema.parse(request.body) }));
+  const input = noteInputSchema.parse(request.body);
+  response.status(201).json(await prisma.note.create({ data: { ...input, ownerEmail: (request as AuthenticatedRequest).auth.email } }));
 }));
 
 notesRouter.put("/:id", asyncHandler(async (request, response) => {

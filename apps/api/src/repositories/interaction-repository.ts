@@ -10,11 +10,12 @@ import { syncOpportunityStatusRecord } from "./opportunity-repository.js";
 
 export type InteractionInput = z.infer<typeof interactionInputSchema>;
 
-export async function listInteractionRecords() {
-  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead();
-  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id)));
+export async function listInteractionRecords(ownerEmail: string) {
+  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
+  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
 
   const interactions = await prisma.interaction.findMany({
+    where: { ownerEmail },
     include: { jobOpportunity: true },
     orderBy: { date: "asc" }
   });
@@ -22,11 +23,12 @@ export async function listInteractionRecords() {
   return promoteOverdueInteractionsForRead(interactions);
 }
 
-export async function createInteractionRecord(input: InteractionInput & { jobOpportunityId: string }) {
+export async function createInteractionRecord(input: InteractionInput & { jobOpportunityId: string }, ownerEmail: string) {
   const { jobOpportunityId, ...rest } = input;
   const interaction = await prisma.interaction.create({
     data: {
       ...rest,
+      ownerEmail,
       date: new Date(rest.date),
       jobOpportunityId
     },
@@ -36,46 +38,46 @@ export async function createInteractionRecord(input: InteractionInput & { jobOpp
   return promoteOverdueInteractionStatusForRead(interaction);
 }
 
-export async function updateInteractionRecord(id: string, input: InteractionInput) {
+export async function updateInteractionRecord(id: string, input: InteractionInput, ownerEmail: string) {
   const interaction = await prisma.interaction.update({ where: { id }, data: { ...input, date: new Date(input.date) }, include: { jobOpportunity: true } });
   return promoteOverdueInteractionStatusForRead(interaction);
 }
 
-export async function deleteInteractionRecord(id: string) {
+export async function deleteInteractionRecord(id: string, ownerEmail: string) {
   return prisma.interaction.delete({
     where: { id },
     include: { jobOpportunity: true }
   });
 }
 
-export async function listOpportunityInteractionRecords(opportunityId: string) {
-  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead();
+export async function listOpportunityInteractionRecords(opportunityId: string, ownerEmail: string) {
+  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
   if (opportunityIds.includes(opportunityId)) {
-    await syncOpportunityStatusRecord(opportunityId);
+    await syncOpportunityStatusRecord(opportunityId, ownerEmail);
   }
 
   const interactions = await prisma.interaction.findMany({
-    where: { jobOpportunityId: opportunityId },
+    where: { jobOpportunityId: opportunityId, ownerEmail },
     orderBy: { date: "asc" }
   });
 
   return promoteOverdueInteractionsForRead(interactions);
 }
 
-export async function createOpportunityInteractionRecord(opportunityId: string, input: InteractionInput) {
+export async function createOpportunityInteractionRecord(opportunityId: string, input: InteractionInput, ownerEmail: string) {
   return prisma.interaction.create({
-    data: { ...input, date: new Date(input.date), jobOpportunityId: opportunityId }
+    data: { ...input, ownerEmail, date: new Date(input.date), jobOpportunityId: opportunityId }
   });
 }
 
-export async function findUpcomingInteractionRecords(limit = 8) {
-  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead();
-  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id)));
+export async function findUpcomingInteractionRecords(ownerEmail: string, limit = 8) {
+  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
+  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
 
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   const interactions = await prisma.interaction.findMany({
-    where: { date: { gte: today } },
+    where: { ownerEmail, date: { gte: today } },
     include: { jobOpportunity: true },
     orderBy: { date: "asc" },
     take: limit

@@ -10,6 +10,9 @@ import { queryClient } from "./lib/query-client";
 import "@interviews-tracker/design-system/styles/tokens.css";
 import "./styles.css";
 
+// Initialize dev-banner-height to 0 by default
+document.documentElement.style.setProperty("--dev-banner-height", "0px");
+
 const DashboardPage = lazy(() =>
   import("./pages/dashboard-page").then((module) => ({
     default: module.DashboardPage,
