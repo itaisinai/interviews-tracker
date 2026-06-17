@@ -81,6 +81,41 @@ Do not use `apps/web/.env` unless you intentionally want to override the normal 
 
 Run `yarn env:check` after editing env vars. Restart `yarn dev` after env changes so both processes reload the updated values.
 
+### Local Database Setup
+
+For local development (especially with dev mode), run PostgreSQL locally using Docker:
+
+```sh
+# Start local database
+docker compose up -d
+
+# Run migrations
+npx prisma migrate deploy
+
+# (Optional) Seed with test data
+npx prisma db seed
+```
+
+The local database runs on `localhost:5433` with credentials from `docker-compose.yml`. Update your `.env`:
+
+```env
+DATABASE_URL=postgresql://jobcrm:jobcrm@localhost:5433/jobcrm
+```
+
+To stop the database:
+
+```sh
+docker compose down
+```
+
+To reset the database (deletes all data):
+
+```sh
+docker compose down -v
+docker compose up -d
+npx prisma migrate deploy
+```
+
 ## Development Mode (Authentication Bypass)
 
 For local development and testing, you can bypass Auth0 authentication and use a test user.
