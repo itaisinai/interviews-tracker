@@ -562,13 +562,32 @@ export async function parseStructuredGmailEmail(input: {
     to: to.map((item) => item.raw),
     cc: cc.map((item) => item.raw),
     dateHeader,
-    internalDate: input.message.internalDate ?? new Date().toISOString(),
+    internalDate: parseGmailInternalDate(input.message.internalDate),
     snippet: input.message.snippet?.trim() || "(No snippet available)",
     plainText,
     htmlText,
     calendarText,
     calendar
   };
+}
+
+
+function parseGmailInternalDate(value: string | undefined) {
+  const timestamp = Number(value);
+
+  if (Number.isFinite(timestamp) && timestamp > 0) {
+    return new Date(timestamp).toISOString();
+  }
+
+  if (value) {
+    const parsed = new Date(value);
+
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
+
+  return new Date().toISOString();
 }
 
 function buildCompanySearchVariants(companyName: string, aliases: Array<string | null | undefined> = []) {
@@ -729,6 +748,7 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
 
   return {
     date: meeting.date,
+    endDate: email.calendar?.end ?? null,
     dateSource: meeting.dateSource,
     type,
     stage,

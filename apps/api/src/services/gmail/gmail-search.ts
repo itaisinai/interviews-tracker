@@ -179,6 +179,7 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
     const parsedInteraction = gmailInteractionDraftSchema.parse({
       ...aiInteraction,
       date: aiInteraction.date?.trim() ? aiInteraction.date : derived.date,
+      endDate: aiInteraction.endDate?.trim() ? aiInteraction.endDate : derived.endDate,
       meetingLink: aiInteraction.meetingLink ?? derived.meetingLink,
       gmailMessageId: input.messageId,
       notes: [derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null
@@ -194,7 +195,8 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
         `Date source: ${derived.dateSource}`,
         email.calendar?.summary ? `Calendar summary: ${email.calendar.summary}` : null,
         email.calendar?.location ? `Calendar location: ${email.calendar.location}` : null,
-        email.calendar?.start ? `Calendar start: ${email.calendar.start}` : null
+        email.calendar?.start ? `Calendar start: ${email.calendar.start}` : null,
+        email.calendar?.end ? `Calendar end: ${email.calendar.end}` : null
       ].filter(Boolean) as string[]
     });
 

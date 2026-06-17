@@ -58,6 +58,7 @@ export type GmailMeetingDateSource = "calendar" | "text" | "header";
 
 export type GmailDerivedInteraction = {
   date: string;
+  endDate: string | null;
   dateSource: GmailMeetingDateSource;
   type: InteractionType;
   stage: string | null;

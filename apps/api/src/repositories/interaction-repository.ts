@@ -28,6 +28,7 @@ export async function createInteractionRecord(input: InteractionInput & { jobOpp
     data: {
       ...rest,
       date: new Date(rest.date),
+      endDate: rest.endDate ? new Date(rest.endDate) : null,
       jobOpportunityId
     },
     include: { jobOpportunity: true }
@@ -37,7 +38,7 @@ export async function createInteractionRecord(input: InteractionInput & { jobOpp
 }
 
 export async function updateInteractionRecord(id: string, input: InteractionInput) {
-  const interaction = await prisma.interaction.update({ where: { id }, data: { ...input, date: new Date(input.date) }, include: { jobOpportunity: true } });
+  const interaction = await prisma.interaction.update({ where: { id }, data: { ...input, date: new Date(input.date), endDate: input.endDate ? new Date(input.endDate) : null }, include: { jobOpportunity: true } });
   return promoteOverdueInteractionStatusForRead(interaction);
 }
 
@@ -64,7 +65,7 @@ export async function listOpportunityInteractionRecords(opportunityId: string) {
 
 export async function createOpportunityInteractionRecord(opportunityId: string, input: InteractionInput) {
   return prisma.interaction.create({
-    data: { ...input, date: new Date(input.date), jobOpportunityId: opportunityId }
+    data: { ...input, date: new Date(input.date), endDate: input.endDate ? new Date(input.endDate) : null, jobOpportunityId: opportunityId }
   });
 }
 

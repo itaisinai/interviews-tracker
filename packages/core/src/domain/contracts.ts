@@ -30,6 +30,7 @@ export const opportunityInputSchema = z.object({
 
 export const interactionInputSchema = z.object({
   date: z.string().datetime().or(z.string().min(1)),
+  endDate: z.string().datetime().or(z.string().min(1)).nullish(),
   type: interactionTypeSchema,
   stage: z.string().nullish(),
   status: interactionStatusSchema,
@@ -115,6 +116,7 @@ export type Interaction = {
   id: string;
   jobOpportunityId: string;
   date: string;
+  endDate?: string | null;
   type: InteractionType;
   stage?: string | null;
   status: InteractionStatus;

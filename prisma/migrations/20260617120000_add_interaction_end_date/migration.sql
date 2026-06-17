@@ -1,0 +1,1 @@
+ALTER TABLE "Interaction" ADD COLUMN "endDate" TIMESTAMP(3);

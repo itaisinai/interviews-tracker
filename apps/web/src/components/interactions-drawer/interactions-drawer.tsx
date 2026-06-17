@@ -29,6 +29,7 @@ type ComposerMode = "chooser" | "gmail" | "gmail-attach" | "text" | null;
 function toDraft(interaction: Interaction): InteractionDraft {
   return {
     date: interaction.date,
+    endDate: interaction.endDate ?? null,
     type: normalizeInteractionType(interaction.type),
     stage: interaction.stage ?? null,
     status: interaction.status,

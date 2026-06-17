@@ -114,6 +114,7 @@ model Interaction {
   id               String            @id @default(cuid())
   jobOpportunityId String
   date             DateTime
+  endDate          DateTime?
   type             String
   stage            String?
   status           InteractionStatus

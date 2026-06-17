@@ -37,6 +37,7 @@ type GmailMessageStates = {
 
 const interactionFieldLabels = {
   date: "Date",
+  endDate: "End date",
   type: "Type",
   stage: "Stage",
   status: "Status",
@@ -51,6 +52,7 @@ const interactionFieldLabels = {
 
 type InteractionDiffField =
   | "date"
+  | "endDate"
   | "type"
   | "stage"
   | "status"
@@ -69,7 +71,7 @@ function sleep(ms: number) {
 }
 
 function normalizeComparableValue(field: InteractionDiffField, value: string | null | undefined) {
-  if (field === "date") {
+  if (field === "date" || field === "endDate") {
     const timestamp = value ? new Date(value).getTime() : Number.NaN;
     return Number.isNaN(timestamp) ? "" : String(timestamp);
   }
@@ -116,6 +118,22 @@ function toDatetimeLocalValue(value: string) {
   const minutes = pad(date.getMinutes());
 
   return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function formatDateTimeValue(value: string | null | undefined) {
+  if (!value) {
+    return "Unknown";
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+
+function updateDraftDatePart(draft: GmailInteractionDraft, field: "date" | "endDate", value: string) {
+  return {
+    ...draft,
+    [field]: value ? new Date(value).toISOString() : field === "date" ? draft.date : null
+  };
 }
 
 export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, onSaved, attachToInteractionId = null }: GmailInteractionPanelProps) {
@@ -663,7 +681,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                         <p className="mt-1 text-body-md text-on-surface-variant">{email.from}</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <p className="text-body-md text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                        <p className="text-body-md text-on-surface-variant">{formatDateTimeValue(email.date)}</p>
                         <LoadingButton
                           className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-50"
                           disabled={actionDisabled}
@@ -734,7 +752,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                     <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                       <div className="min-w-0">
                         <p className="truncate font-body-md text-body-md font-semibold text-on-background">{email.subject}</p>
-                        <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                        <p className="mt-1 text-body-sm text-on-surface-variant">{formatDateTimeValue(email.date)}</p>
                       </div>
                       <LoadingButton
                         className="btn btn-secondary"
@@ -773,7 +791,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
                         ) : null}
                         {email.subject}
                       </p>
-                      <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                      <p className="mt-1 text-body-sm text-on-surface-variant">{formatDateTimeValue(email.date)}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="rounded-full bg-primary-container px-3 py-1 text-label-sm text-on-primary-container">
@@ -911,8 +929,9 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
           <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4 text-body-md text-on-surface-variant">
             <p><span className="font-semibold text-on-background">Source email:</span> {selectedEmail.subject}</p>
             <p className="mt-1"><span className="font-semibold text-on-background">From:</span> {selectedEmail.fromRaw}</p>
-            <p className="mt-1"><span className="font-semibold text-on-background">Message date:</span> {new Date(selectedEmail.internalDate).toLocaleString()}</p>
-            {selectedEmail.calendar?.start ? <p className="mt-1"><span className="font-semibold text-on-background">Calendar start:</span> {new Date(selectedEmail.calendar.start).toLocaleString()}</p> : null}
+            <p className="mt-1"><span className="font-semibold text-on-background">Message date:</span> {formatDateTimeValue(selectedEmail.internalDate)}</p>
+            {selectedEmail.calendar?.start ? <p className="mt-1"><span className="font-semibold text-on-background">Calendar start:</span> {formatDateTimeValue(selectedEmail.calendar.start)}</p> : null}
+            {selectedEmail.calendar?.end ? <p className="mt-1"><span className="font-semibold text-on-background">Calendar end:</span> {formatDateTimeValue(selectedEmail.calendar.end)}</p> : null}
             {selectedEmail.calendar?.location ? <p className="mt-1"><span className="font-semibold text-on-background">Location:</span> {selectedEmail.calendar.location}</p> : null}
             {draft?.meetingLink ? (
               <p className="mt-1">
@@ -926,12 +945,24 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
 
           <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Field label="Date" changed={changedInteractionFields.has("date")}>
-              <input
-                className="input"
-                type="datetime-local"
-                value={toDatetimeLocalValue(draft.date)}
-                onChange={(event) => setDraft({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })}
-              />
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+                <input
+                  className="input min-w-0"
+                  type="datetime-local"
+                  aria-label="Start date and time"
+                  value={toDatetimeLocalValue(draft.date)}
+                  onChange={(event) => setDraft(updateDraftDatePart(draft, "date", event.target.value))}
+                />
+                <span className="text-body-md text-on-surface-variant">-</span>
+                <input
+                  className="input min-w-0"
+                  type="datetime-local"
+                  aria-label="End date and time"
+                  value={toDatetimeLocalValue(draft.endDate ?? "")}
+                  min={toDatetimeLocalValue(draft.date)}
+                  onChange={(event) => setDraft(updateDraftDatePart(draft, "endDate", event.target.value))}
+                />
+              </div>
             </Field>
             <Field label="Type" changed={changedInteractionFields.has("type")}>
               <select className="input" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as GmailInteractionDraft["type"] })}>
