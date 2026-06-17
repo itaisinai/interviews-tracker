@@ -2,6 +2,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { setAccessTokenGetter } from "../../lib/api";
+import { DevModeAuthBypass } from "./dev-mode-bypass";
+
+const devModeBypassAuth = import.meta.env.VITE_DEV_MODE_BYPASS_AUTH === "true";
+const devModeUserEmail = (import.meta.env.VITE_DEV_MODE_USER_EMAIL as string | undefined)?.trim() || "dev@local.test";
 
 const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN as string | undefined;
 const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID as
@@ -220,6 +224,11 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
 }
 
 export function AuthGate({ children }: { children: ReactNode }) {
+  // Dev mode bypass - check FIRST before Auth0 validation
+  if (devModeBypassAuth) {
+    return <DevModeAuthBypass userEmail={devModeUserEmail}>{children}</DevModeAuthBypass>;
+  }
+
   if (!auth0Domain || !auth0ClientId || !auth0Audience || !allowedEmail) {
     return (
       <AuthPanel

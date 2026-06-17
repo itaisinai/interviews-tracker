@@ -76,6 +76,7 @@ export const compensationInputSchema = z.object({
 
 export type Opportunity = {
   id: string;
+  ownerEmail: string;
   slug: string;
   companyName: string;
   companySearchName?: string | null;
@@ -113,6 +114,7 @@ export type Opportunity = {
 
 export type Interaction = {
   id: string;
+  ownerEmail: string;
   jobOpportunityId: string;
   date: string;
   type: InteractionType;
@@ -131,6 +133,7 @@ export type Interaction = {
 
 export type Note = {
   id: string;
+  ownerEmail: string;
   title: string;
   content: string;
   category: string;
@@ -139,6 +142,7 @@ export type Note = {
 
 export type Task = {
   id: string;
+  ownerEmail: string;
   title: string;
   status: TaskStatus;
   priority: Priority;
@@ -149,6 +153,7 @@ export type Task = {
 
 export type Compensation = {
   id: string;
+  ownerEmail: string;
   jobOpportunityId: string;
   baseSalary?: string | null;
   equity?: string | null;

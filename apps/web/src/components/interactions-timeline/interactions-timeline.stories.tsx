@@ -21,6 +21,7 @@ const reevolOpportunity = {
 const reevolInteractions = promoteOverdueInteractionsForRead([
   {
     id: "reevol-phone-2026-06-15",
+    ownerEmail: "test@example.com",
     jobOpportunityId: reevolOpportunity.id,
     date: "2026-06-15T12:30:00",
     type: "Phone Call",
@@ -33,6 +34,7 @@ const reevolInteractions = promoteOverdueInteractionsForRead([
   },
   {
     id: "reevol-interview-2026-06-17",
+    ownerEmail: "test@example.com",
     jobOpportunityId: reevolOpportunity.id,
     date: "2026-06-17T14:00:00",
     type: "Interview",

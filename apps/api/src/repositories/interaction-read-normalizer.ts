@@ -90,9 +90,10 @@ export function promoteOpportunityInteractionsForRead<T extends { interactions: 
   };
 }
 
-export async function normalizeOverdueScheduledInteractionsForRead(now = new Date()) {
+export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: string, now = new Date()) {
   const candidates = await prisma.interaction.findMany({
     where: {
+      ownerEmail,
       status: "SCHEDULED",
       date: { lt: now },
       type: { in: [...overdueInteractionTypes] }
@@ -117,6 +118,7 @@ export async function normalizeOverdueScheduledInteractionsForRead(now = new Dat
 
   const opportunityInteractions = await prisma.interaction.findMany({
     where: {
+      ownerEmail,
       jobOpportunityId: { in: opportunityIds }
     },
     select: {
@@ -156,6 +158,7 @@ export async function normalizeOverdueScheduledInteractionsForRead(now = new Dat
   if (interactionIdsToPromote.size > 0) {
     await prisma.interaction.updateMany({
       where: {
+        ownerEmail,
         id: { in: [...interactionIdsToPromote] }
       },
       data: { status: "NEEDS_FOLLOW_UP" }
