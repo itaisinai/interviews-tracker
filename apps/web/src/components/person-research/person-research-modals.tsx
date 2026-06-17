@@ -270,14 +270,19 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
           <div>
             <h4 className="label">Skills</h4>
             <div className="mt-2 flex flex-wrap gap-2">
-              {research.skills.map((skill: string, index: number) => (
+              {research.skills.slice(0, 20).map((skill: string, index: number) => (
                 <span
                   key={index}
-                  className="rounded-full bg-surface-container-high px-3 py-1.5 text-body-sm text-on-surface-variant"
+                  className="inline-flex rounded-full bg-surface-container-high px-3 py-1.5 text-body-sm text-on-surface-variant"
                 >
                   {skill}
                 </span>
               ))}
+              {research.skills.length > 20 ? (
+                <span className="inline-flex items-center rounded-full bg-surface-container px-3 py-1.5 text-body-sm text-on-surface-variant">
+                  +{research.skills.length - 20} more
+                </span>
+              ) : null}
             </div>
           </div>
         ) : null}

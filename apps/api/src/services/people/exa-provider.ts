@@ -212,8 +212,19 @@ export class ExaProvider {
 
       // Parse Skills section
       if (inSkillsSection && !line.startsWith("#")) {
-        // Skills are usually comma-separated or bullet points
-        skills.push(line.replace(/^[•\-\*]\s*/, ""));
+        // Skills can be: bullet points, comma-separated, or pipe-separated
+        const skillLine = line.replace(/^[•\-\*]\s*/, "");
+
+        // Split by common delimiters
+        const splitSkills = skillLine.split(/[•·|,]\s*/).filter(s => s.trim().length > 0);
+
+        if (splitSkills.length > 1) {
+          // Multiple skills on one line
+          skills.push(...splitSkills);
+        } else if (skillLine.trim()) {
+          // Single skill
+          skills.push(skillLine.trim());
+        }
       }
     }
 
