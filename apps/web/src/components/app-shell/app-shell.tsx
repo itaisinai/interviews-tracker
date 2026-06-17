@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import React, { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { NotificationsBell } from "../notifications";
 import { GlobalSearchBox } from "./global-search-box";
@@ -60,6 +61,7 @@ export function AppShell() {
         : activeNavItem.icon;
   const avatar = user?.picture ?? null;
   const sidebarWidth = sidebarCollapsed ? 72 : 260;
+  const transitionDuration = 0.3; // seconds
 
   // Apply sidebar offset only on desktop (md breakpoint and up)
   const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
@@ -75,30 +77,47 @@ export function AppShell() {
   return (
     <div className="min-h-screen bg-background text-on-background">
       <aside
-        className="fixed left-0 z-50 hidden flex-col border-r border-outline-variant bg-[#d7e8f4] transition-all duration-300 md:flex"
+        className="fixed left-0 z-50 hidden flex-col border-r border-outline-variant bg-[#d7e8f4] md:flex"
         style={{
           top: "var(--dev-banner-height, 0)",
           height: "calc(100vh - var(--dev-banner-height, 0))",
-          width: `${sidebarWidth}px`
+          width: `${sidebarWidth}px`,
+          transition: `width ${transitionDuration}s ease-out`
         }}
       >
-        <div className="flex h-16 items-center justify-between border-b border-outline-variant px-4">
-          {!sidebarCollapsed && (
-            <div>
-              <h1 className="font-headline-md text-headline-md font-bold text-on-background">
-                CareerFlow
-              </h1>
-              <p className="font-label-md text-label-md text-on-surface-variant">
-                Senior Workspace
-              </p>
-            </div>
-          )}
+        <div className="flex h-16 items-center border-b border-outline-variant px-4 overflow-hidden">
+          <div className="flex-1 min-w-0">
+            <AnimatePresence initial={false}>
+              {!sidebarCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: transitionDuration, ease: "easeOut" }}
+                >
+                  <h1 className="font-headline-md text-headline-md font-bold text-on-background whitespace-nowrap">
+                    CareerFlow
+                  </h1>
+                  <p className="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">
+                    Senior Workspace
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low ${sidebarCollapsed ? 'mx-auto' : ''}`}
+            className="flex-shrink-0 rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-low"
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <MaterialIcon name={sidebarCollapsed ? "menu" : "menu_open"} />
+            <div
+              style={{
+                transform: sidebarCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+                transition: `transform ${transitionDuration}s ease-out`
+              }}
+            >
+              <MaterialIcon name="menu" />
+            </div>
           </button>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto py-2">
@@ -109,8 +128,8 @@ export function AppShell() {
               end={item.to === "/"}
               title={sidebarCollapsed ? item.label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-4 py-2 transition-colors hover:bg-surface-container-low/80 ${
-                  sidebarCollapsed ? 'justify-center px-4' : 'pl-4 pr-6'
+                `flex items-center py-2 transition-colors hover:bg-surface-container-low/80 pl-6 ${
+                  sidebarCollapsed ? '' : 'gap-4 pr-6'
                 } ${
                   isActive
                     ? "border-l-2 border-primary bg-surface-container-lowest font-bold text-primary"
@@ -121,45 +140,78 @@ export function AppShell() {
               {({ isActive }) => (
                 <>
                   <MaterialIcon name={item.icon} filled={isActive} />
-                  {!sidebarCollapsed && (
-                    <span className="font-body-md text-body-md">{item.label}</span>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {!sidebarCollapsed && (
+                      <motion.span
+                        className="font-body-md text-body-md"
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: "auto" }}
+                        exit={{ opacity: 0, width: 0 }}
+                        transition={{ duration: transitionDuration, ease: "easeOut" }}
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </>
               )}
             </NavLink>
           ))}
         </nav>
-        <div className={`mt-auto space-y-1 border-t border-outline-variant pt-4 ${sidebarCollapsed ? 'px-2' : 'px-4'}`}>
+        <div className={`mt-auto space-y-1 border-t border-outline-variant pt-4 overflow-hidden ${sidebarCollapsed ? 'px-2' : 'px-4'}`}>
           <button
-            className={`flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${sidebarCollapsed ? 'justify-center' : ''}`}
+            className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
+              sidebarCollapsed ? '' : 'gap-4'
+            }`}
             title={sidebarCollapsed ? user?.email ?? displayName : undefined}
           >
-            <MaterialIcon name="person" />
-            {!sidebarCollapsed && (
-              <span className="min-w-0 truncate font-body-md text-body-md">
-                {user?.email ?? displayName}
-              </span>
-            )}
+            <MaterialIcon name="person" className="flex-shrink-0" />
+            <AnimatePresence initial={false}>
+              {!sidebarCollapsed && (
+                <motion.span
+                  className="min-w-0 truncate font-body-md text-body-md"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: transitionDuration, ease: "easeOut" }}
+                >
+                  {user?.email ?? displayName}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
           <button
-            className={`flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${sidebarCollapsed ? 'justify-center' : ''}`}
+            className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
+              sidebarCollapsed ? '' : 'gap-4'
+            }`}
             onClick={() =>
               void logout({ logoutParams: { returnTo: window.location.origin } })
             }
             title={sidebarCollapsed ? "Logout" : undefined}
           >
-            <MaterialIcon name="logout" />
-            {!sidebarCollapsed && (
-              <span className="font-body-md text-body-md">Logout</span>
-            )}
+            <MaterialIcon name="logout" className="flex-shrink-0" />
+            <AnimatePresence initial={false}>
+              {!sidebarCollapsed && (
+                <motion.span
+                  className="font-body-md text-body-md"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: transitionDuration, ease: "easeOut" }}
+                >
+                  Logout
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
         </div>
       </aside>
       <header
-        className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm transition-[left] duration-300 md:z-40"
+        className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm md:z-40"
         style={{
           top: "var(--dev-banner-height, 0)",
-          left: isDesktop ? `${sidebarWidth}px` : '0'
+          left: isDesktop ? `${sidebarWidth}px` : '0',
+          transition: `left ${transitionDuration}s ease-out`
         }}
       >
           <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
@@ -238,10 +290,11 @@ export function AppShell() {
         </div>
       </nav>
       <main
-        className="min-h-screen pb-24 transition-[margin-left] duration-300 md:pb-8 md:overflow-x-hidden"
+        className="min-h-screen pb-24 md:pb-8 md:overflow-x-hidden"
         style={{
           paddingTop: "calc(4rem + var(--dev-banner-height, 0))",
-          marginLeft: isDesktop ? `${sidebarWidth}px` : '0'
+          marginLeft: isDesktop ? `${sidebarWidth}px` : '0',
+          transition: `margin-left ${transitionDuration}s ease-out`
         }}
       >
         <div className="mx-auto w-full max-w-[1280px] px-4 py-4 md:px-6 md:py-8">
