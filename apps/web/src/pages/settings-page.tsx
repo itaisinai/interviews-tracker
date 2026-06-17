@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
-import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
+import { InlineLoadingState, LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 import { api } from "../lib/api";
 import type { GmailStatus, Option } from "../lib/types";
 

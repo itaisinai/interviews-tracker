@@ -1,12 +1,13 @@
-import type { Request } from "express";
-import { z } from "zod";
-import { createTimer } from "../lib/logger.js";
-import { interactionInputSchema, noteInputSchema, taskInputSchema, opportunityInputSchema } from "../lib/schemas.js";
-import { getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord, createOpportunityNoteRecord, createOpportunityTaskRecord } from "../repositories/opportunity-repository.js";
 import { createOpportunity, deleteOpportunity, getOpportunity, listOpportunities, updateOpportunity } from "../services/opportunities/opportunity-service.js";
-import { createInteraction as createInteractionRecord } from "../services/interactions/interaction-service.js";
+import { createOpportunityNoteRecord, createOpportunityTaskRecord, getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord } from "../repositories/opportunity-repository.js";
 import { hideGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages, unmarkUsedGmailMessageState } from "../services/gmail/gmail-service.js";
+import { interactionInputSchema, noteInputSchema, opportunityInputSchema, taskInputSchema } from "../lib/schemas.js";
+
+import type { Request } from "express";
+import { createInteraction as createInteractionRecord } from "../services/interactions/interaction-service.js";
+import { createTimer } from "../lib/logger.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
+import { z } from "zod";
 
 type AuthenticatedRequest = Request & { auth?: { email?: string | null } };
 
@@ -70,7 +71,8 @@ export async function searchOpportunityGmailHandler(request: AuthenticatedReques
     jobOpportunityId: opportunity.id,
     companyName: opportunity.companyName,
     companySearchName: opportunity.companySearchName,
-    roleTitle: opportunity.roleTitle
+    roleTitle: opportunity.roleTitle,
+    companyDomains: opportunity.domains.map((item) => item.domain.label)
   });
   timer.end({ candidates: result.candidates.length });
   return result;
@@ -137,14 +139,14 @@ export async function restoreOpportunityGmailMessageHandler(request: Authenticat
   await restoreHiddenGmailMessage({
     auth0Email: request.auth?.email ?? "",
     messageId,
-    jobOpportunityId: request.params.id
+    jobOpportunityId: opportunity.id
   });
 
   return { ok: true };
 }
 
 export async function unpickOpportunityGmailMessageHandler(request: AuthenticatedRequest) {
-  const opportunity = await getOpportunitySummaryRecord(request.params.id);
+  const opportunity = await getOpportunitySummaryRecord(request.params.slugOrId);
 
   if (!opportunity) {
     return null;
@@ -154,7 +156,7 @@ export async function unpickOpportunityGmailMessageHandler(request: Authenticate
   await unmarkUsedGmailMessageState({
     auth0Email: request.auth?.email ?? "",
     messageId,
-    jobOpportunityId: request.params.id
+    jobOpportunityId: opportunity.id
   });
 
   return { ok: true };

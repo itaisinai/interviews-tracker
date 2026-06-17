@@ -2,13 +2,12 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { PageIntro } from "../components/app-shell";
-import { MaterialIcon } from "../components/material-icon";
-import { LoadingButton, PageErrorState, PageLoadingState } from "../components/loading-state";
 import { ParserLoadingState } from "../components/parser-loading-state";
 import { api } from "../lib/api";
 import { jobStatusOptions, labelForJobStatus, labelForPipelineType, labelForPriority } from "../lib/enum-labels";
 import type { JobStatus, Option, PipelineType, Priority } from "../lib/types";
 import type { ParserRunState } from "../lib/parser-run";
+import { LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 type ParsedJobDescription = Awaited<ReturnType<typeof api.parseJob>>;
 

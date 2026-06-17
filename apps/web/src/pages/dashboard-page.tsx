@@ -3,15 +3,14 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Badge } from "../components/badge";
-import { AppCalendar, type CalendarEvent } from "../components/calendar";
+import { AppCalendar } from "../components/calendar";
 import { InteractionsDrawer } from "../components/interactions-drawer";
-import { MaterialIcon } from "../components/material-icon";
 import { PageIntro } from "../components/app-shell";
-import { InlineLoadingState, PageErrorState, PageLoadingState } from "../components/loading-state";
+import { buildInteractionCalendarEvents } from "../components/interactions-flow";
 import { api } from "../lib/api";
-import { labelForInteractionType } from "../lib/enum-labels";
 import { formatDateTime } from "../lib/format";
 import type { Interaction } from "../lib/types";
+import { InlineLoadingState, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 function splitMonthDay(value: string) {
   const date = new Date(value);
@@ -23,10 +22,32 @@ function splitMonthDay(value: string) {
 
 export function DashboardPage() {
   const { user } = useAuth0();
-  const [selectedInteraction, setSelectedInteraction] =
-    useState<Interaction | null>(null);
+  const [selectedInteractionId, setSelectedInteractionId] = useState<
+    string | null
+  >(null);
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
+  const { data: interactions = [] } = useQuery({ queryKey: ["interactions"], queryFn: api.interactions });
   const displayName = user?.name ?? user?.email?.split("@")[0] ?? "Alex";
+
+  const selectedInteraction = useMemo(
+    () =>
+      interactions.find((item) => item.id === selectedInteractionId) ??
+      data?.upcomingInteractions.find((item) => item.id === selectedInteractionId) ??
+      null,
+    [data?.upcomingInteractions, interactions, selectedInteractionId],
+  );
+  const selectedOpportunity = useMemo(() => {
+    if (!selectedInteraction?.jobOpportunity) {
+      return null;
+    }
+
+    return {
+      ...selectedInteraction.jobOpportunity,
+      interactions: interactions.filter(
+        (item) => item.jobOpportunityId === selectedInteraction.jobOpportunityId,
+      ),
+    };
+  }, [interactions, selectedInteraction]);
 
   const mobilePriorityItems = useMemo(() => {
     if (!data) {
@@ -44,8 +65,8 @@ export function DashboardPage() {
   }, [data]);
 
   const calendarEvents = useMemo(
-    () => (data ? buildCalendarEvents(data.upcomingInteractions) : []),
-    [data],
+    () => buildInteractionCalendarEvents(interactions),
+    [interactions],
   );
 
   const pipelineHealth = Math.round(((data?.counts.activeProcesses ?? 0) / Math.max((data?.counts.activeProcesses ?? 0) + (data?.counts.potential ?? 0), 1)) * 100);
@@ -158,7 +179,7 @@ export function DashboardPage() {
                   type="button"
                   className={`flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary ${index > 0 ? "border-t border-outline-variant/40" : ""}`}
                   aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
-                  onClick={() => setSelectedInteraction(item)}
+                  onClick={() => setSelectedInteractionId(item.id)}
                 >
                   <div className="w-10 shrink-0 text-center">
                     <div className="font-label-sm text-label-sm text-primary">{parts.month}</div>
@@ -233,7 +254,7 @@ export function DashboardPage() {
                   type="button"
                   className="w-full rounded-xl border border-outline-variant bg-white p-5 text-left shadow-sm transition-all hover:border-primary/40 hover:bg-surface-container-low hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
-                  onClick={() => setSelectedInteraction(item)}
+                  onClick={() => setSelectedInteractionId(item.id)}
                 >
                   <div className="mb-2 flex items-center gap-2">
                     <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary">{formatDateTime(item.date)}</span>
@@ -308,41 +329,10 @@ export function DashboardPage() {
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
-        onClose={() => setSelectedInteraction(null)}
-        onSelectInteraction={() => undefined}
+        selectedOpportunity={selectedOpportunity}
+        onClose={() => setSelectedInteractionId(null)}
+        onSelectInteraction={setSelectedInteractionId}
       />
     </>
   );
-}
-
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-type InteractionCalendarEvent = CalendarEvent & {
-  date: string;
-};
-
-function buildCalendarEvents(
-  interactions: readonly Interaction[],
-): InteractionCalendarEvent[] {
-  return interactions.map((interaction) => {
-    const date = new Date(interaction.date);
-    const titleParts = [
-      interaction.jobOpportunity?.companyName,
-      interaction.stage || labelForInteractionType(interaction.type),
-      interaction.personName,
-    ].filter(Boolean);
-
-    return {
-      id: interaction.id,
-      date: interaction.date,
-      title:
-        titleParts.length > 0
-          ? titleParts.join(" · ")
-          : labelForInteractionType(interaction.type),
-      time: timeFormatter.format(date),
-    };
-  });
 }

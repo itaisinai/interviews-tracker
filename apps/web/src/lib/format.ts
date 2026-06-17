@@ -25,19 +25,25 @@ function isSameLocalDay(value: Date, reference = new Date()) {
   );
 }
 
-export function formatDate(value?: string | null) {
+export function formatDate(
+  value?: string | null,
+  referenceDate: Date = new Date(),
+) {
   if (!value) return "-";
   const date = new Date(value);
   const formatted = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  return isSameLocalDay(date) ? `Today · ${formatted}` : formatted;
+  return isSameLocalDay(date, referenceDate) ? `Today · ${formatted}` : formatted;
 }
 
-export function formatDateTime(value?: string | null) {
+export function formatDateTime(
+  value?: string | null,
+  referenceDate: Date = new Date(),
+) {
   if (!value) return "-";
   const date = new Date(value);
   const formattedDate = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const formattedTime = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
-  return isSameLocalDay(date) ? `Today · ${formattedDate} · ${formattedTime}` : `${formattedDate} · ${formattedTime}`;
+  return isSameLocalDay(date, referenceDate) ? `Today · ${formattedDate} · ${formattedTime}` : `${formattedDate} · ${formattedTime}`;
 }
 
 export function statusTone(status: JobStatus | string) {

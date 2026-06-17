@@ -1,0 +1,7 @@
+{
+  "name": "nx",
+  "version": "0.0.0-local",
+  "private": true,
+  "type": "module",
+  "bin": "bin/nx.mjs"
+}

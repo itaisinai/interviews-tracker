@@ -2,8 +2,6 @@ import { AppCalendar } from "../calendar";
 import { FilterTabs } from "./filter-tabs";
 import { GmailImportPanel } from "./gmail-import-panel";
 import { InteractionHealthPanel } from "./interaction-health-panel";
-import { InlineLoadingState } from "../loading-state";
-import { MaterialIcon } from "../material-icon";
 import { OpportunityInteractionTimeline } from "../interactions-timeline";
 import { PageIntro } from "../app-shell";
 import type { Interaction, Opportunity } from "../../lib/types";
@@ -12,6 +10,10 @@ import type {
   InteractionFilter,
   InteractionOpportunityGroup,
 } from "./interaction-flow-helpers";
+import {
+  InlineLoadingState,
+  MaterialIcon,
+} from "@interviews-tracker/design-system";
 
 type DesktopInteractionsFlowProps = {
   filter: InteractionFilter;
@@ -72,7 +74,9 @@ export function DesktopInteractionsFlow({
               onClick={showGmailImport ? onCloseGmailImport : onOpenGmailImport}
             >
               <MaterialIcon name="mail" />
-              {showGmailImport ? "Hide Gmail Import" : "Add interaction from Gmail"}
+              {showGmailImport
+                ? "Hide Gmail Import"
+                : "Add interaction from Gmail"}
             </button>
           </>
         }
@@ -89,10 +93,10 @@ export function DesktopInteractionsFlow({
         />
       ) : null}
       <FilterTabs filter={filter} onChange={onFilterChange} variant="desktop" />
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        <section className="space-y-6 lg:col-span-7">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <section className="space-y-4 lg:col-span-7">
           <TimelineHeading />
-          <div className="space-y-6">
+          <div className="space-y-4">
             {visibleGroups.map((group) => (
               <OpportunityInteractionTimeline
                 key={group.opportunityId}
@@ -107,8 +111,47 @@ export function DesktopInteractionsFlow({
             ))}
           </div>
         </section>
-        <aside className="space-y-6 lg:col-span-5">
-          <AppCalendar eyebrow="Calendar" events={calendarEvents} />
+        <aside className="space-y-4 lg:col-span-5">
+          <AppCalendar
+            eyebrow="Calendar"
+            events={calendarEvents}
+            renderEvent={(event) => (
+              <button
+                type="button"
+                className={`w-full rounded-lg border px-2 py-2 text-left transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${
+                  event.isFuture
+                    ? "border-primary/20 bg-primary/5"
+                    : "border-outline-variant/60 bg-surface-container-low/40"
+                }`}
+                onClick={() => onSelectInteraction(event.id)}
+                aria-label={`Open interaction ${event.title}`}
+              >
+                <div className="mb-1 flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-2 py-0.5 font-label-sm text-[11px] uppercase tracking-wider ${
+                      event.isFuture
+                        ? "bg-primary text-on-primary"
+                        : "bg-surface-container-high text-on-surface-variant"
+                    }`}
+                  >
+                    {event.isFuture ? "Upcoming" : "Meeting"}
+                  </span>
+                  {event.time ? (
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">
+                      {event.time}
+                    </span>
+                  ) : null}
+                </div>
+                <div
+                  className={`text-body-sm ${
+                    event.isFuture ? "text-primary" : "text-on-surface-variant"
+                  }`}
+                >
+                  {event.title}
+                </div>
+              </button>
+            )}
+          />
           <InteractionHealthPanel
             interactions={interactions}
             followUpCount={followUpCount}

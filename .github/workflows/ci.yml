@@ -31,11 +31,20 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      - name: Generate Prisma client
+        run: yarn prisma:generate
+
       - name: Typecheck
         run: yarn typecheck
 
       - name: Build
         run: yarn build
+
+      - name: Validate runtime package exports
+        run: yarn check:runtime-exports
+
+      - name: Smoke API
+        run: yarn smoke:api
 
       - name: Build Storybook
         run: yarn build:storybook

@@ -1,1 +1,1 @@
-export * from "./OpportunityInteractionTimeline.js";
+export * from "./opportunity-interaction-timeline";

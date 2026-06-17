@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import { createMonthCalendar, type CalendarEvent, type CalendarEventTone } from "./calendar-utils.js";
+import {
+  createMonthCalendar,
+  type CalendarEvent,
+  type CalendarEventTone,
+} from "./calendar-utils.js";
 import { MaterialIcon } from "../material-icon/index.js";
 
 export type CalendarProps<Event extends CalendarEvent = CalendarEvent> = {
@@ -44,7 +48,8 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
   emptyLabel = "Empty",
   singleEventLabel = "1 meeting",
   multipleEventsLabel = "Multiple",
-  eventCountLabel = (count) => `${count} ${count === 1 ? "meeting" : "meetings"}`,
+  eventCountLabel = (count) =>
+    `${count} ${count === 1 ? "meeting" : "meetings"}`,
   renderEvent,
   onPreviousMonth,
   onNextMonth,
@@ -54,10 +59,17 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
   const calendar = createMonthCalendar({ events, month });
 
   return (
-    <section className={["rounded-xl border border-outline-variant bg-white p-6 shadow-sm", className].join(" ")}>
+    <section
+      className={[
+        "rounded-xl border border-outline-variant bg-white p-6 shadow-sm",
+        className,
+      ].join(" ")}
+    >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="font-label-md text-label-md uppercase tracking-[0.18em] text-primary">{eyebrow}</p>
+          <p className="font-label-md text-label-md uppercase tracking-[0.18em] text-primary">
+            {eyebrow}
+          </p>
           <h3 className="mt-1 font-title-md text-title-md font-bold text-on-background">
             {title ?? calendar.monthLabel}
           </h3>
@@ -106,12 +118,18 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
       <div className="mb-3 flex flex-wrap gap-3 text-label-sm font-medium text-on-surface-variant">
         <CalendarLegendDot className="bg-outline-variant" label={emptyLabel} />
         <CalendarLegendDot className="bg-primary" label={singleEventLabel} />
-        <CalendarLegendDot className="bg-amber-400" label={multipleEventsLabel} />
+        <CalendarLegendDot
+          className="bg-amber-400"
+          label={multipleEventsLabel}
+        />
       </div>
 
       <div className="grid grid-cols-7 gap-1.5 text-center">
         {weekdayLabels.map((day) => (
-          <div key={day} className="py-1 font-label-sm text-label-sm text-on-surface-variant">
+          <div
+            key={day}
+            className="py-1 font-label-sm text-label-sm text-on-surface-variant"
+          >
             {day}
           </div>
         ))}
@@ -129,8 +147,12 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
               aria-label={getAccessibleLabel(day.date, day.events)}
               tabIndex={0}
             >
-              <span className="font-label-md text-label-md">{dayFormatter.format(day.date)}</span>
-              <span className={`mt-1 h-2 w-2 rounded-full ${dotClassNames[day.tone]}`} />
+              <span className="font-label-md text-label-md">
+                {dayFormatter.format(day.date)}
+              </span>
+              <span
+                className={`mt-1 h-2 w-2 rounded-full ${dotClassNames[day.tone]}`}
+              />
               {day.isToday ? (
                 <span className="mt-1 rounded-full bg-primary px-2 py-0.5 font-label-sm text-label-sm text-on-primary">
                   Today
@@ -138,18 +160,26 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
               ) : null}
             </div>
 
-            <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-3 hidden w-64 -translate-x-1/2 rounded-xl border border-outline-variant bg-white p-3 text-left shadow-xl group-hover:block group-focus-within:block">
+            <div className="pointer-events-auto absolute bottom-[calc(100%-0.25rem)] left-1/2 z-30 hidden w-64 -translate-x-1/2 rounded-xl border border-outline-variant bg-white p-3 text-left shadow-xl group-hover:block group-focus-within:block">
               <p className="mb-2 font-label-md text-label-md text-on-background">
                 {tooltipDateFormatter.format(day.date)}
               </p>
               {day.events.length > 0 ? (
                 <ul className="space-y-2">
                   {day.events.map((event) => (
-                    <li key={event.id}>{renderEvent ? renderEvent(event) : <DefaultCalendarEvent event={event} />}</li>
+                    <li key={event.id}>
+                      {renderEvent ? (
+                        renderEvent(event)
+                      ) : (
+                        <DefaultCalendarEvent event={event} />
+                      )}
+                    </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-body-sm text-on-surface-variant">No meetings scheduled.</p>
+                <p className="text-body-sm text-on-surface-variant">
+                  No meetings scheduled.
+                </p>
               )}
             </div>
           </div>
@@ -159,7 +189,13 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
   );
 }
 
-function CalendarLegendDot({ className, label }: { className: string; label: string }) {
+function CalendarLegendDot({
+  className,
+  label,
+}: {
+  className: string;
+  label: string;
+}) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className={`h-2.5 w-2.5 rounded-full ${className}`} />
@@ -171,7 +207,11 @@ function CalendarLegendDot({ className, label }: { className: string; label: str
 function DefaultCalendarEvent({ event }: { event: CalendarEvent }) {
   return (
     <div className="flex gap-2 text-body-sm text-on-surface-variant">
-      {event.time ? <span className="font-label-sm text-label-sm text-primary">{event.time}</span> : null}
+      {event.time ? (
+        <span className="font-label-sm text-label-sm text-primary">
+          {event.time}
+        </span>
+      ) : null}
       <span className="min-w-0 flex-1">{event.title}</span>
     </div>
   );

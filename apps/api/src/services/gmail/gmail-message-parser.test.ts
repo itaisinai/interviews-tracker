@@ -50,6 +50,14 @@ test("builds extra searches for sender domains that include the company token", 
   assert.equal(queries.some((query) => query.includes("dialog")), false);
 });
 
+test("builds initial Gmail searches from known company domains", () => {
+  const queries = buildGmailSearchQueries("Alta", "Senior Software Engineer", [], ["altahq.com"]);
+
+  assert.ok(queries.includes("altahq newer_than:365d"));
+  assert.ok(queries.includes("\"altahq.com\" newer_than:365d"));
+  assert.ok(queries.includes("from:altahq.com newer_than:365d"));
+});
+
 test("builds extra sender-domain searches from English aliases", () => {
   const queries = buildRelatedSenderDomainSearchQueries("טוקו", ["toku.com"], ["Toku"]);
 
