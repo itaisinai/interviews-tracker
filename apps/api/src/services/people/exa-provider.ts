@@ -47,8 +47,8 @@ export class ExaProvider {
           query,
           numResults: 5,
           includeDomains: ["linkedin.com/in"],
-          useAutoprompt: true, // Exa's AI improves the search query
-          type: "neural" // Semantic search
+          useAutoprompt: true,
+          type: "neural"
         })
       });
 
@@ -59,7 +59,6 @@ export class ExaProvider {
 
       const data = await response.json() as ExaSearchResponse;
 
-      // Find the best matching LinkedIn profile
       const linkedInResults = data.results.filter(r =>
         r.url.includes("linkedin.com/in/") && !r.url.includes("/posts/")
       );
@@ -68,7 +67,6 @@ export class ExaProvider {
         return null;
       }
 
-      // Return the top result
       return linkedInResults[0].url;
     } catch (error) {
       console.error("Exa search error:", error);
@@ -77,7 +75,6 @@ export class ExaProvider {
   }
 
   async getLinkedInContent(url: string): Promise<ExaContentsResponse["results"][0] | null> {
-    // Get the content/text from the LinkedIn page
     try {
       const response = await fetch(`${this.baseUrl}/contents`, {
         method: "POST",
@@ -108,45 +105,136 @@ export class ExaProvider {
   }
 
   parseLinkedInContent(content: string, name: string, linkedInUrl: string): PersonResearchResult {
-    // Simple parsing of LinkedIn content
-    // LinkedIn content from Exa typically includes the structured text
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
 
-    // Extract basic info - LinkedIn profiles usually have: Name, Headline, About, Experience, Education, Skills
-    let currentRole = "";
-    let currentCompany = "";
+    let title = "";
+    let company = "";
     let about = "";
     const experience: Array<{ company: string; title: string; dates?: string; duration?: string }> = [];
     const education: Array<{ institution: string; degree?: string; dates?: string }> = [];
     const skills: string[] = [];
 
-    // Simple heuristics to parse the content
+    let inAboutSection = false;
+    let inExperienceSection = false;
+    let inEducationSection = false;
+    let inSkillsSection = false;
+    let currentExperience: { company?: string; title?: string; dates?: string; duration?: string } | null = null;
+    let currentEducation: { institution?: string; degree?: string; dates?: string } | null = null;
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      const nextLine = lines[i + 1];
 
-      // Try to extract current role (usually near the top)
-      if (i < 5 && line.includes("·") && !currentRole) {
-        currentRole = line;
+      // Detect sections
+      if (line.match(/^#+\s*About/i)) {
+        inAboutSection = true;
+        inExperienceSection = false;
+        inEducationSection = false;
+        inSkillsSection = false;
+        continue;
       }
 
-      // Look for company names (often in all caps or after "at")
-      if (line.match(/\bat\b/i) && !currentCompany) {
-        currentCompany = line.split(/\bat\b/i)[1]?.trim() || "";
+      if (line.match(/^#+\s*Experience/i)) {
+        inAboutSection = false;
+        inExperienceSection = true;
+        inEducationSection = false;
+        inSkillsSection = false;
+        continue;
+      }
+
+      if (line.match(/^#+\s*Education/i)) {
+        inAboutSection = false;
+        inExperienceSection = false;
+        inEducationSection = true;
+        inSkillsSection = false;
+        continue;
+      }
+
+      if (line.match(/^#+\s*Skills/i)) {
+        inAboutSection = false;
+        inExperienceSection = false;
+        inEducationSection = false;
+        inSkillsSection = true;
+        continue;
+      }
+
+      // Extract title and company from top lines
+      if (i < 10 && line.includes(" at ") && !title) {
+        const parts = line.split(" at ");
+        title = parts[0]?.trim() || "";
+        company = parts[1]?.trim() || "";
+      }
+
+      // Parse About section
+      if (inAboutSection && !line.startsWith("#")) {
+        about += (about ? " " : "") + line;
+      }
+
+      // Parse Experience section
+      if (inExperienceSection) {
+        if (line.startsWith("###")) {
+          // Save previous experience
+          if (currentExperience?.company && currentExperience?.title) {
+            experience.push(currentExperience as { company: string; title: string; dates?: string; duration?: string });
+          }
+
+          // New experience entry - title line
+          currentExperience = { title: line.replace(/^###\s*/, "").trim() };
+        } else if (currentExperience && !currentExperience.company && !line.startsWith("#")) {
+          // Company name (usually follows title)
+          currentExperience.company = line;
+        } else if (currentExperience && line.includes("·") && !currentExperience.dates) {
+          // Dates and duration line
+          const parts = line.split("·");
+          currentExperience.dates = parts[0]?.trim();
+          currentExperience.duration = parts[1]?.trim();
+        }
+      }
+
+      // Parse Education section
+      if (inEducationSection) {
+        if (line.startsWith("###")) {
+          // Save previous education
+          if (currentEducation?.institution) {
+            education.push(currentEducation as { institution: string; degree?: string; dates?: string });
+          }
+
+          // New education entry - institution name
+          currentEducation = { institution: line.replace(/^###\s*/, "").trim() };
+        } else if (currentEducation && !currentEducation.degree && !line.startsWith("#")) {
+          // Degree line
+          currentEducation.degree = line;
+        } else if (currentEducation && !currentEducation.dates && !line.startsWith("#")) {
+          // Dates line
+          currentEducation.dates = line;
+        }
+      }
+
+      // Parse Skills section
+      if (inSkillsSection && !line.startsWith("#")) {
+        // Skills are usually comma-separated or bullet points
+        skills.push(line.replace(/^[•\-\*]\s*/, ""));
       }
     }
 
-    // Create minimal research result
-    // Note: This is basic parsing. Exa's content is usually well-structured
+    // Save last experience/education if any
+    if (currentExperience?.company && currentExperience?.title) {
+      experience.push(currentExperience as { company: string; title: string; dates?: string; duration?: string });
+    }
+    if (currentEducation?.institution) {
+      education.push(currentEducation as { institution: string; degree?: string; dates?: string });
+    }
+
     return {
       person: {
         name,
-        title: currentRole || undefined,
-        company: currentCompany || undefined,
+        title: title || undefined,
+        company: company || undefined,
         linkedinUrl: linkedInUrl,
         avatarUrl: undefined
       },
       research: {
-        about: content.substring(0, 300) + (content.length > 300 ? "..." : ""), // First 300 chars as summary
+        about: about || undefined,
         experience: experience.length > 0 ? experience : undefined,
         education: education.length > 0 ? education : undefined,
         skills: skills.length > 0 ? skills : undefined,
@@ -161,21 +249,18 @@ export class ExaProvider {
   }
 
   async researchPerson(name: string, companyName?: string, linkedinUrl?: string): Promise<PersonResearchResult | null> {
-    // Step 1: Find LinkedIn profile if not provided
     let profileUrl = linkedinUrl || await this.searchLinkedInProfile(name, companyName);
 
     if (!profileUrl) {
       return null;
     }
 
-    // Step 2: Get LinkedIn content from Exa
     const contentResult = await this.getLinkedInContent(profileUrl);
 
     if (!contentResult || !contentResult.text) {
       return null;
     }
 
-    // Step 3: Parse the LinkedIn content
     const result = this.parseLinkedInContent(contentResult.text, name, profileUrl);
 
     return result;
