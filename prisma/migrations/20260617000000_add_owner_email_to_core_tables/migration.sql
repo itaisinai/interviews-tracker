@@ -1,27 +1,19 @@
--- Add ownerEmail column to all core tables (nullable first for data backfill)
-ALTER TABLE "JobOpportunity" ADD COLUMN "ownerEmail" TEXT;
-ALTER TABLE "Interaction" ADD COLUMN "ownerEmail" TEXT;
-ALTER TABLE "Note" ADD COLUMN "ownerEmail" TEXT;
-ALTER TABLE "Task" ADD COLUMN "ownerEmail" TEXT;
-ALTER TABLE "Compensation" ADD COLUMN "ownerEmail" TEXT;
-ALTER TABLE "JobOpportunityDomain" ADD COLUMN "ownerEmail" TEXT;
+-- Add ownerEmail column to all core tables with default value
+-- Using your email: itai.sinai@gmail.com
+ALTER TABLE "JobOpportunity" ADD COLUMN "ownerEmail" TEXT DEFAULT 'itai.sinai@gmail.com' NOT NULL;
+ALTER TABLE "Interaction" ADD COLUMN "ownerEmail" TEXT DEFAULT 'itai.sinai@gmail.com' NOT NULL;
+ALTER TABLE "Note" ADD COLUMN "ownerEmail" TEXT DEFAULT 'itai.sinai@gmail.com' NOT NULL;
+ALTER TABLE "Task" ADD COLUMN "ownerEmail" TEXT DEFAULT 'itai.sinai@gmail.com' NOT NULL;
+ALTER TABLE "Compensation" ADD COLUMN "ownerEmail" TEXT DEFAULT 'itai.sinai@gmail.com' NOT NULL;
+ALTER TABLE "JobOpportunityDomain" ADD COLUMN "ownerEmail" TEXT DEFAULT 'itai.sinai@gmail.com' NOT NULL;
 
--- Backfill existing data with the production user's email
--- This reads from the ALLOWED_EMAIL environment variable that must be set
-UPDATE "JobOpportunity" SET "ownerEmail" = current_setting('app.allowed_email', false) WHERE "ownerEmail" IS NULL;
-UPDATE "Interaction" SET "ownerEmail" = current_setting('app.allowed_email', false) WHERE "ownerEmail" IS NULL;
-UPDATE "Note" SET "ownerEmail" = current_setting('app.allowed_email', false) WHERE "ownerEmail" IS NULL;
-UPDATE "Task" SET "ownerEmail" = current_setting('app.allowed_email', false) WHERE "ownerEmail" IS NULL;
-UPDATE "Compensation" SET "ownerEmail" = current_setting('app.allowed_email', false) WHERE "ownerEmail" IS NULL;
-UPDATE "JobOpportunityDomain" SET "ownerEmail" = current_setting('app.allowed_email', false) WHERE "ownerEmail" IS NULL;
-
--- Make ownerEmail NOT NULL now that data is backfilled
-ALTER TABLE "JobOpportunity" ALTER COLUMN "ownerEmail" SET NOT NULL;
-ALTER TABLE "Interaction" ALTER COLUMN "ownerEmail" SET NOT NULL;
-ALTER TABLE "Note" ALTER COLUMN "ownerEmail" SET NOT NULL;
-ALTER TABLE "Task" ALTER COLUMN "ownerEmail" SET NOT NULL;
-ALTER TABLE "Compensation" ALTER COLUMN "ownerEmail" SET NOT NULL;
-ALTER TABLE "JobOpportunityDomain" ALTER COLUMN "ownerEmail" SET NOT NULL;
+-- Remove the default after backfilling (new rows should set ownerEmail explicitly)
+ALTER TABLE "JobOpportunity" ALTER COLUMN "ownerEmail" DROP DEFAULT;
+ALTER TABLE "Interaction" ALTER COLUMN "ownerEmail" DROP DEFAULT;
+ALTER TABLE "Note" ALTER COLUMN "ownerEmail" DROP DEFAULT;
+ALTER TABLE "Task" ALTER COLUMN "ownerEmail" DROP DEFAULT;
+ALTER TABLE "Compensation" ALTER COLUMN "ownerEmail" DROP DEFAULT;
+ALTER TABLE "JobOpportunityDomain" ALTER COLUMN "ownerEmail" DROP DEFAULT;
 
 -- Drop old unique constraints on JobOpportunity
 DROP INDEX IF EXISTS "JobOpportunity_slug_key";
