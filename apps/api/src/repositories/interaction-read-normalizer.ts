@@ -105,7 +105,7 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
       type: { in: [...overdueInteractionTypes] },
       OR: [
         { endDate: null, date: { lt: now } },
-        { endDate: { not: null, lt: now } }
+        { endDate: { lt: now } }
       ]
     },
     select: {
@@ -136,6 +136,7 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
       id: true,
       jobOpportunityId: true,
       date: true,
+      endDate: true,
       type: true,
       status: true,
       stage: true,

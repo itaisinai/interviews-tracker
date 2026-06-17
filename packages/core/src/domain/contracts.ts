@@ -42,7 +42,10 @@ export const interactionInputSchema = z.object({
   notes: z.string().nullish(),
   outcome: z.string().nullish(),
   followUp: z.string().nullish()
-});
+}).refine((data) => {
+  if (!data.endDate) return true;
+  return new Date(data.endDate).getTime() >= new Date(data.date).getTime();
+}, { message: "End date must be at or after start date", path: ["endDate"] });
 
 export const noteInputSchema = z.object({
   jobOpportunityId: z.string().nullish(),

@@ -105,7 +105,7 @@ export function promoteOverdueInteractionStatusForRead<T extends Pick<Interactio
   };
 }
 
-export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "id" | "date" | "type" | "status" | "stage" | "outcome" | "followUp">>(interactions: readonly T[], now = new Date()) {
+export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "id" | "date" | "endDate" | "type" | "status" | "stage" | "outcome" | "followUp">>(interactions: readonly T[], now = new Date()) {
   const orderedInteractions = [...interactions].sort((left, right) => {
     const leftTime = new Date(left.date).getTime();
     const rightTime = new Date(right.date).getTime();
@@ -124,7 +124,7 @@ export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "i
   });
 }
 
-export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | "status" | "type" | "stage" | "outcome" | "followUp">) {
+export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | "endDate" | "status" | "type" | "stage" | "outcome" | "followUp">) {
   const promoted = promoteOverdueInteractionStatusForRead(interaction);
 
   if (promoted.status === "SCHEDULED") {
