@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const personResearchExperienceSchema = z.object({
   company: z.string(),
+  companyUrl: z.string().url().optional(),
   title: z.string(),
   dates: z.string().optional(),
   duration: z.string().optional()

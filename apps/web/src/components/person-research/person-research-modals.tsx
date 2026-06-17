@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Modal, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 import type { PersonResearchResult } from "../../lib/types";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 type PersonInfo = {
   name: string;
@@ -58,10 +59,10 @@ export function ConfirmResearchModal({ isOpen, onClose, person, onStartResearch 
                 href={person.linkedinUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-body-sm text-primary hover:underline"
+                className="mt-2 inline-flex items-center gap-1.5 text-body-sm text-primary transition-colors hover:text-primary/80"
               >
-                <MaterialIcon name="open_in_new" className="text-[16px]" />
-                LinkedIn
+                <MaterialIcon name="open_in_new" className="flex-shrink-0" />
+                <span className="underline">LinkedIn</span>
               </a>
             ) : null}
           </div>
@@ -178,6 +179,8 @@ type ReviewModalProps = {
 
 export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onDiscard, onSave, isSaving }: ReviewModalProps) {
   const { person, research } = result;
+  const [showAllExperience, setShowAllExperience] = useState(false);
+  const [showAllEducation, setShowAllEducation] = useState(false);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Review research result" size="lg">
@@ -204,10 +207,10 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
                 href={person.linkedinUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-body-sm text-primary hover:underline"
+                className="mt-2 inline-flex items-center gap-1.5 text-body-sm text-primary transition-colors hover:text-primary/80"
               >
-                <MaterialIcon name="open_in_new" className="text-[16px]" />
-                LinkedIn
+                <MaterialIcon name="open_in_new" className="flex-shrink-0" />
+                <span className="underline">LinkedIn</span>
               </a>
             ) : null}
           </div>
@@ -215,25 +218,37 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
 
         {research.about ? (
           <div>
-            <h4 className="label">About</h4>
+            <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">About</h3>
             <p className="mt-2 whitespace-pre-line text-body-md text-on-surface-variant">{research.about}</p>
           </div>
         ) : null}
 
         {research.experience && research.experience.length > 0 ? (
           <div>
-            <h4 className="label">Experience</h4>
-            <div className="mt-3 space-y-4">
-              {research.experience.map((exp: { company: string; title: string; dates?: string; duration?: string }, index: number) => (
-                <div key={index} className="flex gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-tertiary/10 text-tertiary">
+            <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Experience</h3>
+            <div className="mt-4 space-y-4">
+              {research.experience.slice(0, 3).map((exp: { company: string; companyUrl?: string; title: string; dates?: string; duration?: string }, index: number) => (
+                <div key={index} className="flex gap-4 border-b border-outline-variant pb-4 last:border-0 last:pb-0 transition-colors duration-200">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <MaterialIcon name="work" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-label-md text-label-md font-bold">{exp.company}</p>
-                    <p className="mt-0.5 text-body-md text-on-surface-variant">{exp.title}</p>
+                    {exp.companyUrl ? (
+                      <a
+                        href={exp.companyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 font-title-sm text-title-sm font-bold text-primary transition-colors hover:text-primary/80"
+                      >
+                        <span className="underline">{exp.company}</span>
+                        <MaterialIcon name="open_in_new" className="flex-shrink-0 text-[18px]" />
+                      </a>
+                    ) : (
+                      <p className="font-title-sm text-title-sm font-bold text-on-surface">{exp.company}</p>
+                    )}
+                    <p className="mt-1 text-body-md text-on-surface">{exp.title}</p>
                     {exp.dates || exp.duration ? (
-                      <p className="mt-0.5 text-body-sm text-on-surface-variant">
+                      <p className="mt-1.5 text-body-sm text-on-surface-variant">
                         {exp.dates}
                         {exp.dates && exp.duration ? " · " : ""}
                         {exp.duration}
@@ -242,44 +257,126 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
                   </div>
                 </div>
               ))}
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  showAllExperience ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <div className="space-y-4">
+                  {research.experience.slice(3).map((exp: { company: string; companyUrl?: string; title: string; dates?: string; duration?: string }, index: number) => (
+                    <div key={index + 3} className="flex gap-4 border-b border-outline-variant pb-4 last:border-0 last:pb-0 transition-colors duration-200">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <MaterialIcon name="work" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        {exp.companyUrl ? (
+                          <a
+                            href={exp.companyUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 font-title-sm text-title-sm font-bold text-primary transition-colors hover:text-primary/80"
+                          >
+                            <span className="underline">{exp.company}</span>
+                            <MaterialIcon name="open_in_new" className="flex-shrink-0 text-[18px]" />
+                          </a>
+                        ) : (
+                          <p className="font-title-sm text-title-sm font-bold text-on-surface">{exp.company}</p>
+                        )}
+                        <p className="mt-1 text-body-md text-on-surface">{exp.title}</p>
+                        {exp.dates || exp.duration ? (
+                          <p className="mt-1.5 text-body-sm text-on-surface-variant">
+                            {exp.dates}
+                            {exp.dates && exp.duration ? " · " : ""}
+                            {exp.duration}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+            {research.experience.length > 3 ? (
+              <button
+                type="button"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-surface-container-lowest px-4 py-2.5 text-body-md font-medium text-on-surface transition-all duration-200 hover:bg-surface-container"
+                onClick={() => setShowAllExperience(!showAllExperience)}
+              >
+                <span className={`transition-transform duration-300 ${showAllExperience ? "rotate-180" : "rotate-0"}`}>
+                  <ChevronDown className="h-4 w-4" />
+                </span>
+                {showAllExperience ? "Show less" : `Show ${research.experience.length - 3} more`}
+              </button>
+            ) : null}
           </div>
         ) : null}
 
         {research.education && research.education.length > 0 ? (
           <div>
-            <h4 className="label">Education</h4>
-            <div className="mt-3 space-y-4">
-              {research.education.map((edu: { institution: string; degree?: string; dates?: string }, index: number) => (
-                <div key={index} className="flex gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
+            <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Education</h3>
+            <div className="mt-4 space-y-4">
+              {research.education.slice(0, 2).map((edu: { institution: string; degree?: string; dates?: string }, index: number) => (
+                <div key={index} className="flex gap-4 border-b border-outline-variant pb-4 last:border-0 last:pb-0 transition-colors duration-200">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary">
                     <MaterialIcon name="school" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-label-md text-label-md font-bold">{edu.institution}</p>
-                    {edu.degree ? <p className="mt-0.5 text-body-md text-on-surface-variant">{edu.degree}</p> : null}
-                    {edu.dates ? <p className="mt-0.5 text-body-sm text-on-surface-variant">{edu.dates}</p> : null}
+                    <p className="font-title-sm text-title-sm font-bold text-on-surface">{edu.institution}</p>
+                    {edu.degree ? <p className="mt-1 text-body-md text-on-surface">{edu.degree}</p> : null}
+                    {edu.dates ? <p className="mt-1.5 text-body-sm text-on-surface-variant">{edu.dates}</p> : null}
                   </div>
                 </div>
               ))}
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  showAllEducation ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <div className="space-y-4">
+                  {research.education.slice(2).map((edu: { institution: string; degree?: string; dates?: string }, index: number) => (
+                    <div key={index + 2} className="flex gap-4 border-b border-outline-variant pb-4 last:border-0 last:pb-0 transition-colors duration-200">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+                        <MaterialIcon name="school" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-title-sm text-title-sm font-bold text-on-surface">{edu.institution}</p>
+                        {edu.degree ? <p className="mt-1 text-body-md text-on-surface">{edu.degree}</p> : null}
+                        {edu.dates ? <p className="mt-1.5 text-body-sm text-on-surface-variant">{edu.dates}</p> : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+            {research.education.length > 2 ? (
+              <button
+                type="button"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-surface-container-lowest px-4 py-2.5 text-body-md font-medium text-on-surface transition-all duration-200 hover:bg-surface-container"
+                onClick={() => setShowAllEducation(!showAllEducation)}
+              >
+                <span className={`transition-transform duration-300 ${showAllEducation ? "rotate-180" : "rotate-0"}`}>
+                  <ChevronDown className="h-4 w-4" />
+                </span>
+                {showAllEducation ? "Show less" : `Show ${research.education.length - 2} more`}
+              </button>
+            ) : null}
           </div>
         ) : null}
 
         {research.skills && research.skills.length > 0 ? (
           <div>
-            <h4 className="label">Skills</h4>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Skills</h3>
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {research.skills.slice(0, 20).map((skill: string, index: number) => (
                 <span
                   key={index}
-                  className="inline-flex rounded-full bg-surface-container-high px-3 py-1.5 text-body-sm text-on-surface-variant"
+                  className="inline-flex rounded-md border border-outline-variant bg-surface-container-lowest px-2.5 py-1 text-body-xs font-medium text-on-surface-variant"
                 >
                   {skill}
                 </span>
               ))}
               {research.skills.length > 20 ? (
-                <span className="inline-flex items-center rounded-full bg-surface-container px-3 py-1.5 text-body-sm text-on-surface-variant">
+                <span className="inline-flex items-center rounded-md border border-outline bg-surface-container px-2.5 py-1 text-body-xs font-medium text-on-surface-variant">
                   +{research.skills.length - 20} more
                 </span>
               ) : null}
@@ -288,8 +385,8 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
         ) : null}
 
         {research.sources && research.sources.length > 0 ? (
-          <div className="rounded-lg bg-surface-container-low p-4">
-            <h4 className="label">Sources</h4>
+          <div className="rounded-lg border border-outline-variant/50 bg-surface-container-lowest p-4">
+            <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Sources</h3>
             <div className="mt-2 space-y-1">
               {research.sources.map((source: { label: string; url: string }, index: number) => (
                 <a

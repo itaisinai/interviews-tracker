@@ -6,6 +6,7 @@ import { InteractionsDrawer } from "../components/interactions-drawer";
 import { CompanyDataSection, OpportunitySidePanel } from "../components/opportunity-detail";
 import { PageIntro } from "../components/app-shell";
 import { Timeline } from "../components/timeline";
+import { ContactsList } from "../components/contacts/contacts-list";
 import { api } from "../lib/api";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 import { InlineLoadingState, LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
@@ -170,6 +171,10 @@ export function OpportunityDetailPage() {
         onToggleGmailImport={() => setShowGmailImport((value) => !value)}
         onSaved={refresh}
       />
+
+      <div className="mt-8">
+        <ContactsList opportunityId={opportunityId} companyName={data.companyName} />
+      </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
         <Timeline

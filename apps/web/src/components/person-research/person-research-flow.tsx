@@ -23,11 +23,12 @@ type PersonResearchFlowProps = {
   isOpen: boolean;
   onClose: () => void;
   onSaved?: () => void;
+  opportunityId?: string;
 };
 
 type FlowStep = "confirm" | "loading" | "review" | "error";
 
-export function PersonResearchFlow({ person, isOpen, onClose, onSaved }: PersonResearchFlowProps) {
+export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportunityId }: PersonResearchFlowProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("confirm");
   const [researchResult, setResearchResult] = useState<PersonResearchResult | null>(null);
@@ -79,7 +80,8 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved }: PersonR
         linkedinUrl: linkedinUrlOverride || researchResult.person.linkedinUrl || undefined,
         title: researchResult.person.title || undefined,
         company: researchResult.person.company || undefined,
-        avatarUrl: researchResult.person.avatarUrl || undefined
+        avatarUrl: researchResult.person.avatarUrl || undefined,
+        jobOpportunityId: opportunityId
       });
 
       // Save research
@@ -93,6 +95,9 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved }: PersonR
       void queryClient.invalidateQueries({ queryKey: ["people"] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      if (opportunityId) {
+        void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunityId] });
+      }
 
       onSaved?.();
       resetFlow();

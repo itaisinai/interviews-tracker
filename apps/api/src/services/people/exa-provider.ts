@@ -105,7 +105,15 @@ export class ExaProvider {
   }
 
   parseLinkedInContent(content: string, name: string, linkedInUrl: string): PersonResearchResult {
+    // Log raw content to understand format
+    console.log("\n===== RAW LINKEDIN CONTENT =====");
+    console.log(content);
+    console.log("===== END RAW CONTENT =====\n");
+
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
+    console.log("\n===== PARSED LINES =====");
+    lines.forEach((line, i) => console.log(`${i}: ${line}`));
+    console.log("===== END LINES =====\n");
 
     let title = "";
     let company = "";
@@ -212,19 +220,8 @@ export class ExaProvider {
 
       // Parse Skills section
       if (inSkillsSection && !line.startsWith("#")) {
-        // Skills can be: bullet points, comma-separated, or pipe-separated
-        const skillLine = line.replace(/^[•\-\*]\s*/, "");
-
-        // Split by common delimiters
-        const splitSkills = skillLine.split(/[•·|,]\s*/).filter(s => s.trim().length > 0);
-
-        if (splitSkills.length > 1) {
-          // Multiple skills on one line
-          skills.push(...splitSkills);
-        } else if (skillLine.trim()) {
-          // Single skill
-          skills.push(skillLine.trim());
-        }
+        // Skills are usually comma-separated or bullet points
+        skills.push(line.replace(/^[•\-\*]\s*/, ""));
       }
     }
 
