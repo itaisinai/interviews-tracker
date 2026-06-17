@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MaterialIcon } from "@interviews-tracker/design-system";
@@ -61,6 +61,17 @@ export function AppShell() {
   const avatar = user?.picture ?? null;
   const sidebarWidth = sidebarCollapsed ? 72 : 260;
 
+  // Apply sidebar offset only on desktop (md breakpoint and up)
+  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-on-background">
       <aside
@@ -71,7 +82,7 @@ export function AppShell() {
           width: `${sidebarWidth}px`
         }}
       >
-        <div className={`flex items-center justify-between border-b border-outline-variant px-4 py-4 ${sidebarCollapsed ? 'flex-col gap-2' : ''}`}>
+        <div className={`flex h-16 items-center justify-between border-b border-outline-variant px-4 ${sidebarCollapsed ? 'flex-col gap-2' : ''}`}>
           {!sidebarCollapsed && (
             <div>
               <h1 className="font-headline-md text-headline-md font-bold text-on-background">
@@ -145,13 +156,13 @@ export function AppShell() {
         </div>
       </aside>
       <header
-        className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm transition-all duration-300 md:inset-x-auto md:right-0 md:z-40"
+        className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm transition-[left] duration-300 md:z-40"
         style={{
           top: "var(--dev-banner-height, 0)",
-          left: window.innerWidth >= 768 ? `${sidebarWidth}px` : '0'
+          left: isDesktop ? `${sidebarWidth}px` : '0'
         }}
       >
-        <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
+          <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
           <div className="flex items-center gap-3 md:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary">
               <MaterialIcon name={mobileIcon} filled={activeBase === "/"} />
@@ -227,10 +238,10 @@ export function AppShell() {
         </div>
       </nav>
       <main
-        className="min-h-screen pb-24 transition-all duration-300 md:overflow-x-hidden md:pb-8"
+        className="min-h-screen pb-24 transition-[margin-left] duration-300 md:pb-8 md:overflow-x-hidden"
         style={{
           paddingTop: "calc(4rem + var(--dev-banner-height, 0))",
-          marginLeft: window.innerWidth >= 768 ? `${sidebarWidth}px` : '0'
+          marginLeft: isDesktop ? `${sidebarWidth}px` : '0'
         }}
       >
         <div className="mx-auto w-full max-w-[1280px] px-4 py-4 md:px-6 md:py-8">
