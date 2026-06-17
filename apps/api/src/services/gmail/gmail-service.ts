@@ -53,5 +53,6 @@ export {
 
 export {
   parseGmailEmailToInteraction,
-  searchGmailMessages
+  searchGmailMessages,
+  syncAttachedGmailInteractionData
 } from "./gmail-search.js";

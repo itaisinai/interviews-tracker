@@ -3,6 +3,7 @@ import { interactionStatusSchema, interactionTypeSchema } from "@interviews-trac
 
 export const interactionDraftSchema = z.object({
   date: z.string().min(1),
+  endDate: z.string().min(1).nullish(),
   type: interactionTypeSchema,
   stage: z.string().nullish(),
   status: interactionStatusSchema,

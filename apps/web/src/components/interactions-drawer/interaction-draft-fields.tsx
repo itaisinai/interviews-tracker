@@ -10,13 +10,25 @@ type InteractionDraftFieldsProps = {
 export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFieldsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Field label="Date" help="When this interaction happened.">
-        <input
-          className="input"
-          type="datetime-local"
-          value={toDatetimeLocalValue(draft.date)}
-          onChange={(event) => setDraft({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })}
-        />
+      <Field label="Date" help="When this interaction starts and ends.">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+          <input
+            className="input min-w-0"
+            type="datetime-local"
+            aria-label="Start date and time"
+            value={toDatetimeLocalValue(draft.date)}
+            onChange={(event) => setDraft({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })}
+          />
+          <span className="text-body-md text-on-surface-variant">-</span>
+          <input
+            className="input min-w-0"
+            type="datetime-local"
+            aria-label="End date and time"
+            value={toDatetimeLocalValue(draft.endDate ?? "")}
+            min={toDatetimeLocalValue(draft.date)}
+            onChange={(event) => setDraft({ ...draft, endDate: event.target.value ? new Date(event.target.value).toISOString() : null })}
+          />
+        </div>
       </Field>
       <Field label="Type" help="What happened?">
         <select className="input" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as InteractionDraft["type"] })}>

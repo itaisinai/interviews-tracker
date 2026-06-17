@@ -141,6 +141,70 @@ export async function searchGmailMessages(input: { auth0Email: string; jobOpport
   }
 }
 
+export async function syncAttachedGmailInteractionData(input: { auth0Email: string; jobOpportunityId: string }) {
+  const access = await getAccessTokenForEmail(input.auth0Email);
+
+  if (!access) {
+    throw new Error("Gmail is not connected.");
+  }
+
+  const interactions = await prisma.interaction.findMany({
+    where: {
+      jobOpportunityId: input.jobOpportunityId,
+      gmailMessageId: { not: null }
+    },
+    select: { id: true, gmailMessageId: true, endDate: true }
+  });
+  let updatedInteractions = 0;
+  let scannedMessages = 0;
+
+  for (const interaction of interactions) {
+    if (!interaction.gmailMessageId) {
+      continue;
+    }
+
+    scannedMessages += 1;
+
+    try {
+      const detail = await fetchJson<GmailMessageResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${interaction.gmailMessageId}?${new URLSearchParams({
+        format: "full"
+      }).toString()}`, {
+        headers: { Authorization: `Bearer ${access.accessToken}` }
+      });
+      const email = await parseStructuredGmailEmail({
+        message: detail,
+        attachmentFetcher: async (messageId, attachmentId) => {
+          const attachment = await fetchGmailAttachment(messageId, attachmentId, access.accessToken);
+          if (!attachment.data) {
+            return "";
+          }
+          return Buffer.from(attachment.data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+        }
+      });
+      const derived = deriveInteractionFromStructuredEmail(email);
+
+      if (!interaction.endDate && derived.endDate) {
+        await prisma.interaction.update({
+          where: { id: interaction.id },
+          data: { endDate: new Date(derived.endDate) }
+        });
+        updatedInteractions += 1;
+      }
+    } catch (error) {
+      logInfo("gmail", "attached interaction sync skipped message", {
+        interactionId: interaction.id,
+        messageId: interaction.gmailMessageId,
+        error: error instanceof Error ? error.message : "unknown"
+      });
+    }
+  }
+
+  return {
+    scannedMessages,
+    updatedInteractions
+  };
+}
+
 export async function parseGmailEmailToInteraction(input: { auth0Email: string; companyName: string; roleTitle?: string | null; messageId: string; jobOpportunityId?: string | null }) {
   const access = await getAccessTokenForEmail(input.auth0Email);
 
@@ -179,6 +243,7 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
     const parsedInteraction = gmailInteractionDraftSchema.parse({
       ...aiInteraction,
       date: aiInteraction.date?.trim() ? aiInteraction.date : derived.date,
+      endDate: aiInteraction.endDate?.trim() ? aiInteraction.endDate : derived.endDate,
       meetingLink: aiInteraction.meetingLink ?? derived.meetingLink,
       gmailMessageId: input.messageId,
       notes: [derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null
@@ -194,7 +259,8 @@ export async function parseGmailEmailToInteraction(input: { auth0Email: string; 
         `Date source: ${derived.dateSource}`,
         email.calendar?.summary ? `Calendar summary: ${email.calendar.summary}` : null,
         email.calendar?.location ? `Calendar location: ${email.calendar.location}` : null,
-        email.calendar?.start ? `Calendar start: ${email.calendar.start}` : null
+        email.calendar?.start ? `Calendar start: ${email.calendar.start}` : null,
+        email.calendar?.end ? `Calendar end: ${email.calendar.end}` : null
       ].filter(Boolean) as string[]
     });
 
