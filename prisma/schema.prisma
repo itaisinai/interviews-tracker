@@ -142,6 +142,7 @@ model Interaction {
   @@index([ownerEmail, date])
   @@index([date])
   @@index([status])
+  @@index([ownerEmail, status, endDate])
 }
 
 model Note {
