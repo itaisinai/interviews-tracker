@@ -79,6 +79,14 @@ export function DevModeAuthBypass({ userEmail, children }: DevModeAuthBypassProp
     };
   }, [userEmail]);
 
+  useEffect(() => {
+    // Add CSS custom property to adjust app layout for dev banner
+    document.documentElement.style.setProperty("--dev-banner-height", "48px");
+    return () => {
+      document.documentElement.style.removeProperty("--dev-banner-height");
+    };
+  }, []);
+
   if (!isReady) {
     return (
       <AuthPanel title="Dev Mode" description="Initializing dev mode session..." />
@@ -88,7 +96,7 @@ export function DevModeAuthBypass({ userEmail, children }: DevModeAuthBypassProp
   return (
     <>
       <DevModeBanner userEmail={userEmail} />
-      <div style={{ paddingTop: "48px" }}>{children}</div>
+      {children}
     </>
   );
 }

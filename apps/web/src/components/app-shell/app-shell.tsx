@@ -60,7 +60,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <aside className="fixed left-0 top-0 z-50 hidden h-full w-[260px] flex-col border-r border-outline-variant bg-[#d7e8f4] py-6 md:flex">
+      <aside className="fixed left-0 z-50 hidden h-full w-[260px] flex-col border-r border-outline-variant bg-[#d7e8f4] py-6 md:flex" style={{ top: "var(--dev-banner-height, 0)", height: "calc(100vh - var(--dev-banner-height, 0))" }}>
         <div className="mb-8 px-6">
           <h1 className="font-headline-md text-headline-md font-bold text-on-background">
             CareerFlow
@@ -110,7 +110,7 @@ export function AppShell() {
           </button>
         </div>
       </aside>
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm md:inset-x-auto md:left-[260px] md:right-0 md:z-40">
+      <header className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm md:inset-x-auto md:left-[260px] md:right-0 md:z-40" style={{ top: "var(--dev-banner-height, 0)" }}>
         <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
           <div className="flex items-center gap-3 md:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary">
@@ -186,7 +186,7 @@ export function AppShell() {
             ))}
         </div>
       </nav>
-      <main className="min-h-screen pb-24 pt-16 md:ml-[260px] md:overflow-x-hidden md:pb-8">
+      <main className="min-h-screen pb-24 md:ml-[260px] md:overflow-x-hidden md:pb-8" style={{ paddingTop: "calc(4rem + var(--dev-banner-height, 0))" }}>
         <div className="mx-auto w-full max-w-[1280px] px-4 py-4 md:px-6 md:py-8">
           <Outlet />
         </div>
