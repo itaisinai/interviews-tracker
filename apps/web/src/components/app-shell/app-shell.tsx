@@ -1,14 +1,18 @@
 import type { ReactNode } from "react";
+import React, { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { NotificationsBell } from "../notifications";
+import { GlobalSearchBox } from "./global-search-box";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
   { to: "/companies", label: "Companies", icon: "business" },
   { to: "/opportunities", label: "Opportunities", icon: "work" },
   { to: "/interactions", label: "Interactions", icon: "forum" },
+  { to: "/search", label: "Search", icon: "search" },
   { to: "/tasks", label: "Tasks", icon: "assignment_turned_in" },
   { to: "/compensation", label: "Compensation", icon: "payments" },
   { to: "/settings", label: "Settings", icon: "settings" }
@@ -19,6 +23,7 @@ const placeholders: Record<string, string> = {
   "/companies": "Search companies...",
   "/opportunities": "Search opportunities...",
   "/interactions": "Search interactions...",
+  "/search": "Search companies, opportunities, interactions...",
   "/tasks": "Search tasks...",
   "/compensation": "Search offers...",
   "/parse": "Search parsed jobs...",
@@ -29,6 +34,7 @@ export function AppShell() {
   const { logout, user } = useAuth0();
   const location = useLocation();
   const navigate = useNavigate();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const activeBase =
     `/${location.pathname.split("/")[1]}` === "/"
       ? "/"
@@ -54,26 +60,77 @@ export function AppShell() {
         ? "rocket_launch"
         : activeNavItem.icon;
   const avatar = user?.picture ?? null;
+  const sidebarWidth = sidebarCollapsed ? 72 : 260;
+  const transitionDuration = 0.3; // seconds
+
+  // Apply sidebar offset only on desktop (md breakpoint and up)
+  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <aside className="fixed left-0 top-0 z-50 hidden h-full w-[260px] flex-col border-r border-outline-variant bg-[#d7e8f4] py-6 md:flex">
-        <div className="mb-8 px-6">
-          <h1 className="font-headline-md text-headline-md font-bold text-on-background">
-            CareerFlow
-          </h1>
-          <p className="font-label-md text-label-md text-on-surface-variant">
-            Senior Workspace
-          </p>
+      <aside
+        className="fixed left-0 z-50 hidden flex-col border-r border-outline-variant bg-[#d7e8f4] md:flex"
+        style={{
+          top: "var(--dev-banner-height, 0)",
+          height: "calc(100vh - var(--dev-banner-height, 0))",
+          width: `${sidebarWidth}px`,
+          transition: `width ${transitionDuration}s ease-out`
+        }}
+      >
+        <div className="flex h-16 items-center border-b border-outline-variant px-4 overflow-hidden">
+          <div className="flex-1 min-w-0">
+            <AnimatePresence initial={false}>
+              {!sidebarCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: transitionDuration, ease: "easeOut" }}
+                >
+                  <h1 className="font-headline-md text-headline-md font-bold text-on-background whitespace-nowrap">
+                    CareerFlow
+                  </h1>
+                  <p className="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">
+                    Senior Workspace
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="flex-shrink-0 rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-low"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <div
+              style={{
+                transform: sidebarCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+                transition: `transform ${transitionDuration}s ease-out`
+              }}
+            >
+              <MaterialIcon name="menu" />
+            </div>
+          </button>
         </div>
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto py-2">
           {nav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === "/"}
+              title={sidebarCollapsed ? item.label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-4 py-2 pl-4 pr-6 transition-colors hover:bg-surface-container-low/80 ${
+                `flex items-center py-2 transition-colors hover:bg-surface-container-low/80 pl-6 ${
+                  sidebarCollapsed ? '' : 'gap-4 pr-6'
+                } ${
                   isActive
                     ? "border-l-2 border-primary bg-surface-container-lowest font-bold text-primary"
                     : "font-medium text-on-surface-variant"
@@ -83,32 +140,81 @@ export function AppShell() {
               {({ isActive }) => (
                 <>
                   <MaterialIcon name={item.icon} filled={isActive} />
-                  <span className="font-body-md text-body-md">{item.label}</span>
+                  <AnimatePresence initial={false}>
+                    {!sidebarCollapsed && (
+                      <motion.span
+                        className="font-body-md text-body-md"
+                        initial={{ opacity: 0, width: 0 }}
+                        animate={{ opacity: 1, width: "auto" }}
+                        exit={{ opacity: 0, width: 0 }}
+                        transition={{ duration: transitionDuration, ease: "easeOut" }}
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </>
               )}
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto space-y-1 border-t border-outline-variant px-6 pt-6">
-          <button className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80">
-            <MaterialIcon name="person" />
-            <span className="min-w-0 truncate font-body-md text-body-md">
-              {user?.email ?? displayName}
-            </span>
+        <div className={`mt-auto space-y-1 border-t border-outline-variant pt-4 overflow-hidden ${sidebarCollapsed ? 'px-2' : 'px-4'}`}>
+          <button
+            className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
+              sidebarCollapsed ? '' : 'gap-4'
+            }`}
+            title={sidebarCollapsed ? user?.email ?? displayName : undefined}
+          >
+            <MaterialIcon name="person" className="flex-shrink-0" />
+            <AnimatePresence initial={false}>
+              {!sidebarCollapsed && (
+                <motion.span
+                  className="min-w-0 truncate font-body-md text-body-md"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: transitionDuration, ease: "easeOut" }}
+                >
+                  {user?.email ?? displayName}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
           <button
-            className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80"
+            className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
+              sidebarCollapsed ? '' : 'gap-4'
+            }`}
             onClick={() =>
               void logout({ logoutParams: { returnTo: window.location.origin } })
             }
+            title={sidebarCollapsed ? "Logout" : undefined}
           >
-            <MaterialIcon name="logout" />
-            <span className="font-body-md text-body-md">Logout</span>
+            <MaterialIcon name="logout" className="flex-shrink-0" />
+            <AnimatePresence initial={false}>
+              {!sidebarCollapsed && (
+                <motion.span
+                  className="font-body-md text-body-md"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: transitionDuration, ease: "easeOut" }}
+                >
+                  Logout
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
         </div>
       </aside>
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm md:inset-x-auto md:left-[260px] md:right-0 md:z-40">
-        <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
+      <header
+        className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm md:z-40"
+        style={{
+          top: "var(--dev-banner-height, 0)",
+          left: isDesktop ? `${sidebarWidth}px` : '0',
+          transition: `left ${transitionDuration}s ease-out`
+        }}
+      >
+          <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
           <div className="flex items-center gap-3 md:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary">
               <MaterialIcon name={mobileIcon} filled={activeBase === "/"} />
@@ -118,13 +224,7 @@ export function AppShell() {
             </span>
           </div>
           <div className="hidden w-full max-w-md items-center md:flex">
-            <div className="relative w-full max-w-md">
-              <MaterialIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-              <input
-                className="w-full rounded-full border-none bg-surface-container-low py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary/20"
-                placeholder={placeholders[activeBase] ?? "Search..."}
-              />
-            </div>
+            <GlobalSearchBox placeholder={placeholders[activeBase] ?? "Search..."} />
           </div>
           <div className="flex items-center gap-3 md:gap-4">
             <NotificationsBell />
@@ -162,7 +262,7 @@ export function AppShell() {
         <div className="grid grid-cols-5">
           {nav
             .filter((item) =>
-              ["/", "/opportunities", "/interactions", "/tasks", "/settings"].includes(
+              ["/", "/opportunities", "/interactions", "/search", "/settings"].includes(
                 item.to,
               ),
             )
@@ -189,7 +289,14 @@ export function AppShell() {
             ))}
         </div>
       </nav>
-      <main className="min-h-screen pb-24 pt-16 md:ml-[260px] md:overflow-x-hidden md:pb-8">
+      <main
+        className="min-h-screen pb-24 md:pb-8 md:overflow-x-hidden"
+        style={{
+          paddingTop: "calc(4rem + var(--dev-banner-height, 0))",
+          marginLeft: isDesktop ? `${sidebarWidth}px` : '0',
+          transition: `margin-left ${transitionDuration}s ease-out`
+        }}
+      >
         <div className="mx-auto w-full max-w-[1280px] px-4 py-4 md:px-6 md:py-8">
           <Outlet />
         </div>

@@ -81,6 +81,97 @@ Do not use `apps/web/.env` unless you intentionally want to override the normal 
 
 Run `yarn env:check` after editing env vars. Restart `yarn dev` after env changes so both processes reload the updated values.
 
+### Local Database Setup
+
+For local development (especially with dev mode), run PostgreSQL locally using Docker:
+
+```sh
+# Start local database
+docker compose up -d
+
+# Run migrations
+npx prisma migrate deploy
+
+# (Optional) Seed with test data
+npx prisma db seed
+```
+
+The local database runs on `localhost:5433` with credentials from `docker-compose.yml`. Update your `.env`:
+
+```env
+DATABASE_URL=postgresql://jobcrm:jobcrm@localhost:5433/jobcrm
+```
+
+To stop the database:
+
+```sh
+docker compose down
+```
+
+To reset the database (deletes all data):
+
+```sh
+docker compose down -v
+docker compose up -d
+npx prisma migrate deploy
+```
+
+## Development Mode (Authentication Bypass)
+
+For local development and testing, you can bypass Auth0 authentication and use a test user.
+
+**⚠️ WARNING**: This should ONLY be used in local development. Never enable in production.
+
+### Enabling Dev Mode
+
+Add these variables to your root `.env` file:
+
+```env
+DEV_MODE_BYPASS_AUTH=true
+DEV_MODE_USER_EMAIL=dev@local.test
+
+VITE_DEV_MODE_BYPASS_AUTH=true
+VITE_DEV_MODE_USER_EMAIL=dev@local.test
+```
+
+Then start the app:
+
+```sh
+yarn dev
+```
+
+When dev mode is enabled:
+- ✅ No Auth0 configuration needed
+- ✅ Automatic "dev@local.test" user for all requests
+- ✅ Separate data from your production user
+- ✅ Prominent visual indicator (yellow banner)
+- ✅ Console warnings for awareness
+
+### Safety Features
+
+Dev mode includes multiple safeguards:
+- Only works with local databases (localhost, 127.0.0.1, docker)
+- Server refuses to start if DATABASE_URL points to production
+- Server refuses to start if NODE_ENV=production
+- Logs all dev mode authentications
+- Shows prominent warnings in console and UI
+
+### Switching Back to Auth0
+
+Simply set `DEV_MODE_BYPASS_AUTH=false` (or remove it) from `.env`, then restart `yarn dev`.
+
+### Use Cases
+
+Dev mode is ideal for:
+- AI assistants testing the app without Auth0 setup
+- Rapid local development without login flows
+- Testing data isolation with multiple users
+- Running automated tests
+
+### Data Isolation
+
+All data created in dev mode is associated with the dev user email (`dev@local.test`). This is completely separate from your production data (`itai.sinai@gmail.com`). You can switch between dev mode and Auth0 mode to see the data separation in action.
+
 ## Visual Testing
 
 Storybook visual regression tests run inside the same Playwright Docker image in local development and CI.

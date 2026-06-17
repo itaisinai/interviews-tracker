@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { logger } from "./logger.js";
+import { isDevModeEnabled, getDevModeUserEmail } from "./dev-mode.js";
 
 declare module "express-serve-static-core" {
   interface Request {
@@ -53,6 +54,19 @@ function getEmail(payload: JWTPayload) {
 }
 
 export async function requireAuth(request: Request, response: Response, next: NextFunction) {
+  // Dev mode bypass - check FIRST before Auth0 validation
+  if (isDevModeEnabled()) {
+    const devEmail = getDevModeUserEmail();
+    logger.info("authentication_dev_mode", {
+      devEmail,
+      path: request.path,
+      method: request.method
+    });
+    request.auth = { email: devEmail };
+    next();
+    return;
+  }
+
   const config = getAuthConfig();
 
   if (!config) {

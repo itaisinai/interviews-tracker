@@ -69,7 +69,8 @@ enum GmailMessageStateStatus {
 
 model JobOpportunity {
   id                     String                  @id @default(cuid())
-  slug                   String                  @unique
+  ownerEmail             String
+  slug                   String
   companyName            String
   companySearchName      String?
   roleTitle              String
@@ -104,7 +105,11 @@ model JobOpportunity {
   tasks                  Task[]
   compensation           Compensation?
 
-  @@unique([companyName, roleTitle])
+  @@unique([ownerEmail, slug])
+  @@unique([ownerEmail, companyName, roleTitle])
+  @@index([ownerEmail])
+  @@index([ownerEmail, pipelineType])
+  @@index([ownerEmail, status])
   @@index([pipelineType])
   @@index([status])
   @@index([priority])
@@ -112,6 +117,7 @@ model JobOpportunity {
 
 model Interaction {
   id               String            @id @default(cuid())
+  ownerEmail       String
   jobOpportunityId String
   date             DateTime
   endDate          DateTime?
@@ -132,12 +138,15 @@ model Interaction {
   notesList        Note[]
   tasks            Task[]
 
+  @@index([ownerEmail])
+  @@index([ownerEmail, date])
   @@index([date])
   @@index([status])
 }
 
 model Note {
   id               String          @id @default(cuid())
+  ownerEmail       String
   jobOpportunityId String?
   interactionId    String?
   title            String
@@ -147,10 +156,13 @@ model Note {
   updatedAt        DateTime        @updatedAt
   jobOpportunity   JobOpportunity? @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
   interaction      Interaction?    @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  @@index([ownerEmail])
 }
 
 model Task {
   id               String          @id @default(cuid())
+  ownerEmail       String
   jobOpportunityId String?
   interactionId    String?
   title            String
@@ -163,12 +175,15 @@ model Task {
   jobOpportunity   JobOpportunity? @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
   interaction      Interaction?    @relation(fields: [interactionId], references: [id], onDelete: Cascade)
 
+  @@index([ownerEmail])
+  @@index([ownerEmail, status])
   @@index([status])
   @@index([dueDate])
 }
 
 model Compensation {
   id                 String         @id @default(cuid())
+  ownerEmail         String
   jobOpportunityId   String         @unique
   baseSalary         String?
   equity             String?
@@ -182,6 +197,8 @@ model Compensation {
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   jobOpportunity     JobOpportunity @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
+
+  @@index([ownerEmail])
 }
 
 model CompanySizeOption {
@@ -225,12 +242,14 @@ model InterviewStageOption {
 }
 
 model JobOpportunityDomain {
+  ownerEmail       String
   jobOpportunityId String
   domainId         String
   jobOpportunity   JobOpportunity @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
   domain           DomainOption   @relation(fields: [domainId], references: [id], onDelete: Cascade)
 
   @@id([jobOpportunityId, domainId])
+  @@index([ownerEmail])
 }
 
 model GmailConnection {

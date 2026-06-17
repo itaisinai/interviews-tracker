@@ -10,6 +10,9 @@ import { queryClient } from "./lib/query-client";
 import "@interviews-tracker/design-system/styles/tokens.css";
 import "./styles.css";
 
+// Initialize dev-banner-height to 0 by default
+document.documentElement.style.setProperty("--dev-banner-height", "0px");
+
 const DashboardPage = lazy(() =>
   import("./pages/dashboard-page").then((module) => ({
     default: module.DashboardPage,
@@ -68,6 +71,11 @@ const ParseJobPage = lazy(() =>
     default: module.ParseJobPage,
   })),
 );
+const SearchPage = lazy(() =>
+  import("./pages/search-page").then((module) => ({
+    default: module.SearchPage,
+  })),
+);
 
 function App() {
   return (
@@ -88,6 +96,7 @@ function App() {
                   <Route path="/opportunities/:slugOrId" element={<OpportunityDetailPage />} />
                   <Route path="/opportunities/:slugOrId/edit" element={<Navigate to="/opportunities/:slugOrId" replace />} />
                   <Route path="/interactions" element={<InteractionsPage />} />
+                  <Route path="/search" element={<SearchPage />} />
                   <Route path="/tasks" element={<TasksPage />} />
                   <Route path="/compensation" element={<CompensationPage />} />
                   <Route path="/parse" element={<ParseJobPage />} />
