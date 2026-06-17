@@ -10,6 +10,7 @@ import {
   listOpportunityInteractionsHandler,
   listTrackedOpportunityGmailMessagesHandler,
   parseOpportunityGmailEmailHandler,
+  syncOpportunityAttachedGmailDataHandler,
   parseOpportunityInteractionTextHandler,
   restoreOpportunityGmailMessageHandler,
   searchOpportunityGmailHandler,
@@ -101,6 +102,16 @@ opportunitiesRouter.get("/:slugOrId/gmail/message-states", asyncHandler(async (r
 
 opportunitiesRouter.post("/:slugOrId/gmail/parse-email", asyncHandler(async (request, response) => {
   const result = await parseOpportunityGmailEmailHandler(request as AuthenticatedRequest);
+  if (!result) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  response.json(result);
+}));
+
+opportunitiesRouter.post("/:slugOrId/gmail/sync-attached", asyncHandler(async (request, response) => {
+  const result = await syncOpportunityAttachedGmailDataHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;

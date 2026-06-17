@@ -10,7 +10,7 @@ export function listInteractionsHandler(request: AuthenticatedRequest) {
 }
 
 export function createInteractionHandler(request: AuthenticatedRequest) {
-  const input = interactionInputSchema.extend({ jobOpportunityId: z.string().min(1) }).parse(request.body);
+  const input = interactionInputSchema.and(z.object({ jobOpportunityId: z.string().min(1) })).parse(request.body);
   return createInteraction(input, request.auth.email);
 }
 

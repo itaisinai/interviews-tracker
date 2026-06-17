@@ -120,6 +120,7 @@ model Interaction {
   ownerEmail       String
   jobOpportunityId String
   date             DateTime
+  endDate          DateTime?
   type             String
   stage            String?
   status           InteractionStatus
@@ -141,6 +142,7 @@ model Interaction {
   @@index([ownerEmail, date])
   @@index([date])
   @@index([status])
+  @@index([ownerEmail, status, endDate])
 }
 
 model Note {

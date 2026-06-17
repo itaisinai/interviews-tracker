@@ -18,6 +18,7 @@ type OverdueInteractionCandidate = {
 type InteractionStatusLike = {
   jobOpportunityId?: string;
   date: string | Date;
+  endDate?: string | Date | null;
   type: string;
   status: InteractionStatus;
   stage?: string | null;
@@ -51,9 +52,15 @@ function hasLaterInteraction<T extends InteractionStatusLike & { id: string }>(i
 export function promoteOverdueInteractionStatusForRead<T extends InteractionStatusLike>(interaction: T, now = new Date()) {
   if (
     interaction.status !== "SCHEDULED" ||
-    !overdueInteractionTypes.includes(interaction.type as (typeof overdueInteractionTypes)[number]) ||
-    new Date(interaction.date).getTime() >= now.getTime()
+    !overdueInteractionTypes.includes(interaction.type as (typeof overdueInteractionTypes)[number])
   ) {
+    return interaction;
+  }
+
+  // Use endDate if present, otherwise use date
+  const effectiveEndTime = interaction.endDate ? new Date(interaction.endDate).getTime() : new Date(interaction.date).getTime();
+
+  if (effectiveEndTime >= now.getTime()) {
     return interaction;
   }
 
@@ -95,13 +102,17 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
     where: {
       ownerEmail,
       status: "SCHEDULED",
-      date: { lt: now },
-      type: { in: [...overdueInteractionTypes] }
+      type: { in: [...overdueInteractionTypes] },
+      OR: [
+        { endDate: null, date: { lt: now } },
+        { endDate: { lt: now } }
+      ]
     },
     select: {
       id: true,
       jobOpportunityId: true,
       date: true,
+      endDate: true,
       type: true,
       status: true,
       stage: true,
@@ -125,6 +136,7 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
       id: true,
       jobOpportunityId: true,
       date: true,
+      endDate: true,
       type: true,
       status: true,
       stage: true,
