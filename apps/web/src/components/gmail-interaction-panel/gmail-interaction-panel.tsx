@@ -151,6 +151,7 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isAttaching, setIsAttaching] = useState(false);
+  const [isSyncingAttached, setIsSyncingAttached] = useState(false);
   const [clearingEmailId, setClearingEmailId] = useState<string | null>(null);
   const [removedEmailsExpanded, setRemovedEmailsExpanded] = useState(false);
   const [attachTargetId, setAttachTargetId] = useState<string>("");
@@ -509,6 +510,28 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
     }
   }
 
+  async function syncAttachedGmailData() {
+    setError(null);
+    setSaveError(null);
+    setIsSyncingAttached(true);
+
+    try {
+      const result = await api.gmailSyncAttached(opportunityId);
+      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      void queryClient.invalidateQueries({ queryKey: ["interactions"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+      setMessage(`Checked ${result.scannedMessages} attached email${result.scannedMessages === 1 ? "" : "s"}; updated ${result.updatedInteractions} interaction${result.updatedInteractions === 1 ? "" : "s"}.`);
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError));
+      setFlowState("failed");
+      setMessage("Could not update attached Gmail data.");
+    } finally {
+      setIsSyncingAttached(false);
+    }
+  }
+
   async function retryLastAction() {
     if (lastAction === "connect") {
       await connectGmail();
@@ -604,6 +627,9 @@ export function GmailInteractionPanel({ opportunityId, companyName, roleTitle, o
           {connected ? (
             <>
               <span className="rounded-full bg-primary-container px-3 py-1 text-label-md text-on-primary-container">Gmail connected</span>
+              <LoadingButton className="btn btn-secondary" loading={isSyncingAttached} loadingLabel="Updating..." icon="sync" onClick={() => void syncAttachedGmailData()}>
+                Update attached data
+              </LoadingButton>
               <LoadingButton className="btn btn-primary" loading={flowState === "searching_emails"} loadingLabel="Searching..." icon="search" onClick={() => void searchEmails()}>
                 Add interaction from Gmail
               </LoadingButton>

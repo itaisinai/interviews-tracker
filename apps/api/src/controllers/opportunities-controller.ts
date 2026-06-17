@@ -1,6 +1,6 @@
 import { createOpportunity, deleteOpportunity, getOpportunity, listOpportunities, updateOpportunity } from "../services/opportunities/opportunity-service.js";
 import { createOpportunityNoteRecord, createOpportunityTaskRecord, getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord } from "../repositories/opportunity-repository.js";
-import { hideGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages, unmarkUsedGmailMessageState } from "../services/gmail/gmail-service.js";
+import { hideGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages, syncAttachedGmailInteractionData, unmarkUsedGmailMessageState } from "../services/gmail/gmail-service.js";
 import { interactionInputSchema, noteInputSchema, opportunityInputSchema, taskInputSchema } from "../lib/schemas.js";
 
 import type { Request } from "express";
@@ -108,6 +108,20 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
     jobOpportunityId: opportunity.id
   });
   timer.end({ company: opportunity.companyName });
+  return result;
+}
+
+export async function syncOpportunityAttachedGmailDataHandler(request: AuthenticatedRequest) {
+  const opportunity = await getOpportunitySummaryRecord(request.params.slugOrId);
+
+  if (!opportunity) {
+    return null;
+  }
+
+  const result = await syncAttachedGmailInteractionData({
+    auth0Email: request.auth?.email ?? "",
+    jobOpportunityId: opportunity.id
+  });
   return result;
 }
 

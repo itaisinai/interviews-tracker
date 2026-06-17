@@ -90,6 +90,7 @@ export const api = {
   gmailSearch: (id: string) => request<GmailSearchResponse>(`/opportunities/${id}/gmail/search`),
   gmailMessageStates: (id: string) => request<{ removedEmails: Array<{ id: string; subject: string; date: string }>; pickedEmails: Array<{ id: string; subject: string; date: string }> }>(`/opportunities/${id}/gmail/message-states`),
   gmailParseEmail: (id: string, body: { messageId: string }) => request<GmailParsedEmailResponse>(`/opportunities/${id}/gmail/parse-email`, { method: "POST", body: JSON.stringify(body) }),
+  gmailSyncAttached: (id: string) => request<{ scannedMessages: number; updatedInteractions: number }>(`/opportunities/${id}/gmail/sync-attached`, { method: "POST" }),
   gmailHideEmail: (id: string, messageId: string) => request<void>(`/opportunities/${id}/gmail/messages/${encodeURIComponent(messageId)}/hide`, { method: "POST" }),
   gmailRestoreEmail: (id: string, messageId: string) => request<void>(`/opportunities/${id}/gmail/messages/${encodeURIComponent(messageId)}/hide`, { method: "DELETE" }),
   gmailUnpickEmail: (id: string, messageId: string) => request<void>(`/opportunities/${id}/gmail/messages/${encodeURIComponent(messageId)}/used`, { method: "DELETE" }),
