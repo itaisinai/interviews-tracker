@@ -212,10 +212,23 @@ export function createGmailAuthUrl(auth0Email: string, returnTo?: string) {
 
 export async function getGmailStatus(auth0Email: string) {
   const settings = getSettings();
+  if (!settings) {
+    return {
+      configured: false,
+      connected: false,
+      needsReconnect: false,
+      googleEmail: null,
+      lastError: null,
+      lastConnectedAt: null,
+      updatedAt: null,
+      scopes: []
+    };
+  }
+
   const connection = await prisma.gmailConnection.findUnique({ where: { auth0Email } });
 
   return {
-    configured: Boolean(settings),
+    configured: true,
     connected: Boolean(connection && !(connection as typeof connection & { needsReconnect?: boolean }).needsReconnect),
     needsReconnect: Boolean((connection as typeof connection & { needsReconnect?: boolean } | null)?.needsReconnect),
     googleEmail: connection?.googleEmail ?? null,
