@@ -18,6 +18,7 @@ type OverdueInteractionCandidate = {
 type InteractionStatusLike = {
   jobOpportunityId?: string;
   date: string | Date;
+  endDate?: string | Date | null;
   type: string;
   status: InteractionStatus;
   stage?: string | null;
