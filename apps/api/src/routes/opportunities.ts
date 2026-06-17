@@ -111,7 +111,7 @@ opportunitiesRouter.post("/:slugOrId/gmail/parse-email", asyncHandler(async (req
 }));
 
 opportunitiesRouter.post("/:slugOrId/gmail/sync-attached", asyncHandler(async (request, response) => {
-  const result = await syncOpportunityAttachedGmailDataHandler(request);
+  const result = await syncOpportunityAttachedGmailDataHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;

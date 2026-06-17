@@ -112,7 +112,7 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
 }
 
 export async function syncOpportunityAttachedGmailDataHandler(request: AuthenticatedRequest) {
-  const opportunity = await getOpportunitySummaryRecord(request.params.slugOrId);
+  const opportunity = await getOpportunitySummaryRecord(request.params.slugOrId, request.auth.email);
 
   if (!opportunity) {
     return null;

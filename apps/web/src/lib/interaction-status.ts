@@ -83,13 +83,19 @@ function hasLaterInteraction(
   return orderedInteractions.slice(currentIndex + 1).length > 0;
 }
 
-export function promoteOverdueInteractionStatusForRead<T extends Pick<Interaction, "date" | "type" | "status">>(interaction: T, now = new Date()) {
+export function promoteOverdueInteractionStatusForRead<T extends Pick<Interaction, "date" | "type" | "status" | "endDate">>(interaction: T, now = new Date()) {
   const normalizedType = normalizeInteractionType(interaction.type);
   if (
     interaction.status !== "SCHEDULED" ||
-    !overdueInteractionTypes.includes(normalizedType as (typeof overdueInteractionTypes)[number]) ||
-    new Date(interaction.date).getTime() >= now.getTime()
+    !overdueInteractionTypes.includes(normalizedType as (typeof overdueInteractionTypes)[number])
   ) {
+    return interaction;
+  }
+
+  // Use endDate if present, otherwise use date
+  const effectiveEndTime = interaction.endDate ? new Date(interaction.endDate).getTime() : new Date(interaction.date).getTime();
+
+  if (effectiveEndTime >= now.getTime()) {
     return interaction;
   }
 
