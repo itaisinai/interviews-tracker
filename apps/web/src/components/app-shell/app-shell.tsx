@@ -3,12 +3,14 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { NotificationsBell } from "../notifications";
+import { GlobalSearchBox } from "./global-search-box";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
   { to: "/companies", label: "Companies", icon: "business" },
   { to: "/opportunities", label: "Opportunities", icon: "work" },
   { to: "/interactions", label: "Interactions", icon: "forum" },
+  { to: "/search", label: "Search", icon: "search" },
   { to: "/tasks", label: "Tasks", icon: "assignment_turned_in" },
   { to: "/compensation", label: "Compensation", icon: "payments" },
   { to: "/settings", label: "Settings", icon: "settings" }
@@ -19,6 +21,7 @@ const placeholders: Record<string, string> = {
   "/companies": "Search companies...",
   "/opportunities": "Search opportunities...",
   "/interactions": "Search interactions...",
+  "/search": "Search companies, opportunities, interactions...",
   "/tasks": "Search tasks...",
   "/compensation": "Search offers...",
   "/parse": "Search parsed jobs...",
@@ -118,13 +121,7 @@ export function AppShell() {
             </span>
           </div>
           <div className="hidden w-full max-w-md items-center md:flex">
-            <div className="relative w-full max-w-md">
-              <MaterialIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-              <input
-                className="w-full rounded-full border-none bg-surface-container-low py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary/20"
-                placeholder={placeholders[activeBase] ?? "Search..."}
-              />
-            </div>
+            <GlobalSearchBox placeholder={placeholders[activeBase] ?? "Search..."} />
           </div>
           <div className="flex items-center gap-3 md:gap-4">
             <NotificationsBell />
@@ -162,7 +159,7 @@ export function AppShell() {
         <div className="grid grid-cols-5">
           {nav
             .filter((item) =>
-              ["/", "/opportunities", "/interactions", "/tasks", "/settings"].includes(
+              ["/", "/opportunities", "/interactions", "/search", "/settings"].includes(
                 item.to,
               ),
             )

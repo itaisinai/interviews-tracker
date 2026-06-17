@@ -68,6 +68,11 @@ const ParseJobPage = lazy(() =>
     default: module.ParseJobPage,
   })),
 );
+const SearchPage = lazy(() =>
+  import("./pages/search-page").then((module) => ({
+    default: module.SearchPage,
+  })),
+);
 
 function App() {
   return (
@@ -88,6 +93,7 @@ function App() {
                   <Route path="/opportunities/:slugOrId" element={<OpportunityDetailPage />} />
                   <Route path="/opportunities/:slugOrId/edit" element={<Navigate to="/opportunities/:slugOrId" replace />} />
                   <Route path="/interactions" element={<InteractionsPage />} />
+                  <Route path="/search" element={<SearchPage />} />
                   <Route path="/tasks" element={<TasksPage />} />
                   <Route path="/compensation" element={<CompensationPage />} />
                   <Route path="/parse" element={<ParseJobPage />} />
