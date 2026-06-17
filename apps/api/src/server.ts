@@ -11,6 +11,7 @@ import { notesRouter } from "./routes/notes.js";
 import { opportunitiesRouter } from "./routes/opportunities.js";
 import { optionsRouter } from "./routes/options.js";
 import { tasksRouter } from "./routes/tasks.js";
+import { peopleRouter } from "./routes/people.js";
 import { requireAuth } from "./lib/auth.js";
 import { errorHandler } from "./lib/http.js";
 import { apiRequestLogger } from "./lib/request-logging.js";
@@ -91,6 +92,7 @@ app.use("/api/compensation", compensationRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/options", optionsRouter);
 app.use("/api/ai", aiRouter);
+app.use("/api/people", peopleRouter);
 app.use(errorHandler);
 
 const port = Number(process.env.PORT ?? 4000);

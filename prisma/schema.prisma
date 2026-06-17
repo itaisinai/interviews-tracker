@@ -257,3 +257,33 @@ model GmailMessageState {
   @@index([auth0Email, status])
   @@index([jobOpportunityId])
 }
+
+model Person {
+  id             String           @id @default(cuid())
+  name           String
+  email          String?
+  linkedinUrl    String?
+  title          String?
+  company        String?
+  avatarUrl      String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  research       PersonResearch?
+
+  @@unique([email])
+  @@unique([linkedinUrl])
+  @@index([name, company])
+}
+
+model PersonResearch {
+  id          String                    @id @default(cuid())
+  personId    String                    @unique
+  about       String?
+  experience  Json?
+  education   Json?
+  skills      Json?
+  sources     Json?
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  person      Person                    @relation(fields: [personId], references: [id], onDelete: Cascade)
+}

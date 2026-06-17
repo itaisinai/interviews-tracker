@@ -24,7 +24,9 @@ export type {
   CompanyResearchInput,
   CompanyResearchResult,
   CompanyResearchApplyResponse,
-  InteractionDraft
+  InteractionDraft,
+  PersonResearchInput,
+  PersonResearchResult
 } from "@interviews-tracker/ai";
 
 export type {
