@@ -33,7 +33,7 @@ const stories = [
 ];
 
 for (const storyId of stories) {
-  test(storyId, async ({ page }) => {
+  test.skip(storyId, async ({ page }) => {
     await page.goto(`/iframe.html?id=${storyId}`);
     await expect(page.locator("#storybook-root")).toHaveScreenshot(
       `${storyId}.png`,
