@@ -1,21 +1,24 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { endOfWeek, startOfToday } from "../services/gmail/date-helpers.js";
 import { asyncHandler } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
 import { normalizeOverdueScheduledInteractionsForRead } from "../repositories/interaction-read-normalizer.js";
 import { syncOpportunityStatusRecord } from "../repositories/opportunity-repository.js";
 
+type AuthenticatedRequest = Request & { auth: { email: string } };
+
 export const dashboardRouter = Router();
 
-dashboardRouter.get("/", asyncHandler(async (_request, response) => {
+dashboardRouter.get("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const ownerEmail = request.auth.email;
   const today = startOfToday();
   const weekEnd = endOfWeek(today);
-  const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead();
-  await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id)));
+  const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
+  await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
   const [opportunities, interactions, tasks] = await Promise.all([
-    prisma.jobOpportunity.findMany({ include: { interactions: true, domains: { include: { domain: true } } }, orderBy: { updatedAt: "desc" } }),
-    prisma.interaction.findMany({ where: { date: { gte: today } }, include: { jobOpportunity: true }, orderBy: { date: "asc" }, take: 8 }),
-    prisma.task.findMany({ where: { dueDate: { gte: today, lte: weekEnd }, status: { in: ["PENDING", "IN_PROGRESS"] } }, include: { jobOpportunity: true }, orderBy: { dueDate: "asc" } })
+    prisma.jobOpportunity.findMany({ where: { ownerEmail }, include: { interactions: true, domains: { include: { domain: true } } }, orderBy: { updatedAt: "desc" } }),
+    prisma.interaction.findMany({ where: { ownerEmail, date: { gte: today } }, include: { jobOpportunity: true }, orderBy: { date: "asc" }, take: 8 }),
+    prisma.task.findMany({ where: { ownerEmail, dueDate: { gte: today, lte: weekEnd }, status: { in: ["PENDING", "IN_PROGRESS"] } }, include: { jobOpportunity: true }, orderBy: { dueDate: "asc" } })
   ]);
 
   response.json({

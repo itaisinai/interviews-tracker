@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../lib/http.js";
 import { createTimer } from "../lib/logger.js";
@@ -8,6 +8,8 @@ import { companyResearchApplyInputSchema, companyResearchInputSchema } from "../
 import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";
 import { normalizeOverdueScheduledInteractionsForRead } from "../repositories/interaction-read-normalizer.js";
 import { syncOpportunityStatusRecord } from "../repositories/opportunity-repository.js";
+
+type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export const companiesRouter = Router();
 
@@ -26,10 +28,11 @@ const include = {
   compensation: true
 };
 
-companiesRouter.get("/", asyncHandler(async (_request, response) => {
-  const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead();
-  await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id)));
-  const opportunities = await prisma.jobOpportunity.findMany({ include, orderBy: { updatedAt: "desc" } });
+companiesRouter.get("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const ownerEmail = request.auth.email;
+  const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
+  await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
+  const opportunities = await prisma.jobOpportunity.findMany({ where: { ownerEmail }, include, orderBy: { updatedAt: "desc" } });
   const companies = new Map<string, typeof opportunities>();
 
   for (const opportunity of opportunities) {
@@ -61,12 +64,13 @@ companiesRouter.get("/", asyncHandler(async (_request, response) => {
   }));
 }));
 
-companiesRouter.get("/:companyName", asyncHandler(async (request, response) => {
+companiesRouter.get("/:companyName", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const ownerEmail = request.auth.email;
   const companyName = decodeURIComponent(request.params.companyName);
-  const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead();
-  await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id)));
+  const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
+  await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
   const opportunities = await prisma.jobOpportunity.findMany({
-    where: { companyName },
+    where: { ownerEmail, companyName },
     include,
     orderBy: { updatedAt: "desc" }
   });
@@ -81,13 +85,15 @@ companiesRouter.get("/:companyName", asyncHandler(async (request, response) => {
   });
 }));
 
-companiesRouter.delete("/:companyName", asyncHandler(async (request, response) => {
+companiesRouter.delete("/:companyName", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const ownerEmail = request.auth.email;
   const companyName = decodeURIComponent(request.params.companyName);
-  await prisma.jobOpportunity.deleteMany({ where: { companyName } });
+  await prisma.jobOpportunity.deleteMany({ where: { ownerEmail, companyName } });
   response.status(204).end();
 }));
 
-companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, response) => {
+companiesRouter.post("/:companyName/enrich", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const ownerEmail = request.auth.email;
   const companyName = decodeURIComponent(request.params.companyName);
   const timer = createTimer("route", "company enrich", { company: companyName });
   const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
@@ -99,7 +105,7 @@ companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, respon
   const workModel = enrichment.workModel ? await prisma.workModelOption.upsert({ where: { label: enrichment.workModel }, create: { label: enrichment.workModel }, update: {} }) : null;
   const domains = await Promise.all(enrichment.domains.map((label: string) => prisma.domainOption.upsert({ where: { label }, create: { label }, update: {} })));
 
-  const opportunities = await prisma.jobOpportunity.findMany({ where: { companyName }, select: { id: true } });
+  const opportunities = await prisma.jobOpportunity.findMany({ where: { ownerEmail, companyName }, select: { id: true } });
 
   for (const opportunity of opportunities) {
     await prisma.jobOpportunity.update({
@@ -121,10 +127,10 @@ companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, respon
       }
     });
 
-    await prisma.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: opportunity.id } });
+    await prisma.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: opportunity.id, ownerEmail } });
     if (domains.length > 0) {
       await prisma.jobOpportunityDomain.createMany({
-        data: domains.map((domain) => ({ jobOpportunityId: opportunity.id, domainId: domain.id })),
+        data: domains.map((domain) => ({ ownerEmail, jobOpportunityId: opportunity.id, domainId: domain.id })),
         skipDuplicates: true
       });
     }
@@ -134,7 +140,7 @@ companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, respon
   response.json({ enrichment, updatedOpportunities: opportunities.length });
 }));
 
-companiesRouter.post("/:companyName/research", asyncHandler(async (request, response) => {
+companiesRouter.post("/:companyName/research", asyncHandler(async (request: AuthenticatedRequest, response) => {
   const companyName = decodeURIComponent(request.params.companyName);
   const timer = createTimer("route", "company research", { company: companyName });
   const input = companyResearchInputSchema.parse({ ...request.body, companyName });
@@ -144,12 +150,13 @@ companiesRouter.post("/:companyName/research", asyncHandler(async (request, resp
   response.json({ research });
 }));
 
-companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request, response) => {
+companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const ownerEmail = request.auth.email;
   const companyName = decodeURIComponent(request.params.companyName);
   const timer = createTimer("route", "company research apply", { company: companyName });
   const { targetOpportunityId, research } = companyResearchApplyInputSchema.parse(request.body);
   const targetOpportunities = await prisma.jobOpportunity.findMany({
-    where: targetOpportunityId ? { id: targetOpportunityId } : { companyName },
+    where: targetOpportunityId ? { id: targetOpportunityId, ownerEmail } : { ownerEmail, companyName },
     select: {
       id: true,
       companyName: true,
@@ -197,7 +204,7 @@ companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request
 
     if (domains.length > 0) {
       await prisma.jobOpportunityDomain.createMany({
-        data: domains.map((domain) => ({ jobOpportunityId: opportunity.id, domainId: domain.id })),
+        data: domains.map((domain) => ({ ownerEmail, jobOpportunityId: opportunity.id, domainId: domain.id })),
         skipDuplicates: true
       });
     }
@@ -206,6 +213,7 @@ companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request
   const noteTarget = targetOpportunities[0];
   await prisma.note.create({
     data: {
+      ownerEmail,
       jobOpportunityId: noteTarget.id,
       title: `Company research: ${research.companyName}`,
       category: "Company Research",
