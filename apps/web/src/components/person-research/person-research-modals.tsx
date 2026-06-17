@@ -268,40 +268,18 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
 
         {research.education && research.education.length > 0 ? (
           <div>
-            <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Education</h3>
-            <div className="mt-4 space-y-4">
-              {research.education.slice(0, 2).map((edu: { institution: string; degree?: string; dates?: string }, index: number) => (
-                <div key={index} className="flex gap-4 border-b border-outline-variant pb-4 last:border-0 last:pb-0 transition-colors duration-200">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary">
-                    <MaterialIcon name="school" />
-                  </div>
+            <h3 className="mb-4 font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Education</h3>
+            <div className="space-y-6">
+              {research.education.slice(0, showAllEducation ? undefined : 2).map((edu: { institution: string; degree?: string; dates?: string }, index: number) => (
+                <div key={index} className="flex gap-3">
+                  <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-surface-container" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-title-sm text-title-sm font-bold text-on-surface">{edu.institution}</p>
-                    {edu.degree ? <p className="mt-1 text-body-md text-on-surface">{edu.degree}</p> : null}
-                    {edu.dates ? <p className="mt-1.5 text-body-sm text-on-surface-variant">{edu.dates}</p> : null}
+                    <h4 className="text-body-lg font-bold text-on-surface">{edu.institution}</h4>
+                    {edu.degree ? <p className="mt-0.5 text-body-sm text-on-surface-variant">{edu.degree}</p> : null}
+                    {edu.dates ? <p className="mt-0.5 text-body-sm text-on-surface-variant">{edu.dates}</p> : null}
                   </div>
                 </div>
               ))}
-              <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                  showAllEducation ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
-                }`}
-              >
-                <div className="space-y-4">
-                  {research.education.slice(2).map((edu: { institution: string; degree?: string; dates?: string }, index: number) => (
-                    <div key={index + 2} className="flex gap-4 border-b border-outline-variant pb-4 last:border-0 last:pb-0 transition-colors duration-200">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary">
-                        <MaterialIcon name="school" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-title-sm text-title-sm font-bold text-on-surface">{edu.institution}</p>
-                        {edu.degree ? <p className="mt-1 text-body-md text-on-surface">{edu.degree}</p> : null}
-                        {edu.dates ? <p className="mt-1.5 text-body-sm text-on-surface-variant">{edu.dates}</p> : null}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
             {research.education.length > 2 ? (
               <button

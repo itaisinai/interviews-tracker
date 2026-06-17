@@ -7,10 +7,13 @@ type ExaSearchResult = {
   author?: string;
   score?: number;
   id: string;
+  text?: string; // Present when contents.text is requested
 };
 
 type ExaSearchResponse = {
   results: ExaSearchResult[];
+  requestId?: string;
+  searchType?: string;
 };
 
 type ExaContentsResponse = {
@@ -30,8 +33,8 @@ export class ExaProvider {
     this.apiKey = apiKey;
   }
 
-  async searchLinkedInProfile(name: string, companyName?: string): Promise<string | null> {
-    // Use Exa's neural search with simple format: "NAME from COMPANY"
+  async searchLinkedInProfile(name: string, companyName?: string): Promise<{ url: string; text: string } | null> {
+    // Use Exa's people category with text content in a single call
     const query = companyName
       ? `${name} from ${companyName}`
       : name;
@@ -45,10 +48,16 @@ export class ExaProvider {
         },
         body: JSON.stringify({
           query,
+          type: "auto",
+          category: "people",
           numResults: 5,
-          includeDomains: ["linkedin.com/in"],
-          useAutoprompt: true,
-          type: "neural"
+          includeDomains: ["linkedin.com"],
+          contents: {
+            text: {
+              includeHtmlTags: false,
+              maxCharacters: 20000
+            }
+          }
         })
       });
 
@@ -59,6 +68,7 @@ export class ExaProvider {
 
       const data = await response.json() as ExaSearchResponse;
 
+      // Filter for profile pages (not posts or other LinkedIn pages)
       const linkedInResults = data.results.filter(r =>
         r.url.includes("linkedin.com/in/") && !r.url.includes("/posts/")
       );
@@ -67,39 +77,21 @@ export class ExaProvider {
         return null;
       }
 
-      return linkedInResults[0].url;
-    } catch (error) {
-      console.error("Exa search error:", error);
-      return null;
-    }
-  }
+      const result = linkedInResults[0];
+      // @ts-ignore - text field exists when contents.text is requested
+      const text = result.text;
 
-  async getLinkedInContent(url: string): Promise<ExaContentsResponse["results"][0] | null> {
-    try {
-      const response = await fetch(`${this.baseUrl}/contents`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": this.apiKey
-        },
-        body: JSON.stringify({
-          ids: [url],
-          text: {
-            includeHtmlTags: false,
-            maxCharacters: 5000
-          }
-        })
-      });
-
-      if (!response.ok) {
-        console.error("Exa contents failed:", response.status);
+      if (!text) {
+        console.error("No text content returned from Exa");
         return null;
       }
 
-      const data = await response.json() as ExaContentsResponse;
-      return data.results[0] || null;
+      return {
+        url: result.url,
+        text
+      };
     } catch (error) {
-      console.error("Exa contents error:", error);
+      console.error("Exa search error:", error);
       return null;
     }
   }
@@ -109,15 +101,11 @@ export class ExaProvider {
 
     let title = "";
     let company = "";
-    let about = "";
     const rawExperience: Array<{ company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string }> = [];
     const education: Array<{ institution: string; degree?: string; dates?: string }> = [];
-    const skills: string[] = [];
 
-    let inAboutSection = false;
     let inExperienceSection = false;
     let inEducationSection = false;
-    let inSkillsSection = false;
     let currentExperience: { company?: string; companyUrl?: string; title?: string; dates?: string; duration?: string; description?: string } | null = null;
     let currentEducation: { institution?: string; degree?: string; dates?: string } | null = null;
 
@@ -126,35 +114,22 @@ export class ExaProvider {
       const nextLine = lines[i + 1];
 
       // Detect sections
-      if (line.match(/^#+\s*About/i)) {
-        inAboutSection = true;
-        inExperienceSection = false;
-        inEducationSection = false;
-        inSkillsSection = false;
-        continue;
-      }
-
       if (line.match(/^#+\s*Experience/i)) {
-        inAboutSection = false;
         inExperienceSection = true;
         inEducationSection = false;
-        inSkillsSection = false;
         continue;
       }
 
       if (line.match(/^#+\s*Education/i)) {
-        inAboutSection = false;
         inExperienceSection = false;
         inEducationSection = true;
-        inSkillsSection = false;
         continue;
       }
 
-      if (line.match(/^#+\s*Skills/i)) {
-        inAboutSection = false;
+      // Exit both sections if we hit any other major section
+      if (line.match(/^#+\s*(About|Skills|Licenses|Certifications|Volunteer|Projects|Publications|Honors|Languages)/i)) {
         inExperienceSection = false;
         inEducationSection = false;
-        inSkillsSection = true;
         continue;
       }
 
@@ -165,14 +140,23 @@ export class ExaProvider {
         company = parts[1]?.trim() || "";
       }
 
-      // Parse About section
-      if (inAboutSection && !line.startsWith("#")) {
-        about += (about ? " " : "") + line;
-      }
-
       // Parse Experience section
       if (inExperienceSection) {
-        if (line.startsWith("###")) {
+        // IMPORTANT: Check for #### BEFORE ### because startsWith("###") matches both!
+        if (line.startsWith("####")) {
+          // Sub-position under a company - save previous position first
+          if (currentExperience?.company && currentExperience?.title) {
+            rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
+          }
+
+          // Start new position under the same company
+          const positionTitle = line.replace(/^####\s*/, "").trim();
+          currentExperience = {
+            company: currentExperience?.company || "",
+            companyUrl: currentExperience?.companyUrl,
+            title: positionTitle
+          };
+        } else if (line.startsWith("###")) {
           // Save previous experience
           if (currentExperience?.company && currentExperience?.title) {
             rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
@@ -180,17 +164,8 @@ export class ExaProvider {
 
           const rawLine = line.replace(/^###\s*/, "").trim();
 
-          // Check if this is a company header (format: ### [Company](url)) or a job title
-          const companyHeaderMatch = rawLine.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-
-          if (companyHeaderMatch) {
-            // This is a company header - positions will follow as ####
-            currentExperience = {
-              company: companyHeaderMatch[1],
-              companyUrl: companyHeaderMatch[2],
-              title: "" // Will be filled by #### lines
-            };
-          } else if (rawLine.includes(" at ")) {
+          // Check if this line contains " at " - indicates single position
+          if (rawLine.includes(" at ")) {
             // Format: ### Title at [Company](url)
             const atMatch = rawLine.match(/^(.+?)\s+at\s+\[([^\]]+)\]\(([^)]+)\)/);
             if (atMatch) {
@@ -200,47 +175,46 @@ export class ExaProvider {
                 companyUrl: atMatch[3]
               };
             } else {
-              currentExperience = { title: rawLine };
+              // Fallback for plain text without markdown link
+              const parts = rawLine.split(" at ");
+              currentExperience = {
+                title: parts[0]?.trim() || "",
+                company: parts[1]?.trim() || ""
+              };
             }
           } else {
-            // Simple format: ### Job Title (company info comes on next line)
-            currentExperience = { title: rawLine };
-          }
-        } else if (line.startsWith("####")) {
-          // Sub-position under a company
-          if (currentExperience && currentExperience.company && !currentExperience.title) {
-            currentExperience.title = line.replace(/^####\s*/, "").trim();
+            // Format: ### [Company](url) - multiple positions will follow as ####
+            const companyMatch = rawLine.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+            if (companyMatch) {
+              currentExperience = {
+                company: companyMatch[1],
+                companyUrl: companyMatch[2],
+                title: "" // Will be filled by #### lines
+              };
+            } else {
+              // Just company name without link
+              currentExperience = {
+                company: rawLine,
+                title: ""
+              };
+            }
           }
         } else if (currentExperience && !line.startsWith("#")) {
-          // Check if this is the company line (contains company name, often with | or · separators)
-          if (!currentExperience.company && !line.startsWith("@") && !line.startsWith("Department:") && !line.match(/^[A-Z][a-z]{2}\s+\d{4}/)) {
-            // Extract company name and URL if present
-            const companyMatch = line.match(/\[([^\]]+)\]\(([^)]+)\)/);
-            if (companyMatch) {
-              currentExperience.company = companyMatch[1];
-              currentExperience.companyUrl = companyMatch[2];
-            } else {
-              // Just company name (might have extra info like "· Full-time")
-              const companyParts = line.split("·")[0].trim();
-              currentExperience.company = companyParts;
-            }
+          // Skip Department/Level metadata lines
+          if (line.startsWith("Department:")) {
+            continue;
           }
-          // Look for dates with format: "Month Year - Month Year (duration)" or "Month Year - Month Year · duration"
-          else if (!currentExperience.dates) {
-            const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{4})\s*-\s*([A-Z][a-z]{2}\s+\d{4}|Present)(?:\s*[·\(]\s*(.+?)[\)]?)?/);
+
+          // Look for dates with format: "Month Year - Month Year (duration)" or just location info
+          if (!currentExperience.dates) {
+            const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{4})\s*-\s*([A-Z][a-z]{2}\s+\d{4}|Present)\s*\(([^)]+)\)/);
             if (dateMatch) {
               currentExperience.dates = `${dateMatch[1]} - ${dateMatch[2]}`;
-              if (dateMatch[3]) {
-                currentExperience.duration = dateMatch[3].replace(/\)$/, "").trim();
-              }
+              currentExperience.duration = dateMatch[3].trim();
             }
           }
-          // Skip location lines (single word countries/cities)
-          else if (line.length < 30 && !line.includes(" ")) {
-            // Skip location like "Israel"
-          }
-          // Description text (after we have dates, not metadata)
-          else if (currentExperience.dates && !line.startsWith("@") && !line.startsWith("Department:") && line.length > 20) {
+          // Description text (after we have dates, skip metadata and short lines)
+          else if (currentExperience.dates && !line.startsWith("@") && line.length > 50) {
             if (!currentExperience.description) {
               currentExperience.description = line;
             } else {
@@ -254,25 +228,43 @@ export class ExaProvider {
       if (inEducationSection) {
         if (line.startsWith("###")) {
           // Save previous education
-          if (currentEducation?.institution) {
+          if (currentEducation?.institution && currentEducation?.degree) {
             education.push(currentEducation as { institution: string; degree?: string; dates?: string });
           }
 
-          // New education entry - institution name
-          currentEducation = { institution: line.replace(/^###\s*/, "").trim() };
-        } else if (currentEducation && !currentEducation.degree && !line.startsWith("#")) {
-          // Degree line
-          currentEducation.degree = line;
-        } else if (currentEducation && !currentEducation.dates && !line.startsWith("#")) {
-          // Dates line
-          currentEducation.dates = line;
-        }
-      }
+          // Format: ### Degree at [Institution](url)
+          const rawLine = line.replace(/^###\s*/, "").trim();
 
-      // Parse Skills section
-      if (inSkillsSection && !line.startsWith("#")) {
-        // Skills are usually comma-separated or bullet points
-        skills.push(line.replace(/^[•\-\*]\s*/, ""));
+          if (rawLine.includes(" at ")) {
+            const atMatch = rawLine.match(/^(.+?)\s+at\s+\[([^\]]+)\]\(([^)]+)\)/);
+            if (atMatch) {
+              currentEducation = {
+                institution: atMatch[2],
+                degree: atMatch[1].trim()
+              };
+            } else {
+              // Fallback for plain text without markdown link
+              const parts = rawLine.split(" at ");
+              currentEducation = {
+                institution: parts[1]?.trim() || "",
+                degree: parts[0]?.trim() || ""
+              };
+            }
+          } else {
+            // Old format or just institution name
+            const institutionMatch = rawLine.match(/^\[([^\]]+)\]/);
+            currentEducation = {
+              institution: institutionMatch ? institutionMatch[1] : rawLine
+            };
+          }
+        } else if (currentEducation && !currentEducation.dates && !line.startsWith("#")) {
+          // Dates line - only capture lines with actual years (format: YYYY - YYYY)
+          const dateMatch = line.match(/\d{4}\s*[-–]\s*\d{4}|\d{4}\s*[-–]\s*Present/);
+          if (dateMatch) {
+            currentEducation.dates = line.split(" in ")[0].trim(); // Remove location suffix
+          }
+        }
+        // Skip everything else (descriptions, locations, etc.)
       }
     }
 
@@ -280,7 +272,7 @@ export class ExaProvider {
     if (currentExperience?.company && currentExperience?.title) {
       rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
     }
-    if (currentEducation?.institution) {
+    if (currentEducation?.institution && currentEducation?.degree) {
       education.push(currentEducation as { institution: string; degree?: string; dates?: string });
     }
 
@@ -329,10 +321,8 @@ export class ExaProvider {
         avatarUrl: undefined
       },
       research: {
-        about: about || undefined,
         experience: groupedExperience.length > 0 ? groupedExperience : undefined,
         education: education.length > 0 ? education : undefined,
-        skills: skills.length > 0 ? skills : undefined,
         sources: [
           {
             label: "LinkedIn Profile",
@@ -344,19 +334,48 @@ export class ExaProvider {
   }
 
   async researchPerson(name: string, companyName?: string, linkedinUrl?: string): Promise<PersonResearchResult | null> {
-    let profileUrl = linkedinUrl || await this.searchLinkedInProfile(name, companyName);
+    let profileData: { url: string; text: string } | null = null;
 
-    if (!profileUrl) {
+    if (linkedinUrl) {
+      // If we have a LinkedIn URL, fetch its content directly using the old /contents endpoint
+      // This is necessary because /search requires a query, not a URL
+      try {
+        const response = await fetch(`${this.baseUrl}/contents`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": this.apiKey
+          },
+          body: JSON.stringify({
+            ids: [linkedinUrl],
+            text: {
+              includeHtmlTags: false,
+              maxCharacters: 20000
+            }
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json() as ExaContentsResponse;
+          const result = data.results[0];
+          if (result?.text) {
+            profileData = { url: linkedinUrl, text: result.text };
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching LinkedIn content:", error);
+      }
+    }
+
+    if (!profileData) {
+      profileData = await this.searchLinkedInProfile(name, companyName);
+    }
+
+    if (!profileData) {
       return null;
     }
 
-    const contentResult = await this.getLinkedInContent(profileUrl);
-
-    if (!contentResult || !contentResult.text) {
-      return null;
-    }
-
-    const result = this.parseLinkedInContent(contentResult.text, name, profileUrl);
+    const result = this.parseLinkedInContent(profileData.text, name, profileData.url);
 
     return result;
   }

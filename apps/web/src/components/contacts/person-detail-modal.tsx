@@ -33,8 +33,6 @@ export function PersonDetailModal({
     }>;
   }> | undefined;
 
-  console.log("Raw experience data:", rawExperience);
-
   const experienceData: CompanyExperience[] = (rawExperience || []).map((exp) => {
     const positions = (exp.positions || []).map((pos) => {
       // Split dates into start and end
@@ -56,8 +54,6 @@ export function PersonDetailModal({
       positions,
     };
   });
-
-  console.log("Transformed experience data:", experienceData);
 
   const education =
     (person.research?.education as Array<{
@@ -153,50 +149,27 @@ export function PersonDetailModal({
               {/* Education */}
               {education.length > 0 && (
                 <div>
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">
-                      Education
-                    </h3>
-                    {education.length > 2 && (
-                      <button
-                        onClick={() => setShowAllEducation(!showAllEducation)}
-                        className="flex items-center gap-1 text-body-sm font-medium text-primary transition-colors hover:text-primary/80"
-                      >
-                        {showAllEducation
-                          ? "Show less"
-                          : `Show all (${education.length})`}
-                        <MaterialIcon
-                          name={
-                            showAllEducation ? "expand_less" : "expand_more"
-                          }
-                          className="text-[18px]"
-                        />
-                      </button>
-                    )}
-                  </div>
+                  <h3 className="mb-4 font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">
+                    Education
+                  </h3>
 
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {education
                       .slice(0, showAllEducation ? undefined : 2)
                       .map((edu, index) => (
                         <div key={index} className="flex gap-3">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-surface-container">
-                            <MaterialIcon
-                              name="school"
-                              className="text-[20px] text-on-surface-variant"
-                            />
-                          </div>
-                          <div>
-                            <p className="font-title-sm text-title-sm font-bold text-on-surface">
+                          <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-surface-container" />
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-body-lg font-bold text-on-surface">
                               {edu.institution}
-                            </p>
+                            </h4>
                             {edu.degree && (
-                              <p className="mt-0.5 text-body-md text-on-surface-variant">
+                              <p className="mt-0.5 text-body-sm text-on-surface-variant">
                                 {edu.degree}
                               </p>
                             )}
                             {edu.dates && (
-                              <p className="mt-1 text-body-sm text-on-surface-variant">
+                              <p className="mt-0.5 text-body-sm text-on-surface-variant">
                                 {edu.dates}
                               </p>
                             )}
@@ -204,6 +177,21 @@ export function PersonDetailModal({
                         </div>
                       ))}
                   </div>
+
+                  {education.length > 2 && (
+                    <button
+                      onClick={() => setShowAllEducation(!showAllEducation)}
+                      className="mt-4 flex items-center gap-1 text-body-sm font-medium text-primary transition-colors hover:text-primary/80"
+                    >
+                      {showAllEducation
+                        ? "Show less"
+                        : `Show all ${education.length} education`}
+                      <MaterialIcon
+                        name={showAllEducation ? "expand_less" : "expand_more"}
+                        className="text-[18px]"
+                      />
+                    </button>
+                  )}
                 </div>
               )}
 
