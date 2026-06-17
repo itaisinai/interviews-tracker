@@ -1,6 +1,6 @@
 import { FilePenLine, Mail } from "lucide-react";
 
-export type InteractionInputMode = "gmail" | "text" | null;
+export type InteractionInputMode = "chooser" | "gmail" | "text" | null;
 
 type InteractionInputChooserProps = {
   onSelectMode: (mode: InteractionInputMode) => void;

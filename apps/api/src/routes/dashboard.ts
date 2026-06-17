@@ -9,8 +9,8 @@ type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export const dashboardRouter = Router();
 
-dashboardRouter.get("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const ownerEmail = request.auth.email;
+dashboardRouter.get("/", asyncHandler(async (request, response) => {
+  const ownerEmail = (request as AuthenticatedRequest).auth.email;
   const today = startOfToday();
   const weekEnd = endOfWeek(today);
   const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);

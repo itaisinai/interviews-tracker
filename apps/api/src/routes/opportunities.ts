@@ -24,33 +24,33 @@ type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export const opportunitiesRouter = Router();
 
-opportunitiesRouter.get("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  response.json(await listOpportunitiesHandler(request));
+opportunitiesRouter.get("/", asyncHandler(async (request, response) => {
+  response.json(await listOpportunitiesHandler(request as AuthenticatedRequest));
 }));
 
-opportunitiesRouter.post("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  response.status(201).json(await createOpportunityHandler(request));
+opportunitiesRouter.post("/", asyncHandler(async (request, response) => {
+  response.status(201).json(await createOpportunityHandler(request as AuthenticatedRequest));
 }));
 
-opportunitiesRouter.get("/:slugOrId", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  response.json(await getOpportunityHandler(request));
+opportunitiesRouter.get("/:slugOrId", asyncHandler(async (request, response) => {
+  response.json(await getOpportunityHandler(request as AuthenticatedRequest));
 }));
 
-opportunitiesRouter.put("/:slugOrId", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  response.json(await updateOpportunityHandler(request));
+opportunitiesRouter.put("/:slugOrId", asyncHandler(async (request, response) => {
+  response.json(await updateOpportunityHandler(request as AuthenticatedRequest));
 }));
 
-opportunitiesRouter.delete("/:slugOrId", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  await deleteOpportunityHandler(request);
+opportunitiesRouter.delete("/:slugOrId", asyncHandler(async (request, response) => {
+  await deleteOpportunityHandler(request as AuthenticatedRequest);
   response.status(204).end();
 }));
 
-opportunitiesRouter.get("/:slugOrId/interactions", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  response.json(await listOpportunityInteractionsHandler(request));
+opportunitiesRouter.get("/:slugOrId/interactions", asyncHandler(async (request, response) => {
+  response.json(await listOpportunityInteractionsHandler(request as AuthenticatedRequest));
 }));
 
-opportunitiesRouter.post("/:slugOrId/interactions", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await createOpportunityInteractionHandler(request);
+opportunitiesRouter.post("/:slugOrId/interactions", asyncHandler(async (request, response) => {
+  const result = await createOpportunityInteractionHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;
@@ -59,8 +59,8 @@ opportunitiesRouter.post("/:slugOrId/interactions", asyncHandler(async (request:
   response.status(201).json(result);
 }));
 
-opportunitiesRouter.post("/:slugOrId/notes", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await createOpportunityNoteHandler(request);
+opportunitiesRouter.post("/:slugOrId/notes", asyncHandler(async (request, response) => {
+  const result = await createOpportunityNoteHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;
@@ -69,8 +69,8 @@ opportunitiesRouter.post("/:slugOrId/notes", asyncHandler(async (request: Authen
   response.status(201).json(result);
 }));
 
-opportunitiesRouter.post("/:slugOrId/tasks", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await createOpportunityTaskHandler(request);
+opportunitiesRouter.post("/:slugOrId/tasks", asyncHandler(async (request, response) => {
+  const result = await createOpportunityTaskHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;
@@ -79,8 +79,8 @@ opportunitiesRouter.post("/:slugOrId/tasks", asyncHandler(async (request: Authen
   response.status(201).json(result);
 }));
 
-opportunitiesRouter.get("/:slugOrId/gmail/search", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await searchOpportunityGmailHandler(request);
+opportunitiesRouter.get("/:slugOrId/gmail/search", asyncHandler(async (request, response) => {
+  const result = await searchOpportunityGmailHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;
@@ -89,8 +89,8 @@ opportunitiesRouter.get("/:slugOrId/gmail/search", asyncHandler(async (request: 
   response.json(result);
 }));
 
-opportunitiesRouter.get("/:slugOrId/gmail/message-states", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await listTrackedOpportunityGmailMessagesHandler(request);
+opportunitiesRouter.get("/:slugOrId/gmail/message-states", asyncHandler(async (request, response) => {
+  const result = await listTrackedOpportunityGmailMessagesHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;
@@ -99,8 +99,8 @@ opportunitiesRouter.get("/:slugOrId/gmail/message-states", asyncHandler(async (r
   response.json(result);
 }));
 
-opportunitiesRouter.post("/:slugOrId/gmail/parse-email", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await parseOpportunityGmailEmailHandler(request);
+opportunitiesRouter.post("/:slugOrId/gmail/parse-email", asyncHandler(async (request, response) => {
+  const result = await parseOpportunityGmailEmailHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;
@@ -109,8 +109,8 @@ opportunitiesRouter.post("/:slugOrId/gmail/parse-email", asyncHandler(async (req
   response.json(result);
 }));
 
-opportunitiesRouter.post("/:slugOrId/gmail/messages/:messageId/hide", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await hideOpportunityGmailMessageHandler(request);
+opportunitiesRouter.post("/:slugOrId/gmail/messages/:messageId/hide", asyncHandler(async (request, response) => {
+  const result = await hideOpportunityGmailMessageHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;
@@ -119,8 +119,8 @@ opportunitiesRouter.post("/:slugOrId/gmail/messages/:messageId/hide", asyncHandl
   response.status(204).end();
 }));
 
-opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/hide", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await restoreOpportunityGmailMessageHandler(request);
+opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/hide", asyncHandler(async (request, response) => {
+  const result = await restoreOpportunityGmailMessageHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;
@@ -129,8 +129,8 @@ opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/hide", asyncHan
   response.status(204).end();
 }));
 
-opportunitiesRouter.post("/:slugOrId/interactions/parse-text", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await parseOpportunityInteractionTextHandler(request);
+opportunitiesRouter.post("/:slugOrId/interactions/parse-text", asyncHandler(async (request, response) => {
+  const result = await parseOpportunityInteractionTextHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;
@@ -139,8 +139,8 @@ opportunitiesRouter.post("/:slugOrId/interactions/parse-text", asyncHandler(asyn
   response.json(result);
 }));
 
-opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/used", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const result = await unpickOpportunityGmailMessageHandler(request);
+opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/used", asyncHandler(async (request, response) => {
+  const result = await unpickOpportunityGmailMessageHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;

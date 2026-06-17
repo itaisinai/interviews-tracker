@@ -28,8 +28,8 @@ const include = {
   compensation: true
 };
 
-companiesRouter.get("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const ownerEmail = request.auth.email;
+companiesRouter.get("/", asyncHandler(async (request, response) => {
+  const ownerEmail = (request as AuthenticatedRequest).auth.email;
   const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
   await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
   const opportunities = await prisma.jobOpportunity.findMany({ where: { ownerEmail }, include, orderBy: { updatedAt: "desc" } });
@@ -64,8 +64,8 @@ companiesRouter.get("/", asyncHandler(async (request: AuthenticatedRequest, resp
   }));
 }));
 
-companiesRouter.get("/:companyName", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const ownerEmail = request.auth.email;
+companiesRouter.get("/:companyName", asyncHandler(async (request, response) => {
+  const ownerEmail = (request as AuthenticatedRequest).auth.email;
   const companyName = decodeURIComponent(request.params.companyName);
   const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
   await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
@@ -85,15 +85,15 @@ companiesRouter.get("/:companyName", asyncHandler(async (request: AuthenticatedR
   });
 }));
 
-companiesRouter.delete("/:companyName", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const ownerEmail = request.auth.email;
+companiesRouter.delete("/:companyName", asyncHandler(async (request, response) => {
+  const ownerEmail = (request as AuthenticatedRequest).auth.email;
   const companyName = decodeURIComponent(request.params.companyName);
   await prisma.jobOpportunity.deleteMany({ where: { ownerEmail, companyName } });
   response.status(204).end();
 }));
 
-companiesRouter.post("/:companyName/enrich", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const ownerEmail = request.auth.email;
+companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, response) => {
+  const ownerEmail = (request as AuthenticatedRequest).auth.email;
   const companyName = decodeURIComponent(request.params.companyName);
   const timer = createTimer("route", "company enrich", { company: companyName });
   const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
@@ -140,7 +140,7 @@ companiesRouter.post("/:companyName/enrich", asyncHandler(async (request: Authen
   response.json({ enrichment, updatedOpportunities: opportunities.length });
 }));
 
-companiesRouter.post("/:companyName/research", asyncHandler(async (request: AuthenticatedRequest, response) => {
+companiesRouter.post("/:companyName/research", asyncHandler(async (request, response) => {
   const companyName = decodeURIComponent(request.params.companyName);
   const timer = createTimer("route", "company research", { company: companyName });
   const input = companyResearchInputSchema.parse({ ...request.body, companyName });
@@ -150,8 +150,8 @@ companiesRouter.post("/:companyName/research", asyncHandler(async (request: Auth
   response.json({ research });
 }));
 
-companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const ownerEmail = request.auth.email;
+companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request, response) => {
+  const ownerEmail = (request as AuthenticatedRequest).auth.email;
   const companyName = decodeURIComponent(request.params.companyName);
   const timer = createTimer("route", "company research apply", { company: companyName });
   const { targetOpportunityId, research } = companyResearchApplyInputSchema.parse(request.body);

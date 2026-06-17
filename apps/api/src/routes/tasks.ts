@@ -7,25 +7,25 @@ type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export const tasksRouter = Router();
 
-tasksRouter.get("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
+tasksRouter.get("/", asyncHandler(async (request, response) => {
   response.json(await prisma.task.findMany({
-    where: { ownerEmail: request.auth.email },
+    where: { ownerEmail: (request as AuthenticatedRequest).auth.email },
     include: { jobOpportunity: true, interaction: true },
     orderBy: [{ status: "asc" }, { dueDate: "asc" }]
   }));
 }));
 
-tasksRouter.post("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
+tasksRouter.post("/", asyncHandler(async (request, response) => {
   const input = taskInputSchema.parse(request.body);
-  response.status(201).json(await prisma.task.create({ data: { ...input, ownerEmail: request.auth.email, dueDate: input.dueDate ? new Date(input.dueDate) : null } }));
+  response.status(201).json(await prisma.task.create({ data: { ...input, ownerEmail: (request as AuthenticatedRequest).auth.email, dueDate: input.dueDate ? new Date(input.dueDate) : null } }));
 }));
 
-tasksRouter.put("/:id", asyncHandler(async (request: AuthenticatedRequest, response) => {
+tasksRouter.put("/:id", asyncHandler(async (request, response) => {
   const input = taskInputSchema.parse(request.body);
   response.json(await prisma.task.update({ where: { id: request.params.id }, data: { ...input, dueDate: input.dueDate ? new Date(input.dueDate) : null } }));
 }));
 
-tasksRouter.delete("/:id", asyncHandler(async (request: AuthenticatedRequest, response) => {
+tasksRouter.delete("/:id", asyncHandler(async (request, response) => {
   await prisma.task.delete({ where: { id: request.params.id } });
   response.status(204).end();
 }));
