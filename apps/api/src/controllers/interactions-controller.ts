@@ -3,20 +3,22 @@ import { z } from "zod";
 import { interactionInputSchema } from "../lib/schemas.js";
 import { createInteraction, deleteInteraction, listInteractions, updateInteraction } from "../services/interactions/interaction-service.js";
 
-export function listInteractionsHandler(_request?: Request) {
-  return listInteractions();
+type AuthenticatedRequest = Request & { auth: { email: string } };
+
+export function listInteractionsHandler(request: AuthenticatedRequest) {
+  return listInteractions(request.auth.email);
 }
 
-export function createInteractionHandler(request: Request) {
-  const input = interactionInputSchema.extend({ jobOpportunityId: z.string().min(1) }).parse(request.body);
-  return createInteraction(input);
+export function createInteractionHandler(request: AuthenticatedRequest) {
+  const input = interactionInputSchema.and(z.object({ jobOpportunityId: z.string().min(1) })).parse(request.body);
+  return createInteraction(input, request.auth.email);
 }
 
-export function updateInteractionHandler(request: Request) {
+export function updateInteractionHandler(request: AuthenticatedRequest) {
   const input = interactionInputSchema.parse(request.body);
-  return updateInteraction(request.params.id, input);
+  return updateInteraction(request.params.id, input, request.auth.email);
 }
 
-export function deleteInteractionHandler(request: Request) {
-  return deleteInteraction(request.params.id, { auth0Email: (request as Request & { auth?: { email?: string | null } }).auth?.email });
+export function deleteInteractionHandler(request: AuthenticatedRequest) {
+  return deleteInteraction(request.params.id, request.auth.email, { auth0Email: request.auth.email });
 }

@@ -1,5 +1,6 @@
 import type { CalendarEvent } from "../calendar";
 import { labelForInteractionType } from "../../lib/enum-labels";
+import { formatDurationBetween } from "../../lib/format";
 import type { Interaction } from "../../lib/types";
 
 export type InteractionFilter = "upcoming" | "done" | "followup" | "all";
@@ -122,9 +123,11 @@ export function buildInteractionCalendarEvents(
   return interactions.map((interaction) => {
     const date = new Date(interaction.date);
     const isFuture = date.getTime() > Date.now();
+    const duration = formatDurationBetween(interaction.date, interaction.endDate);
+    const interactionTitle = `${interaction.stage || labelForInteractionType(interaction.type)}${duration ? ` (${duration})` : ""}`;
     const titleParts = [
       interaction.jobOpportunity?.companyName,
-      interaction.stage || labelForInteractionType(interaction.type),
+      interactionTitle,
       interaction.personName,
     ].filter(Boolean);
 

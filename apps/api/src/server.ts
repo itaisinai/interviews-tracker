@@ -17,6 +17,7 @@ import { errorHandler } from "./lib/http.js";
 import { apiRequestLogger } from "./lib/request-logging.js";
 import { logger } from "./lib/logger.js";
 import { completeGmailOAuth } from "./services/gmail/gmail-service.js";
+import { validateDevModeOnStartup } from "./lib/dev-mode.js";
 
 const app = express();
 const localOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"];
@@ -94,6 +95,9 @@ app.use("/api/options", optionsRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/people", peopleRouter);
 app.use(errorHandler);
+
+// Validate dev mode configuration before starting server
+validateDevModeOnStartup();
 
 const port = Number(process.env.PORT ?? 4000);
 app.listen(port, () => {

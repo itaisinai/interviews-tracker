@@ -10,6 +10,7 @@ import { ContactsList } from "../components/contacts/contacts-list";
 import { api } from "../lib/api";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 import { InlineLoadingState, LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+import type { InteractionInputMode } from "../components/interaction-input-chooser";
 
 export function OpportunityDetailPage() {
   const { slugOrId = "" } = useParams();
@@ -40,7 +41,7 @@ export function OpportunityDetailPage() {
     negotiationNotes: "",
   });
   const [showResearch, setShowResearch] = useState(false);
-  const [showGmailImport, setShowGmailImport] = useState(false);
+  const [showInteractionInput, setShowInteractionInput] = useState<InteractionInputMode>(null);
 
   const opportunityId = data?.id ?? slugOrId;
   const canonicalSlug = data?.slug ?? null;
@@ -166,10 +167,18 @@ export function OpportunityDetailPage() {
       <CompanyDataSection
         opportunity={data}
         showResearch={showResearch}
-        showGmailImport={showGmailImport}
+        showInteractionInput={showInteractionInput}
         onToggleResearch={() => setShowResearch((value) => !value)}
-        onToggleGmailImport={() => setShowGmailImport((value) => !value)}
-        onSaved={refresh}
+        onToggleInteractionInput={() => {
+          setShowInteractionInput((current) => (current ? null : "chooser"));
+        }}
+        onSelectInteractionInputMode={(mode) => {
+          setShowInteractionInput(mode);
+        }}
+        onSaved={() => {
+          refresh();
+          setShowInteractionInput(null);
+        }}
       />
 
       <div className="mt-8">

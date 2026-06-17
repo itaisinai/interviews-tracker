@@ -3,23 +3,28 @@ import type { Opportunity } from "../../lib/types";
 import { Badge } from "../badge";
 import { CompanyResearchPanel } from "../company-research-panel";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
+import { InteractionInputChooser, type InteractionInputMode } from "../interaction-input-chooser";
+import { InteractionTextParserPanel } from "../interactions-drawer/interaction-text-parser-panel";
 import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { ArrowLeft } from "lucide-react";
 
 type CompanyDataSectionProps = {
   opportunity: Opportunity;
   showResearch: boolean;
-  showGmailImport: boolean;
+  showInteractionInput: InteractionInputMode;
   onToggleResearch: () => void;
-  onToggleGmailImport: () => void;
+  onToggleInteractionInput: () => void;
+  onSelectInteractionInputMode: (mode: InteractionInputMode) => void;
   onSaved: () => void;
 };
 
 export function CompanyDataSection({
   opportunity,
   showResearch,
-  showGmailImport,
+  showInteractionInput,
   onToggleResearch,
-  onToggleGmailImport,
+  onToggleInteractionInput,
+  onSelectInteractionInputMode,
   onSaved,
 }: CompanyDataSectionProps) {
   return (
@@ -54,12 +59,12 @@ export function CompanyDataSection({
             </LoadingButton>
             <LoadingButton
               className={
-                showGmailImport ? "btn btn-primary" : "btn btn-secondary"
+                showInteractionInput ? "btn btn-primary" : "btn btn-secondary"
               }
-              icon="mail"
-              onClick={onToggleGmailImport}
+              icon="add"
+              onClick={onToggleInteractionInput}
             >
-              {showGmailImport ? "Hide Gmail import" : "Add Gmail interaction"}
+              {showInteractionInput ? "Hide add interaction" : "Add interaction"}
             </LoadingButton>
           </div>
         </div>
@@ -86,15 +91,74 @@ export function CompanyDataSection({
         </div>
       ) : null}
 
-      {showGmailImport ? (
-        <div className="mt-6">
+      {showInteractionInput === "chooser" ? (
+        <section className="panel mt-6 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                Add interaction
+              </p>
+              <h4 className="font-title-md text-title-md font-bold">
+                Choose input method
+              </h4>
+            </div>
+          </div>
+          <div className="mt-4">
+            <InteractionInputChooser onSelectMode={onSelectInteractionInputMode} />
+          </div>
+        </section>
+      ) : null}
+
+      {showInteractionInput === "gmail" ? (
+        <section className="panel mt-6 p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                Add interaction
+              </p>
+              <h4 className="font-title-md text-title-md font-bold">Gmail import</h4>
+            </div>
+            <button
+              className="btn btn-secondary"
+              onClick={() => onSelectInteractionInputMode("chooser")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+          </div>
           <GmailInteractionPanel
             opportunityId={opportunity.id}
             companyName={opportunity.companyName}
             roleTitle={opportunity.roleTitle}
             onSaved={onSaved}
           />
-        </div>
+        </section>
+      ) : null}
+
+      {showInteractionInput === "text" ? (
+        <section className="panel mt-6 p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                Add interaction
+              </p>
+              <h4 className="font-title-md text-title-md font-bold">Text parser</h4>
+            </div>
+            <button
+              className="btn btn-secondary"
+              onClick={() => onSelectInteractionInputMode("chooser")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+          </div>
+          <InteractionTextParserPanel
+            opportunityId={opportunity.id}
+            companyName={opportunity.companyName}
+            roleTitle={opportunity.roleTitle}
+            onSaved={onSaved}
+          />
+        </section>
       ) : null}
 
       <section className="panel mt-6 p-6">

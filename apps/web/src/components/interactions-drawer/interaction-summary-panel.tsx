@@ -22,7 +22,7 @@ import { Badge } from "../badge";
 import { InteractionDraftFields } from "./interaction-draft-fields";
 import { LoadingButton } from "@interviews-tracker/design-system";
 import type { ReactNode } from "react";
-import { formatDateTime } from "../../lib/format";
+import { formatDateTime, formatDurationBetween } from "../../lib/format";
 
 type InteractionSummaryPanelProps = {
   interaction: Interaction;
@@ -65,6 +65,7 @@ export function InteractionSummaryPanel({
   const typeLabel =
     displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ??
     interaction.type;
+  const durationLabel = formatDurationBetween(interaction.date, interaction.endDate);
 
   // Fetch contacts for this opportunity to find the person
   const { data: contacts = [] } = useQuery({
@@ -90,7 +91,7 @@ export function InteractionSummaryPanel({
             ) : null}
             {interaction.stage ? (
               <span className="rounded-full bg-surface-container-low px-2.5 py-1 text-[11px] font-medium text-on-surface-variant">
-                {interaction.stage}
+                {interaction.stage}{durationLabel ? ` (${durationLabel})` : ""}
               </span>
             ) : null}
           </div>

@@ -35,6 +35,7 @@ export interface AiParserService {
     email: unknown;
     derived: {
       date: string;
+      endDate: string | null;
       dateSource: "calendar" | "text" | "header";
       type: string;
       stage: string | null;
@@ -174,9 +175,10 @@ const gmailEmailClassificationBatchJsonSchema = {
 const interactionDraftJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["date", "type", "stage", "status", "personName", "personRole", "agenda", "meetingLink", "notes", "outcome", "followUp"],
+  required: ["date", "endDate", "type", "stage", "status", "personName", "personRole", "agenda", "meetingLink", "notes", "outcome", "followUp"],
   properties: {
     date: { type: "string" },
+    endDate: { type: ["string", "null"] },
     type: { type: "string", enum: [...interactionTypeSchema.options] },
     stage: { type: ["string", "null"] },
     status: { type: "string", enum: ["SCHEDULED", "DONE", "REJECTED", "CANCELLED", "NEEDS_FOLLOW_UP"] },
@@ -267,6 +269,7 @@ export class OpenAiParserService implements AiParserService {
     email: unknown;
     derived: {
       date: string;
+      endDate: string | null;
       dateSource: "calendar" | "text" | "header";
       type: string;
       stage: string | null;
@@ -280,6 +283,7 @@ export class OpenAiParserService implements AiParserService {
   }): Promise<z.infer<typeof gmailInteractionDraftSchema>> {
     const derivedPrompt = {
       date: input.derived.date,
+      endDate: input.derived.endDate,
       dateSource: input.derived.dateSource,
       notes: input.derived.notes
     };
@@ -310,6 +314,7 @@ export class OpenAiParserService implements AiParserService {
     return interactionDraftSchema.parse({
       ...aiInteraction,
       date: aiInteraction.date?.trim() ? aiInteraction.date : input.derived.date,
+      endDate: aiInteraction.endDate?.trim() ? aiInteraction.endDate : input.derived.endDate,
       notes: [input.derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null
     });
   }

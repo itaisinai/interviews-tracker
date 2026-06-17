@@ -30,6 +30,7 @@ export const opportunityInputSchema = z.object({
 
 export const interactionInputSchema = z.object({
   date: z.string().datetime().or(z.string().min(1)),
+  endDate: z.string().datetime().or(z.string().min(1)).nullish(),
   type: interactionTypeSchema,
   stage: z.string().nullish(),
   status: interactionStatusSchema,
@@ -41,7 +42,10 @@ export const interactionInputSchema = z.object({
   notes: z.string().nullish(),
   outcome: z.string().nullish(),
   followUp: z.string().nullish()
-});
+}).refine((data) => {
+  if (!data.endDate) return true;
+  return new Date(data.endDate).getTime() >= new Date(data.date).getTime();
+}, { message: "End date must be at or after start date", path: ["endDate"] });
 
 export const noteInputSchema = z.object({
   jobOpportunityId: z.string().nullish(),
@@ -76,6 +80,7 @@ export const compensationInputSchema = z.object({
 
 export type Opportunity = {
   id: string;
+  ownerEmail: string;
   slug: string;
   companyName: string;
   companySearchName?: string | null;
@@ -113,8 +118,10 @@ export type Opportunity = {
 
 export type Interaction = {
   id: string;
+  ownerEmail: string;
   jobOpportunityId: string;
   date: string;
+  endDate?: string | null;
   type: InteractionType;
   stage?: string | null;
   status: InteractionStatus;
@@ -131,6 +138,7 @@ export type Interaction = {
 
 export type Note = {
   id: string;
+  ownerEmail: string;
   title: string;
   content: string;
   category: string;
@@ -139,6 +147,7 @@ export type Note = {
 
 export type Task = {
   id: string;
+  ownerEmail: string;
   title: string;
   status: TaskStatus;
   priority: Priority;
@@ -149,6 +158,7 @@ export type Task = {
 
 export type Compensation = {
   id: string;
+  ownerEmail: string;
   jobOpportunityId: string;
   baseSalary?: string | null;
   equity?: string | null;

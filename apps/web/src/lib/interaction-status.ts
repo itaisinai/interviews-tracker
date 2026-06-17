@@ -83,13 +83,19 @@ function hasLaterInteraction(
   return orderedInteractions.slice(currentIndex + 1).length > 0;
 }
 
-export function promoteOverdueInteractionStatusForRead<T extends Pick<Interaction, "date" | "type" | "status">>(interaction: T, now = new Date()) {
+export function promoteOverdueInteractionStatusForRead<T extends Pick<Interaction, "date" | "type" | "status" | "endDate">>(interaction: T, now = new Date()) {
   const normalizedType = normalizeInteractionType(interaction.type);
   if (
     interaction.status !== "SCHEDULED" ||
-    !overdueInteractionTypes.includes(normalizedType as (typeof overdueInteractionTypes)[number]) ||
-    new Date(interaction.date).getTime() >= now.getTime()
+    !overdueInteractionTypes.includes(normalizedType as (typeof overdueInteractionTypes)[number])
   ) {
+    return interaction;
+  }
+
+  // Use endDate if present, otherwise use date
+  const effectiveEndTime = interaction.endDate ? new Date(interaction.endDate).getTime() : new Date(interaction.date).getTime();
+
+  if (effectiveEndTime >= now.getTime()) {
     return interaction;
   }
 
@@ -99,7 +105,7 @@ export function promoteOverdueInteractionStatusForRead<T extends Pick<Interactio
   };
 }
 
-export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "id" | "date" | "type" | "status" | "stage" | "outcome" | "followUp">>(interactions: readonly T[], now = new Date()) {
+export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "id" | "date" | "endDate" | "type" | "status" | "stage" | "outcome" | "followUp">>(interactions: readonly T[], now = new Date()) {
   const orderedInteractions = [...interactions].sort((left, right) => {
     const leftTime = new Date(left.date).getTime();
     const rightTime = new Date(right.date).getTime();
@@ -118,7 +124,7 @@ export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "i
   });
 }
 
-export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | "status" | "type" | "stage" | "outcome" | "followUp">) {
+export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | "endDate" | "status" | "type" | "stage" | "outcome" | "followUp">) {
   const promoted = promoteOverdueInteractionStatusForRead(interaction);
 
   if (promoted.status === "SCHEDULED") {

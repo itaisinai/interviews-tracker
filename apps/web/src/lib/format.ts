@@ -70,3 +70,31 @@ export function pipelineTone(pipeline: PipelineType | string) {
   if (pipeline === "ARCHIVED") return "muted";
   return "potential";
 }
+
+export function formatDurationBetween(startValue: string, endValue?: string | null) {
+  if (!endValue) {
+    return null;
+  }
+
+  const start = new Date(startValue).getTime();
+  const end = new Date(endValue).getTime();
+  const totalMinutes = Math.round((end - start) / 60_000);
+
+  if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) {
+    return null;
+  }
+
+  if (totalMinutes < 60) {
+    return `${totalMinutes} minute${totalMinutes === 1 ? "" : "s"}`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const hourLabel = `${hours} hour${hours === 1 ? "" : "s"}`;
+
+  if (minutes === 0) {
+    return hourLabel;
+  }
+
+  return `${hourLabel} ${minutes} minute${minutes === 1 ? "" : "s"}`;
+}
