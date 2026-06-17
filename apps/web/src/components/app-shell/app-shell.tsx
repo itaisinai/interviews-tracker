@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MaterialIcon } from "@interviews-tracker/design-system";
@@ -32,6 +33,7 @@ export function AppShell() {
   const { logout, user } = useAuth0();
   const location = useLocation();
   const navigate = useNavigate();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const activeBase =
     `/${location.pathname.split("/")[1]}` === "/"
       ? "/"
@@ -57,26 +59,48 @@ export function AppShell() {
         ? "rocket_launch"
         : activeNavItem.icon;
   const avatar = user?.picture ?? null;
+  const sidebarWidth = sidebarCollapsed ? 72 : 260;
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      <aside className="fixed left-0 z-50 hidden h-full w-[260px] flex-col border-r border-outline-variant bg-[#d7e8f4] py-6 md:flex" style={{ top: "var(--dev-banner-height, 0)", height: "calc(100vh - var(--dev-banner-height, 0))" }}>
-        <div className="mb-8 px-6">
-          <h1 className="font-headline-md text-headline-md font-bold text-on-background">
-            CareerFlow
-          </h1>
-          <p className="font-label-md text-label-md text-on-surface-variant">
-            Senior Workspace
-          </p>
+      <aside
+        className="fixed left-0 z-50 hidden flex-col border-r border-outline-variant bg-[#d7e8f4] transition-all duration-300 md:flex"
+        style={{
+          top: "var(--dev-banner-height, 0)",
+          height: "calc(100vh - var(--dev-banner-height, 0))",
+          width: `${sidebarWidth}px`
+        }}
+      >
+        <div className={`flex items-center justify-between border-b border-outline-variant px-4 py-4 ${sidebarCollapsed ? 'flex-col gap-2' : ''}`}>
+          {!sidebarCollapsed && (
+            <div>
+              <h1 className="font-headline-md text-headline-md font-bold text-on-background">
+                CareerFlow
+              </h1>
+              <p className="font-label-md text-label-md text-on-surface-variant">
+                Senior Workspace
+              </p>
+            </div>
+          )}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container-low"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <MaterialIcon name={sidebarCollapsed ? "chevron_right" : "chevron_left"} />
+          </button>
         </div>
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto py-2">
           {nav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === "/"}
+              title={sidebarCollapsed ? item.label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-4 py-2 pl-4 pr-6 transition-colors hover:bg-surface-container-low/80 ${
+                `flex items-center gap-4 py-2 transition-colors hover:bg-surface-container-low/80 ${
+                  sidebarCollapsed ? 'justify-center px-4' : 'pl-4 pr-6'
+                } ${
                   isActive
                     ? "border-l-2 border-primary bg-surface-container-lowest font-bold text-primary"
                     : "font-medium text-on-surface-variant"
@@ -86,31 +110,47 @@ export function AppShell() {
               {({ isActive }) => (
                 <>
                   <MaterialIcon name={item.icon} filled={isActive} />
-                  <span className="font-body-md text-body-md">{item.label}</span>
+                  {!sidebarCollapsed && (
+                    <span className="font-body-md text-body-md">{item.label}</span>
+                  )}
                 </>
               )}
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto space-y-1 border-t border-outline-variant px-6 pt-6">
-          <button className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80">
+        <div className={`mt-auto space-y-1 border-t border-outline-variant pt-4 ${sidebarCollapsed ? 'px-2' : 'px-4'}`}>
+          <button
+            className={`flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${sidebarCollapsed ? 'justify-center' : ''}`}
+            title={sidebarCollapsed ? user?.email ?? displayName : undefined}
+          >
             <MaterialIcon name="person" />
-            <span className="min-w-0 truncate font-body-md text-body-md">
-              {user?.email ?? displayName}
-            </span>
+            {!sidebarCollapsed && (
+              <span className="min-w-0 truncate font-body-md text-body-md">
+                {user?.email ?? displayName}
+              </span>
+            )}
           </button>
           <button
-            className="flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80"
+            className={`flex w-full items-center gap-4 rounded-lg py-2 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${sidebarCollapsed ? 'justify-center' : ''}`}
             onClick={() =>
               void logout({ logoutParams: { returnTo: window.location.origin } })
             }
+            title={sidebarCollapsed ? "Logout" : undefined}
           >
             <MaterialIcon name="logout" />
-            <span className="font-body-md text-body-md">Logout</span>
+            {!sidebarCollapsed && (
+              <span className="font-body-md text-body-md">Logout</span>
+            )}
           </button>
         </div>
       </aside>
-      <header className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm md:inset-x-auto md:left-[260px] md:right-0 md:z-40" style={{ top: "var(--dev-banner-height, 0)" }}>
+      <header
+        className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm transition-all duration-300 md:inset-x-auto md:right-0 md:z-40"
+        style={{
+          top: "var(--dev-banner-height, 0)",
+          left: window.innerWidth >= 768 ? `${sidebarWidth}px` : '0'
+        }}
+      >
         <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
           <div className="flex items-center gap-3 md:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary">
@@ -186,7 +226,13 @@ export function AppShell() {
             ))}
         </div>
       </nav>
-      <main className="min-h-screen pb-24 md:ml-[260px] md:overflow-x-hidden md:pb-8" style={{ paddingTop: "calc(4rem + var(--dev-banner-height, 0))" }}>
+      <main
+        className="min-h-screen pb-24 transition-all duration-300 md:overflow-x-hidden md:pb-8"
+        style={{
+          paddingTop: "calc(4rem + var(--dev-banner-height, 0))",
+          marginLeft: window.innerWidth >= 768 ? `${sidebarWidth}px` : '0'
+        }}
+      >
         <div className="mx-auto w-full max-w-[1280px] px-4 py-4 md:px-6 md:py-8">
           <Outlet />
         </div>
