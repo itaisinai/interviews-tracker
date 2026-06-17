@@ -8,8 +8,8 @@ interface DevModeBannerProps {
 
 function DevModeBanner({ userEmail }: DevModeBannerProps) {
   return (
-    <div className="fixed left-0 right-0 top-0 z-[9999] bg-yellow-600 px-4 py-2 text-center font-bold text-white">
-      <div className="flex items-center justify-center gap-2">
+    <div className="fixed left-0 right-0 top-0 z-[9999] h-12 bg-yellow-600 px-4 text-center font-bold text-white">
+      <div className="flex h-full items-center justify-center gap-2">
         <MaterialIcon name="warning" filled />
         <span>DEV MODE - Test User: {userEmail}</span>
         <MaterialIcon name="warning" filled />
@@ -81,7 +81,7 @@ export function DevModeAuthBypass({ userEmail, children }: DevModeAuthBypassProp
 
   useEffect(() => {
     // Add CSS custom property to adjust app layout for dev banner
-    document.documentElement.style.setProperty("--dev-banner-height", "48px");
+    document.documentElement.style.setProperty("--dev-banner-height", "3rem");
     return () => {
       document.documentElement.style.removeProperty("--dev-banner-height");
     };
