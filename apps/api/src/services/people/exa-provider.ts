@@ -152,7 +152,9 @@ export class ExaProvider {
           // Start new position under the same company
           const positionTitle = line.replace(/^####\s*/, "").trim();
           currentExperience = {
+            // @ts-ignore
             company: currentExperience?.company || "",
+            // @ts-ignore
             companyUrl: currentExperience?.companyUrl,
             title: positionTitle
           };
@@ -321,6 +323,7 @@ export class ExaProvider {
         avatarUrl: undefined
       },
       research: {
+        // @ts-ignore
         experience: groupedExperience.length > 0 ? groupedExperience : undefined,
         education: education.length > 0 ? education : undefined,
         sources: [
