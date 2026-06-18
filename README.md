@@ -4,6 +4,27 @@
 
 A full-stack personal CRM for managing a senior software engineering job search. It tracks potential companies, active interview processes, calls, interviews, notes, prep tasks, company research, compensation, and follow-ups.
 
+## For AI Assistants
+
+This repository has a comprehensive Claude Code operating system to ensure consistency across sessions:
+
+- **[.claude/CLAUDE.md](.claude/CLAUDE.md)** - Primary context: product philosophy, UX architecture, engineering principles, design system governance, and required workflows
+- **[.claude/skills/](.claude/skills/)** - Specialized validation skills:
+  - `architecture-guardian` - Detect duplication, validate layering, check boundaries
+  - `design-system-enforcer` - Identify reusable patterns, enforce token usage
+  - `product-owner` - Protect product direction, optimize workflows
+  - `ai-workflow-optimizer` - Ensure AI features follow best practices
+  - `system-improvement-reviewer` - Comprehensive pre-commit quality check
+
+**Start every session by reading `.claude/CLAUDE.md`**
+
+See also:
+- `docs/product-philosophy.md` - Core product decisions
+- `docs/ux-patterns.md` - Component usage matrix and workflow patterns
+- `docs/engineering-decisions.md` - Architectural decision records
+- `docs/architecture.md` - Technical layering and boundaries
+- `docs/design-system.md` - Component structure and tokens
+
 ## Stack
 
 - React, TypeScript, Vite, Tailwind CSS, React Router, React Query, React Hook Form
