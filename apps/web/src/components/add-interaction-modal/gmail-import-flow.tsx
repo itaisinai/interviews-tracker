@@ -59,29 +59,26 @@ export function GmailImportFlow({
     },
     onSuccess: onSaved,
   });
+  const refetchCandidatesAfterUndo = async () => {
+    setSelectedMessageId(null);
+    setDraft(null);
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunityId],
+      }),
+      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] }),
+    ]);
+    setStep("searching");
+  };
   const undoPickedEmail = useMutation({
     mutationFn: (email: TrackedGmailEmail) =>
       api.gmailUnpickEmail(opportunityId, email.id),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["gmail-message-states", opportunityId],
-        }),
-        queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] }),
-      ]);
-    },
+    onSuccess: refetchCandidatesAfterUndo,
   });
   const undoDismissedEmail = useMutation({
     mutationFn: (email: TrackedGmailEmail) =>
       api.gmailRestoreEmail(opportunityId, email.id),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["gmail-message-states", opportunityId],
-        }),
-        queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] }),
-      ]);
-    },
+    onSuccess: refetchCandidatesAfterUndo,
   });
 
   useEffect(() => {
