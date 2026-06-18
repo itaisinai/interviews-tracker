@@ -22,7 +22,7 @@ import { Badge } from "../badge";
 import { InteractionDraftFields } from "./interaction-draft-fields";
 import { LoadingButton } from "@interviews-tracker/design-system";
 import type { ReactNode } from "react";
-import { formatDateTime, formatDurationBetween } from "../../lib/format";
+import { formatDateTime, formatDurationBetween, formatDateTimeRange } from "../../lib/format";
 
 type InteractionSummaryPanelProps = {
   interaction: Interaction;
@@ -96,7 +96,10 @@ export function InteractionSummaryPanel({
             ) : null}
           </div>
           <p className="mt-3 font-headline-md text-headline-md font-bold">
-            {formatDateTime(interaction.date, referenceDate)}
+            {interaction.endDate
+              ? formatDateTimeRange(interaction.date, interaction.endDate, referenceDate)
+              : formatDateTime(interaction.date, referenceDate)
+            }
           </p>
           <div className="mt-1 flex items-center gap-2">
             {interaction.personName ? (
