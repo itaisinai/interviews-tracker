@@ -76,6 +76,24 @@ Comprehensive quality check before completing substantial work. Orchestrates all
 
 ---
 
+## Required Final Check: Local Verification
+
+Before completing substantial work, ask:
+
+Did this change affect UI, routing, flows, API contracts, or user-facing behavior?
+
+If yes:
+
+- Was the relevant page opened locally?
+- Was a representative user flow exercised?
+- Were console errors checked?
+- Were server logs checked?
+- Was the result documented?
+
+If not completed, mark the task as incomplete or explicitly report the verification gap.
+
+---
+
 ## Output Format
 
 ### Comprehensive Report

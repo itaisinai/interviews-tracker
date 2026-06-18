@@ -9,16 +9,19 @@ This document provides the primary context for Claude Code sessions working on t
 ### Core Mental Model
 
 **Opportunity is the primary workspace.**
+
 - Everything centers around winning job opportunities
 - Interactions, notes, tasks, and compensation support the opportunity
 - The timeline tells the story of each opportunity's journey
 
 **Preparation over data entry.**
+
 - Optimize for interview prep, not record-keeping
 - Surface actionable insights, not just data
 - Make it easy to review what matters before each interaction
 
 **AI automation as the default path.**
+
 - Prefer: AI extracts → user reviews → user accepts
 - Avoid: User searches → selects → configures → reviews → confirms
 - Confidence-based flows: high confidence = auto-apply, low confidence = suggest
@@ -46,44 +49,51 @@ This document provides the primary context for Claude Code sessions working on t
 
 ### Component Usage Rules
 
-| Use Case | Component | Why |
-|----------|-----------|-----|
-| **Browse/Consume** | Drawer | Lightweight, preserves page context |
-| **Create/Workflow** | Modal | Focused task, easily closable |
-| **Main Workspace** | Page | Full functionality, persistent |
-| **Quick Action** | Inline/Button | Minimal friction |
+| Use Case            | Component     | Why                                 |
+| ------------------- | ------------- | ----------------------------------- |
+| **Browse/Consume**  | Drawer        | Lightweight, preserves page context |
+| **Create/Workflow** | Modal         | Focused task, easily closable       |
+| **Main Workspace**  | Page          | Full functionality, persistent      |
+| **Quick Action**    | Inline/Button | Minimal friction                    |
 
 ### Anti-Patterns to Avoid
 
 ❌ **Drawers for creation workflows**
+
 - Drawers should be lightweight (view/consume only)
 - Creation needs focus → use modals
 
 ❌ **Wizard-heavy experiences**
+
 - Multi-step wizards create friction
 - Prefer single-screen forms with smart defaults
 
 ❌ **Nested modals**
+
 - Creates confusion and poor UX
 - Use page transitions instead
 
 ❌ **Full CRUD in drawers**
+
 - Drawers are not mini-pages
 - Complex editing belongs on pages
 
 ### Workflow Patterns
 
 **AI-First Automation:**
+
 ```
 Parse/Extract → AI Analysis → Show Review UI → User Accepts/Edits → Save
 ```
 
 **Manual Fallback:**
+
 ```
 Simple Input Form → Preview → Save
 ```
 
 **Bulk Operations:**
+
 ```
 Select Multiple → Choose Action → Confirm → Execute
 ```
@@ -91,14 +101,17 @@ Select Multiple → Choose Action → Confirm → Execute
 ### Page Layout Decisions
 
 ✅ **Interview Preparation before Company Details**
+
 - What helps you win comes first
 - Company research supports prep, doesn't dominate
 
 ✅ **Add Interaction is modal-based**
+
 - Focused workflow with clear completion
 - Not buried in a drawer
 
 ✅ **Timeline prominence**
+
 - Central to opportunity page
 - Shows interaction history clearly
 
@@ -109,21 +122,25 @@ Select Multiple → Choose Action → Confirm → Execute
 ### Core Values
 
 **Plan before implementation.**
+
 - Understand the problem space
 - Consider alternatives
 - Document decisions
 
 **Prefer deletion over addition.**
+
 - Remove unused code immediately
 - Question every new dependency
 - Simplify before extending
 
 **Prefer reuse over duplication.**
+
 - Check for existing patterns first
 - Extract when you see 3+ uses
 - Consolidate similar implementations
 
 **Prefer extension over replacement.**
+
 - Build on existing patterns
 - Avoid rewriting working code
 - Refactor incrementally
@@ -131,16 +148,19 @@ Select Multiple → Choose Action → Confirm → Execute
 ### Code Quality Standards
 
 **Favor design-system primitives.**
+
 - Use `@interviews-tracker/design-system` components
 - Don't create one-off UI components
 - Follow semantic token patterns
 
 **Favor composability.**
+
 - Small, focused components
 - Clear props interfaces
 - Easy to test and reuse
 
 **Favor consistency.**
+
 - Follow established patterns
 - Match existing code style
 - Use consistent naming
@@ -169,6 +189,7 @@ Before implementing any feature:
 Before completing substantial work, perform a **System Improvement Review**:
 
 **Check for:**
+
 - ✅ Duplicate code that should be consolidated
 - ✅ Duplicate UI patterns (3+ uses = extract)
 - ✅ Design-system extraction opportunities
@@ -187,6 +208,7 @@ Before completing substantial work, perform a **System Improvement Review**:
 ### Quick Reference
 
 **See detailed documentation:**
+
 - `docs/architecture.md` - Layering, boundaries, data flow
 - `docs/design-system.md` - Component structure, tokens, Storybook
 - `docs/refactor-roadmap.md` - Planned improvements
@@ -200,6 +222,7 @@ HTTP Request → Route → Controller → Service → Repository → Prisma
 ```
 
 **Key Rules:**
+
 - Routes: HTTP wiring only
 - Controllers: Parse requests, validate inputs
 - Services: Business orchestration
@@ -218,6 +241,7 @@ apps → packages (one-way dependency)
 ```
 
 **Never:**
+
 - Import from `apps/` in `packages/`
 - Import Prisma in frontend
 - Mix business logic in routes
@@ -229,11 +253,13 @@ apps → packages (one-way dependency)
 ### Extraction Criteria (3+ Rule)
 
 **Extract to design-system when:**
+
 - ✅ Pattern appears 3+ times across codebase
 - ✅ Pattern is likely to be reused
 - ✅ Component is business-agnostic (no Opportunity/Interaction/Company logic)
 
 **Keep local when:**
+
 - ❌ Single use, unlikely to repeat
 - ❌ Tightly coupled to specific feature
 - ❌ Rapid experimentation phase
@@ -264,6 +290,7 @@ apps → packages (one-way dependency)
 ### Current Design System Components
 
 **Primitives available:**
+
 - Button, IconButton, Badge
 - Card, Modal, Drawer
 - Input, Textarea, Select, FormField
@@ -272,6 +299,7 @@ apps → packages (one-way dependency)
 - MaterialIcon
 
 **Extraction candidates** (check before duplicating):
+
 - StatusBadge (status indicators)
 - TimelineItem (interaction timeline)
 - DetailRow (key-value display)
@@ -285,16 +313,19 @@ apps → packages (one-way dependency)
 ### Confidence-Based Automation
 
 **High Confidence** (80%+): Auto-apply with notification
+
 ```
 Extract data → Apply changes → Show "Applied [X]" toast → Allow undo
 ```
 
 **Medium Confidence** (50-80%): Suggest with easy accept
+
 ```
 Extract data → Show review UI → Pre-filled with suggestion → User accepts/edits
 ```
 
 **Low Confidence** (<50%): Provide starting point
+
 ```
 Extract partial data → Show form with fields → User completes
 ```
@@ -302,11 +333,13 @@ Extract partial data → Show form with fields → User completes
 ### Review-Before-Save Pattern
 
 **Always show:**
+
 - What was extracted/parsed
 - Source of data (which email, which text)
 - Confidence/reasoning (when applicable)
 
 **User controls:**
+
 - Edit any field before saving
 - Reject and try different source
 - Save as-is with one click
@@ -314,26 +347,31 @@ Extract partial data → Show form with fields → User completes
 ### Source Traceability
 
 **For AI-extracted data:**
+
 - Link to source email (`gmailMessageId`)
 - Store extraction metadata
 - Allow re-parsing from source
 - Show "Imported from Gmail" badges
 
 **For manual data:**
+
 - Track creation date/user
 - No false attribution
 
 ### AI Workflow Anti-Patterns
 
 ❌ **Over-confirming**
+
 - Don't ask "Are you sure?" multiple times
 - Single review step is enough
 
 ❌ **Hiding the source**
+
 - Always show where data came from
 - Allow jumping back to source
 
 ❌ **All-or-nothing parsing**
+
 - Partial results are valuable
 - Let user fill gaps manually
 
@@ -365,15 +403,93 @@ Extract partial data → Show form with fields → User completes
 ### When You Discover Patterns
 
 **Document them:**
+
 - Add to this CLAUDE.md if cross-cutting
 - Add to `docs/engineering-decisions.md` if architectural
 - Add to `docs/ux-patterns.md` if UI/workflow
 - Add to `docs/product-philosophy.md` if product direction
 
 **Suggest improvements:**
+
 - Update relevant skill in `.claude/skills/`
 - Flag design-system extraction opportunities
 - Recommend consolidation
+
+---
+
+## Local Product Verification
+
+For any task that changes visual UI, interaction flows, routing, user-facing behavior, or internal logic that may affect an existing user flow, Claude must perform at least one local browser verification before considering the task complete.
+
+This is required even if typecheck, lint, and tests pass.
+
+### When Required
+
+Run local verification for changes involving:
+
+- UI layout or styling
+- drawers, modals, pages, navigation
+- forms
+- timeline behavior
+- Gmail import flow
+- opportunity page behavior
+- interaction details
+- company research
+- person/contact research
+- API contract changes that affect frontend behavior
+- refactors that may affect user-facing flows
+
+### Expected Process
+
+1. Start the local development environment using the existing project scripts.
+2. Use the existing dev user / dev authentication flow.
+3. Navigate to the relevant page.
+4. Exercise the changed flow manually in the browser.
+5. Verify the happy path still works.
+6. Check for obvious visual regressions.
+7. Check the browser console for errors.
+8. Check the terminal/server logs for errors.
+9. Summarize what was verified.
+
+### Minimum Verification Standard
+
+At minimum, Claude must verify one representative path.
+
+Examples:
+
+- Opportunity UI change:
+  - open an existing opportunity page
+  - confirm header, preparation section, company details, timeline render correctly
+  - click an interaction and verify drawer opens
+
+- Interaction drawer change:
+  - open opportunity
+  - click timeline interaction
+  - verify drawer content, actions, fullscreen button, close behavior
+
+- Add interaction flow:
+  - open opportunity
+  - click Add Interaction
+  - verify modal opens
+  - test manual creation or Gmail import path depending on the change
+
+- Gmail import change:
+  - open Add Interaction modal
+  - start Gmail import with dev user
+  - verify candidate/review/accept flow
+
+### Completion Requirement
+
+A task is not complete until the final summary includes:
+
+- local environment command used
+- page/route visited
+- dev user/auth method used
+- flow tested
+- result
+- any issues found or explicitly not found
+
+If local verification cannot be completed, Claude must clearly say why and what remains unverified.
 
 ---
 
@@ -382,21 +498,25 @@ Extract partial data → Show form with fields → User completes
 Before implementing frontend-only workarounds, check:
 
 ### API Design
+
 - Is this really a frontend concern?
 - Should the backend provide this data/logic?
 - Are we working around a backend gap?
 
 ### Dead Code Audit
+
 - Deprecated endpoints still in routes?
 - Old response shapes no longer used?
 - Duplicate endpoints doing similar things?
 
 ### Type Safety
+
 - Do DTOs match actual responses?
 - Optional fields correctly typed?
 - null vs undefined handled consistently?
 
 ### Performance
+
 - N+1 queries happening?
 - Missing database indexes?
 - Over-fetching data?
@@ -406,6 +526,7 @@ Before implementing frontend-only workarounds, check:
 ## Design Inspiration
 
 ### Learn from:
+
 - **Linear** - Clean, fast, keyboard-first
 - **Notion Calendar** - Timeline excellence
 - **Superhuman** - Keyboard shortcuts, speed
@@ -413,6 +534,7 @@ Before implementing frontend-only workarounds, check:
 - **Vercel** - Deploy UX, clear feedback
 
 ### Avoid patterns from:
+
 - **Salesforce** - Overwhelming UI, too many fields
 - **HubSpot** - Feature bloat, complex navigation
 - **Jira** - Over-engineered, slow
@@ -427,24 +549,28 @@ This repository improves itself through active use.
 ### When You Discover Recurring Patterns
 
 **Step 1: Document the Pattern**
+
 - Add to this CLAUDE.md if cross-cutting
 - Add to `docs/engineering-decisions.md` if architectural
 - Add to `docs/ux-patterns.md` if UI/workflow
 
 **Step 2: Update Skills**
 If a pattern could be automated/validated:
+
 - Update relevant skill in `.claude/skills/`
 - Add pattern detection logic
 - Include examples
 
 **Step 3: Suggest Extraction**
 If you notice duplicate code 3+ times:
+
 - Recommend design-system extraction
 - Recommend shared utility extraction
 - Recommend repository pattern extraction
 
 **Step 4: Flag for Human Review**
 Add to session summary:
+
 - "Suggested CLAUDE.md updates: [...]"
 - "Potential skill improvements: [...]"
 - "Design system opportunities: [...]"
@@ -452,16 +578,19 @@ Add to session summary:
 ### Evolution Triggers
 
 **After each substantial feature:**
+
 - Did we introduce new patterns?
 - Should we document new decisions?
 - Can we simplify something?
 
 **When hitting friction:**
+
 - Is there missing documentation?
 - Should there be a new skill?
 - Do principles need updating?
 
 **Monthly review:**
+
 - What patterns emerged?
 - What documentation is stale?
 - What skills need refinement?
@@ -471,24 +600,28 @@ Add to session summary:
 ## Quick Reference Card
 
 ### Before Implementing
+
 - [ ] Read this CLAUDE.md
 - [ ] Check `docs/architecture.md`
 - [ ] Run `architecture-guardian` skill
 - [ ] Run `product-owner` skill (for UX)
 
 ### During Implementation
+
 - [ ] Follow established patterns
 - [ ] Use design-system components
 - [ ] Add tests for new logic
 - [ ] Keep commits atomic
 
 ### Before Completing
+
 - [ ] Run `system-improvement-reviewer` skill
 - [ ] Update docs if needed
 - [ ] Check for duplication
 - [ ] Test the feature
 
 ### AI Features Checklist
+
 - [ ] Run `ai-workflow-optimizer` skill
 - [ ] Implement confidence-based flows
 - [ ] Show source traceability
