@@ -72,7 +72,7 @@ export function DashboardPage() {
   const pipelineHealth = Math.round(((data?.counts.activeProcesses ?? 0) / Math.max((data?.counts.activeProcesses ?? 0) + (data?.counts.potential ?? 0), 1)) * 100);
 
   if (isLoading || !data) {
-    return <PageLoadingState title="Dashboard" description="Loading your pipeline, tasks, and upcoming interactions." />;
+    return <PageLoadingState title="Dashboard" description="Loading your pipeline and upcoming interactions." />;
   }
 
   if (isError) {
@@ -125,7 +125,7 @@ export function DashboardPage() {
                 <span className="font-headline-md text-headline-md font-bold">{data.counts.upcomingInteractions}</span>
                 <span className="font-label-sm text-label-sm text-on-surface-variant">this week</span>
               </div>
-              <p className="mt-4 font-label-sm text-label-sm text-on-surface-variant">{Math.max(data.counts.upcomingInteractions - data.tasksDueThisWeek.length, 0)} awaiting follow-up</p>
+              <p className="mt-4 font-label-sm text-label-sm text-on-surface-variant">Upcoming conversations to prepare for</p>
             </div>
           </div>
         </section>
@@ -197,27 +197,11 @@ export function DashboardPage() {
           </div>
         </section>
 
-        <section className="mb-8">
-          <h2 className="mb-3 font-title-md text-title-md font-bold">Tasks Due This Week</h2>
-          <div className="space-y-3">
-            {data.tasksDueThisWeek.map((task) => (
-              <div key={task.id} className="flex items-start gap-3 rounded-xl border border-outline-variant bg-white p-4">
-                <input type="checkbox" className="mt-1 h-5 w-5 rounded border-outline-variant text-primary focus:ring-primary" />
-                <div className="min-w-0 flex-1">
-                  <p className="break-words font-body-md text-body-md text-on-background">{task.title}</p>
-                  {task.jobOpportunity?.companyName ? <p className="mt-1 font-label-md text-label-md text-on-surface-variant">{task.jobOpportunity.companyName}</p> : null}
-                </div>
-                {task.priority === "HIGH" ? <MaterialIcon name="priority_high" className="text-error" /> : null}
-              </div>
-            ))}
-            {data.tasksDueThisWeek.length === 0 ? <p className="text-body-md text-on-surface-variant">No tasks due this week.</p> : null}
-          </div>
-        </section>
 
         <section className="mb-6 rounded-2xl bg-primary p-6 text-on-primary">
           <p className="font-body-lg text-body-lg font-semibold">Keep it up, {displayName}!</p>
           <p className="mt-2 font-body-md text-body-md leading-6 text-on-primary/90">
-            You have {data.counts.upcomingInteractions} upcoming interactions and {data.tasksDueThisWeek.length} tasks due this week. Momentum is visible.
+            You have {data.counts.upcomingInteractions} upcoming interactions this week. Momentum is visible.
           </p>
         </section>
       </div>
@@ -308,10 +292,10 @@ export function DashboardPage() {
 
         <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="relative overflow-hidden rounded-2xl bg-surface-container-high p-6">
-            <p className="font-label-md text-label-md uppercase text-on-surface-variant">Tasks This Week</p>
-            <h3 className="mt-2 font-headline-lg text-headline-lg">{data.tasksDueThisWeek.length}</h3>
-            <p className="mt-1 text-body-md font-medium text-primary">Preparation and follow-up actions</p>
-            <MaterialIcon name="trending_up" className="absolute -bottom-4 -right-4 text-[80px] opacity-10" />
+            <p className="font-label-md text-label-md uppercase text-on-surface-variant">Interactions This Week</p>
+            <h3 className="mt-2 font-headline-lg text-headline-lg">{data.counts.upcomingInteractions}</h3>
+            <p className="mt-1 text-body-md font-medium text-primary">Scheduled conversations</p>
+            <MaterialIcon name="event" className="absolute -bottom-4 -right-4 text-[80px] opacity-10" />
           </div>
           <div className="relative overflow-hidden rounded-2xl border border-outline-variant bg-white p-6">
             <p className="font-label-md text-label-md uppercase text-on-surface-variant">Pipeline Focus</p>
@@ -322,7 +306,7 @@ export function DashboardPage() {
           <div className="relative overflow-hidden rounded-2xl bg-primary p-6 text-on-primary">
             <p className="font-label-md text-label-md uppercase opacity-80">Offer Tracking</p>
             <h3 className="mt-2 font-headline-lg text-headline-lg">{data.counts.offers}</h3>
-            <p className="mt-1 text-body-md font-medium opacity-90">Compensation conversations</p>
+            <p className="mt-1 text-body-md font-medium opacity-90">Offer-stage opportunities</p>
             <MaterialIcon name="monetization_on" className="absolute -bottom-4 -right-4 text-[80px] opacity-10" />
           </div>
         </div>

@@ -48,14 +48,6 @@ const InteractionsPage = lazy(() =>
     default: module.InteractionsPage,
   })),
 );
-const TasksPage = lazy(() =>
-  import("./pages/tasks-page").then((module) => ({ default: module.TasksPage })),
-);
-const CompensationPage = lazy(() =>
-  import("./pages/compensation-page").then((module) => ({
-    default: module.CompensationPage,
-  })),
-);
 const SettingsPage = lazy(() =>
   import("./pages/settings-page").then((module) => ({
     default: module.SettingsPage,
@@ -97,8 +89,6 @@ function App() {
                   <Route path="/opportunities/:slugOrId/edit" element={<Navigate to="/opportunities/:slugOrId" replace />} />
                   <Route path="/interactions" element={<InteractionsPage />} />
                   <Route path="/search" element={<SearchPage />} />
-                  <Route path="/tasks" element={<TasksPage />} />
-                  <Route path="/compensation" element={<CompensationPage />} />
                   <Route path="/parse" element={<ParseJobPage />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/settings" element={<SettingsPage />} />

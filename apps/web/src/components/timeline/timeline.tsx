@@ -73,7 +73,13 @@ export function Timeline({
           No interactions found for this opportunity yet.
         </div>
       ) : (
-        <ol className="relative ml-8 border-l border-outline-variant">
+        <ol className="relative ml-8">
+          {orderedInteractions.length > 1 ? (
+            <div
+              className="absolute bottom-6 left-0 top-6 border-l border-outline-variant"
+              aria-hidden="true"
+            />
+          ) : null}
           {orderedInteractions.map((item, index) => {
             const badge = getInteractionTimelineBadgeMeta(
               item,
