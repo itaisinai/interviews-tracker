@@ -13,7 +13,7 @@ export type GmailImportFlowProps = {
   onBack: () => void;
 };
 
-type FlowStep = "searching" | "select-candidate" | "review-changes" | "no-results";
+type FlowStep = "searching" | "select-candidate" | "review-changes" | "no-results" | "error";
 
 export function GmailImportFlow({
   opportunityId,
@@ -27,10 +27,11 @@ export function GmailImportFlow({
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
 
-  const { data: searchResults, isLoading: isSearching, refetch: refetchSearch } = useQuery({
+  const { data: searchResults, isLoading: isSearching, isError: searchFailed, error: searchError, refetch: refetchSearch } = useQuery({
     queryKey: ["gmail-search", opportunityId],
     queryFn: () => api.gmailSearch(opportunityId),
     enabled: step === "searching",
+    retry: false,
   });
 
   const { data: messageStates } = useQuery({
@@ -78,6 +79,12 @@ export function GmailImportFlow({
   });
 
   useEffect(() => {
+    if (searchFailed) {
+      setStep("error");
+    }
+  }, [searchFailed]);
+
+  useEffect(() => {
     if (!searchResults) return;
 
     if (searchResults.candidates.length === 0) {
@@ -96,6 +103,38 @@ export function GmailImportFlow({
       }
     }
   }, [searchResults]);
+
+  if (step === "error") {
+    return (
+      <div className="space-y-4 py-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+          <MaterialIcon name="error" className="text-[24px]" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-neutral-900">Gmail search failed</h3>
+          <p className="mt-2 text-sm text-neutral-600">
+            {searchError instanceof Error ? searchError.message : "Unable to search Gmail. Check your connection and try again."}
+          </p>
+        </div>
+        <div className="flex justify-center gap-2">
+          <button onClick={onBack} className="btn btn-secondary">
+            <MaterialIcon name="arrow_back" />
+            Back
+          </button>
+          <button
+            onClick={() => {
+              setStep("searching");
+              void refetchSearch();
+            }}
+            className="btn btn-primary"
+          >
+            <MaterialIcon name="refresh" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isSearching || step === "searching") {
     return (

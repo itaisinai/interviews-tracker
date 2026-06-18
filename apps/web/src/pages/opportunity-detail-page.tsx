@@ -1,21 +1,30 @@
+import type { Interaction } from "../lib/types";
+import {
+  InlineLoadingState,
+  LoadingButton,
+  MaterialIcon,
+  PageErrorState,
+  PageLoadingState,
+} from "@interviews-tracker/design-system";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
+import {
+  getInteractionBadgeMeta,
+  promoteOverdueInteractionsForRead,
+} from "../lib/interaction-status";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { AddInteractionModal } from "../components/add-interaction-modal";
+import { Badge } from "../components/badge";
+import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
+import { ContactsList } from "../components/contacts/contacts-list";
 import { InteractionsDrawer } from "../components/interactions-drawer";
+import { InterviewPreparation } from "../components/interview-preparation";
 import { PageIntro } from "../components/app-shell";
 import { Timeline } from "../components/timeline";
-import { ContactsList } from "../components/contacts/contacts-list";
-import { InterviewPreparation } from "../components/interview-preparation";
-import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
-import { AddInteractionModal } from "../components/add-interaction-modal";
 import { api } from "../lib/api";
-import { getInteractionBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
-import { InlineLoadingState, LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 import { labelForPipelineType } from "../lib/enum-labels";
-import { Badge } from "../components/badge";
-import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
-import type { Interaction } from "../lib/types";
 
 export function OpportunityDetailPage() {
   const { slugOrId = "" } = useParams();
@@ -28,7 +37,8 @@ export function OpportunityDetailPage() {
   });
   const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
 
-  const opportunityId = data?.slug ?? data?.id ?? slugOrId;
+  const opportunityRouteId = data?.slug ?? data?.id ?? slugOrId;
+  const opportunityDbId = data?.id ?? slugOrId;
   const canonicalSlug = data?.slug ?? null;
   const [selectedInteractionId, setSelectedInteractionId] = useState<
     string | null
@@ -36,7 +46,7 @@ export function OpportunityDetailPage() {
   const refresh = () =>
     void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
   const deleteOpportunity = useMutation({
-    mutationFn: () => api.deleteOpportunity(opportunityId),
+    mutationFn: () => api.deleteOpportunity(opportunityRouteId),
     onSuccess: () => navigate("/opportunities"),
   });
   const deleteInteraction = useMutation({
@@ -87,7 +97,7 @@ export function OpportunityDetailPage() {
     return (
       <PageLoadingState
         title="Opportunity"
-        description="Loading opportunity details, notes, and interaction history."
+        description="Loading opportunity details, interaction history."
       />
     );
   }
@@ -138,7 +148,7 @@ export function OpportunityDetailPage() {
               onClick={() => {
                 if (
                   window.confirm(
-                    `Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions, notes, tasks, and compensation.`,
+                    `Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions.`,
                   )
                 )
                   deleteOpportunity.mutate();
@@ -164,11 +174,16 @@ export function OpportunityDetailPage() {
       </div>
 
       <div id="contacts-section" className="mt-8">
-        <ContactsList opportunityId={opportunityId} companyName={data.companyName} />
+        <ContactsList
+          opportunityId={opportunityDbId}
+          companyName={data.companyName}
+        />
       </div>
 
-      <div className="mt-8">
-        <CompanyDetailsModern opportunity={data} />
+      <div className="mt-8 grid gap-8 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <CompanyDetailsModern opportunity={data} />
+        </div>
       </div>
 
       <div className="mt-8">
@@ -189,7 +204,9 @@ export function OpportunityDetailPage() {
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
-        selectedOpportunity={data ? { ...data, interactions: displayedInteractions } : null}
+        selectedOpportunity={
+          data ? { ...data, interactions: displayedInteractions } : null
+        }
         onClose={() => setSelectedInteractionId(null)}
         onSelectInteraction={setSelectedInteractionId}
       />
@@ -197,7 +214,7 @@ export function OpportunityDetailPage() {
       <AddInteractionModal
         isOpen={showAddInteractionModal}
         onClose={() => setShowAddInteractionModal(false)}
-        opportunityId={opportunityId}
+        opportunityId={opportunityDbId}
         companyName={data.companyName}
         roleTitle={data.roleTitle}
         onSaved={() => {
@@ -234,7 +251,9 @@ function FocusedInteractionCard({
               {interaction.stage || interaction.type}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-body-md text-on-surface-variant">
-              <span>{formatDateTimeRange(interaction.date, interaction.endDate)}</span>
+              <span>
+                {formatDateTimeRange(interaction.date, interaction.endDate)}
+              </span>
               {duration ? <span>· {duration}</span> : null}
               <Badge value={interaction.status} tone={badge.tone}>
                 {badge.label}

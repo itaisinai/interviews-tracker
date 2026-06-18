@@ -16,6 +16,7 @@ import { InteractionDrawerHeader } from "./interaction-drawer-header";
 import { InteractionSummaryPanel } from "./interaction-summary-panel";
 import { InteractionTimelinePanel } from "./interaction-timeline-panel";
 import { useNavigate } from "react-router-dom";
+import { GmailInteractionPanel } from "../gmail-interaction-panel/gmail-interaction-panel";
 
 type InteractionsDrawerProps = {
   selectedInteraction: Interaction | null;
@@ -56,6 +57,7 @@ export function InteractionsDrawer({
   const [mountedInteraction, setMountedInteraction] =
     useState<Interaction | null>(selectedInteraction);
   const [isVisible, setIsVisible] = useState(false);
+  const [showGmailAttach, setShowGmailAttach] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
   const openFrameRef = useRef<number | null>(null);
 
@@ -103,6 +105,7 @@ export function InteractionsDrawer({
 
   useEffect(() => {
     setIsEditing(false);
+    setShowGmailAttach(false);
     setDraft(mountedInteraction ? toDraft(mountedInteraction) : null);
   }, [mountedInteraction?.id]);
 
@@ -218,11 +221,21 @@ export function InteractionsDrawer({
                 deleteInteraction.isPending &&
                 deleteInteraction.variables === displayInteraction.id
               }
-              onAttachEmail={() => {
-                // TODO: Re-implement with Add Interaction Modal
-                console.log("Attach email functionality will be in Add Interaction Modal");
-              }}
+              onAttachEmail={() => setShowGmailAttach((current) => !current)}
             />
+
+            {showGmailAttach && opportunity ? (
+              <GmailInteractionPanel
+                opportunityId={opportunity.id}
+                companyName={opportunity.companyName}
+                roleTitle={opportunity.roleTitle}
+                attachToInteractionId={displayInteraction.id}
+                onSaved={() => {
+                  refreshQueries();
+                  setShowGmailAttach(false);
+                }}
+              />
+            ) : null}
 
             <InteractionTimelinePanel
               companyName={opportunity?.companyName ?? "Timeline"}
