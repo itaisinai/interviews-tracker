@@ -35,7 +35,13 @@ export function GmailChangesReview({
 }: GmailChangesReviewProps) {
   const current = attachTargetInteraction;
   const changesCount = changedInteractionFields.size;
-  const confidencePercent = Math.round((analysis?.confidence ?? 0.95) * 100);
+  const confidencePercent = analysis
+    ? analysis.hasCalendar
+      ? 95
+      : analysis.dateSource === "text"
+        ? 85
+        : 75
+    : 95;
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 min-h-[600px]">

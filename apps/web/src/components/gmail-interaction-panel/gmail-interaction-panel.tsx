@@ -6,6 +6,7 @@ import { GmailSuccessState } from "./gmail-success-state";
 import { GmailReviewPanel } from "./gmail-review-panel";
 import { useGmailInteractionPanel } from "./use-gmail-interaction-panel";
 import { useState } from "react";
+import type { TrackedGmailEmail } from "./gmail-interaction-panel-helpers";
 
 type GmailInteractionPanelProps = {
   opportunityId: string;
@@ -218,7 +219,7 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
             </p>
             <LoadingButton
               className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 transition-colors inline-flex items-center gap-2"
-              loading={panel.flowState === "searching_emails"}
+              loading={panel.actionDisabled}
               loadingLabel="Searching..."
               onClick={panel.searchEmails}
             >
@@ -227,6 +228,15 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
             </LoadingButton>
           </div>
         </div>
+
+        <GmailDebugState
+          pickedEmails={panel.pickedEmails}
+          removedEmails={panel.removedEmails}
+          fetching={panel.gmailMessageStatesFetching}
+          clearingEmailId={panel.clearingEmailId}
+          onUnpickEmail={panel.unpickEmail}
+          onRestoreEmail={panel.restoreEmail}
+        />
 
         {panel.error && panel.flowState === "failed" && (
           <div className="p-4 rounded-lg border border-red-200 bg-red-50">
@@ -255,5 +265,77 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
         )}
       </div>
     </section>
+  );
+}
+
+function GmailDebugState({
+  pickedEmails,
+  removedEmails,
+  fetching,
+  clearingEmailId,
+  onUnpickEmail,
+  onRestoreEmail,
+}: {
+  pickedEmails: TrackedGmailEmail[];
+  removedEmails: TrackedGmailEmail[];
+  fetching: boolean;
+  clearingEmailId: string | null;
+  onUnpickEmail: (email: TrackedGmailEmail) => void;
+  onRestoreEmail: (email: TrackedGmailEmail) => void;
+}) {
+  if (!pickedEmails.length && !removedEmails.length && !fetching) return null;
+
+  return (
+    <div className="mt-6 rounded-xl border border-dashed border-neutral-200 bg-neutral-50 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <MaterialIcon name="bug_report" className="text-[16px] text-neutral-500" />
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+          Gmail debug state {fetching ? "· loading" : ""}
+        </p>
+      </div>
+      <DebugEmailList title="Picked emails" empty="No picked emails tracked." emails={pickedEmails} actionLabel="Unpick" clearingEmailId={clearingEmailId} onAction={onUnpickEmail} />
+      <div className="mt-3">
+        <DebugEmailList title="Cleared emails" empty="No cleared emails." emails={removedEmails} actionLabel="Restore" clearingEmailId={clearingEmailId} onAction={onRestoreEmail} />
+      </div>
+    </div>
+  );
+}
+
+function DebugEmailList({
+  title,
+  empty,
+  emails,
+  actionLabel,
+  clearingEmailId,
+  onAction,
+}: {
+  title: string;
+  empty: string;
+  emails: TrackedGmailEmail[];
+  actionLabel: string;
+  clearingEmailId: string | null;
+  onAction: (email: TrackedGmailEmail) => void;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-medium text-neutral-700">{title}</p>
+      {emails.length ? (
+        <div className="mt-2 space-y-2">
+          {emails.map((email) => (
+            <div key={email.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-neutral-900">{email.subject}</p>
+                <p className="text-xs text-neutral-500">{new Date(email.date).toLocaleString()} · {email.id}</p>
+              </div>
+              <button type="button" className="rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50" disabled={clearingEmailId === email.id} onClick={() => onAction(email)}>
+                {clearingEmailId === email.id ? "Working..." : actionLabel}
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-1 text-xs text-neutral-500">{empty}</p>
+      )}
+    </div>
   );
 }
