@@ -1,3 +1,8 @@
+---
+name: system-improvement-reviewer
+description: Use before Before completing substantial features, creating pull requests, after major refactors, or when asked to "review for improvements". Runs all guardian skills and identifies improvement opportunities.
+---
+
 # System Improvement Reviewer Skill
 
 ## Purpose
@@ -45,22 +50,26 @@ Comprehensive quality check before completing substantial work. Orchestrates all
 ### Additional Checks
 
 **Documentation:**
+
 - [ ] README.md updates needed?
 - [ ] CLAUDE.md updates needed?
 - [ ] New patterns to document?
 - [ ] Engineering decisions to record?
 
 **Technical Debt:**
+
 - [ ] TODOs added (with context)?
 - [ ] Temporary hacks flagged?
 - [ ] Known limitations documented?
 
 **Testing:**
+
 - [ ] New code paths tested?
 - [ ] Edge cases handled?
 - [ ] Error scenarios considered?
 
 **Cleanup Opportunities:**
+
 - [ ] Unused imports to remove?
 - [ ] Console.log statements to remove?
 - [ ] Commented code to delete?
@@ -75,30 +84,38 @@ Comprehensive quality check before completing substantial work. Orchestrates all
 # System Improvement Review
 
 ## 🏗️ Architecture
+
 [Results from architecture-guardian]
 
 ## 🎨 Design System
+
 [Results from design-system-enforcer]
 
 ## 📦 Product Direction
+
 [Results from product-owner]
 
 ## 🤖 AI Workflows
+
 [Results from ai-workflow-optimizer if applicable]
 
 ## 📚 Documentation
+
 - [ ] Update needed: [file]
 - [ ] New pattern to document: [description]
 
 ## 🧹 Cleanup Opportunities
+
 - [ ] Remove: [file:line]
 - [ ] Extract: [pattern]
 - [ ] Consolidate: [files]
 
 ## ✅ Summary
+
 [Overall assessment]
 
 ## 🎯 Recommended Next Steps
+
 1. [Critical fixes]
 2. [Moderate improvements]
 3. [Nice-to-haves]

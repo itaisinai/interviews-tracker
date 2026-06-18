@@ -1,3 +1,8 @@
+---
+name: architecture-guardian
+description: Use before implementing new features, during code review, or when refactoring. Validates architectural decisions, detects code quality issues, and ensures layering patterns are followed.
+---
+
 # Architecture Guardian Skill
 
 ## Purpose
@@ -9,16 +14,19 @@ Validate architectural decisions, detect code quality issues, and ensure the cod
 ## When to Use
 
 ✅ **Before implementing new features**
+
 - Check for existing similar implementations
 - Validate layering approach
 - Identify reusable patterns
 
 ✅ **During code review**
+
 - Detect violations
 - Find duplication
 - Spot technical debt
 
 ✅ **When refactoring**
+
 - Ensure boundaries are preserved
 - Check for unintended coupling
 - Validate extraction decisions
@@ -30,17 +38,20 @@ Validate architectural decisions, detect code quality issues, and ensure the cod
 ### 1. Code Duplication
 
 **Look for:**
+
 - Identical or near-identical functions across files
 - Similar component structures (3+ instances)
 - Repeated business logic
 - Duplicate validation/transformation code
 
 **Report:**
+
 - File paths and line numbers
 - Similarity percentage
 - Consolidation recommendation
 
 **Example Finding:**
+
 ```
 🟡 MODERATE: Duplicate interaction validation
 
@@ -57,12 +68,14 @@ Recommendation: Extract to shared validation in lib/validators/
 ### 2. Package Boundary Violations
 
 **Check:**
+
 - ✅ Apps import from packages (allowed)
 - ❌ Packages import from apps (VIOLATION)
 - ❌ Circular dependencies between packages
 - ❌ Prisma imports in frontend code
 
 **Valid dependency direction:**
+
 ```
 apps → packages
 api-client → core, ai, integrations
@@ -72,6 +85,7 @@ core → (none)
 ```
 
 **Example Finding:**
+
 ```
 🔴 CRITICAL: Package boundary violation
 
@@ -85,6 +99,7 @@ Fix: Move logger to @interviews-tracker/logger package or pass as dependency
 ### 3. Layering Violations
 
 **Expected layers:**
+
 ```
 HTTP Request → Route → Controller → Service → Repository → Prisma
                                   ↓
@@ -92,12 +107,14 @@ HTTP Request → Route → Controller → Service → Repository → Prisma
 ```
 
 **Check for:**
+
 - ❌ Prisma queries in routes
 - ❌ Business logic in controllers
 - ❌ HTTP concerns in services
 - ❌ External API calls in repositories
 
 **Example Finding:**
+
 ```
 🔴 CRITICAL: Layering violation
 
@@ -112,6 +129,7 @@ Fix: Move query to repository, call through service layer
 ### 4. Dead or Obsolete Code
 
 **Identify:**
+
 - Unused exports (functions, types, components)
 - Deprecated endpoints still in routes
 - Old response shapes no longer used
@@ -119,6 +137,7 @@ Fix: Move query to repository, call through service layer
 - TODO comments >6 months old
 
 **Example Finding:**
+
 ```
 🟢 MINOR: Dead code detected
 
@@ -133,12 +152,14 @@ Recommendation: Delete if no longer needed
 ### 5. Missing Abstractions
 
 **Detect patterns that should be abstracted:**
+
 - Same sequence of operations repeated 3+ times
 - Similar error handling across files
 - Repeated type transformations
 - Common validation patterns
 
 **Example Finding:**
+
 ```
 🟡 MODERATE: Missing abstraction
 
@@ -160,6 +181,7 @@ Recommendation: Extract to shared repository utility
 [Description of issue]
 
 Location:
+
 - file/path.ts:line
 - file/path2.ts:line
 
@@ -171,18 +193,21 @@ Recommendation: [Specific action to take]
 ### Severity Levels
 
 🔴 **CRITICAL** - Must fix before merging
+
 - Security vulnerabilities
 - Data integrity risks
 - Breaking architectural principles
 - Package boundary violations
 
 🟡 **MODERATE** - Should address soon
+
 - Significant duplication
 - Missing important abstractions
 - Performance concerns
 - Unclear separation of concerns
 
 🟢 **MINOR** - Nice to have
+
 - Small duplication
 - Dead code cleanup
 - Documentation gaps
@@ -195,11 +220,13 @@ Recommendation: [Specific action to take]
 Run through this checklist for the changed files:
 
 ### Package Structure
+
 - [ ] Check import statements for boundary violations
 - [ ] Verify package dependency direction
 - [ ] Look for circular dependencies
 
 ### Layering
+
 - [ ] Routes only do HTTP wiring (no business logic)
 - [ ] Controllers parse/validate, call services
 - [ ] Services orchestrate, don't know about HTTP
@@ -207,12 +234,14 @@ Run through this checklist for the changed files:
 - [ ] Integrations isolated from business logic
 
 ### Code Quality
+
 - [ ] Search for duplicate function signatures
 - [ ] Check for repeated code blocks (>10 lines similar)
 - [ ] Look for unused exports/imports
 - [ ] Find commented code (>10 lines)
 
 ### Abstractions
+
 - [ ] Identify repeated patterns (3+ occurrences)
 - [ ] Check for inline business logic that should be extracted
 - [ ] Look for validation code that should be shared
@@ -225,22 +254,27 @@ Run through this checklist for the changed files:
 ### Issue: Direct Prisma in Routes
 
 **Bad:**
+
 ```typescript
 // routes/opportunities.ts
-router.get('/:id', async (req, res) => {
+router.get("/:id", async (req, res) => {
   const opp = await prisma.jobOpportunity.findUnique({
-    where: { id: req.params.id }
+    where: { id: req.params.id },
   });
   res.json(opp);
 });
 ```
 
 **Good:**
+
 ```typescript
 // routes/opportunities.ts
-router.get('/:id', asyncHandler(async (req, res) => {
-  res.json(await getOpportunityHandler(req as AuthenticatedRequest));
-}));
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    res.json(await getOpportunityHandler(req as AuthenticatedRequest));
+  }),
+);
 
 // controllers/opportunities-controller.ts
 export async function getOpportunityHandler(request: AuthenticatedRequest) {
@@ -263,12 +297,14 @@ export async function getOpportunityRecord(id: string, ownerEmail: string) {
 ### Issue: Package Importing from App
 
 **Bad:**
+
 ```typescript
 // packages/ai/src/parser.ts
-import { logger } from '../../../apps/api/src/lib/logger';
+import { logger } from "../../../apps/api/src/lib/logger";
 ```
 
 **Good:**
+
 ```typescript
 // packages/ai/src/parser.ts
 export function parseJob(input: string, logger: Logger) {
@@ -276,7 +312,7 @@ export function parseJob(input: string, logger: Logger) {
 }
 
 // OR: Move logger to its own package
-import { logger } from '@interviews-tracker/logger';
+import { logger } from "@interviews-tracker/logger";
 ```
 
 ---
@@ -284,24 +320,26 @@ import { logger } from '@interviews-tracker/logger';
 ### Issue: Duplicate Validation
 
 **Bad:**
+
 ```typescript
 // File 1
 if (!input.date || !input.type || !input.status) {
-  throw new Error('Missing required fields');
+  throw new Error("Missing required fields");
 }
 
 // File 2
 if (!input.date || !input.type || !input.status) {
-  throw new Error('Missing required fields');
+  throw new Error("Missing required fields");
 }
 
 // File 3
 if (!input.date || !input.type || !input.status) {
-  throw new Error('Missing required fields');
+  throw new Error("Missing required fields");
 }
 ```
 
 **Good:**
+
 ```typescript
 // packages/core/src/domain/contracts.ts
 export const interactionInputSchema = z.object({
@@ -329,10 +367,12 @@ const input = interactionInputSchema.parse(rawInput);
 ### ✅ Existing Pattern Found
 
 Similar functionality exists:
+
 - `listOpportunityInteractionsHandler` in opportunities-controller.ts
 - `listInteractionRecords` in interaction-repository.ts
 
 Recommendation: Follow the same layering pattern:
+
 1. Route in routes/companies.ts → handler
 2. Controller in companies-controller.ts → service
 3. Service calls existing interaction-repository functions
@@ -343,7 +383,7 @@ All imports follow correct dependency direction.
 
 ### 🟡 Consider: Deduplication Opportunity
 
-If this creates a 3rd "list interactions with filters" pattern, 
+If this creates a 3rd "list interactions with filters" pattern,
 consider extracting a shared repository function:
 `listInteractionRecords(filters: InteractionFilters, ownerEmail: string)`
 
@@ -355,16 +395,19 @@ Proceed with implementation following established patterns.
 ## Integration with Other Skills
 
 **Works with:**
+
 - `design-system-enforcer` - Checks UI layer while this checks logic layer
 - `system-improvement-reviewer` - Includes this as one validation step
 - `product-owner` - This validates technical, product-owner validates UX
 
 **Before running:**
+
 - Understand what files changed
 - Know what feature is being implemented
 - Review `.claude/CLAUDE.md` principles
 
 **After running:**
+
 - Address critical findings immediately
 - Schedule moderate findings
 - Note minor findings for bulk cleanup
@@ -374,11 +417,13 @@ Proceed with implementation following established patterns.
 ## Continuous Improvement
 
 **Add new checks when you notice:**
+
 - Recurring violations
 - Missed patterns
 - New anti-patterns emerging
 
 **Update this skill when:**
+
 - Architecture principles change
 - New layers are introduced
 - Package structure evolves

@@ -1,3 +1,8 @@
+---
+name: design-system-enforcer
+description: Use before implementing new UI, copying/pasting component code, or styling components. Checks for duplicate patterns, hardcoded values, business logic in UI, and design system extraction opportunities.
+---
+
 # Design System Enforcer Skill
 
 ## Purpose
@@ -9,16 +14,19 @@ Ensure UI consistency, identify reusable patterns, and enforce design system bes
 ## When to Use
 
 ✅ **When creating or modifying UI components**
+
 - Before implementing new UI
 - When copying/pasting component code
 - When styling components
 
 ✅ **Before completing frontend work**
+
 - Check for extraction opportunities
 - Validate token usage
 - Ensure consistency
 
 ✅ **During component extraction discussions**
+
 - Evaluate extraction criteria
 - Plan migration approach
 
@@ -29,12 +37,14 @@ Ensure UI consistency, identify reusable patterns, and enforce design system bes
 ### 1. Duplicate UI Patterns (3+ Uses Rule)
 
 **Detection criteria:**
+
 - Same visual style across 3+ files
 - Similar component structure
 - Repeated layout patterns
 - Identical prop interfaces
 
 **Example Finding:**
+
 ```
 🟡 MODERATE: Duplicate status badge pattern
 
@@ -54,12 +64,14 @@ Recommendation: Extract to design-system/components/status-badge/
 ### 2. Hardcoded Values vs Semantic Tokens
 
 **Check for:**
+
 - ❌ Hardcoded colors: `bg-blue-500`, `text-gray-700`
 - ❌ Magic numbers: `p-4`, `gap-3`, `rounded-lg`
 - ❌ One-off styles: `style={{ padding: '12px' }}`
 - ✅ Should use: Token-backed Tailwind classes
 
 **Valid tokens:**
+
 ```css
 /* From packages/design-system/src/styles/tokens.css */
 color.background.app
@@ -72,6 +84,7 @@ color.status.success
 ```
 
 **Example Finding:**
+
 ```
 🟢 MINOR: Hardcoded color values
 
@@ -87,12 +100,14 @@ Recommendation: Use semantic tokens
 ### 3. Business Logic in UI Components
 
 **Detect:**
+
 - Data fetching in presentational components
 - Business rules in component files
 - Prisma types in frontend components
 - Backend-specific logic
 
 **Example Finding:**
+
 ```
 🔴 CRITICAL: Business logic in UI component
 
@@ -108,18 +123,20 @@ UI components should be pure presentation
 ### 4. Component Structure Violations
 
 **Check folder structure:**
+
 ```
 packages/design-system/src/components/
   button/
     button.tsx          ✅
     button.stories.tsx  ✅
     index.ts           ✅
-  
+
   utils.tsx            ❌ Should be in components/utils/
   MyComponent.tsx      ❌ Should use kebab-case folder
 ```
 
 **Example Finding:**
+
 ```
 🟡 MODERATE: Component structure violation
 
@@ -137,18 +154,21 @@ Fix: Create folder structure:
 ### 5. Design System Extraction Opportunities
 
 **Evaluate for extraction:**
+
 - ✅ Appears 3+ times
 - ✅ Business-agnostic (no Opportunity/Interaction logic)
 - ✅ Stable API (not rapidly changing)
 - ✅ Reusable across features
 
 **Keep local if:**
+
 - ❌ Single use, unlikely to repeat
 - ❌ Tightly coupled to feature
 - ❌ Experimental/prototyping
 - ❌ Feature-specific customization
 
 **Example Finding:**
+
 ```
 🟡 MODERATE: Extraction opportunity
 
@@ -171,6 +191,7 @@ Recommendation: Extract to design-system/components/participant-row/
 [Description]
 
 Location(s):
+
 - file/path.tsx:line
 - file/path2.tsx:line
 
@@ -182,16 +203,19 @@ Recommendation: [Action]
 ### Severity Levels
 
 🔴 **CRITICAL** - Fix immediately
+
 - Business logic in UI
 - Security issues (XSS, injection)
 - Type safety violations
 
 🟡 **MODERATE** - Address soon
+
 - 3+ duplicate patterns
 - Significant token violations
 - Missing Storybook stories
 
 🟢 **MINOR** - Nice to have
+
 - 2 duplicate patterns (watch for 3rd)
 - Minor styling inconsistencies
 - Missing component docs
@@ -203,6 +227,7 @@ Recommendation: [Action]
 When recommending extraction, verify:
 
 ### ✅ Extraction Criteria
+
 - [ ] Pattern appears 3+ times (or will soon)
 - [ ] No business-specific logic (Opportunity/Interaction/Company)
 - [ ] Stable, unlikely to change rapidly
@@ -210,6 +235,7 @@ When recommending extraction, verify:
 - [ ] Reusable across different features
 
 ### ✅ Design System Structure
+
 - [ ] Component folder uses kebab-case
 - [ ] Has component file (.tsx)
 - [ ] Has story file (.stories.tsx)
@@ -217,6 +243,7 @@ When recommending extraction, verify:
 - [ ] Uses semantic tokens (not hardcoded)
 
 ### ✅ Migration Plan
+
 - [ ] Create in design-system first
 - [ ] Add Storybook story
 - [ ] Update one consumer (test)
@@ -231,11 +258,13 @@ When recommending extraction, verify:
 ### Issue: Hardcoded Colors
 
 **Bad:**
+
 ```tsx
 <div className="bg-blue-600 text-white border-gray-300">
 ```
 
 **Good:**
+
 ```tsx
 <div className="bg-action-primary text-on-action-primary border-default">
 ```
@@ -245,6 +274,7 @@ When recommending extraction, verify:
 ### Issue: Duplicate Badge Component
 
 **Bad: 3 separate implementations**
+
 ```tsx
 // File 1
 <span className="rounded-full bg-green-100 px-3 py-1 text-green-800">
@@ -263,19 +293,16 @@ When recommending extraction, verify:
 ```
 
 **Good: Single design-system component**
+
 ```tsx
 // packages/design-system/src/components/badge/badge.tsx
-export function Badge({ children, variant = 'default' }: BadgeProps) {
-  return (
-    <span className={`badge badge-${variant}`}>
-      {children}
-    </span>
-  );
+export function Badge({ children, variant = "default" }: BadgeProps) {
+  return <span className={`badge badge-${variant}`}>{children}</span>;
 }
 
 // Usage
-import { Badge } from '@interviews-tracker/design-system';
-<Badge variant="success">{status}</Badge>
+import { Badge } from "@interviews-tracker/design-system";
+<Badge variant="success">{status}</Badge>;
 ```
 
 ---
@@ -283,18 +310,21 @@ import { Badge } from '@interviews-tracker/design-system';
 ### Issue: Business Logic in Component
 
 **Bad:**
+
 ```tsx
 // Component file
 function InteractionCard({ interaction }: Props) {
   // Overdue promotion logic in component
-  const isOverdue = interaction.status === 'SCHEDULED' && 
+  const isOverdue =
+    interaction.status === "SCHEDULED" &&
     new Date(interaction.date) < new Date();
-  
-  return <div>{isOverdue ? 'NEEDS_FOLLOW_UP' : interaction.status}</div>;
+
+  return <div>{isOverdue ? "NEEDS_FOLLOW_UP" : interaction.status}</div>;
 }
 ```
 
 **Good:**
+
 ```tsx
 // lib/interaction-status.ts
 export function promoteOverdueInteractionStatusForRead(interaction) {
@@ -302,7 +332,7 @@ export function promoteOverdueInteractionStatusForRead(interaction) {
 }
 
 // Component file
-import { promoteOverdueInteractionStatusForRead } from '../../lib/interaction-status';
+import { promoteOverdueInteractionStatusForRead } from "../../lib/interaction-status";
 
 function InteractionCard({ interaction }: Props) {
   const promoted = promoteOverdueInteractionStatusForRead(interaction);
@@ -315,6 +345,7 @@ function InteractionCard({ interaction }: Props) {
 ## Current Design System Components
 
 **Available primitives:**
+
 ```
 ✅ Button, IconButton
 ✅ Badge
@@ -327,6 +358,7 @@ function InteractionCard({ interaction }: Props) {
 ```
 
 **Check before creating new:**
+
 - Does Button/IconButton work?
 - Can Badge be styled for your use case?
 - Does Card provide the container you need?
@@ -339,12 +371,14 @@ function InteractionCard({ interaction }: Props) {
 **Patterns seen 3+ times (extract these):**
 
 ### 1. StatusBadge
+
 ```tsx
 // Pattern: Badge with color based on enum
 <Badge variant={getVariantForStatus(status)}>{status}</Badge>
 ```
 
 ### 2. TimelineItem
+
 ```tsx
 // Pattern: Timeline entry with icon, date, content
 <div className="timeline-item">
@@ -355,6 +389,7 @@ function InteractionCard({ interaction }: Props) {
 ```
 
 ### 3. DetailRow
+
 ```tsx
 // Pattern: Label + Value display
 <div className="flex justify-between">
@@ -364,6 +399,7 @@ function InteractionCard({ interaction }: Props) {
 ```
 
 ### 4. EmptyState
+
 ```tsx
 // Pattern: Icon + Message + Action
 <div className="empty-state">
@@ -374,6 +410,7 @@ function InteractionCard({ interaction }: Props) {
 ```
 
 ### 5. ParticipantRow
+
 ```tsx
 // Pattern: Avatar + Name + Role
 <div className="flex items-center gap-3">
@@ -393,24 +430,25 @@ function InteractionCard({ interaction }: Props) {
 
 **Design System Enforcer Response:**
 
-```markdown
+````markdown
 ## Design System Check
 
 ### ✅ Existing Component Available
 
 The `Badge` component already handles status display:
+
 - Location: packages/design-system/src/components/badge/
 - Supports variants: default, success, warning, danger, info
 - Uses semantic tokens
 
 Recommendation: Use existing Badge component
-```tsx
-import { Badge } from '@interviews-tracker/design-system';
 
-<Badge variant={getStatusVariant(status)}>
-  {status}
-</Badge>
+```tsx
+import { Badge } from "@interviews-tracker/design-system";
+
+<Badge variant={getStatusVariant(status)}>{status}</Badge>;
 ```
+````
 
 ### 🟡 Status Variant Mapping
 
@@ -420,6 +458,7 @@ If `getStatusVariant()` doesn't exist, create it in:
 ### ✅ Token Usage
 
 Ensure variant mapping uses semantic tokens, not hardcoded colors.
+
 ```
 
 ---
@@ -458,3 +497,4 @@ Ensure variant mapping uses semantic tokens, not hardcoded colors.
 ---
 
 **Last Updated:** 2026-06-18
+```
