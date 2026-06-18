@@ -1,7 +1,7 @@
 import { createOpportunity, deleteOpportunity, getOpportunity, listOpportunities, updateOpportunity } from "../services/opportunities/opportunity-service.js";
-import { createOpportunityNoteRecord, createOpportunityTaskRecord, getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord } from "../repositories/opportunity-repository.js";
+import { getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord } from "../repositories/opportunity-repository.js";
 import { hideGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages, syncAttachedGmailInteractionData, unmarkUsedGmailMessageState } from "../services/gmail/gmail-service.js";
-import { interactionInputSchema, noteInputSchema, opportunityInputSchema, taskInputSchema } from "../lib/schemas.js";
+import { interactionInputSchema, opportunityInputSchema } from "../lib/schemas.js";
 
 import type { Request } from "express";
 import { createInteraction as createInteractionRecord } from "../services/interactions/interaction-service.js";
@@ -40,22 +40,6 @@ export async function createOpportunityInteractionHandler(request: Authenticated
   if (!opportunity) return null;
   const input = interactionInputSchema.parse(request.body);
   return createInteractionRecord({ ...input, jobOpportunityId: opportunity.id }, request.auth.email);
-}
-
-export async function createOpportunityNoteHandler(request: AuthenticatedRequest) {
-  const opportunity = await getOpportunitySummaryRecord(request.params.slugOrId, request.auth.email);
-  if (!opportunity) return null;
-  const body = request.body as Record<string, unknown>;
-  const input = noteInputSchema.parse({ ...body, jobOpportunityId: opportunity.id });
-  return createOpportunityNoteRecord(opportunity.id, input, request.auth.email);
-}
-
-export async function createOpportunityTaskHandler(request: AuthenticatedRequest) {
-  const opportunity = await getOpportunitySummaryRecord(request.params.slugOrId, request.auth.email);
-  if (!opportunity) return null;
-  const body = request.body as Record<string, unknown>;
-  const input = taskInputSchema.parse({ ...body, jobOpportunityId: opportunity.id });
-  return createOpportunityTaskRecord(opportunity.id, input, request.auth.email);
 }
 
 export async function searchOpportunityGmailHandler(request: AuthenticatedRequest) {

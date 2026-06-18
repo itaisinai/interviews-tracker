@@ -13,19 +13,15 @@ const nav = [
   { to: "/opportunities", label: "Opportunities", icon: "work" },
   { to: "/interactions", label: "Interactions", icon: "forum" },
   { to: "/search", label: "Search", icon: "search" },
-  { to: "/tasks", label: "Tasks", icon: "assignment_turned_in" },
-  { to: "/compensation", label: "Compensation", icon: "payments" },
   { to: "/settings", label: "Settings", icon: "settings" }
 ];
 
 const placeholders: Record<string, string> = {
-  "/": "Search opportunities or tasks...",
+  "/": "Search opportunities...",
   "/companies": "Search companies...",
   "/opportunities": "Search opportunities...",
   "/interactions": "Search interactions...",
   "/search": "Search companies, opportunities, interactions...",
-  "/tasks": "Search tasks...",
-  "/compensation": "Search offers...",
   "/parse": "Search parsed jobs...",
   "/settings": "Search options..."
 };

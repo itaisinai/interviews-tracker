@@ -1,9 +1,4 @@
-import type { Compensation, Interaction, Note, Task } from "../lib/types";
-import type {
-  CompensationDraft,
-  NoteDraft,
-  TaskDraft,
-} from "../components/opportunity-detail/opportunity-detail-types";
+import type { Interaction } from "../lib/types";
 import {
   InlineLoadingState,
   LoadingButton,
@@ -42,28 +37,6 @@ export function OpportunityDetailPage() {
   });
   const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
 
-  const [noteDraft, setNoteDraft] = useState<NoteDraft>({
-    title: "",
-    category: "general",
-    content: "",
-  });
-  const [taskDraft, setTaskDraft] = useState<TaskDraft>({
-    title: "",
-    status: "pending",
-    priority: "medium",
-    dueDate: "",
-    notes: "",
-  });
-  const [compensationDraft, setCompensationDraft] = useState<CompensationDraft>(
-    {
-      baseSalary: "",
-      equity: "",
-      bonus: "",
-      offerStatus: "pending",
-      negotiationNotes: "",
-    },
-  );
-
   const opportunityRouteId = data?.slug ?? data?.id ?? slugOrId;
   const opportunityDbId = data?.id ?? slugOrId;
   const canonicalSlug = data?.slug ?? null;
@@ -79,32 +52,6 @@ export function OpportunityDetailPage() {
   const deleteInteraction = useMutation({
     mutationFn: (interactionId: string) => api.deleteInteraction(interactionId),
     onSuccess: refresh,
-  });
-  const saveCompensation = useMutation({
-    mutationFn: () =>
-      api.upsertCompensation({
-        ...compensationDraft,
-        jobOpportunityId: opportunityDbId,
-      }),
-    onSuccess: () => {
-      setCompensationDraft({
-        baseSalary: "",
-        equity: "",
-        bonus: "",
-        offerStatus: "pending",
-        negotiationNotes: "",
-      });
-      refresh();
-      void queryClient.invalidateQueries({ queryKey: ["compensation"] });
-    },
-  });
-  const deleteCompensation = useMutation({
-    mutationFn: (compensation: Compensation) =>
-      api.deleteCompensation(compensation.id),
-    onSuccess: () => {
-      refresh();
-      void queryClient.invalidateQueries({ queryKey: ["compensation"] });
-    },
   });
 
   const displayedInteractions = useMemo(
@@ -150,7 +97,7 @@ export function OpportunityDetailPage() {
     return (
       <PageLoadingState
         title="Opportunity"
-        description="Loading opportunity details, notes, and interaction history."
+        description="Loading opportunity details, interaction history."
       />
     );
   }
@@ -201,7 +148,7 @@ export function OpportunityDetailPage() {
               onClick={() => {
                 if (
                   window.confirm(
-                    `Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions, notes, tasks, and compensation.`,
+                    `Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions.`,
                   )
                 )
                   deleteOpportunity.mutate();

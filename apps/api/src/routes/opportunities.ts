@@ -1,8 +1,6 @@
 import {
   createOpportunityHandler,
   createOpportunityInteractionHandler,
-  createOpportunityNoteHandler,
-  createOpportunityTaskHandler,
   deleteOpportunityHandler,
   getOpportunityHandler,
   hideOpportunityGmailMessageHandler,
@@ -53,26 +51,6 @@ opportunitiesRouter.get("/:slugOrId/interactions", asyncHandler(async (request, 
 
 opportunitiesRouter.post("/:slugOrId/interactions", asyncHandler(async (request, response) => {
   const result = await createOpportunityInteractionHandler(request as AuthenticatedRequest);
-  if (!result) {
-    response.status(404).json({ message: "Opportunity not found" });
-    return;
-  }
-
-  response.status(201).json(result);
-}));
-
-opportunitiesRouter.post("/:slugOrId/notes", asyncHandler(async (request, response) => {
-  const result = await createOpportunityNoteHandler(request as AuthenticatedRequest);
-  if (!result) {
-    response.status(404).json({ message: "Opportunity not found" });
-    return;
-  }
-
-  response.status(201).json(result);
-}));
-
-opportunitiesRouter.post("/:slugOrId/tasks", asyncHandler(async (request, response) => {
-  const result = await createOpportunityTaskHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;

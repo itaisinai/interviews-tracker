@@ -10,9 +10,6 @@ export type {
   OptionsResponse,
   Opportunity,
   Interaction,
-  Note,
-  Task,
-  Compensation,
   CompanySummary,
   CompanyDetail
 } from "@interviews-tracker/core";
