@@ -20,6 +20,9 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
     queryFn: () => api.getOpportunityContacts(opportunityId)
   });
 
+  // Cast contacts to Person type
+  const typedContacts = contacts as Person[];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -36,11 +39,11 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
         </h3>
       </div>
 
-      {contacts.length === 0 ? (
+      {typedContacts.length === 0 ? (
         <p className="text-body-sm text-on-surface-variant">No contacts yet</p>
       ) : (
         <div className="space-y-2">
-          {contacts.map((contact) => (
+          {typedContacts.map((contact) => (
             <button
               key={contact.id}
               onClick={() => setSelectedPerson(contact)}

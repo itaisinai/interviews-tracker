@@ -74,7 +74,7 @@ export function InteractionSummaryPanel({
     enabled: !!interaction.jobOpportunityId && !!interaction.personName
   });
 
-  const personRecord = contacts.find(
+  const personRecord = (contacts as Person[]).find(
     (c) => c.name === interaction.personName
   );
 
@@ -105,7 +105,7 @@ export function InteractionSummaryPanel({
                 className="inline-flex items-center gap-2 rounded-lg border border-outline px-3 py-1.5 text-body-sm font-medium text-on-surface transition-colors hover:bg-surface-container"
                 onClick={() => {
                   // Create a person object (with or without research)
-                  const personToShow = personRecord || {
+                  const personToShow: Person = personRecord || {
                     id: '',
                     name: interaction.personName!,
                     email: null,
