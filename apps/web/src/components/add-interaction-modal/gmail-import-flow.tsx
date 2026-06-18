@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import type { InteractionDraft } from "../../lib/types";
 import { MaterialIcon, LoadingButton, DiffReviewRow } from "@interviews-tracker/design-system";
@@ -22,14 +22,20 @@ export function GmailImportFlow({
   onSaved,
   onBack,
 }: GmailImportFlowProps) {
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("searching");
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
 
-  const { data: searchResults, isLoading: isSearching } = useQuery({
+  const { data: searchResults, isLoading: isSearching, refetch: refetchSearch } = useQuery({
     queryKey: ["gmail-search", opportunityId],
     queryFn: () => api.gmailSearch(opportunityId),
     enabled: step === "searching",
+  });
+
+  const { data: messageStates } = useQuery({
+    queryKey: ["gmail-message-states", opportunityId],
+    queryFn: () => api.gmailMessageStates(opportunityId),
   });
 
   const parseEmail = useMutation({
@@ -38,6 +44,28 @@ export function GmailImportFlow({
     onSuccess: (result) => {
       setDraft(result.interaction);
       setStep("review-changes");
+    },
+  });
+
+  const unpickEmail = useMutation({
+    mutationFn: (messageId: string) =>
+      api.gmailUnpickEmail(opportunityId, messageId),
+    onSuccess: () => {
+      // Refresh the message states and search results
+      void queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+      void queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      void refetchSearch();
+    },
+  });
+
+  const restoreEmail = useMutation({
+    mutationFn: (messageId: string) =>
+      api.gmailRestoreEmail(opportunityId, messageId),
+    onSuccess: () => {
+      // Refresh the message states and search results
+      void queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+      void queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      void refetchSearch();
     },
   });
 
@@ -89,9 +117,21 @@ export function GmailImportFlow({
     return (
       <div className="space-y-4">
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-          <p className="text-sm text-neutral-700">
-            Found {searchResults.candidates.length} potential emails. Select one to import:
-          </p>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-neutral-700">
+              Found {searchResults.candidates.length} potential emails. Select one to import:
+            </p>
+            <button
+              onClick={() => {
+                setStep("searching");
+                void refetchSearch();
+              }}
+              className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+            >
+              <MaterialIcon name="refresh" className="text-[16px]" />
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -121,6 +161,67 @@ export function GmailImportFlow({
           <MaterialIcon name="arrow_back" />
           Back
         </button>
+
+        {/* Debug: Show picked/cleared emails */}
+        {messageStates && (messageStates.pickedEmails.length > 0 || messageStates.removedEmails.length > 0) && (
+          <div className="border-t border-neutral-200 pt-4 mt-4">
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-medium text-neutral-600 hover:text-neutral-900">
+                Debug: Picked/Cleared emails ({messageStates.pickedEmails.length + messageStates.removedEmails.length})
+              </summary>
+              <div className="mt-3 space-y-3">
+                {messageStates.pickedEmails.length > 0 && (
+                  <div>
+                    <div className="mb-2 text-xs font-semibold uppercase text-emerald-600">
+                      Picked ({messageStates.pickedEmails.length})
+                    </div>
+                    <div className="space-y-2">
+                      {messageStates.pickedEmails.map((email) => (
+                        <div key={email.id} className="flex items-start justify-between gap-2 rounded border border-emerald-200 bg-emerald-50 p-2">
+                          <div className="flex-1 min-w-0 text-xs">
+                            <div className="font-medium truncate">{email.subject}</div>
+                            <div className="text-emerald-600">{email.date}</div>
+                          </div>
+                          <button
+                            onClick={() => unpickEmail.mutate(email.id)}
+                            disabled={unpickEmail.isPending}
+                            className="flex-shrink-0 rounded px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                          >
+                            {unpickEmail.isPending ? "..." : "Undo"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {messageStates.removedEmails.length > 0 && (
+                  <div>
+                    <div className="mb-2 text-xs font-semibold uppercase text-neutral-500">
+                      Cleared ({messageStates.removedEmails.length})
+                    </div>
+                    <div className="space-y-2">
+                      {messageStates.removedEmails.map((email) => (
+                        <div key={email.id} className="flex items-start justify-between gap-2 rounded border border-neutral-200 bg-neutral-50 p-2">
+                          <div className="flex-1 min-w-0 text-xs">
+                            <div className="font-medium truncate">{email.subject}</div>
+                            <div className="text-neutral-500">{email.date}</div>
+                          </div>
+                          <button
+                            onClick={() => restoreEmail.mutate(email.id)}
+                            disabled={restoreEmail.isPending}
+                            className="flex-shrink-0 rounded px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-100 disabled:opacity-50"
+                          >
+                            {restoreEmail.isPending ? "..." : "Restore"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </details>
+          </div>
+        )}
       </div>
     );
   }
@@ -231,20 +332,101 @@ export function GmailImportFlow({
 
   if (step === "no-results" || searchResults?.candidates.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
-          <MaterialIcon name="inbox" className="text-[32px] text-neutral-400" />
+      <div className="space-y-6">
+        <div className="py-12 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
+            <MaterialIcon name="inbox" className="text-[32px] text-neutral-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-neutral-900">
+            No emails found
+          </h3>
+          <p className="mt-2 text-sm text-neutral-600">
+            We couldn't find any recent emails for {companyName}.
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={() => {
+                setStep("searching");
+                void refetchSearch();
+              }}
+              className="btn btn-secondary"
+            >
+              <MaterialIcon name="refresh" />
+              Refresh Search
+            </button>
+            <button onClick={onBack} className="btn btn-secondary">
+              <MaterialIcon name="arrow_back" />
+              Back
+            </button>
+          </div>
         </div>
-        <h3 className="text-lg font-semibold text-neutral-900">
-          No emails found
-        </h3>
-        <p className="mt-2 text-sm text-neutral-600">
-          We couldn't find any recent emails for {companyName}.
-        </p>
-        <button onClick={onBack} className="btn btn-secondary mt-6">
-          <MaterialIcon name="arrow_back" />
-          Back
-        </button>
+
+        {/* Debug: Show picked/cleared emails */}
+        {messageStates && (messageStates.pickedEmails.length > 0 || messageStates.removedEmails.length > 0) && (
+          <div className="border-t border-neutral-200 pt-6">
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-medium text-neutral-600 hover:text-neutral-900">
+                Debug: Show picked/cleared emails ({messageStates.pickedEmails.length + messageStates.removedEmails.length} total)
+              </summary>
+              <div className="mt-4 space-y-4">
+                {messageStates.pickedEmails.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-xs font-semibold uppercase text-neutral-500">
+                      Picked Emails ({messageStates.pickedEmails.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {messageStates.pickedEmails.map((email) => (
+                        <div
+                          key={email.id}
+                          className="flex items-start justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 text-xs"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-emerald-900 truncate">{email.subject}</div>
+                            <div className="mt-1 text-emerald-700">{new Date(email.date).toLocaleDateString()}</div>
+                          </div>
+                          <button
+                            onClick={() => unpickEmail.mutate(email.id)}
+                            disabled={unpickEmail.isPending}
+                            className="flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                          >
+                            {unpickEmail.isPending ? "..." : "Undo"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {messageStates.removedEmails.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 text-xs font-semibold uppercase text-neutral-500">
+                      Cleared Emails ({messageStates.removedEmails.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {messageStates.removedEmails.map((email) => (
+                        <div
+                          key={email.id}
+                          className="flex items-start justify-between gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-neutral-700 truncate">{email.subject}</div>
+                            <div className="mt-1 text-neutral-500">{new Date(email.date).toLocaleDateString()}</div>
+                          </div>
+                          <button
+                            onClick={() => restoreEmail.mutate(email.id)}
+                            disabled={restoreEmail.isPending}
+                            className="flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100 disabled:opacity-50"
+                          >
+                            {restoreEmail.isPending ? "..." : "Restore"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </details>
+          </div>
+        )}
       </div>
     );
   }

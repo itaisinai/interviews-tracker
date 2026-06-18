@@ -301,7 +301,10 @@ export function InteractionSummaryPanel({
                 interaction.jobOpportunity?.companyName,
             }}
             isOpen={researchModalOpen}
-            onClose={() => setResearchModalOpen(false)}
+            onClose={() => {
+              setResearchModalOpen(false);
+              setSelectedPerson(null);
+            }}
             opportunityId={interaction.jobOpportunityId}
           />
           <PersonDetailModal
@@ -313,7 +316,7 @@ export function InteractionSummaryPanel({
             }}
             onResearch={(name, title) => {
               setPersonDetailModalOpen(false);
-              setSelectedPerson(null);
+              // Don't clear selectedPerson here - keep it for research modal
               setResearchModalOpen(true);
             }}
           />
