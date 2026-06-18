@@ -24,7 +24,9 @@ export type {
   CompanyResearchInput,
   CompanyResearchResult,
   CompanyResearchApplyResponse,
-  InteractionDraft
+  InteractionDraft,
+  PersonResearchInput,
+  PersonResearchResult
 } from "@interviews-tracker/ai";
 
 export type {
@@ -50,3 +52,20 @@ export type {
 export type {
   GmailParsedEmailResponse
 } from "@interviews-tracker/api-client";
+
+export type Person = {
+  id: string;
+  name: string;
+  email: string | null;
+  linkedinUrl: string | null;
+  title: string | null;
+  company: string | null;
+  avatarUrl: string | null;
+  research?: {
+    about?: string;
+    experience?: unknown;
+    education?: unknown;
+    skills?: unknown;
+    sources?: unknown;
+  } | null;
+};

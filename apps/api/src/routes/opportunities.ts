@@ -20,6 +20,7 @@ import {
 
 import { Router, type Request } from "express";
 import { asyncHandler } from "../lib/http.js";
+import { prisma } from "../lib/prisma.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
@@ -158,4 +159,31 @@ opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/used", asyncHan
   }
 
   response.status(204).end();
+}));
+
+// Get opportunity contacts
+opportunitiesRouter.get("/:slugOrId/contacts", asyncHandler(async (request, response) => {
+  const { slugOrId } = request.params;
+
+  const opportunity = await prisma.jobOpportunity.findFirst({
+    where: {
+      OR: [
+        { id: slugOrId },
+        { slug: slugOrId }
+      ]
+    }
+  });
+
+  if (!opportunity) {
+    response.status(404).json({ error: "Opportunity not found" });
+    return;
+  }
+
+  const contacts = await prisma.person.findMany({
+    where: { jobOpportunityId: opportunity.id },
+    include: { research: true },
+    orderBy: { updatedAt: "desc" }
+  });
+
+  response.json(contacts);
 }));

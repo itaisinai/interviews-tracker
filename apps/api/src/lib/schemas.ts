@@ -22,7 +22,9 @@ export {
   aiParseResponseSchema,
   companyEnrichmentSchema,
   gmailEmailExtractionAnalysisSchema,
-  gmailInteractionDraftSchema
+  gmailInteractionDraftSchema,
+  personResearchInputSchema,
+  personResearchResultSchema
 } from "@interviews-tracker/ai";
 
 import {

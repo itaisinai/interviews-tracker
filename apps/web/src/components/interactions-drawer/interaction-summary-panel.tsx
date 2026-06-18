@@ -1,5 +1,5 @@
-import type { Dispatch, SetStateAction } from "react";
-import type { Interaction, InteractionDraft } from "../../lib/types";
+import { useState, type Dispatch, type SetStateAction } from "react";
+import type { Interaction, InteractionDraft, Person } from "../../lib/types";
 import {
   Link2,
   LucidePencilOff,
@@ -8,6 +8,11 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
+import { MaterialIcon } from "@interviews-tracker/design-system";
+import { PersonResearchFlow } from "../person-research/person-research-flow";
+import { PersonDetailModal } from "../contacts/person-detail-modal";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../lib/api";
 import {
   displayLabelForEnumValue,
   normalizeInteractionType,
@@ -53,10 +58,25 @@ export function InteractionSummaryPanel({
   isDeleting,
   onAttachEmail,
 }: InteractionSummaryPanelProps) {
+  const [researchModalOpen, setResearchModalOpen] = useState(false);
+  const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+
   const typeLabel =
     displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ??
     interaction.type;
   const durationLabel = formatDurationBetween(interaction.date, interaction.endDate);
+
+  // Fetch contacts for this opportunity to find the person
+  const { data: contacts = [] } = useQuery({
+    queryKey: ["opportunity-contacts", interaction.jobOpportunityId],
+    queryFn: () => api.getOpportunityContacts(interaction.jobOpportunityId),
+    enabled: !!interaction.jobOpportunityId && !!interaction.personName
+  });
+
+  const personRecord = (contacts as Person[]).find(
+    (c) => c.name === interaction.personName
+  );
 
   return (
     <section className="rounded-2xl border border-outline-variant bg-white p-5">
@@ -78,13 +98,81 @@ export function InteractionSummaryPanel({
           <p className="mt-3 font-headline-md text-headline-md font-bold">
             {formatDateTime(interaction.date, referenceDate)}
           </p>
-          <p className="mt-1 flex items-center gap-2 text-body-md text-on-surface-variant">
-            <UserRound className="h-4 w-4" />
-            <span>
-              {interaction.personName ?? "No person"}
-              {interaction.personRole ? ` · ${interaction.personRole}` : ""}
-            </span>
-          </p>
+          <div className="mt-1 flex items-center gap-2">
+            {interaction.personName ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-lg border border-outline px-3 py-1.5 text-body-sm font-medium text-on-surface transition-colors hover:bg-surface-container"
+                onClick={() => {
+                  // Create a person object (with or without research)
+                  const personToShow: Person = personRecord || {
+                    id: '',
+                    name: interaction.personName!,
+                    email: null,
+                    linkedinUrl: null,
+                    title: interaction.personRole || null,
+                    company: interaction.jobOpportunity?.companyName || null,
+                    avatarUrl: null,
+                    research: null
+                  };
+                  setSelectedPerson(personToShow);
+                  setPersonDetailModalOpen(true);
+                }}
+              >
+                <UserRound className="h-4 w-4" />
+                <span>
+                  {interaction.personName}
+                  {interaction.personRole ? ` · ${interaction.personRole}` : ""}
+                </span>
+              </button>
+            ) : (
+              <span className="flex items-center gap-2 text-body-md text-on-surface-variant">
+                <UserRound className="h-4 w-4" />
+                <span>No person</span>
+              </span>
+            )}
+            {interaction.personName && !personRecord && (
+              <button
+                type="button"
+                className="rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-primary"
+                onClick={() => setResearchModalOpen(true)}
+                aria-label="Research this person"
+                title="Research this person"
+              >
+                <MaterialIcon name="travel_explore" className="text-[18px]" />
+              </button>
+            )}
+          </div>
+
+          {interaction.personName && (
+            <>
+              <PersonResearchFlow
+                person={{
+                  name: interaction.personName,
+                  title: interaction.personRole,
+                  company: interaction.jobOpportunity?.companyName
+                }}
+                isOpen={researchModalOpen}
+                onClose={() => setResearchModalOpen(false)}
+                opportunityId={interaction.jobOpportunityId}
+              />
+              {selectedPerson && (
+                <PersonDetailModal
+                  person={selectedPerson}
+                  isOpen={personDetailModalOpen}
+                  onClose={() => {
+                    setPersonDetailModalOpen(false);
+                    setSelectedPerson(null);
+                  }}
+                  onResearch={(name, title) => {
+                    setPersonDetailModalOpen(false);
+                    setSelectedPerson(null);
+                    setResearchModalOpen(true);
+                  }}
+                />
+              )}
+            </>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

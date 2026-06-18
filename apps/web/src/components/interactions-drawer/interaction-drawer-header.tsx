@@ -45,7 +45,7 @@ export function InteractionDrawerHeader({
         {opportunity ? (
           <Link
             className="btn btn-secondary"
-            to={`/opportunities/${opportunity.id}`}
+            to={`/opportunities/${opportunity.slug || opportunity.id}`}
             title="Open opportunity details"
           >
             <FolderOpen className="h-4 w-4" />
