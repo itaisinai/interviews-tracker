@@ -73,15 +73,15 @@ export function Timeline({
           No interactions found for this opportunity yet.
         </div>
       ) : (
-        <ol className="relative pl-8">
-          <span className="absolute left-[7px] top-2 bottom-2 w-px bg-outline-variant" />
+        <ol className="relative ml-8 border-l border-outline-variant">
           {orderedInteractions.map((item, index) => {
             const badge = getInteractionTimelineBadgeMeta(
               item,
               orderedInteractions,
             );
             const isSelected = selectedInteractionId === item.id;
-            const isUpcoming = new Date(item.date).getTime() > referenceDate.getTime();
+            const isUpcoming =
+              new Date(item.date).getTime() > referenceDate.getTime();
             const isClickable = Boolean(onSelectInteraction);
             const isDeleting = isDeletingInteraction?.(item.id) ?? false;
 
