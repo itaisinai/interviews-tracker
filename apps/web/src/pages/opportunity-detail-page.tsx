@@ -3,14 +3,17 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { InteractionsDrawer } from "../components/interactions-drawer";
-import { CompanyDataSection, OpportunitySidePanel } from "../components/opportunity-detail";
 import { PageIntro } from "../components/app-shell";
 import { Timeline } from "../components/timeline";
 import { ContactsList } from "../components/contacts/contacts-list";
+import { InterviewPreparation } from "../components/interview-preparation";
+import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
+import { AddInteractionModal } from "../components/add-interaction-modal";
 import { api } from "../lib/api";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 import { InlineLoadingState, LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
-import type { InteractionInputMode } from "../components/interaction-input-chooser";
+import { labelForPipelineType } from "../lib/enum-labels";
+import { Badge } from "../components/badge";
 
 export function OpportunityDetailPage() {
   const { slugOrId = "" } = useParams();
@@ -21,67 +24,21 @@ export function OpportunityDetailPage() {
     queryFn: () => api.opportunity(slugOrId),
     enabled: Boolean(slugOrId),
   });
-  const [note, setNote] = useState({
-    title: "",
-    category: "General",
-    content: "",
-  });
-  const [task, setTask] = useState({
-    title: "",
-    status: "PENDING",
-    priority: "MEDIUM",
-    dueDate: "",
-    notes: "",
-  });
-  const [comp, setComp] = useState({
-    baseSalary: "",
-    equity: "",
-    bonus: "",
-    offerStatus: "NOT_DISCUSSED",
-    negotiationNotes: "",
-  });
-  const [showResearch, setShowResearch] = useState(false);
-  const [showInteractionInput, setShowInteractionInput] = useState<InteractionInputMode>(null);
+  const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
 
-  const opportunityId = data?.id ?? slugOrId;
+  const opportunityId = data?.slug ?? data?.id ?? slugOrId;
   const canonicalSlug = data?.slug ?? null;
   const [selectedInteractionId, setSelectedInteractionId] = useState<
     string | null
   >(null);
   const refresh = () =>
     void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
-  const addNote = useMutation({
-    mutationFn: () => api.createOpportunityNote(opportunityId, note),
-    onSuccess: refresh,
-  });
-  const addTask = useMutation({
-    mutationFn: () => api.createOpportunityTask(opportunityId, task),
-    onSuccess: refresh,
-  });
-  const saveComp = useMutation({
-    mutationFn: () =>
-      api.upsertCompensation({ ...comp, jobOpportunityId: opportunityId }),
-    onSuccess: refresh,
-  });
   const deleteOpportunity = useMutation({
     mutationFn: () => api.deleteOpportunity(opportunityId),
     onSuccess: () => navigate("/opportunities"),
   });
   const deleteInteraction = useMutation({
     mutationFn: (interactionId: string) => api.deleteInteraction(interactionId),
-    onSuccess: refresh,
-  });
-  const deleteNote = useMutation({
-    mutationFn: (noteId: string) => api.deleteNote(noteId),
-    onSuccess: refresh,
-  });
-  const deleteTask = useMutation({
-    mutationFn: (taskId: string) => api.deleteTask(taskId),
-    onSuccess: refresh,
-  });
-  const deleteCompensation = useMutation({
-    mutationFn: (compensationId: string) =>
-      api.deleteCompensation(compensationId),
     onSuccess: refresh,
   });
 
@@ -140,6 +97,24 @@ export function OpportunityDetailPage() {
         actions={
           <>
             {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+            <div className="flex items-center gap-2">
+              <Badge value={data.status} />
+              <Badge value={data.priority} />
+              <Badge value={data.pipelineType}>
+                {labelForPipelineType(data.pipelineType)}
+              </Badge>
+            </div>
+            <LoadingButton
+              className="btn btn-secondary"
+              icon="add"
+              onClick={() => setShowAddInteractionModal(true)}
+            >
+              Add Interaction
+            </LoadingButton>
+            <Link className="btn btn-primary" to="/opportunities">
+              <MaterialIcon name="arrow_back" />
+              Back to Pipeline
+            </Link>
             <LoadingButton
               className="btn btn-secondary text-error hover:bg-error-container"
               loading={deleteOpportunity.isPending}
@@ -156,38 +131,24 @@ export function OpportunityDetailPage() {
             >
               Delete
             </LoadingButton>
-            <Link className="btn btn-primary" to="/opportunities">
-              <MaterialIcon name="arrow_back" />
-              Back to Pipeline
-            </Link>
           </>
         }
       />
 
-      <CompanyDataSection
-        opportunity={data}
-        showResearch={showResearch}
-        showInteractionInput={showInteractionInput}
-        onToggleResearch={() => setShowResearch((value) => !value)}
-        onToggleInteractionInput={() => {
-          setShowInteractionInput((current) => (current ? null : "chooser"));
-        }}
-        onSelectInteractionInputMode={(mode) => {
-          setShowInteractionInput(mode);
-        }}
-        onSaved={() => {
-          refresh();
-          setShowInteractionInput(null);
-        }}
-      />
-
       <div className="mt-8">
+        <InterviewPreparation opportunity={data} />
+      </div>
+
+      <div id="contacts-section" className="mt-8">
         <ContactsList opportunityId={opportunityId} companyName={data.companyName} />
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="mt-8">
+        <CompanyDetailsModern opportunity={data} />
+      </div>
+
+      <div className="mt-8">
         <Timeline
-          className="lg:col-span-7"
           interactions={displayedInteractions}
           selectedInteractionId={selectedInteractionId}
           onSelectInteraction={setSelectedInteractionId}
@@ -201,41 +162,24 @@ export function OpportunityDetailPage() {
             deleteInteraction.variables === interactionId
           }
         />
-
-        <OpportunitySidePanel
-          opportunity={data}
-          note={note}
-          task={task}
-          compensation={comp}
-          onNoteChange={setNote}
-          onTaskChange={setTask}
-          onCompensationChange={setComp}
-          onAddNote={() => addNote.mutate()}
-          onAddTask={() => addTask.mutate()}
-          onSaveCompensation={() => saveComp.mutate()}
-          onDeleteNote={(item) => {
-            if (window.confirm("Delete this note?")) deleteNote.mutate(item.id);
-          }}
-          onDeleteTask={(item) => {
-            if (window.confirm("Delete this task?")) deleteTask.mutate(item.id);
-          }}
-          onDeleteCompensation={(item) => {
-            if (window.confirm("Delete compensation details?"))
-              deleteCompensation.mutate(item.id);
-          }}
-          addingNote={addNote.isPending}
-          addingTask={addTask.isPending}
-          savingCompensation={saveComp.isPending}
-          deletingNoteId={deleteNote.variables}
-          deletingTaskId={deleteTask.variables}
-          deletingCompensation={deleteCompensation.isPending}
-        />
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
         selectedOpportunity={data ? { ...data, interactions: displayedInteractions } : null}
         onClose={() => setSelectedInteractionId(null)}
         onSelectInteraction={setSelectedInteractionId}
+      />
+
+      <AddInteractionModal
+        isOpen={showAddInteractionModal}
+        onClose={() => setShowAddInteractionModal(false)}
+        opportunityId={opportunityId}
+        companyName={data.companyName}
+        roleTitle={data.roleTitle}
+        onSaved={() => {
+          refresh();
+          setShowAddInteractionModal(false);
+        }}
       />
     </>
   );

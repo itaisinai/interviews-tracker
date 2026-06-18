@@ -22,7 +22,11 @@ import { Badge } from "../badge";
 import { InteractionDraftFields } from "./interaction-draft-fields";
 import { LoadingButton } from "@interviews-tracker/design-system";
 import type { ReactNode } from "react";
-import { formatDateTime, formatDurationBetween, formatDateTimeRange } from "../../lib/format";
+import {
+  formatDateTime,
+  formatDurationBetween,
+  formatDateTimeRange,
+} from "../../lib/format";
 
 type InteractionSummaryPanelProps = {
   interaction: Interaction;
@@ -65,243 +69,416 @@ export function InteractionSummaryPanel({
   const typeLabel =
     displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ??
     interaction.type;
-  const durationLabel = formatDurationBetween(interaction.date, interaction.endDate);
+  const durationLabel = formatDurationBetween(
+    interaction.date,
+    interaction.endDate,
+  );
+
+  // Split multiple names (e.g., "John Doe and Jane Smith" or "John Doe, Jane Smith")
+  const personNames = interaction.personName
+    ? interaction.personName
+        .split(/\s+and\s+|,\s*/)
+        .map((name) => name.trim())
+        .filter(Boolean)
+    : [];
 
   // Fetch contacts for this opportunity to find the person
   const { data: contacts = [] } = useQuery({
     queryKey: ["opportunity-contacts", interaction.jobOpportunityId],
     queryFn: () => api.getOpportunityContacts(interaction.jobOpportunityId),
-    enabled: !!interaction.jobOpportunityId && !!interaction.personName
+    enabled: !!interaction.jobOpportunityId && !!interaction.personName,
   });
 
-  const personRecord = (contacts as Person[]).find(
-    (c) => c.name === interaction.personName
+  const personRecords = personNames.map((name) =>
+    (contacts as Person[]).find((c) => c.name === name),
   );
 
   return (
     <section className="relative">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-6 mb-6">
+      {/* Header with Primary Action */}
+      <div className="flex items-start justify-between gap-6 mb-8">
         <div className="flex-1 min-w-0">
-          {/* Title */}
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 mb-2">
-            {interaction.stage || typeLabel}
-            {durationLabel ? ` (${durationLabel})` : ""}
-          </h1>
+          {/* Title with Icon */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-600">
+              <MaterialIcon name="calendar_month" className="text-[20px]" />
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
+              {interaction.stage || typeLabel}
+            </h1>
+          </div>
 
-          {/* Metadata Row */}
-          <div className="flex items-center gap-3 text-sm text-neutral-600 flex-wrap">
+          {/* Date and Time */}
+          <div className="flex items-center gap-2 text-base text-neutral-700 mb-3 ml-[52px]">
             <span className="font-medium">
-              {interaction.endDate
-                ? formatDateTimeRange(interaction.date, interaction.endDate, referenceDate)
-                : formatDateTime(interaction.date, referenceDate)
-              }
+              {new Date(interaction.date).toLocaleDateString(undefined, {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })}
             </span>
             <span className="text-neutral-400">·</span>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700 text-xs font-medium">
+            <span>
+              {new Date(interaction.date).toLocaleTimeString(undefined, {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              })}
+              {interaction.endDate && (
+                <>
+                  {" – "}
+                  {new Date(interaction.endDate).toLocaleTimeString(undefined, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  })}
+                </>
+              )}
+            </span>
+            {durationLabel && (
+              <>
+                <span className="text-neutral-400">·</span>
+                <span className="text-neutral-600">{durationLabel}</span>
+              </>
+            )}
+          </div>
+
+          {/* Badges */}
+          <div className="flex items-center gap-2 ml-[52px] flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-700 text-xs font-medium">
               {typeLabel}
             </span>
-            {headerBadge ? (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-medium">
+            {headerBadge && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
                 {headerBadge.label}
               </span>
-            ) : null}
+            )}
           </div>
         </div>
 
-        {/* Actions - Icon-only ghost buttons */}
-        <div className="flex items-center gap-1">
-          {interaction.gmailMessageId && (
-            <button
-              onClick={onAttachEmail}
-              className="group p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors"
-              title="Re-parse email"
+        {/* Primary and Secondary Actions */}
+        <div className="flex items-start gap-2">
+          {interaction.meetingLink && (
+            <a
+              href={interaction.meetingLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 transition-colors inline-flex items-center gap-2"
             >
-              <MaterialIcon name="refresh" className="text-[16px]" />
-            </button>
+              <MaterialIcon name="videocam" className="text-[16px]" />
+              Join meeting
+            </a>
           )}
-          <button
-            onClick={onToggleEditing}
-            className="group p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors"
-            title="Edit"
-          >
-            {isEditing ? (
-              <LucidePencilOff className="w-4 h-4" />
-            ) : (
-              <Pencil className="w-4 h-4" />
+
+          {/* Secondary Actions */}
+          <div className="flex items-center gap-1">
+            {interaction.gmailMessageId && (
+              <button
+                onClick={onAttachEmail}
+                className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors"
+                title="Re-parse email"
+              >
+                <MaterialIcon name="refresh" className="text-[16px]" />
+              </button>
             )}
-          </button>
-          <LoadingButton
-            className="group p-2 rounded-lg hover:bg-red-50 text-neutral-600 hover:text-red-600 transition-colors border-0 bg-transparent shadow-none"
-            loading={isDeleting}
-            onClick={onDelete}
-            title="Delete"
-          >
-            <Trash2 className="w-4 h-4" />
-          </LoadingButton>
+            <button
+              onClick={onToggleEditing}
+              className="p-2 rounded-lg hover:bg-neutral-100 text-neutral-600 hover:text-neutral-900 transition-colors"
+              title="Edit"
+            >
+              {isEditing ? (
+                <LucidePencilOff className="w-4 h-4" />
+              ) : (
+                <Pencil className="w-4 h-4" />
+              )}
+            </button>
+            <LoadingButton
+              className="p-2 rounded-lg hover:bg-red-50 text-neutral-600 hover:text-red-600 transition-colors border-0 bg-transparent shadow-none"
+              loading={isDeleting}
+              onClick={onDelete}
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </LoadingButton>
+          </div>
         </div>
       </div>
 
-      {/* Organizer - Compact Profile */}
-      {interaction.personName ? (
-        <div className="flex items-center gap-3 mb-8">
-          <div
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-sm font-medium cursor-pointer"
-            onClick={() => {
-              const personToShow: Person = personRecord || {
-                id: '',
-                name: interaction.personName!,
-                email: null,
-                linkedinUrl: null,
-                title: interaction.personRole || null,
-                company: interaction.jobOpportunity?.companyName || null,
-                avatarUrl: null,
-                research: null
-              };
-              setSelectedPerson(personToShow);
-              setPersonDetailModalOpen(true);
-            }}
-          >
-            {interaction.personName.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => {
-                const personToShow: Person = personRecord || {
-                  id: '',
-                  name: interaction.personName!,
-                  email: null,
-                  linkedinUrl: null,
-                  title: interaction.personRole || null,
-                  company: interaction.jobOpportunity?.companyName || null,
-                  avatarUrl: null,
-                  research: null
-                };
-                setSelectedPerson(personToShow);
-                setPersonDetailModalOpen(true);
-              }}
-              className="font-medium text-neutral-900 hover:text-emerald-600 transition-colors"
-            >
-              {interaction.personName}
-            </button>
-            {interaction.personRole && (
-              <>
-                <span className="text-neutral-400">·</span>
-                <span className="text-neutral-600">{interaction.personRole}</span>
-              </>
-            )}
-            {!personRecord && (
-              <button
-                type="button"
-                className="p-1 rounded hover:bg-neutral-100 text-neutral-400 hover:text-emerald-600 transition-colors"
-                onClick={() => setResearchModalOpen(true)}
-                aria-label="Research this person"
-                title="Research this person"
-              >
-                <MaterialIcon name="travel_explore" className="text-[14px]" />
-              </button>
-            )}
+      {/* Participants - Compact */}
+      {personNames.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-sm font-medium text-neutral-900 mb-3">
+            Participants
+          </h3>
+          <div className="space-y-2">
+            {personNames.map((name, index) => {
+              const personRecord = personRecords[index];
+
+              // Find current title at this company from LinkedIn work history
+              const currentTitle = (personRecord?.research as any)?.workHistory?.find(
+                (work: any) =>
+                  work.company === interaction.jobOpportunity?.companyName &&
+                  work.isCurrent,
+              )?.title;
+
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => {
+                    const personToShow: Person = personRecord || {
+                      id: "",
+                      name: name,
+                      email: null,
+                      linkedinUrl: null,
+                      title: interaction.personRole || null,
+                      company: interaction.jobOpportunity?.companyName || null,
+                      avatarUrl: null,
+                      research: null,
+                    };
+                    setSelectedPerson(personToShow);
+                    setPersonDetailModalOpen(true);
+                  }}
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors text-left group"
+                >
+                  <UserRound className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-neutral-900 group-hover:text-emerald-600">
+                      {name}
+                    </div>
+                    {currentTitle && (
+                      <div className="text-xs text-neutral-500 mt-0.5">
+                        {currentTitle} @{" "}
+                        {interaction.jobOpportunity?.companyName}
+                      </div>
+                    )}
+                  </div>
+                  {!personRecord && (
+                    <button
+                      type="button"
+                      className="ml-auto p-1 rounded hover:bg-neutral-100 text-neutral-400 hover:text-emerald-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const personToShow: Person = {
+                          id: "",
+                          name: name,
+                          email: null,
+                          linkedinUrl: null,
+                          title: interaction.personRole || null,
+                          company:
+                            interaction.jobOpportunity?.companyName || null,
+                          avatarUrl: null,
+                          research: null,
+                        };
+                        setSelectedPerson(personToShow);
+                        setResearchModalOpen(true);
+                      }}
+                      aria-label={`Research ${name}`}
+                      title={`Research ${name}`}
+                    >
+                      <MaterialIcon
+                        name="travel_explore"
+                        className="text-[14px]"
+                      />
+                    </button>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
-      ) : null}
+      )}
 
       {/* Modals */}
-      {interaction.personName && (
+      {selectedPerson && (
         <>
           <PersonResearchFlow
             person={{
-              name: interaction.personName,
-              title: interaction.personRole,
-              company: interaction.jobOpportunity?.companyName
+              name: selectedPerson.name,
+              title: selectedPerson.title || interaction.personRole,
+              company:
+                selectedPerson.company ||
+                interaction.jobOpportunity?.companyName,
             }}
             isOpen={researchModalOpen}
             onClose={() => setResearchModalOpen(false)}
             opportunityId={interaction.jobOpportunityId}
           />
-          {selectedPerson && (
-            <PersonDetailModal
-              person={selectedPerson}
-              isOpen={personDetailModalOpen}
-              onClose={() => {
-                setPersonDetailModalOpen(false);
-                setSelectedPerson(null);
-              }}
-              onResearch={(name, title) => {
-                setPersonDetailModalOpen(false);
-                setSelectedPerson(null);
-                setResearchModalOpen(true);
-              }}
-            />
-          )}
+          <PersonDetailModal
+            person={selectedPerson}
+            isOpen={personDetailModalOpen}
+            onClose={() => {
+              setPersonDetailModalOpen(false);
+              setSelectedPerson(null);
+            }}
+            onResearch={(name, title) => {
+              setPersonDetailModalOpen(false);
+              setSelectedPerson(null);
+              setResearchModalOpen(true);
+            }}
+          />
         </>
       )}
 
-      {/* Information Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        {/* Meeting Link Card */}
-        {interaction.meetingLink && (
-          <a
-            href={interaction.meetingLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative p-5 rounded-xl border border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm transition-all duration-200"
-          >
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
-                <MaterialIcon name="videocam" className="text-[16px]" />
+      {/* Related - Compact Links */}
+      {(interaction.meetingLink ||
+        interaction.gmailMessageId ||
+        interaction.agenda) && (
+        <div className="mb-8">
+          <h3 className="text-sm font-medium text-neutral-900 mb-3">Related</h3>
+          <div className="space-y-1">
+            {interaction.gmailMessageId && (
+              <button
+                onClick={onAttachEmail}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors text-left group"
+              >
+                <MaterialIcon
+                  name="mail"
+                  className="text-[16px] text-neutral-400 group-hover:text-blue-600"
+                />
+                <span className="text-sm text-neutral-700 group-hover:text-blue-600">
+                  Updated invitation
+                </span>
+                <MaterialIcon
+                  name="arrow_forward"
+                  className="text-[14px] text-neutral-400 group-hover:text-blue-600 ml-auto"
+                />
+              </button>
+            )}
+            {interaction.meetingLink && (
+              <a
+                href={interaction.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors group"
+              >
+                <MaterialIcon
+                  name="link"
+                  className="text-[16px] text-neutral-400 group-hover:text-emerald-600"
+                />
+                <span className="text-sm text-neutral-700 group-hover:text-emerald-600">
+                  Meeting link
+                </span>
+                <MaterialIcon
+                  name="open_in_new"
+                  className="text-[14px] text-neutral-400 group-hover:text-emerald-600 ml-auto"
+                />
+              </a>
+            )}
+            {interaction.agenda && (
+              <div className="flex items-center gap-3 p-3">
+                <MaterialIcon
+                  name="description"
+                  className="text-[16px] text-neutral-400"
+                />
+                <span className="text-sm text-neutral-700">
+                  Calendar invite
+                </span>
               </div>
-              <MaterialIcon name="open_in_new" className="text-[14px] text-neutral-400 group-hover:text-neutral-600 transition-colors" />
-            </div>
-            <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">
-              Meeting Link
-            </div>
-            <div className="text-sm font-semibold text-neutral-900 group-hover:text-emerald-600 transition-colors flex items-center gap-1.5">
-              Join meeting
-              <span className="text-neutral-400 group-hover:text-emerald-600">→</span>
-            </div>
-          </a>
-        )}
+            )}
+          </div>
+        </div>
+      )}
 
-        {/* Attached Email Card */}
-        <button
-          onClick={onAttachEmail}
-          className="group relative p-5 rounded-xl border border-neutral-200 bg-white hover:border-neutral-300 hover:shadow-sm transition-all duration-200 text-left"
-        >
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-              <MaterialIcon name="mail" className="text-[16px]" />
-            </div>
-          </div>
-          <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">
-            Attached Email
-          </div>
-          <div className="text-sm font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
-            {interaction.gmailMessageId ? "View email" : "Attach email"}
-            <span className="text-neutral-400 group-hover:text-blue-600">→</span>
-          </div>
-        </button>
-      </div>
-
+      {/* Edit Form */}
       {isEditing && draft ? (
-        <div className="mt-4 rounded-2xl border border-outline-variant bg-surface-container-low p-4">
+        <div className="p-6 rounded-xl border border-neutral-200 bg-neutral-50/50 mb-8">
           <InteractionDraftFields draft={draft} setDraft={onDraftChange} />
-          <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="mt-6 flex gap-3">
             <LoadingButton
-              className="btn btn-primary"
               loading={isSaving}
               loadingLabel="Saving..."
               onClick={onSave}
+              className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 transition-colors inline-flex items-center gap-2"
             >
               <Save className="h-4 w-4" />
-              Save interaction
+              Save changes
             </LoadingButton>
-            <button className="btn btn-secondary" onClick={onCancelEditing}>
+            <button
+              onClick={onCancelEditing}
+              className="px-4 py-2 rounded-lg border border-neutral-200 text-neutral-700 font-medium text-sm hover:bg-neutral-50 transition-colors"
+            >
               Cancel
             </button>
           </div>
         </div>
       ) : null}
+
+      {/* Interview Preparation Section */}
+      {!isEditing && (
+        <div className="mb-8">
+          <h3 className="text-sm font-medium text-neutral-900 mb-3">Interview Preparation <span className="ml-2 text-xs font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Beta</span></h3>
+          <p className="text-sm text-neutral-600 mb-4">
+            AI-powered preparation based on this opportunity and participants.
+          </p>
+          <button
+            className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+            onClick={() => {
+              // Scroll to preparation section on opportunity page
+              document.getElementById('interview-preparation-section')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            <MaterialIcon name="stars" className="text-[16px]" />
+            Open preparation
+          </button>
+        </div>
+      )}
+
+      {/* Quick Info Section */}
+      {!isEditing && (
+        <div className="mb-8">
+          <h3 className="text-sm font-medium text-neutral-900 mb-3">Quick info</h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between py-2">
+              <span className="text-xs text-neutral-500">Type</span>
+              <span className="text-sm text-neutral-900">{typeLabel}</span>
+            </div>
+            {interaction.stage && (
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs text-neutral-500">Stage</span>
+                <span className="text-sm text-neutral-900">{interaction.stage}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between py-2">
+              <span className="text-xs text-neutral-500">Status</span>
+              <span className="text-sm text-neutral-900">{headerBadge?.label || interaction.status}</span>
+            </div>
+            {durationLabel && (
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs text-neutral-500">Duration</span>
+                <span className="text-sm text-neutral-900">{durationLabel}</span>
+              </div>
+            )}
+            {interaction.personName && (
+              <div className="flex items-center justify-between py-2">
+                <span className="text-xs text-neutral-500">Organizer</span>
+                <span className="text-sm text-neutral-900">{interaction.personName.split(/\s+and\s+|,\s*/)[0]}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Actions */}
+      {!isEditing && (
+        <div className="mt-8 pt-6 border-t border-neutral-200 flex items-center justify-between">
+          <button
+            onClick={onToggleEditing}
+            className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+          >
+            Edit interaction
+          </button>
+          <LoadingButton
+            loading={isDeleting}
+            loadingLabel="Deleting..."
+            onClick={onDelete}
+            className="text-sm text-red-600 hover:text-red-700 transition-colors bg-transparent border-0 shadow-none"
+          >
+            <Trash2 className="w-4 h-4 mr-1 inline" />
+            Delete
+          </LoadingButton>
+        </div>
+      )}
     </section>
   );
 }

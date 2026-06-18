@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Building2, FolderOpen, X } from "lucide-react";
+import { Building2, Maximize2, X } from "lucide-react";
 
 import type { Interaction, Opportunity } from "../../lib/types";
 
@@ -7,12 +7,14 @@ type InteractionDrawerHeaderProps = {
   opportunity: Opportunity | null;
   interaction: Interaction;
   onClose: () => void;
+  onOpenFullscreen?: () => void;
 };
 
 export function InteractionDrawerHeader({
   opportunity,
   interaction,
   onClose,
+  onOpenFullscreen,
 }: InteractionDrawerHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-outline-variant bg-white px-5 py-4">
@@ -42,16 +44,16 @@ export function InteractionDrawerHeader({
             Company
           </Link>
         ) : null}
-        {opportunity ? (
-          <Link
+        {onOpenFullscreen && (
+          <button
             className="btn btn-secondary"
-            to={`/opportunities/${opportunity.slug || opportunity.id}`}
-            title="Open opportunity details"
+            onClick={onOpenFullscreen}
+            title="Open in fullscreen"
           >
-            <FolderOpen className="h-4 w-4" />
-            Opportunity
-          </Link>
-        ) : null}
+            <Maximize2 className="h-4 w-4" />
+            Fullscreen
+          </button>
+        )}
         <button className="btn btn-secondary" onClick={onClose}>
           <X className="h-4 w-4" />
           Close
