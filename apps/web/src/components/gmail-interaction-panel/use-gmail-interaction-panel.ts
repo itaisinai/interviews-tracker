@@ -145,6 +145,37 @@ export function useGmailInteractionPanel({ opportunityId, companyName, roleTitle
     }
   }, [attachToInteractionId]);
 
+  // Auto-parse email when re-parsing an existing interaction with gmailMessageId
+  useEffect(() => {
+    const targetInteraction = opportunityQuery.data?.interactions.find((i) => i.id === attachToInteractionId);
+    if (
+      attachToInteractionId &&
+      targetInteraction?.gmailMessageId &&
+      !selectedEmail &&
+      statusQuery.data?.connected &&
+      flowState === "idle"
+    ) {
+      // Trigger parsing of the attached email
+      void (async () => {
+        setFlowState("fetching_email");
+        setMessage("Loading attached email...");
+        setError(null);
+
+        try {
+          const result = await api.gmailParseEmail(opportunityId, { messageId: targetInteraction.gmailMessageId! });
+
+          setSelectedEmail(result.email);
+          setAnalysis(result.analysis);
+          setDraft(result.interaction);
+          setFlowState("ready_for_review");
+          setMessage("Email re-parsed successfully. Review the changes below.");
+        } catch (error) {
+          handleGmailActionError(error, "Failed to load attached email.");
+        }
+      })();
+    }
+  }, [attachToInteractionId, opportunityQuery.data?.interactions, selectedEmail, statusQuery.data?.connected, flowState, opportunityId]);
+
   const searchHint = useMemo(() => `Searching Gmail for "${companyName}" from the last 180 days.`, [companyName]);
   const attachTargetInteraction = useMemo(
     () => opportunityQuery.data?.interactions.find((interaction) => interaction.id === attachTargetId) ?? null,
