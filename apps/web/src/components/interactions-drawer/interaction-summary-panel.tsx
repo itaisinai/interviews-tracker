@@ -406,13 +406,19 @@ export function InteractionSummaryPanel({
 
       {/* Interview Preparation Section */}
       {!isEditing && (
-        <div className="mb-8">
-          <h3 className="text-sm font-medium text-neutral-900 mb-3">Interview Preparation <span className="ml-2 text-xs font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Beta</span></h3>
+        <div className="mb-8 rounded-xl border border-neutral-200 bg-white p-4">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">Interview Preparation <span className="ml-2 align-middle text-xs font-normal text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Beta</span></h3>
           <p className="text-sm text-neutral-600 mb-4">
             AI-powered preparation based on this opportunity and participants.
           </p>
+          <div className="mb-4 grid grid-cols-2 gap-2">
+            <MiniPrepCard icon="business" title="Company context" />
+            <MiniPrepCard icon="work" title="Role details" />
+            <MiniPrepCard icon="groups" title="Interviewers" />
+            <MiniPrepCard icon="stars" title="Talking points" />
+          </div>
           <button
-            className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 transition-colors"
             onClick={() => {
               // Scroll to preparation section on opportunity page
               document.getElementById('interview-preparation-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -480,6 +486,17 @@ export function InteractionSummaryPanel({
         </div>
       )}
     </section>
+  );
+}
+
+function MiniPrepCard({ icon, title }: { icon: string; title: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-neutral-100 bg-neutral-50 px-2.5 py-2">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
+        <MaterialIcon name={icon} className="text-[15px]" />
+      </span>
+      <span className="truncate text-xs font-medium text-neutral-800">{title}</span>
+    </div>
   );
 }
 

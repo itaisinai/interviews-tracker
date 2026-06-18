@@ -1,9 +1,15 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import type { InteractionDraft } from "../../lib/types";
 import { MaterialIcon, LoadingButton, DiffReviewRow } from "@interviews-tracker/design-system";
 import { formatDateTime } from "../../lib/format";
+
+type TrackedGmailEmail = {
+  id: string;
+  subject: string;
+  date: string;
+};
 
 export type GmailImportFlowProps = {
   opportunityId: string;
@@ -22,6 +28,7 @@ export function GmailImportFlow({
   onSaved,
   onBack,
 }: GmailImportFlowProps) {
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("searching");
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
@@ -30,6 +37,10 @@ export function GmailImportFlow({
     queryKey: ["gmail-search", opportunityId],
     queryFn: () => api.gmailSearch(opportunityId),
     enabled: step === "searching",
+  });
+  const messageStatesQuery = useQuery({
+    queryKey: ["gmail-message-states", opportunityId],
+    queryFn: () => api.gmailMessageStates(opportunityId),
   });
 
   const parseEmail = useMutation({
@@ -47,6 +58,30 @@ export function GmailImportFlow({
       return api.createInteraction(opportunityId, draft);
     },
     onSuccess: onSaved,
+  });
+  const undoPickedEmail = useMutation({
+    mutationFn: (email: TrackedGmailEmail) =>
+      api.gmailUnpickEmail(opportunityId, email.id),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["gmail-message-states", opportunityId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] }),
+      ]);
+    },
+  });
+  const undoDismissedEmail = useMutation({
+    mutationFn: (email: TrackedGmailEmail) =>
+      api.gmailRestoreEmail(opportunityId, email.id),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["gmail-message-states", opportunityId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] }),
+      ]);
+    },
   });
 
   useEffect(() => {
@@ -230,17 +265,48 @@ export function GmailImportFlow({
   }
 
   if (step === "no-results" || searchResults?.candidates.length === 0) {
+    const pickedEmails = messageStatesQuery.data?.pickedEmails ?? [];
+    const dismissedEmails = messageStatesQuery.data?.removedEmails ?? [];
+
     return (
-      <div className="py-12 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
-          <MaterialIcon name="inbox" className="text-[32px] text-neutral-400" />
+      <div className="space-y-6">
+        <div className="py-8 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
+            <MaterialIcon name="inbox" className="text-[32px] text-neutral-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-neutral-900">
+            No emails found
+          </h3>
+          <p className="mt-2 text-sm text-neutral-600">
+            We couldn't find any recent emails for {companyName}.
+          </p>
         </div>
-        <h3 className="text-lg font-semibold text-neutral-900">
-          No emails found
-        </h3>
-        <p className="mt-2 text-sm text-neutral-600">
-          We couldn't find any recent emails for {companyName}.
-        </p>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TrackedEmailGroup
+            title="Picked emails"
+            description="Already attached or imported emails are excluded from future candidate searches."
+            emptyMessage="No picked emails for this opportunity."
+            emails={pickedEmails}
+            actionLabel="Undo"
+            isLoading={messageStatesQuery.isFetching}
+            pendingEmailId={undoPickedEmail.variables?.id ?? null}
+            isPending={undoPickedEmail.isPending}
+            onUndo={(email) => undoPickedEmail.mutate(email)}
+          />
+          <TrackedEmailGroup
+            title="Dismissed emails"
+            description="Dismissed emails are hidden from candidate searches until you undo them."
+            emptyMessage="No dismissed emails for this opportunity."
+            emails={dismissedEmails}
+            actionLabel="Undo"
+            isLoading={messageStatesQuery.isFetching}
+            pendingEmailId={undoDismissedEmail.variables?.id ?? null}
+            isPending={undoDismissedEmail.isPending}
+            onUndo={(email) => undoDismissedEmail.mutate(email)}
+          />
+        </div>
+
         <button onClick={onBack} className="btn btn-secondary mt-6">
           <MaterialIcon name="arrow_back" />
           Back
@@ -250,4 +316,73 @@ export function GmailImportFlow({
   }
 
   return null;
+}
+
+function TrackedEmailGroup({
+  title,
+  description,
+  emptyMessage,
+  emails,
+  actionLabel,
+  isLoading,
+  pendingEmailId,
+  isPending,
+  onUndo,
+}: {
+  title: string;
+  description: string;
+  emptyMessage: string;
+  emails: TrackedGmailEmail[];
+  actionLabel: string;
+  isLoading: boolean;
+  pendingEmailId: string | null;
+  isPending: boolean;
+  onUndo: (email: TrackedGmailEmail) => void;
+}) {
+  return (
+    <section className="rounded-xl border border-neutral-200 bg-white p-4 text-left">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-semibold text-neutral-900">{title}</h4>
+          <p className="mt-1 text-xs text-neutral-600">{description}</p>
+        </div>
+        <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-600">
+          {isLoading ? "…" : emails.length}
+        </span>
+      </div>
+
+      {emails.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          {emails.map((email) => (
+            <div
+              key={email.id}
+              className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-neutral-900">
+                  {email.subject}
+                </p>
+                <p className="mt-0.5 text-xs text-neutral-500">
+                  {new Date(email.date).toLocaleString()}
+                </p>
+              </div>
+              <LoadingButton
+                className="btn btn-secondary shrink-0"
+                loading={isPending && pendingEmailId === email.id}
+                loadingLabel="Undoing..."
+                icon="undo"
+                onClick={() => onUndo(email)}
+              >
+                {actionLabel}
+              </LoadingButton>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-lg border border-dashed border-neutral-200 bg-neutral-50 px-3 py-4 text-center text-sm text-neutral-500">
+          {emptyMessage}
+        </p>
+      )}
+    </section>
+  );
 }
