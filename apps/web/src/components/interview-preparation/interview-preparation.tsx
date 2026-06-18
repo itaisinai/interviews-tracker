@@ -24,7 +24,7 @@ export function InterviewPreparation({
         subtitle="AI-powered insights to help you prepare for this opportunity"
       />
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-4">
         <PreparationCard
           icon="business"
           title="Company Context"
