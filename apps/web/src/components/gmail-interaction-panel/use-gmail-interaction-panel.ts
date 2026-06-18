@@ -421,6 +421,7 @@ export function useGmailInteractionPanel({ opportunityId, companyName, roleTitle
       onSaved?.(savedInteraction);
     } catch (caughtError) {
       setSaveError(getErrorMessage(caughtError));
+      throw caughtError;
     } finally {
       setIsAttaching(false);
     }
@@ -571,7 +572,7 @@ export function useGmailInteractionPanel({ opportunityId, companyName, roleTitle
       setAnalysis(null);
       setMessage("Ready to search Gmail again.");
     },
-    onSaveInteraction: () => void saveInteraction.mutate(),
+    onSaveInteraction: () => saveInteraction.mutateAsync(),
     onDraftChange: setDraft,
     onAttachTargetIdChange: setAttachTargetId
   };
