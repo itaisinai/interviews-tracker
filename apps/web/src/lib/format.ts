@@ -46,6 +46,43 @@ export function formatDateTime(
   return isSameLocalDay(date, referenceDate) ? `Today · ${formattedDate} · ${formattedTime}` : `${formattedDate} · ${formattedTime}`;
 }
 
+export function formatDateTimeRange(
+  startValue?: string | null,
+  endValue?: string | null,
+  referenceDate: Date = new Date(),
+) {
+  if (!startValue) return "-";
+
+  const startDate = new Date(startValue);
+  const formattedDate = startDate.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const startTime = startDate.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+
+  if (!endValue) {
+    return `${formattedDate}, ${startTime}`;
+  }
+
+  const endDate = new Date(endValue);
+  const endTime = endDate.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+
+  // Calculate duration
+  const totalMinutes = Math.round((endDate.getTime() - startDate.getTime()) / 60_000);
+  let durationText = "";
+
+  if (totalMinutes < 60) {
+    durationText = `${totalMinutes} minutes`;
+  } else {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (minutes === 0) {
+      durationText = hours === 1 ? "1 hour" : `${hours} hours`;
+    } else {
+      durationText = `${hours}.${Math.round(minutes / 6)} hours`;
+    }
+  }
+
+  return `${formattedDate}, ${startTime} - ${endTime}. ${durationText}`;
+}
+
 export function statusTone(status: JobStatus | string) {
   if (status === "DONE") return "green";
   if (status === "REJECTED") return "red";

@@ -90,6 +90,35 @@ export function toDatetimeLocalValue(value: string) {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+export function toDateValue(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const pad = (input: number) => String(input).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+
+  return `${year}-${month}-${day}`;
+}
+
+export function toTimeValue(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const pad = (input: number) => String(input).padStart(2, "0");
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+
+  return `${hours}:${minutes}`;
+}
+
 export type {
   GmailEmailExtractionAnalysis,
   GmailInteractionDraft,

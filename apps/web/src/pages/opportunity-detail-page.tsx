@@ -3,14 +3,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { InteractionsDrawer } from "../components/interactions-drawer";
-import { CompanyDataSection, OpportunitySidePanel } from "../components/opportunity-detail";
 import { PageIntro } from "../components/app-shell";
 import { Timeline } from "../components/timeline";
 import { ContactsList } from "../components/contacts/contacts-list";
+import { InterviewPreparation } from "../components/interview-preparation";
+import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
+import { AddInteractionModal } from "../components/add-interaction-modal";
 import { api } from "../lib/api";
-import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
+import { getInteractionBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
 import { InlineLoadingState, LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
-import type { InteractionInputMode } from "../components/interaction-input-chooser";
+import { labelForPipelineType } from "../lib/enum-labels";
+import { Badge } from "../components/badge";
+import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
+import type { Interaction } from "../lib/types";
 
 export function OpportunityDetailPage() {
   const { slugOrId = "" } = useParams();
@@ -21,67 +26,21 @@ export function OpportunityDetailPage() {
     queryFn: () => api.opportunity(slugOrId),
     enabled: Boolean(slugOrId),
   });
-  const [note, setNote] = useState({
-    title: "",
-    category: "General",
-    content: "",
-  });
-  const [task, setTask] = useState({
-    title: "",
-    status: "PENDING",
-    priority: "MEDIUM",
-    dueDate: "",
-    notes: "",
-  });
-  const [comp, setComp] = useState({
-    baseSalary: "",
-    equity: "",
-    bonus: "",
-    offerStatus: "NOT_DISCUSSED",
-    negotiationNotes: "",
-  });
-  const [showResearch, setShowResearch] = useState(false);
-  const [showInteractionInput, setShowInteractionInput] = useState<InteractionInputMode>(null);
+  const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
 
-  const opportunityId = data?.id ?? slugOrId;
+  const opportunityId = data?.slug ?? data?.id ?? slugOrId;
   const canonicalSlug = data?.slug ?? null;
   const [selectedInteractionId, setSelectedInteractionId] = useState<
     string | null
   >(null);
   const refresh = () =>
     void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
-  const addNote = useMutation({
-    mutationFn: () => api.createOpportunityNote(opportunityId, note),
-    onSuccess: refresh,
-  });
-  const addTask = useMutation({
-    mutationFn: () => api.createOpportunityTask(opportunityId, task),
-    onSuccess: refresh,
-  });
-  const saveComp = useMutation({
-    mutationFn: () =>
-      api.upsertCompensation({ ...comp, jobOpportunityId: opportunityId }),
-    onSuccess: refresh,
-  });
   const deleteOpportunity = useMutation({
     mutationFn: () => api.deleteOpportunity(opportunityId),
     onSuccess: () => navigate("/opportunities"),
   });
   const deleteInteraction = useMutation({
     mutationFn: (interactionId: string) => api.deleteInteraction(interactionId),
-    onSuccess: refresh,
-  });
-  const deleteNote = useMutation({
-    mutationFn: (noteId: string) => api.deleteNote(noteId),
-    onSuccess: refresh,
-  });
-  const deleteTask = useMutation({
-    mutationFn: (taskId: string) => api.deleteTask(taskId),
-    onSuccess: refresh,
-  });
-  const deleteCompensation = useMutation({
-    mutationFn: (compensationId: string) =>
-      api.deleteCompensation(compensationId),
     onSuccess: refresh,
   });
 
@@ -95,6 +54,19 @@ export function OpportunityDetailPage() {
       null,
     [displayedInteractions, selectedInteractionId],
   );
+  const focusedInteraction = useMemo(() => {
+    const now = Date.now();
+    return (
+      displayedInteractions.find(
+        (item) => new Date(item.date).getTime() >= now,
+      ) ??
+      [...displayedInteractions].sort(
+        (left, right) =>
+          new Date(right.date).getTime() - new Date(left.date).getTime(),
+      )[0] ??
+      null
+    );
+  }, [displayedInteractions]);
 
   useEffect(() => {
     if (
@@ -140,6 +112,24 @@ export function OpportunityDetailPage() {
         actions={
           <>
             {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+            <div className="flex items-center gap-2">
+              <Badge value={data.status} />
+              <Badge value={data.priority} />
+              <Badge value={data.pipelineType}>
+                {labelForPipelineType(data.pipelineType)}
+              </Badge>
+            </div>
+            <LoadingButton
+              className="btn btn-secondary"
+              icon="add"
+              onClick={() => setShowAddInteractionModal(true)}
+            >
+              Add Interaction
+            </LoadingButton>
+            <Link className="btn btn-primary" to="/opportunities">
+              <MaterialIcon name="arrow_back" />
+              Back to Pipeline
+            </Link>
             <LoadingButton
               className="btn btn-secondary text-error hover:bg-error-container"
               loading={deleteOpportunity.isPending}
@@ -156,38 +146,33 @@ export function OpportunityDetailPage() {
             >
               Delete
             </LoadingButton>
-            <Link className="btn btn-primary" to="/opportunities">
-              <MaterialIcon name="arrow_back" />
-              Back to Pipeline
-            </Link>
           </>
         }
       />
 
-      <CompanyDataSection
-        opportunity={data}
-        showResearch={showResearch}
-        showInteractionInput={showInteractionInput}
-        onToggleResearch={() => setShowResearch((value) => !value)}
-        onToggleInteractionInput={() => {
-          setShowInteractionInput((current) => (current ? null : "chooser"));
-        }}
-        onSelectInteractionInputMode={(mode) => {
-          setShowInteractionInput(mode);
-        }}
-        onSaved={() => {
-          refresh();
-          setShowInteractionInput(null);
-        }}
-      />
+      {focusedInteraction ? (
+        <div className="mt-8">
+          <FocusedInteractionCard
+            interaction={focusedInteraction}
+            onOpen={() => setSelectedInteractionId(focusedInteraction.id)}
+          />
+        </div>
+      ) : null}
 
       <div className="mt-8">
+        <InterviewPreparation opportunity={data} />
+      </div>
+
+      <div id="contacts-section" className="mt-8">
         <ContactsList opportunityId={opportunityId} companyName={data.companyName} />
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="mt-8">
+        <CompanyDetailsModern opportunity={data} />
+      </div>
+
+      <div className="mt-8">
         <Timeline
-          className="lg:col-span-7"
           interactions={displayedInteractions}
           selectedInteractionId={selectedInteractionId}
           onSelectInteraction={setSelectedInteractionId}
@@ -201,35 +186,6 @@ export function OpportunityDetailPage() {
             deleteInteraction.variables === interactionId
           }
         />
-
-        <OpportunitySidePanel
-          opportunity={data}
-          note={note}
-          task={task}
-          compensation={comp}
-          onNoteChange={setNote}
-          onTaskChange={setTask}
-          onCompensationChange={setComp}
-          onAddNote={() => addNote.mutate()}
-          onAddTask={() => addTask.mutate()}
-          onSaveCompensation={() => saveComp.mutate()}
-          onDeleteNote={(item) => {
-            if (window.confirm("Delete this note?")) deleteNote.mutate(item.id);
-          }}
-          onDeleteTask={(item) => {
-            if (window.confirm("Delete this task?")) deleteTask.mutate(item.id);
-          }}
-          onDeleteCompensation={(item) => {
-            if (window.confirm("Delete compensation details?"))
-              deleteCompensation.mutate(item.id);
-          }}
-          addingNote={addNote.isPending}
-          addingTask={addTask.isPending}
-          savingCompensation={saveComp.isPending}
-          deletingNoteId={deleteNote.variables}
-          deletingTaskId={deleteTask.variables}
-          deletingCompensation={deleteCompensation.isPending}
-        />
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
@@ -237,6 +193,93 @@ export function OpportunityDetailPage() {
         onClose={() => setSelectedInteractionId(null)}
         onSelectInteraction={setSelectedInteractionId}
       />
+
+      <AddInteractionModal
+        isOpen={showAddInteractionModal}
+        onClose={() => setShowAddInteractionModal(false)}
+        opportunityId={opportunityId}
+        companyName={data.companyName}
+        roleTitle={data.roleTitle}
+        onSaved={() => {
+          refresh();
+          setShowAddInteractionModal(false);
+        }}
+      />
     </>
+  );
+}
+
+function FocusedInteractionCard({
+  interaction,
+  onOpen,
+}: {
+  interaction: Interaction;
+  onOpen: () => void;
+}) {
+  const badge = getInteractionBadgeMeta(interaction);
+  const duration = formatDurationBetween(interaction.date, interaction.endDate);
+
+  return (
+    <section className="rounded-2xl border border-outline-variant bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-container text-primary">
+            <MaterialIcon name="calendar_month" className="text-[22px]" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-label-sm text-label-sm uppercase tracking-widest text-primary">
+              Interview focus
+            </p>
+            <h2 className="mt-1 font-title-lg text-title-lg font-bold text-on-background">
+              {interaction.stage || interaction.type}
+            </h2>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-body-md text-on-surface-variant">
+              <span>{formatDateTimeRange(interaction.date, interaction.endDate)}</span>
+              {duration ? <span>· {duration}</span> : null}
+              <Badge value={interaction.status} tone={badge.tone}>
+                {badge.label}
+              </Badge>
+              <Badge value={interaction.type}>{interaction.type}</Badge>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {interaction.meetingLink ? (
+            <a
+              className="btn btn-primary"
+              href={interaction.meetingLink}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <MaterialIcon name="videocam" />
+              Join meeting
+            </a>
+          ) : null}
+          <button className="btn btn-secondary" type="button" onClick={onOpen}>
+            <MaterialIcon name="open_in_full" />
+            Open details
+          </button>
+        </div>
+      </div>
+      {interaction.personName ? (
+        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+          {interaction.personName.split(/\s+and\s+|,\s*/).map((name) => (
+            <div
+              key={name}
+              className="rounded-xl border border-outline-variant bg-surface-container-low/50 px-4 py-3"
+            >
+              <p className="font-label-md text-label-md font-bold text-on-background">
+                {name}
+              </p>
+              {interaction.personRole ? (
+                <p className="mt-1 text-body-sm text-on-surface-variant">
+                  {interaction.personRole}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }

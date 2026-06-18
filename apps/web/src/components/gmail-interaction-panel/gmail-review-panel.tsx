@@ -3,7 +3,7 @@ import type { GmailEmailExtractionAnalysis, GmailInteractionDraft, GmailStructur
 import { interactionStatusOptions, interactionTypeOptions } from "../../lib/enum-labels";
 import { Badge } from "../badge";
 import { LoadingButton } from "@interviews-tracker/design-system";
-import { toDatetimeLocalValue, type InteractionDiffField } from "./gmail-interaction-panel-helpers";
+import { toDatetimeLocalValue, toDateValue, toTimeValue, type InteractionDiffField } from "./gmail-interaction-panel-helpers";
 
 type GmailReviewPanelProps = {
   draft: GmailInteractionDraft;
@@ -157,6 +157,7 @@ export function GmailReviewPanel({
         <p className="mt-1"><span className="font-semibold text-on-background">From:</span> {selectedEmail.fromRaw}</p>
         <p className="mt-1"><span className="font-semibold text-on-background">Message date:</span> {new Date(selectedEmail.internalDate).toLocaleString()}</p>
         {selectedEmail.calendar?.start ? <p className="mt-1"><span className="font-semibold text-on-background">Calendar start:</span> {new Date(selectedEmail.calendar.start).toLocaleString()}</p> : null}
+        {selectedEmail.calendar?.end ? <p className="mt-1"><span className="font-semibold text-on-background">Calendar end:</span> {new Date(selectedEmail.calendar.end).toLocaleString()}</p> : null}
         {selectedEmail.calendar?.location ? <p className="mt-1"><span className="font-semibold text-on-background">Location:</span> {selectedEmail.calendar.location}</p> : null}
         {draft.meetingLink ? (
           <p className="mt-1">
@@ -168,11 +169,68 @@ export function GmailReviewPanel({
         ) : null}
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mt-5 space-y-4">
         <Field label="Date" changed={changedInteractionFields.has("date")}>
-          <input className="input" type="datetime-local" value={toDatetimeLocalValue(draft.date)} onChange={(event) => onDraftChange({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })} />
+          <div className="flex items-center gap-2">
+            <input
+              className="input flex-1"
+              type="date"
+              aria-label="Date"
+              value={toDateValue(draft.date)}
+              onChange={(event) => {
+                if (!event.target.value) return;
+                const startDate = new Date(draft.date);
+                const [year, month, day] = event.target.value.split('-').map(Number);
+                startDate.setFullYear(year, month - 1, day);
+
+                const updates: Partial<typeof draft> = { date: startDate.toISOString() };
+
+                // Update endDate to same day if it exists
+                if (draft.endDate) {
+                  const endDate = new Date(draft.endDate);
+                  endDate.setFullYear(year, month - 1, day);
+                  updates.endDate = endDate.toISOString();
+                }
+
+                onDraftChange({ ...draft, ...updates });
+              }}
+            />
+            <input
+              className="input w-24"
+              type="time"
+              aria-label="Start time"
+              value={toTimeValue(draft.date)}
+              onChange={(event) => {
+                if (!event.target.value) return;
+                const date = new Date(draft.date);
+                const [hours, minutes] = event.target.value.split(':').map(Number);
+                date.setHours(hours, minutes);
+                onDraftChange({ ...draft, date: date.toISOString() });
+              }}
+            />
+            <span className="text-body-md text-on-surface-variant">-</span>
+            <input
+              className="input w-24"
+              type="time"
+              aria-label="End time"
+              value={draft.endDate ? toTimeValue(draft.endDate) : ""}
+              onChange={(event) => {
+                if (!event.target.value) {
+                  onDraftChange({ ...draft, endDate: null });
+                  return;
+                }
+
+                const date = new Date(draft.date);
+                const [hours, minutes] = event.target.value.split(':').map(Number);
+                date.setHours(hours, minutes);
+                onDraftChange({ ...draft, endDate: date.toISOString() });
+              }}
+            />
+          </div>
         </Field>
-        <Field label="Type" changed={changedInteractionFields.has("type")}>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Field label="Type" changed={changedInteractionFields.has("type")}>
           <select className="input" value={draft.type} onChange={(event) => onDraftChange({ ...draft, type: event.target.value as GmailInteractionDraft["type"] })}>
             {interactionTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -214,6 +272,7 @@ export function GmailReviewPanel({
         <Field label="Follow-up" changed={changedInteractionFields.has("followUp")}>
           <textarea className="input min-h-24" value={draft.followUp ?? ""} onChange={(event) => onDraftChange({ ...draft, followUp: event.target.value || null })} />
         </Field>
+        </div>
       </div>
     </div>
   );
