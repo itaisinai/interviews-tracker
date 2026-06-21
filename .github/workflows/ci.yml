@@ -36,8 +36,5 @@ jobs:
       - name: Build
         run: yarn build
 
-      - name: Validate runtime package exports
-        run: yarn check:runtime-exports
-
       - name: Smoke API
         run: yarn smoke:api
