@@ -2,7 +2,10 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { MemoryRouter } from "react-router-dom";
 
 import type { Interaction, Opportunity } from "../../lib/types";
-import { getInteractionTimelineBadgeMeta, promoteOverdueInteractionsForRead } from "../../lib/interaction-status";
+import {
+  getInteractionTimelineBadgeMeta,
+  promoteOverdueInteractionsForRead,
+} from "../../lib/interaction-status";
 import { OpportunityInteractionTimeline } from "./opportunity-interaction-timeline";
 import { InteractionDrawerHeader } from "../interactions-drawer/interaction-drawer-header";
 import { InteractionSummaryPanel } from "../interactions-drawer/interaction-summary-panel";
@@ -84,7 +87,10 @@ export const ExpandedPage: Story = {
   render: (args) => (
     <div className="min-h-screen bg-[#f7f5ef] p-6">
       <div className="mx-auto max-w-[60rem]">
-        <OpportunityInteractionTimeline {...args} onSelectInteraction={() => void 0} />
+        <OpportunityInteractionTimeline
+          {...args}
+          onSelectInteraction={() => void 0}
+        />
       </div>
     </div>
   ),
@@ -101,10 +107,9 @@ export const DrawerOpen: Story = {
         />
         <div className="space-y-4 p-5">
           <InteractionSummaryPanel
-          interaction={reevolSelectedInteraction}
-          headerBadge={reevolHeaderBadge}
-          referenceDate={storyReferenceDate}
-          isEditing={false}
+            interaction={reevolSelectedInteraction}
+            headerBadge={reevolHeaderBadge}
+            isEditing={false}
             draft={null}
             onToggleEditing={() => void 0}
             onCancelEditing={() => void 0}
@@ -115,12 +120,12 @@ export const DrawerOpen: Story = {
             isDeleting={false}
           />
           <InteractionTimelinePanel
-          companyName={reevolOpportunity.companyName}
-          interactions={reevolInteractions}
-          selectedInteractionId={reevolSelectedInteraction.id}
-          referenceDate={storyReferenceDate}
-          onSelectInteraction={() => void 0}
-        />
+            companyName={reevolOpportunity.companyName}
+            interactions={reevolInteractions}
+            selectedInteractionId={reevolSelectedInteraction.id}
+            referenceDate={storyReferenceDate}
+            onSelectInteraction={() => void 0}
+          />
           <InteractionComposerPanel
             opportunityId={reevolOpportunity.id}
             companyName={reevolOpportunity.companyName}
@@ -186,7 +191,6 @@ export const CombinedState: Story = {
               <InteractionSummaryPanel
                 interaction={reevolSelectedInteraction}
                 headerBadge={reevolHeaderBadge}
-                referenceDate={storyReferenceDate}
                 isEditing={false}
                 draft={null}
                 onToggleEditing={() => void 0}

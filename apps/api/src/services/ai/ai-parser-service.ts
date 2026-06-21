@@ -47,14 +47,22 @@ export interface AiParserService {
       followUp: string | null;
     };
   }): Promise<z.infer<typeof gmailInteractionDraftSchema>>;
-  summarizeMultipleEmails(input: {
+  parseMultipleEmailsToInteraction(input: {
+    companyName: string;
+    roleTitle?: string | null;
     emails: Array<{
       subject: string;
       from: string;
       date: string;
       body: string;
+      calendar?: {
+        start?: string | null;
+        end?: string | null;
+        summary?: string | null;
+        location?: string | null;
+      } | null;
     }>;
-  }): Promise<string>;
+  }): Promise<z.infer<typeof interactionDraftSchema>>;
   parseInteractionText(input: {
     companyName: string;
     roleTitle?: string | null;
@@ -327,60 +335,79 @@ export class OpenAiParserService implements AiParserService {
     });
   }
 
-  async summarizeMultipleEmails(input: {
+  async parseMultipleEmailsToInteraction(input: {
+    companyName: string;
+    roleTitle?: string | null;
     emails: Array<{
       subject: string;
       from: string;
       date: string;
       body: string;
+      calendar?: {
+        start?: string | null;
+        end?: string | null;
+        summary?: string | null;
+        location?: string | null;
+      } | null;
     }>;
-  }): Promise<string> {
-    const { buildMultiEmailSummarizationPrompt } = await import("@interviews-tracker/ai");
+  }): Promise<z.infer<typeof interactionDraftSchema>> {
+    console.log('[AI PARSE] Starting parseMultipleEmailsToInteraction');
+    console.log('[AI PARSE] Company:', input.companyName, 'Role:', input.roleTitle);
+    console.log('[AI PARSE] Number of emails:', input.emails.length);
 
-    // Combine all email content with context
-    const combinedText = input.emails
-      .map((email, index) =>
-        `Email ${index + 1} (${email.date}):\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body}`
-      )
-      .join("\n\n---\n\n");
-
-    const timer = createTimer("llm", "openai summarize_multi_emails", { model: this.model });
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: this.model,
-        input: [
-          {
-            role: "system",
-            content: [
-              {
-                type: "input_text",
-                text: buildMultiEmailSummarizationPrompt()
-              }
-            ]
-          },
-          {
-            role: "user",
-            content: [{ type: "input_text", text: combinedText }]
-          }
-        ]
-      })
+    input.emails.forEach((email, i) => {
+      console.log(`[AI PARSE] Email ${i + 1}:`, {
+        subject: email.subject,
+        from: email.from,
+        date: email.date,
+        bodyLength: email.body.length,
+        bodyPreview: email.body.slice(0, 150) + '...',
+        hasCalendar: !!email.calendar,
+        calendarStart: email.calendar?.start,
+        calendarEnd: email.calendar?.end
+      });
     });
 
-    timer.end();
+    const emailsText = JSON.stringify(input.emails, null, 2);
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
-    }
+    const systemPrompt = [
+      `Parse multiple recruitment emails into a single interaction record for ${input.companyName}${input.roleTitle ? ` - ${input.roleTitle}` : ''}.`,
+      "",
+      "Rules:",
+      "- Use the LATEST calendar time if multiple exist",
+      "- Combine all unique participant names with 'and'",
+      "- For notes: write 2-4 sentence summary of key info (location, parking, what to bring, who you're meeting)",
+      "- Do NOT include metadata like 'Subject:', 'From:', etc. in notes",
+      "- For type/stage: prefer more specific over generic",
+      "- Return structured JSON matching the schema"
+    ].join("\n");
 
-    const result = (await response.json()) as OpenAiResponse;
-    const outputText = result.output?.[0]?.content?.[0]?.text || result.output_text || "";
+    console.log('[AI PARSE] System prompt:', systemPrompt);
+    console.log('[AI PARSE] Input text length:', emailsText.length);
 
-    return outputText.trim();
+    const outputText = await this.createStructuredOutput({
+      name: "parse_multiple_emails",
+      schema: interactionDraftJsonSchema,
+      systemPrompt,
+      text: emailsText
+    });
+
+    console.log('[AI PARSE] Raw AI output:', outputText);
+
+    const parsed = interactionDraftSchema.parse(JSON.parse(outputText));
+
+    console.log('[AI PARSE] Parsed result:', {
+      date: parsed.date,
+      endDate: parsed.endDate,
+      type: parsed.type,
+      stage: parsed.stage,
+      status: parsed.status,
+      personName: parsed.personName,
+      notesLength: parsed.notes?.length,
+      notesPreview: parsed.notes?.slice(0, 200)
+    });
+
+    return parsed;
   }
 
   async parseInteractionText(input: {

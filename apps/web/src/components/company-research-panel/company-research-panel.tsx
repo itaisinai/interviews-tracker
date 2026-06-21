@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
-import { Badge } from "../badge";
 import type { CompanyResearchExistingData, CompanyResearchResult } from "../../lib/types";
-import { companyResearchLogTone, companyResearchRunMeta, companyResearchStepMessages, type CompanyResearchRunState } from "../../lib/company-research";
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { companyResearchRunMeta, companyResearchStepMessages, type CompanyResearchRunState } from "../../lib/company-research";
+import { CompanyResearchProgress } from "./company-research-progress";
+import { CompanyResearchReview } from "./company-research-review";
+import { Field, splitListInput } from "./company-research-fields";
+import { MaterialIcon } from "@interviews-tracker/design-system";
 
 type CompanyResearchPanelProps = {
   companyName: string;
@@ -15,7 +17,7 @@ type CompanyResearchPanelProps = {
   onSaved?: (research: CompanyResearchResult) => void;
 };
 
-type EditableResearchField = keyof Pick<
+export type EditableResearchField = keyof Pick<
   CompanyResearchResult,
   | "companyName"
   | "companySearchName"
@@ -31,7 +33,7 @@ type EditableResearchField = keyof Pick<
   | "productDescription"
 >;
 
-type EditableResearchListField = keyof Pick<
+export type EditableResearchListField = keyof Pick<
   CompanyResearchResult,
   "investors" | "domains" | "sourceUrls" | "rawImportantNotes"
 >;
@@ -183,7 +185,6 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
     setProgress(0);
   }
 
-  const loadingTone = companyResearchRunMeta[runState].tone;
 
   function updateResearchField(field: EditableResearchField, value: string | null) {
     setResearch((current) => current ? { ...current, [field]: value } : current);
@@ -249,237 +250,32 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
       </div>
 
       {runState !== "idle" ? (
-        <div className="mt-6">
-          <div className="flex items-start gap-4">
-            <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${loadingTone === "danger" ? "bg-error-container text-on-error-container" : loadingTone === "success" ? "bg-primary-container text-on-primary-container" : "bg-secondary-container text-on-secondary-container"}`}>
-              {runState === "failed" ? <MaterialIcon name="error" filled /> : runState === "completed" ? <MaterialIcon name="check_circle" filled /> : <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-label-md text-label-md uppercase tracking-widest text-on-surface-variant">Research run</p>
-              <h4 className="mt-1 font-title-md text-title-md font-bold">{companyResearchRunMeta[runState].label}</h4>
-              <p className="mt-1 text-body-md text-on-surface-variant">{companyResearchRunMeta[runState].description}</p>
-              {runState !== "completed" ? <p className="mt-2 text-body-md text-on-surface-variant">Current step: {currentStep}</p> : null}
-            </div>
-          </div>
-
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-container-high">
-            <div
-              className={`h-full rounded-full transition-[width,background-color] duration-300 ease-out ${runState === "failed" ? "bg-error" : runState === "completed" ? "bg-primary" : "bg-secondary"}`}
-              style={{ width: `${Math.max(4, Math.min(100, progress))}%` }}
-            />
-          </div>
-
-          <ol className="mt-5 space-y-2">
-            {companyResearchStepMessages.map((message, index) => {
-              const status = runState === "failed"
-                ? (index <= stageIndex ? "error" : "pending")
-                : runState === "completed"
-                  ? "done"
-                  : index < stageIndex
-                    ? "done"
-                    : index === stageIndex
-                      ? "active"
-                      : "pending";
-              const tone = companyResearchLogTone[status];
-
-              return (
-                <li key={message} className={`flex items-start gap-3 rounded-lg bg-white px-3 py-2 ${tone.ring ?? ""}`}>
-                  <span className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${tone.dot}`} />
-                  <span className={`text-body-md ${tone.text}`}>{message}</span>
-                </li>
-              );
-            })}
-          </ol>
-
-          {error ? <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-body-md text-on-error-container">{error}</p> : null}
-        </div>
+        <CompanyResearchProgress
+          runState={runState}
+          stageIndex={stageIndex}
+          progress={progress}
+          currentStep={currentStep}
+          error={error}
+        />
       ) : null}
 
       {research ? (
-        <div className="mt-6 rounded-2xl border border-outline-variant bg-surface-container-low p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Review</p>
-              <h4 className="font-title-md text-title-md font-bold">Extracted company research</h4>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="btn btn-secondary text-error hover:bg-error-container" onClick={cancelResearch}>
-                <MaterialIcon name="close" />
-                Cancel
-              </button>
-              <span className="rounded-full bg-primary-container px-3 py-1 font-label-md text-label-md text-on-primary-container">{research.confidence} confidence</span>
-              <LoadingButton className="btn btn-primary" loading={isSaving} loadingLabel="Saving..." icon="save" onClick={() => void saveResearch()}>
-                Save research
-              </LoadingButton>
-            </div>
-          </div>
-
-          {saveMessage ? <p className="mt-4 rounded-lg bg-primary-container px-4 py-3 text-body-md text-on-primary-container">{saveMessage}</p> : null}
-          {saveError ? <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-body-md text-on-error-container">{saveError}</p> : null}
-
-          <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <EditableDetail label="Company title" value={research.companyName} editing={editingField === "companyName"} onEdit={() => setEditingField("companyName")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("companyName", value || companyName)} status={diffStatus(companyName, research.companyName)} />
-            <EditableDetail label="English search name" value={research.companySearchName} editing={editingField === "companySearchName"} onEdit={() => setEditingField("companySearchName")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("companySearchName", value)} status={diffStatus(existingCompanyData?.companySearchName ?? null, research.companySearchName)} />
-            <EditableDetail label="LinkedIn URL" value={research.linkedinUrl} editing={editingField === "linkedinUrl"} onEdit={() => setEditingField("linkedinUrl")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("linkedinUrl", value)} status={diffStatus(null, research.linkedinUrl)} />
-            <EditableDetail label="Funding" value={research.funding} editing={editingField === "funding"} onEdit={() => setEditingField("funding")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("funding", value)} status={diffStatus(existingCompanyData?.funding ?? null, research.funding)} multiline />
-            <EditableDetail label="Total raised" value={research.totalRaised} editing={editingField === "totalRaised"} onEdit={() => setEditingField("totalRaised")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("totalRaised", value)} status={diffStatus(null, research.totalRaised)} />
-            <EditableDetail label="Rounds count" value={research.roundsCount != null ? String(research.roundsCount) : null} editing={editingField === "roundsCount"} onEdit={() => setEditingField("roundsCount")} onDone={() => setEditingField(null)} onChange={updateResearchRoundsCount} status={diffStatus(null, research.roundsCount != null ? String(research.roundsCount) : null)} />
-            <EditableDetail label="Latest round" value={research.latestRound} editing={editingField === "latestRound"} onEdit={() => setEditingField("latestRound")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("latestRound", value)} status={diffStatus(null, research.latestRound)} />
-            <EditableDetail label="Investors" value={research.investors.length > 0 ? research.investors.join(", ") : null} editing={editingField === "investors"} onEdit={() => setEditingField("investors")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchListField("investors", value ?? "")} status={diffStatus(null, research.investors.length > 0 ? research.investors.join(", ") : null)} multiline />
-            <EditableDetail label="Investment rounds" value={research.investmentRounds} editing={editingField === "investmentRounds"} onEdit={() => setEditingField("investmentRounds")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("investmentRounds", value)} status={diffStatus(existingCompanyData?.investmentRounds ?? null, research.investmentRounds)} multiline />
-            <EditableDetail label="Employees" value={research.employees} editing={editingField === "employees"} onEdit={() => setEditingField("employees")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("employees", value)} status={diffStatus(existingCompanyData?.employees ?? null, research.employees)} />
-            <EditableDetail label="Location" value={research.location} editing={editingField === "location"} onEdit={() => setEditingField("location")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("location", value)} status={diffStatus(existingCompanyData?.location ?? null, research.location)} />
-            <EditableDetail label="Domains" value={research.domains.length > 0 ? research.domains.join(", ") : null} editing={editingField === "domains"} onEdit={() => setEditingField("domains")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchListField("domains", value ?? "")} status={diffStatus(null, research.domains.length > 0 ? research.domains.join(", ") : null)} />
-            <EditableDetail label="Customers / traction" value={research.customersTraction} editing={editingField === "customersTraction"} onEdit={() => setEditingField("customersTraction")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("customersTraction", value)} status={diffStatus(existingCompanyData?.customersTraction ?? null, research.customersTraction)} multiline />
-            <EditableDetail label="Company description" value={research.companyDescription} editing={editingField === "companyDescription"} onEdit={() => setEditingField("companyDescription")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("companyDescription", value)} status={diffStatus(existingCompanyData?.companyDescription ?? null, research.companyDescription)} multiline />
-            <EditableDetail label="Product description" value={research.productDescription} editing={editingField === "productDescription"} onEdit={() => setEditingField("productDescription")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchField("productDescription", value)} status={diffStatus(existingCompanyData?.productDescription ?? null, research.productDescription)} multiline />
-          </div>
-
-          <div className="mt-5">
-            <EditableDetail label="Source URLs" value={research.sourceUrls.join("\n")} editing={editingField === "sourceUrls"} onEdit={() => setEditingField("sourceUrls")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchListField("sourceUrls", value ?? "")} multiline />
-          </div>
-
-          <div className="mt-5">
-            <EditableDetail label="Important notes" value={research.rawImportantNotes.join("\n")} editing={editingField === "rawImportantNotes"} onEdit={() => setEditingField("rawImportantNotes")} onDone={() => setEditingField(null)} onChange={(value) => updateResearchListField("rawImportantNotes", value ?? "")} multiline />
-          </div>
-        </div>
+        <CompanyResearchReview
+          companyName={companyName}
+          existingCompanyData={existingCompanyData}
+          research={research}
+          editingField={editingField}
+          isSaving={isSaving}
+          saveMessage={saveMessage}
+          saveError={saveError}
+          onCancel={cancelResearch}
+          onSave={() => void saveResearch()}
+          onEditField={setEditingField}
+          onUpdateField={updateResearchField}
+          onUpdateListField={updateResearchListField}
+          onUpdateRoundsCount={updateResearchRoundsCount}
+        />
       ) : null}
     </section>
-  );
-}
-
-type DiffStatus = "NEW" | "UPDATED" | null;
-
-function diffStatus(existing: string | null | undefined, next: string | null | undefined): DiffStatus {
-  const current = normalizeComparable(existing);
-  const incoming = normalizeComparable(next);
-
-  if (!incoming) {
-    return null;
-  }
-
-  if (!current) {
-    return "NEW";
-  }
-
-  return current === incoming ? null : "UPDATED";
-}
-
-function normalizeComparable(value: string | null | undefined) {
-  return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? "";
-}
-
-function splitListInput(value: string) {
-  return value
-    .split(/\n|,/)
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-}
-
-function Detail({ label, value, status }: { label: string; value: string | null; status?: DiffStatus }) {
-  const isUrl = typeof value === "string" && /^https?:\/\//i.test(value);
-
-  return (
-    <div>
-      <div className="flex items-center gap-2">
-        <p className="label">{label}</p>
-        {status ? <Badge value={status} tone={status === "NEW" ? "green" : "violet"} /> : null}
-      </div>
-      {isUrl && value ? (
-        <a
-          className="mt-1 inline-flex max-w-full items-center gap-2 break-all text-body-md text-primary hover:underline"
-          href={value}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <MaterialIcon name="open_in_new" className="text-[16px]" />
-          <span>{value}</span>
-        </a>
-      ) : (
-        <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{value || "-"}</p>
-      )}
-    </div>
-  );
-}
-
-function EditableDetail({
-  label,
-  value,
-  status,
-  editing,
-  multiline = false,
-  onEdit,
-  onDone,
-  onChange
-}: {
-  label: string;
-  value: string | null;
-  status?: DiffStatus;
-  editing: boolean;
-  multiline?: boolean;
-  onEdit: () => void;
-  onDone: () => void;
-  onChange: (value: string | null) => void;
-}) {
-  const isUrl = typeof value === "string" && /^https?:\/\//i.test(value);
-
-  return (
-    <div>
-      <div className="flex items-center gap-2">
-        <p className="label">{label}</p>
-        {status ? <Badge value={status} tone={status === "NEW" ? "green" : "violet"} /> : null}
-        <button
-          type="button"
-          className="rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-background"
-          aria-label={`Edit ${label}`}
-          title={`Edit ${label}`}
-          onClick={onEdit}
-        >
-          <MaterialIcon name="edit" className="text-[16px]" />
-        </button>
-      </div>
-      {editing ? (
-        <div className="mt-2 space-y-2">
-          {multiline ? (
-            <textarea
-              className="input min-h-24"
-              value={value ?? ""}
-              onChange={(event) => onChange(event.target.value || null)}
-            />
-          ) : (
-            <input
-              className="input"
-              value={value ?? ""}
-              onChange={(event) => onChange(event.target.value || null)}
-            />
-          )}
-          <button type="button" className="btn btn-secondary" onClick={onDone}>
-            <MaterialIcon name="check" />
-            Save
-          </button>
-        </div>
-      ) : isUrl && value ? (
-        <a
-          className="mt-1 inline-flex max-w-full items-center gap-2 break-all text-body-md text-primary hover:underline"
-          href={value}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <MaterialIcon name="open_in_new" className="text-[16px]" />
-          <span>{value}</span>
-        </a>
-      ) : (
-        <p className="mt-1 whitespace-pre-line text-body-md text-on-surface-variant">{value || "-"}</p>
-      )}
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      <span className="label">{label}</span>
-      <div className="mt-2">{children}</div>
-    </label>
   );
 }

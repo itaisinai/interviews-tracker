@@ -525,6 +525,12 @@ export async function parseStructuredGmailEmail(input: {
   let htmlText = structured.htmlText;
   let calendarText = structured.calendarText;
 
+  // If no plainText but we have HTML, strip HTML to get text
+  if (!plainText && htmlText) {
+    plainText = stripHtml(htmlText);
+    console.log('[PARSE] No plain text found, stripped HTML. Length:', plainText.length);
+  }
+
   const messageParts = collectAllParts(input.message.payload);
 
   for (const part of messageParts) {

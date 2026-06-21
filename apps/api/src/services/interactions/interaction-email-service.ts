@@ -1,10 +1,11 @@
-import { prisma } from "../../lib/prisma.js";
-import { parseStructuredGmailEmail, deriveInteractionFromStructuredEmail } from "../gmail/gmail-message-parser.js";
-import { getAccessTokenForEmail } from "../gmail/gmail-auth.js";
-import { fetchJson } from "../gmail/gmail-http.js";
-import { getAiParserService } from "../ai/ai-parser-service.js";
+import type { GmailAttachmentResponse, GmailMessageResponse } from "../gmail/gmail-message-utils.js";
+import { deriveInteractionFromStructuredEmail, parseStructuredGmailEmail } from "../gmail/gmail-message-parser.js";
+
 import type { GmailDerivedInteraction } from "../gmail/gmail-message-parser.js";
-import type { GmailMessageResponse, GmailAttachmentResponse } from "../gmail/gmail-message-utils.js";
+import { fetchJson } from "../gmail/gmail-http.js";
+import { getAccessTokenForEmail } from "../gmail/gmail-auth.js";
+import { getAiParserService } from "../ai/ai-parser-service.js";
+import { prisma } from "../../lib/prisma.js";
 
 /**
  * Attach a Gmail message to an interaction
@@ -131,154 +132,116 @@ export async function attachEmailToInteraction(params: {
  * Aggregate data from all attached emails and update the interaction
  * Strategy: Latest wins for conflicts, merge participants, combine notes
  */
+/**
+ * Aggregate data from all attached emails using AI
+ */
 export async function aggregateInteractionEmails(interactionId: string) {
+  console.log('[AGGREGATE] ========== START ==========');
+  console.log('[AGGREGATE] Interaction ID:', interactionId);
+
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {
-      attachedEmails: {
-        orderBy: { receivedDate: 'desc' }
-      }
+      attachedEmails: { orderBy: { receivedDate: 'desc' } },
+      jobOpportunity: { select: { companyName: true, roleTitle: true } }
     }
   });
 
   if (!interaction) {
+    console.log('[AGGREGATE] Interaction not found');
     return;
   }
 
-  // Handle legacy interactions with gmailMessageId but no attachedEmails
-  if (interaction.attachedEmails.length === 0 && interaction.gmailMessageId) {
-    // Try to find if this email was already migrated but query didn't include it
-    const existingEmail = await prisma.interactionEmail.findFirst({
-      where: {
-        interactionId: interaction.id,
-        gmailMessageId: interaction.gmailMessageId
-      }
-    });
-
-    if (existingEmail) {
-      // Email exists but wasn't included - refetch
-      interaction.attachedEmails = [existingEmail];
-    }
-  }
-
-  // If still no emails, nothing to aggregate
   if (interaction.attachedEmails.length === 0) {
+    console.log('[AGGREGATE] No attached emails');
     return;
   }
 
-  const allParticipants = new Set<string>();
-  const allNotes: Array<{ subject: string; from: string; date: string; body: string }> = [];
-  let latestDate: string | null = null;
-  let latestEndDate: string | null = null;
-  let latestType: string | null = null;
-  let latestStage: string | null = null;
-  let latestStatus: string | null = null;
-  let latestAgenda: string | null = null;
-  let latestMeetingLink: string | null = null;
-  let latestLocation: string | null = null;
+  console.log(`[AGGREGATE] Found ${interaction.attachedEmails.length} attached emails`);
+  console.log('[AGGREGATE] Company:', interaction.jobOpportunity?.companyName);
+  console.log('[AGGREGATE] Role:', interaction.jobOpportunity?.roleTitle);
 
-  // Process emails from newest to oldest
-  console.log(`[AGGREGATE] Processing ${interaction.attachedEmails.length} emails for interaction ${interactionId}`);
-
+  const emails = [];
   for (const email of interaction.attachedEmails) {
-    console.log(`[AGGREGATE] Email ID: ${email.id}, Gmail ID: ${email.gmailMessageId}, Subject: ${email.subject}`);
+    console.log(`[AGGREGATE] Email ${email.id}: subject="${email.subject}", from="${email.from}"`);
 
     const data = email.extractedData as any;
-    // Handle both new structure (with derived/structured) and old structure (direct)
-    const extracted = (data?.derived || data) as GmailDerivedInteraction | null;
-    const structured = data?.structured;
+    console.log('[AGGREGATE] extractedData keys:', Object.keys(data || {}));
 
-    if (!extracted) {
-      console.log(`[AGGREGATE] Skipping email ${email.id} - no extractedData`);
+    const structured = data?.structured;
+    console.log('[AGGREGATE] Has structured:', !!structured);
+    console.log('[AGGREGATE] Has plainText:', !!structured?.plainText);
+
+    if (structured?.plainText) {
+      console.log('[AGGREGATE] plainText length:', structured.plainText.length);
+      console.log('[AGGREGATE] plainText preview:', structured.plainText.slice(0, 200));
+    }
+
+    if (!structured?.plainText) {
+      console.log('[AGGREGATE] ⚠️ SKIPPING - no plainText');
       continue;
     }
 
-    // Latest wins for scalar fields
-    if (!latestDate && extracted.date) latestDate = extracted.date;
-    if (!latestEndDate && extracted.endDate) latestEndDate = extracted.endDate;
-    if (!latestType && extracted.type) latestType = extracted.type;
-    if (!latestStage && extracted.stage) latestStage = extracted.stage;
-    if (!latestStatus && extracted.status) latestStatus = extracted.status;
-    if (!latestAgenda && extracted.agenda) latestAgenda = extracted.agenda;
-    if (!latestMeetingLink && extracted.meetingLink) latestMeetingLink = extracted.meetingLink;
+    const emailData = {
+      subject: email.subject || '',
+      from: email.from || '',
+      date: email.receivedDate?.toISOString() || '',
+      body: structured.plainText.slice(0, 2000),
+      calendar: structured.calendar ? {
+        start: structured.calendar.start || null,
+        end: structured.calendar.end || null,
+        summary: structured.calendar.summary || null,
+        location: structured.calendar.location || null
+      } : null
+    };
 
-    // Merge participants (accumulate all unique names)
-    if (extracted.personName) {
-      const names = extracted.personName.split(/\s+and\s+|,\s*/).map(n => n.trim()).filter(Boolean);
-      names.forEach(name => allParticipants.add(name));
-    }
-
-    // Collect email body text for AI summarization
-    // Priority: structured.plainText > old notes field > subject
-    let bodyText = '';
-
-    if (structured?.plainText) {
-      // New format: use clean plainText
-      bodyText = structured.plainText.trim();
-    } else if (extracted.notes) {
-      // Old format: extract body from notes field
-      // Notes field has format: "Subject: ...\nFrom: ...\nBody: actual content"
-      const bodyMatch = extracted.notes.match(/Body:\s*(.+)/s);
-      if (bodyMatch && bodyMatch[1]) {
-        bodyText = bodyMatch[1].trim();
-      } else {
-        // If no Body: prefix, use the whole notes field
-        bodyText = extracted.notes;
-      }
-    }
-
-    // Only add if we have actual content (not just metadata)
-    if (bodyText && bodyText.length > 20) {
-      allNotes.push({
-        subject: email.subject || 'No subject',
-        from: email.from || 'Unknown',
-        date: email.receivedDate?.toISOString() || '',
-        body: bodyText.slice(0, 2000) // Limit to avoid token overload
-      });
-    }
+    console.log('[AGGREGATE] ✅ Added email to AI input');
+    emails.push(emailData);
   }
 
-  // Use AI to summarize notes from multiple emails
-  let summarizedNotes: string | null = null;
-  if (allNotes.length > 0) {
-    console.log(`[AGGREGATE] Summarizing ${allNotes.length} email bodies with AI`);
-    console.log(`[AGGREGATE] Email bodies preview:`, allNotes.map(n => ({ subject: n.subject, bodyPreview: n.body.slice(0, 100) })));
-
-    try {
-      const aiService = getAiParserService();
-      summarizedNotes = await aiService.summarizeMultipleEmails({ emails: allNotes });
-      console.log('[AGGREGATE] AI returned notes:', summarizedNotes);
-    } catch (error) {
-      console.error('Failed to summarize notes with AI:', error);
-      // Fallback to simple concatenation if AI fails
-      summarizedNotes = allNotes.map(n => n.body).join('\n\n');
-    }
+  if (emails.length === 0) {
+    console.log('[AGGREGATE] ⚠️ No emails with plainText');
+    return;
   }
 
-  // Update the interaction with aggregated data
+  console.log(`[AGGREGATE] Calling AI with ${emails.length} emails`);
+
+  const aiService = getAiParserService();
+  const parsed = await aiService.parseMultipleEmailsToInteraction({
+    companyName: interaction.jobOpportunity?.companyName || 'Unknown',
+    roleTitle: interaction.jobOpportunity?.roleTitle || null,
+    emails
+  });
+
+  console.log('[AGGREGATE] ✅ AI returned result');
+  console.log('[AGGREGATE] notes:', parsed.notes);
+
   await prisma.interaction.update({
     where: { id: interactionId },
     data: {
-      date: latestDate ? new Date(latestDate) : undefined,
-      endDate: latestEndDate ? new Date(latestEndDate) : null,
-      type: latestType || interaction.type,
-      stage: latestStage || interaction.stage,
-      status: latestStatus as any || interaction.status,
-      personName: allParticipants.size > 0 ? Array.from(allParticipants).join(', ') : interaction.personName,
-      agenda: latestAgenda || interaction.agenda,
-      meetingLink: latestMeetingLink || interaction.meetingLink,
-      notes: summarizedNotes || interaction.notes
+      date: new Date(parsed.date),
+      endDate: parsed.endDate ? new Date(parsed.endDate) : null,
+      type: parsed.type,
+      stage: parsed.stage || null,
+      status: parsed.status as any,
+      personName: parsed.personName || null,
+      personRole: parsed.personRole || null,
+      agenda: parsed.agenda || null,
+      meetingLink: parsed.meetingLink || null,
+      notes: parsed.notes || null,
+      outcome: parsed.outcome || null,
+      followUp: parsed.followUp || null
     }
   });
 
-  // Re-sync opportunity status since interaction data may have changed
+  console.log('[AGGREGATE] ✅ Database updated');
+
   const { syncOpportunityStatusRecord } = await import("../../repositories/opportunity-repository.js");
   await syncOpportunityStatusRecord(interaction.jobOpportunityId, interaction.ownerEmail);
+
+  console.log('[AGGREGATE] ========== END ==========');
 }
 
-/**
- * Attach multiple Gmail messages to an interaction in a single transaction
- */
 export async function attachMultipleEmailsToInteraction(params: {
   auth0Email: string;
   interactionId: string;
@@ -475,9 +438,15 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
     throw new Error(`Unauthorized: interaction belongs to ${interaction.jobOpportunity.ownerEmail}`);
   }
 
-  // Re-fetch and re-parse any emails that have null extractedData
-  // This handles legacy emails that were attached before we added parsing
-  const emailsNeedingParse = interaction.attachedEmails.filter(e => !e.extractedData);
+  // Re-fetch and re-parse any emails that have null extractedData OR missing plainText
+  // This handles legacy emails that were attached before we added plainText extraction
+  const emailsNeedingParse = interaction.attachedEmails.filter(e => {
+    if (!e.extractedData) return true;
+    const data = e.extractedData as any;
+    const hasPlainText = data?.structured?.plainText;
+    console.log(`[REPARSE] Email ${e.id} has plainText:`, !!hasPlainText);
+    return !hasPlainText;
+  });
 
   if (emailsNeedingParse.length > 0) {
     const access = await getAccessTokenForEmail(interaction.jobOpportunity.ownerEmail);
@@ -496,6 +465,15 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
         );
 
         console.log(`[REPARSE] Fetched email subject: ${rawMessage.payload?.headers?.find(h => h.name === 'Subject')?.value}`);
+        console.log('[REPARSE] Gmail payload structure:', {
+          mimeType: rawMessage.payload?.mimeType,
+          hasBody: !!rawMessage.payload?.body,
+          bodySize: rawMessage.payload?.body?.size,
+          bodyHasData: !!rawMessage.payload?.body?.data,
+          hasParts: !!rawMessage.payload?.parts,
+          partsCount: rawMessage.payload?.parts?.length,
+          partMimeTypes: rawMessage.payload?.parts?.map(p => p.mimeType)
+        });
 
         const structuredEmail = await parseStructuredGmailEmail({
           message: rawMessage,
@@ -511,26 +489,45 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
           }
         });
 
+        console.log('[REPARSE] Parsed structuredEmail:', {
+          subject: structuredEmail.subject,
+          hasPlainText: !!structuredEmail.plainText,
+          plainTextLength: structuredEmail.plainText?.length,
+          plainTextPreview: structuredEmail.plainText?.slice(0, 200),
+          hasCalendar: !!structuredEmail.calendar,
+          calendarStart: structuredEmail.calendar?.start
+        });
+
         const derived = deriveInteractionFromStructuredEmail(structuredEmail);
+
+        const dataToSave = {
+          subject: structuredEmail.subject,
+          from: structuredEmail.fromRaw,
+          receivedDate: new Date(structuredEmail.internalDate),
+          extractedData: {
+            derived,
+            structured: {
+              subject: structuredEmail.subject,
+              from: structuredEmail.fromRaw,
+              plainText: structuredEmail.plainText,
+              calendar: structuredEmail.calendar
+            }
+          } as any
+        };
+
+        console.log('[REPARSE] Saving to database:', {
+          emailId: email.id,
+          hasPlainText: !!dataToSave.extractedData.structured.plainText,
+          plainTextLength: dataToSave.extractedData.structured.plainText?.length
+        });
 
         // Update the email with parsed data
         await prisma.interactionEmail.update({
           where: { id: email.id },
-          data: {
-            subject: structuredEmail.subject,
-            from: structuredEmail.fromRaw,
-            receivedDate: new Date(structuredEmail.internalDate),
-            extractedData: {
-              derived,
-              structured: {
-                subject: structuredEmail.subject,
-                from: structuredEmail.fromRaw,
-                plainText: structuredEmail.plainText,
-                calendar: structuredEmail.calendar
-              }
-            } as any
-          }
+          data: dataToSave
         });
+
+        console.log('[REPARSE] ✅ Database updated for email', email.id);
       } catch (error) {
         console.error(`Failed to re-parse email ${email.gmailMessageId}:`, error);
         // Continue with other emails even if one fails
@@ -538,16 +535,60 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
     }
   }
 
-  // Now aggregate all emails (both newly parsed and existing ones)
-  await aggregateInteractionEmails(interactionId);
-
-  // Return the updated interaction
-  return prisma.interaction.findUnique({
+  // Return interaction for frontend to decide whether to save
+  // Don't auto-aggregate here - let frontend show AI results for review
+  const refreshedInteraction = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {
       attachedEmails: {
         orderBy: { receivedDate: 'desc' }
+      },
+      jobOpportunity: {
+        select: { companyName: true, roleTitle: true }
       }
     }
   });
+
+  if (!refreshedInteraction) {
+    throw new Error('Interaction not found after reparse');
+  }
+
+  // Generate AI results WITHOUT saving to database
+  const emails = [];
+  for (const email of refreshedInteraction.attachedEmails) {
+    const data = email.extractedData as any;
+    const structured = data?.structured;
+    if (!structured?.plainText) continue;
+
+    emails.push({
+      subject: email.subject || '',
+      from: email.from || '',
+      date: email.receivedDate?.toISOString() || '',
+      body: structured.plainText.slice(0, 2000),
+      calendar: structured.calendar ? {
+        start: structured.calendar.start || null,
+        end: structured.calendar.end || null,
+        summary: structured.calendar.summary || null,
+        location: structured.calendar.location || null
+      } : null
+    });
+  }
+
+  let aiSuggestion = null;
+  if (emails.length > 0) {
+    const aiService = getAiParserService();
+    aiSuggestion = await aiService.parseMultipleEmailsToInteraction({
+      companyName: refreshedInteraction.jobOpportunity?.companyName || 'Unknown',
+      roleTitle: refreshedInteraction.jobOpportunity?.roleTitle || null,
+      emails
+    });
+    console.log('[REPARSE] AI suggestion (NOT saved):', aiSuggestion.notes?.slice(0, 200));
+  }
+
+  console.log('[REPARSE] Returning interaction with AI suggestion for review');
+
+  return {
+    ...refreshedInteraction,
+    aiSuggestion // Frontend can use this to pre-fill edit form
+  };
 }

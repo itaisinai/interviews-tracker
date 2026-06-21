@@ -26,6 +26,31 @@ type InteractionsDrawerProps = {
 
 
 function toDraft(interaction: Interaction): InteractionDraft {
+  // If AI suggestion exists (from reparse), use it to pre-fill the draft
+  const aiSuggestion = (interaction as any).aiSuggestion;
+
+  if (aiSuggestion) {
+    console.log('[DRAWER] Using AI suggestion for draft:', {
+      notes: aiSuggestion.notes?.slice(0, 100)
+    });
+    return {
+      date: aiSuggestion.date || interaction.date,
+      endDate: aiSuggestion.endDate ?? null,
+      type: normalizeInteractionType(aiSuggestion.type || interaction.type),
+      stage: aiSuggestion.stage ?? null,
+      status: aiSuggestion.status || interaction.status,
+      personName: aiSuggestion.personName ?? null,
+      personRole: aiSuggestion.personRole ?? null,
+      agenda: aiSuggestion.agenda ?? null,
+      meetingLink: aiSuggestion.meetingLink ?? null,
+      gmailMessageId: interaction.gmailMessageId ?? null,
+      notes: aiSuggestion.notes ?? null,
+      outcome: aiSuggestion.outcome ?? null,
+      followUp: aiSuggestion.followUp ?? null,
+    };
+  }
+
+  // Normal draft from existing interaction
   return {
     date: interaction.date,
     endDate: interaction.endDate ?? null,
@@ -118,11 +143,10 @@ export function InteractionsDrawer({
   );
 
   const selectedTimelineInteraction = useMemo(() => {
-    const timelineInteraction = timeline.find(
-      (item) => item.id === mountedInteraction?.id,
-    );
-    return timelineInteraction ?? mountedInteraction ?? null;
-  }, [timeline, mountedInteraction]);
+    // Always prefer mountedInteraction for latest data (gets updated on save)
+    // Only use timeline for badge metadata
+    return mountedInteraction;
+  }, [mountedInteraction]);
 
   const headerBadge = selectedTimelineInteraction
     ? getInteractionTimelineBadgeMeta(selectedTimelineInteraction, timeline)
@@ -155,7 +179,26 @@ export function InteractionsDrawer({
       return api.updateInteraction(selectedTimelineInteraction.id, draft);
     },
     onSuccess: (savedInteraction) => {
+      // Update the opportunity cache with saved interaction
+      queryClient.setQueryData(
+        ["opportunity", opportunityId],
+        (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            interactions: old.interactions.map((int: any) =>
+              int.id === savedInteraction.id ? savedInteraction : int
+            )
+          };
+        }
+      );
+
+      // Update local drawer state so it shows fresh data immediately
+      setMountedInteraction(savedInteraction);
+
+      // Invalidate other queries
       refreshQueries();
+
       setIsEditing(false);
       setDraft(toDraft(savedInteraction));
     },
@@ -199,10 +242,30 @@ export function InteractionsDrawer({
               headerBadge={headerBadge}
               isEditing={isEditing}
               draft={draft}
-              onToggleEditing={() => {
-                // Refresh draft with latest data before toggling
-                setDraft(toDraft(displayInteraction));
-                setIsEditing((current) => !current);
+              onToggleEditing={(aiSuggestion?: any) => {
+                // If AI suggestion provided, use it to create draft
+                if (aiSuggestion) {
+                  console.log('[DRAWER] Creating draft from AI suggestion:', aiSuggestion.notes?.slice(0, 100));
+                  setDraft({
+                    date: aiSuggestion.date || displayInteraction.date,
+                    endDate: aiSuggestion.endDate ?? null,
+                    type: normalizeInteractionType(aiSuggestion.type || displayInteraction.type),
+                    stage: aiSuggestion.stage ?? null,
+                    status: aiSuggestion.status || displayInteraction.status,
+                    personName: aiSuggestion.personName ?? null,
+                    personRole: aiSuggestion.personRole ?? null,
+                    agenda: aiSuggestion.agenda ?? null,
+                    meetingLink: aiSuggestion.meetingLink ?? null,
+                    gmailMessageId: displayInteraction.gmailMessageId ?? null,
+                    notes: aiSuggestion.notes ?? null,
+                    outcome: aiSuggestion.outcome ?? null,
+                    followUp: aiSuggestion.followUp ?? null,
+                  });
+                } else {
+                  // Normal edit - use current interaction data
+                  setDraft(toDraft(displayInteraction));
+                }
+                setIsEditing(true);
               }}
               onCancelEditing={() => {
                 setIsEditing(false);
@@ -212,9 +275,7 @@ export function InteractionsDrawer({
               onSave={() => void updateInteraction.mutate()}
               isSaving={updateInteraction.isPending}
               onDelete={() => {
-                if (window.confirm("Delete this interaction?")) {
-                  deleteInteraction.mutate(displayInteraction.id);
-                }
+                deleteInteraction.mutate(displayInteraction.id);
               }}
               isDeleting={
                 deleteInteraction.isPending &&

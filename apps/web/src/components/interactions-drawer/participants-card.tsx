@@ -1,0 +1,130 @@
+import { useState } from "react";
+import { MaterialIcon } from "@interviews-tracker/design-system";
+import { PersonResearchFlow } from "../person-research/person-research-flow";
+import { PersonDetailModal } from "../contacts/person-detail-modal";
+import type { Person } from "../../lib/types";
+
+type ParticipantsCardProps = {
+  personNames: string[];
+  personRecords: Array<Person | undefined>;
+  opportunityId?: string;
+  opportunityCompanyName?: string;
+};
+
+export function ParticipantsCard({
+  personNames,
+  personRecords,
+  opportunityId,
+  opportunityCompanyName
+}: ParticipantsCardProps) {
+  const [researchModalOpen, setResearchModalOpen] = useState(false);
+  const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [selectedPersonName, setSelectedPersonName] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredPersons = personNames.filter(name =>
+    name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (personNames.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <div className="bg-white rounded-lg border border-neutral-200 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <MaterialIcon name="group" className="text-[18px] text-neutral-600" />
+            <h3 className="text-sm font-semibold text-neutral-900">Participants</h3>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-3">
+          <MaterialIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-neutral-400" />
+          <input
+            type="text"
+            placeholder="Search participants..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+          />
+        </div>
+
+        {/* Participants List */}
+        <div className="space-y-2">
+          {filteredPersons.map((name, index) => {
+            const person = personRecords[index];
+
+            return (
+              <div
+                key={name}
+                className="flex items-center justify-between py-2 px-2 rounded hover:bg-neutral-50 transition-colors"
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <MaterialIcon name="person" className="text-[18px] text-neutral-400 flex-shrink-0" />
+                  <span className="text-sm text-neutral-900 truncate">{name}</span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (person?.research) {
+                      setSelectedPerson(person);
+                      setPersonDetailModalOpen(true);
+                    } else {
+                      setSelectedPersonName(name);
+                      setResearchModalOpen(true);
+                    }
+                  }}
+                  className="flex-shrink-0 p-1 rounded hover:bg-neutral-100 transition-colors"
+                  title="Research person"
+                >
+                  <MaterialIcon
+                    name={person?.research ? "badge" : "search"}
+                    className="text-[16px] text-neutral-500 hover:text-emerald-600"
+                  />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {filteredPersons.length === 0 && (
+          <p className="text-sm text-neutral-500 text-center py-2">
+            No participants found
+          </p>
+        )}
+      </div>
+
+      {/* Research Modal */}
+      <PersonResearchFlow
+        person={{ name: selectedPersonName, title: null }}
+        opportunityId={opportunityId}
+        opportunityCompanyName={opportunityCompanyName}
+        isOpen={researchModalOpen}
+        onClose={() => setResearchModalOpen(false)}
+        onSaved={() => setResearchModalOpen(false)}
+      />
+
+      {/* Person Detail Modal */}
+      {selectedPerson && (
+        <PersonDetailModal
+          person={selectedPerson}
+          isOpen={personDetailModalOpen}
+          onClose={() => {
+            setPersonDetailModalOpen(false);
+            setSelectedPerson(null);
+          }}
+          onResearch={(name) => {
+            setPersonDetailModalOpen(false);
+            setSelectedPerson(null);
+            setSelectedPersonName(name);
+            setResearchModalOpen(true);
+          }}
+        />
+      )}
+    </>
+  );
+}
