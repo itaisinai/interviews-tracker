@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction } from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
 import type { Interaction, InteractionDraft, Person } from "../../lib/types";
 import { InteractionDraftFields } from "./interaction-draft-fields";
 import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
@@ -11,6 +11,7 @@ import { AttachedEmailsCard } from "./attached-emails-card";
 import { QuickInfoCard } from "./quick-info-card";
 import { NotesCard } from "./notes-card";
 import { GmailEmailStatesSection } from "./gmail-email-states-section";
+import { AddFeedbackModal } from "./add-feedback-modal";
 
 type InteractionSummaryPanelProps = {
   interaction: Interaction;
@@ -44,6 +45,8 @@ export function InteractionSummaryPanel({
   isDeleting,
   opportunityCompanyName,
 }: InteractionSummaryPanelProps) {
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+
   // Split multiple names
   const personNames = interaction.personName
     ? interaction.personName
@@ -63,6 +66,21 @@ export function InteractionSummaryPanel({
     (contacts as Person[]).find((c) => c.name === name),
   );
 
+  const handleAddFeedback = async (content: string, source?: string) => {
+    console.log('[FEEDBACK] Submitting feedback', { interactionId: interaction.id, contentLength: content.length, source });
+
+    // Call API to add feedback and get AI suggestion
+    const result = await api.addFeedbackToInteraction(interaction.id, content, source);
+
+    console.log('[FEEDBACK] Got AI suggestion from API', {
+      hasAiSuggestion: !!(result as any).aiSuggestion,
+      aiNotes: (result as any).aiSuggestion?.notes?.slice(0, 100)
+    });
+
+    // Pass AI suggestion to edit form (same flow as reparse)
+    onToggleEditing((result as any).aiSuggestion);
+  };
+
   return (
     <div className="space-y-4">
       {/* Compact Summary */}
@@ -75,6 +93,7 @@ export function InteractionSummaryPanel({
             onDelete();
           }
         }}
+        onAddFeedback={() => setShowFeedbackModal(true)}
       />
 
       {/* Edit Form */}
@@ -141,6 +160,13 @@ export function InteractionSummaryPanel({
           <p className="text-sm text-neutral-700 whitespace-pre-wrap">{interaction.followUp}</p>
         </div>
       )}
+
+      {/* Add Feedback Modal */}
+      <AddFeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        onSubmit={handleAddFeedback}
+      />
     </div>
   );
 }

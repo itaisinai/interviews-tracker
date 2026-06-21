@@ -1,6 +1,6 @@
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { Badge } from "../badge";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, MessageSquare } from "lucide-react";
 import type { Interaction } from "../../lib/types";
 import { formatDateTimeRange } from "../../lib/format";
 import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
@@ -13,6 +13,7 @@ type InteractionSummaryCompactProps = {
   } | null;
   onEdit: () => void;
   onDelete: () => void;
+  onAddFeedback: () => void;
 };
 
 export function InteractionSummaryCompact({
@@ -20,6 +21,7 @@ export function InteractionSummaryCompact({
   statusBadge,
   onEdit,
   onDelete,
+  onAddFeedback,
 }: InteractionSummaryCompactProps) {
   const typeLabel = displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ?? interaction.type;
   const dateTimeRange = formatDateTimeRange(interaction.date, interaction.endDate);
@@ -75,6 +77,13 @@ export function InteractionSummaryCompact({
 
           {/* Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={onAddFeedback}
+              className="p-2 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-colors"
+              title="Add Feedback"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
             <button
               onClick={onEdit}
               className="p-2 rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors"

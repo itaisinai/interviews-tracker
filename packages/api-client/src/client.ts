@@ -104,5 +104,7 @@ export const api = {
   attachEmailToInteraction: (interactionId: string, gmailMessageId: string) => request<{ id: string; interactionId: string; gmailMessageId: string; subject: string | null; from: string | null; receivedDate: string | null; extractedData: unknown; attachedAt: string }>(`/interactions/${interactionId}/emails`, { method: "POST", body: JSON.stringify({ gmailMessageId }) }),
   attachMultipleEmailsToInteraction: (interactionId: string, gmailMessageIds: string[]) => request<{ attachedEmails: Array<{ id: string; interactionId: string; gmailMessageId: string; subject: string | null; from: string | null; receivedDate: string | null; extractedData: unknown; attachedAt: string }> }>(`/interactions/${interactionId}/emails`, { method: "POST", body: JSON.stringify({ gmailMessageIds }) }),
   removeEmailFromInteraction: (interactionId: string, emailId: string) => request<void>(`/interactions/${interactionId}/emails/${emailId}`, { method: "DELETE" }),
-  reparseInteractionEmails: (interactionId: string) => request<unknown>(`/interactions/${interactionId}/reparse`, { method: "POST" })
+  reparseInteractionEmails: (interactionId: string) => request<unknown>(`/interactions/${interactionId}/reparse`, { method: "POST" }),
+  listInteractionFeedback: (interactionId: string) => request<Array<{ id: string; interactionId: string; content: string; source: string | null; extractedData: unknown; attachedAt: string }>>(`/interactions/${interactionId}/feedback`),
+  addFeedbackToInteraction: (interactionId: string, content: string, source?: string) => request<unknown>(`/interactions/${interactionId}/feedback`, { method: "POST", body: JSON.stringify({ content, source }) })
 };
