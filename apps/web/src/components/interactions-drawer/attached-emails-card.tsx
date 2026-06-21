@@ -31,9 +31,16 @@ export function AttachedEmailsCard({
     setIsReparsing(true);
     try {
       await api.reparseInteractionEmails(interactionId);
-      void queryClient.invalidateQueries({ queryKey: ["interactions"] });
-      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
+
+      // Invalidate and wait for refetch to complete
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["interactions"] }),
+        queryClient.invalidateQueries({ queryKey: ["opportunities"] }),
+        queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] }),
+        queryClient.refetchQueries({ queryKey: ["opportunity", opportunityId] })
+      ]);
+
+      // Now open edit form with fresh data
       onEmailsAttached?.();
     } catch (error) {
       console.error("Failed to reparse emails:", error);
