@@ -35,49 +35,56 @@ export async function addFeedbackToInteraction(params: {
     throw new Error(`Unauthorized: interaction belongs to ${interaction.ownerEmail}`);
   }
 
-  // Save feedback record
-  const feedbackRecord = await prisma.interactionFeedback.create({
-    data: {
-      interactionId,
-      content: feedbackContent,
-      source,
-    }
-  });
-
-  console.log('[FEEDBACK] Saved feedback record:', feedbackRecord.id);
-
-  // Get all feedback for this interaction (including the new one)
-  const allFeedback = await prisma.interactionFeedback.findMany({
+  // Get persisted feedback for this interaction before adding the new item.
+  const existingFeedback = await prisma.interactionFeedback.findMany({
     where: { interactionId },
     orderBy: { attachedAt: 'asc' }
   });
 
-  console.log('[FEEDBACK] Total feedback count:', allFeedback.length);
+  console.log('[FEEDBACK] Existing feedback count:', existingFeedback.length);
 
-  // Call AI to smart-merge existing notes + all feedback
+  const pendingFeedbackAttachedAt = new Date();
+  const feedbackItems = [
+    ...existingFeedback.map(f => ({
+      content: f.content,
+      source: f.source ?? 'Unknown',
+      date: f.attachedAt
+    })),
+    {
+      content: feedbackContent,
+      source: source ?? 'Unknown',
+      date: pendingFeedbackAttachedAt
+    }
+  ];
+
+  // Call AI to smart-merge existing notes + persisted feedback + the new feedback.
+  // The new feedback is only saved after this succeeds, so failed merge attempts
+  // cannot leave duplicate or failed feedback rows behind.
   const aiParser = getAiParserService();
   const result = await aiParser.smartMergeFeedback({
     companyName: interaction.jobOpportunity.companyName,
     roleTitle: interaction.jobOpportunity.roleTitle,
     existingNotes: interaction.notes,
-    feedbackItems: allFeedback.map(f => ({
-      content: f.content,
-      source: f.source ?? 'Unknown',
-      date: f.attachedAt
-    }))
+    feedbackItems
   });
 
   console.log('[FEEDBACK] AI merged notes length:', result.mergedNotes?.length ?? 0);
 
-  // Store AI extraction in feedback record
-  await prisma.interactionFeedback.update({
-    where: { id: feedbackRecord.id },
+  // Save feedback record only after the merge succeeds.
+  const feedbackRecord = await prisma.interactionFeedback.create({
     data: {
+      interactionId,
+      content: feedbackContent,
+      source,
       extractedData: {
         aiMergeResult: result
       }
     }
   });
+
+  console.log('[FEEDBACK] Saved feedback record:', feedbackRecord.id);
+
+  const allFeedback = [...existingFeedback, feedbackRecord];
 
   // Return interaction with AI suggestion (NOT saved yet - user must review)
   return {

@@ -14,6 +14,7 @@ type InteractionSummaryCompactProps = {
   onEdit: () => void;
   onDelete: () => void;
   onAddFeedback: () => void;
+  isAddFeedbackDisabled?: boolean;
 };
 
 export function InteractionSummaryCompact({
@@ -22,6 +23,7 @@ export function InteractionSummaryCompact({
   onEdit,
   onDelete,
   onAddFeedback,
+  isAddFeedbackDisabled = false,
 }: InteractionSummaryCompactProps) {
   const typeLabel = displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ?? interaction.type;
   const dateTimeRange = formatDateTimeRange(interaction.date, interaction.endDate);
@@ -79,8 +81,9 @@ export function InteractionSummaryCompact({
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={onAddFeedback}
-              className="p-2 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-colors"
-              title="Add Feedback"
+              disabled={isAddFeedbackDisabled}
+              className="p-2 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-neutral-200 disabled:text-neutral-400 disabled:hover:bg-transparent transition-colors"
+              title={isAddFeedbackDisabled ? "Save or cancel edits before adding feedback" : "Add Feedback"}
             >
               <MessageSquare className="w-4 h-4" />
             </button>
