@@ -77,7 +77,8 @@ export function InteractionSummaryPanel({
       aiNotes: (result as any).aiSuggestion?.notes?.slice(0, 100)
     });
 
-    // Pass AI suggestion to edit form (same flow as reparse)
+    // Pass AI suggestion to edit form (same flow as reparse). This action is
+    // disabled while editing so it cannot overwrite an in-progress draft.
     onToggleEditing((result as any).aiSuggestion);
   };
 
@@ -93,7 +94,12 @@ export function InteractionSummaryPanel({
             onDelete();
           }
         }}
-        onAddFeedback={() => setShowFeedbackModal(true)}
+        onAddFeedback={() => {
+          if (!isEditing) {
+            setShowFeedbackModal(true);
+          }
+        }}
+        isAddFeedbackDisabled={isEditing}
       />
 
       {/* Edit Form */}
