@@ -437,9 +437,15 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
     throw new Error(`Unauthorized: interaction belongs to ${interaction.jobOpportunity.ownerEmail}`);
   }
 
-  // Re-fetch and re-parse any emails that have null extractedData
-  // This handles legacy emails that were attached before we added parsing
-  const emailsNeedingParse = interaction.attachedEmails.filter(e => !e.extractedData);
+  // Re-fetch and re-parse any emails that have null extractedData OR missing plainText
+  // This handles legacy emails that were attached before we added plainText extraction
+  const emailsNeedingParse = interaction.attachedEmails.filter(e => {
+    if (!e.extractedData) return true;
+    const data = e.extractedData as any;
+    const hasPlainText = data?.structured?.plainText;
+    console.log(`[REPARSE] Email ${e.id} has plainText:`, !!hasPlainText);
+    return !hasPlainText;
+  });
 
   if (emailsNeedingParse.length > 0) {
     const access = await getAccessTokenForEmail(interaction.jobOpportunity.ownerEmail);
