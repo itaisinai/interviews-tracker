@@ -11,10 +11,18 @@ export function CompanyDetailsModern({
   opportunity,
   className = "",
 }: CompanyDetailsModernProps) {
-  const [expandedSection, setExpandedSection] = useState<string | null>("overview");
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["overview"]));
 
   const toggleSection = (section: string) => {
-    setExpandedSection((current) => (current === section ? null : section));
+    setExpandedSections((current) => {
+      const next = new Set(current);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
   };
 
   return (
@@ -28,7 +36,7 @@ export function CompanyDetailsModern({
         <CollapsibleSection
           title="Overview"
           icon="business"
-          isExpanded={expandedSection === "overview"}
+          isExpanded={expandedSections.has("overview")}
           onToggle={() => toggleSection("overview")}
         >
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -107,7 +115,7 @@ export function CompanyDetailsModern({
         <CollapsibleSection
           title="Tech Stack"
           icon="code"
-          isExpanded={expandedSection === "tech"}
+          isExpanded={expandedSections.has("tech")}
           onToggle={() => toggleSection("tech")}
         >
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -142,7 +150,7 @@ export function CompanyDetailsModern({
         <CollapsibleSection
           title="Role Details"
           icon="work"
-          isExpanded={expandedSection === "role"}
+          isExpanded={expandedSections.has("role")}
           onToggle={() => toggleSection("role")}
         >
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
