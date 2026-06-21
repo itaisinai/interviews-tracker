@@ -1,4 +1,5 @@
-import type { Interaction } from "../lib/types";
+import type { FormEvent } from "react";
+import type { Interaction, Opportunity } from "../lib/types";
 import {
   InlineLoadingState,
   LoadingButton,
@@ -52,6 +53,25 @@ export function OpportunityDetailPage() {
   const deleteInteraction = useMutation({
     mutationFn: (interactionId: string) => api.deleteInteraction(interactionId),
     onSuccess: refresh,
+  });
+  const updateOpportunityTitle = useMutation({
+    mutationFn: (updates: Pick<Opportunity, "companyName" | "roleTitle">) => {
+      if (!data) {
+        throw new Error("Opportunity is not loaded");
+      }
+      return api.updateOpportunity(
+        opportunityRouteId,
+        buildOpportunityInput(data, updates),
+      );
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["opportunity", slugOrId], updated);
+      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+      if (updated.slug && updated.slug !== slugOrId) {
+        navigate(`/opportunities/${updated.slug}`, { replace: true });
+      }
+    },
   });
 
   const displayedInteractions = useMemo(
@@ -117,8 +137,34 @@ export function OpportunityDetailPage() {
   return (
     <>
       <PageIntro
-        title={data.companyName}
-        description={data.roleTitle}
+        title={
+          <EditableTitleField
+            ariaLabel="Company name"
+            className="font-headline-lg text-headline-lg text-on-background"
+            value={data.companyName}
+            isSaving={updateOpportunityTitle.isPending}
+            onSave={(companyName) =>
+              updateOpportunityTitle.mutate({
+                companyName,
+                roleTitle: data.roleTitle,
+              })
+            }
+          />
+        }
+        description={
+          <EditableTitleField
+            ariaLabel="Role title"
+            className="font-body-lg text-body-lg text-on-surface-variant"
+            value={data.roleTitle}
+            isSaving={updateOpportunityTitle.isPending}
+            onSave={(roleTitle) =>
+              updateOpportunityTitle.mutate({
+                companyName: data.companyName,
+                roleTitle,
+              })
+            }
+          />
+        }
         actions={
           <>
             {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
@@ -220,6 +266,130 @@ export function OpportunityDetailPage() {
       />
     </>
   );
+}
+
+
+function EditableTitleField({
+  ariaLabel,
+  className,
+  value,
+  isSaving,
+  onSave,
+}: {
+  ariaLabel: string;
+  className: string;
+  value: string;
+  isSaving: boolean;
+  onSave: (value: string) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraft(value);
+    }
+  }, [isEditing, value]);
+
+  const cancel = () => {
+    setDraft(value);
+    setIsEditing(false);
+  };
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const trimmed = draft.trim();
+    if (!trimmed || trimmed === value) {
+      cancel();
+      return;
+    }
+    onSave(trimmed);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <form className="group/title-edit flex max-w-full items-center gap-2" onSubmit={submit}>
+        <input
+          aria-label={ariaLabel}
+          autoFocus
+          className={`${className} min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-1 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20`}
+          disabled={isSaving}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              cancel();
+            }
+          }}
+        />
+        <button
+          aria-label={`Save ${ariaLabel.toLowerCase()}`}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary-container disabled:opacity-50"
+          disabled={isSaving || !draft.trim()}
+          type="submit"
+        >
+          <MaterialIcon name="check" />
+        </button>
+        <button
+          aria-label={`Cancel ${ariaLabel.toLowerCase()} edit`}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+          disabled={isSaving}
+          type="button"
+          onClick={cancel}
+        >
+          <MaterialIcon name="close" />
+        </button>
+      </form>
+    );
+  }
+
+  return (
+    <span className="group/title-edit inline-flex max-w-full items-center gap-2">
+      <span className={className}>{value}</span>
+      <button
+        aria-label={`Edit ${ariaLabel.toLowerCase()}`}
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-on-surface-variant opacity-0 transition hover:bg-surface-container group-hover/title-edit:opacity-100 focus:opacity-100"
+        disabled={isSaving}
+        type="button"
+        onClick={() => setIsEditing(true)}
+      >
+        <MaterialIcon name="edit" className="text-[18px]" />
+      </button>
+    </span>
+  );
+}
+
+function buildOpportunityInput(
+  opportunity: Opportunity,
+  updates: Pick<Opportunity, "companyName" | "roleTitle">,
+) {
+  return {
+    companyName: updates.companyName,
+    companySearchName: opportunity.companySearchName ?? null,
+    roleTitle: updates.roleTitle,
+    pipelineType: opportunity.pipelineType,
+    status: opportunity.status,
+    priority: opportunity.priority,
+    referrerOrConnection: opportunity.referrerOrConnection ?? null,
+    source: opportunity.source ?? null,
+    jobUrl: opportunity.jobUrl ?? null,
+    linkedinUrl: opportunity.linkedinUrl ?? null,
+    nextStep: opportunity.nextStep ?? null,
+    notes: opportunity.notes ?? null,
+    employeesRangeId: opportunity.employeesRange?.id ?? null,
+    companyStageId: opportunity.companyStage?.id ?? null,
+    workModelId: opportunity.workModel?.id ?? null,
+    location: opportunity.location ?? null,
+    funding: opportunity.funding ?? null,
+    companyDescription: opportunity.companyDescription ?? null,
+    productDescription: opportunity.productDescription ?? null,
+    customersTraction: opportunity.customersTraction ?? null,
+    techStack: opportunity.techStack ?? null,
+    backendFrontendSplit: opportunity.backendFrontendSplit ?? null,
+    compensationNotes: opportunity.compensationNotes ?? null,
+    domainIds: opportunity.domains.map((item) => item.domain.id),
+  };
 }
 
 function FocusedInteractionCard({

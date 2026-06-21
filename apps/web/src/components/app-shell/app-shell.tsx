@@ -306,8 +306,8 @@ export function PageIntro({
   description,
   actions,
 }: {
-  title: string;
-  description?: string;
+  title: ReactNode;
+  description?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
