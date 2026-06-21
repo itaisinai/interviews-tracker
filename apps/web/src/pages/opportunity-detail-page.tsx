@@ -182,9 +182,6 @@ export function OpportunityDetailPage() {
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <div>
-          <CompanyDetailsModern opportunity={data} />
-        </div>
-        <div>
           <Timeline
             interactions={displayedInteractions}
             selectedInteractionId={selectedInteractionId}
@@ -199,6 +196,9 @@ export function OpportunityDetailPage() {
               deleteInteraction.variables === interactionId
             }
           />
+        </div>
+        <div>
+          <CompanyDetailsModern opportunity={data} />
         </div>
       </div>
       <InteractionsDrawer
