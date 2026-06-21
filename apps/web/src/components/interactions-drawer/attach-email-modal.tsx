@@ -61,12 +61,8 @@ export function AttachEmailModal({
 
     setIsAttaching(true);
     try {
-      // Attach all selected emails
-      await Promise.all(
-        Array.from(selectedEmailIds).map(gmailMessageId =>
-          api.attachEmailToInteraction(interactionId, gmailMessageId)
-        )
-      );
+      // Attach all selected emails in a single batch request to avoid race conditions
+      await api.attachMultipleEmailsToInteraction(interactionId, Array.from(selectedEmailIds));
 
       // Invalidate and refetch queries - wait for them to complete
       await Promise.all([

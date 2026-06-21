@@ -16,6 +16,20 @@ export async function attachEmailToInteraction(params: {
 }) {
   const { auth0Email, interactionId, gmailMessageId } = params;
 
+  // Verify interaction ownership
+  const interaction = await prisma.interaction.findUnique({
+    where: { id: interactionId },
+    select: { ownerEmail: true }
+  });
+
+  if (!interaction) {
+    throw new Error(`Interaction ${interactionId} not found`);
+  }
+
+  if (interaction.ownerEmail !== auth0Email) {
+    throw new Error(`Unauthorized: interaction belongs to ${interaction.ownerEmail}`);
+  }
+
   // Check if already attached
   const existing = await prisma.interactionEmail.findUnique({
     where: {
@@ -57,6 +71,16 @@ export async function attachEmailToInteraction(params: {
 
   const derived = deriveInteractionFromStructuredEmail(structuredEmail);
 
+  // Get the interaction's opportunity ID to mark email as used
+  const interactionForOpportunity = await prisma.interaction.findUnique({
+    where: { id: interactionId },
+    select: { jobOpportunityId: true }
+  });
+
+  if (!interactionForOpportunity) {
+    throw new Error(`Interaction ${interactionId} not found`);
+  }
+
   // Store the attached email with both derived and structured data
   const interactionEmail = await prisma.interactionEmail.create({
     data: {
@@ -74,6 +98,26 @@ export async function attachEmailToInteraction(params: {
           calendar: structuredEmail.calendar
         }
       } as any
+    }
+  });
+
+  // Mark email as used in Gmail message state to prevent re-import
+  await prisma.gmailMessageState.upsert({
+    where: {
+      auth0Email_messageId: {
+        auth0Email,
+        messageId: gmailMessageId
+      }
+    },
+    create: {
+      auth0Email,
+      jobOpportunityId: interactionForOpportunity.jobOpportunityId,
+      messageId: gmailMessageId,
+      status: "USED"
+    },
+    update: {
+      status: "USED",
+      jobOpportunityId: interactionForOpportunity.jobOpportunityId
     }
   });
 
@@ -226,16 +270,154 @@ export async function aggregateInteractionEmails(interactionId: string) {
       notes: summarizedNotes || interaction.notes
     }
   });
+
+  // Re-sync opportunity status since interaction data may have changed
+  const { syncOpportunityStatusRecord } = await import("../../repositories/opportunity-repository.js");
+  await syncOpportunityStatusRecord(interaction.jobOpportunityId, interaction.ownerEmail);
+}
+
+/**
+ * Attach multiple Gmail messages to an interaction in a single transaction
+ */
+export async function attachMultipleEmailsToInteraction(params: {
+  auth0Email: string;
+  interactionId: string;
+  gmailMessageIds: string[];
+}) {
+  const { auth0Email, interactionId, gmailMessageIds } = params;
+
+  // Verify interaction ownership
+  const interaction = await prisma.interaction.findUnique({
+    where: { id: interactionId },
+    select: { ownerEmail: true, jobOpportunityId: true }
+  });
+
+  if (!interaction) {
+    throw new Error(`Interaction ${interactionId} not found`);
+  }
+
+  if (interaction.ownerEmail !== auth0Email) {
+    throw new Error(`Unauthorized: interaction belongs to ${interaction.ownerEmail}`);
+  }
+
+  // Fetch and parse all emails
+  const access = await getAccessTokenForEmail(auth0Email);
+  if (!access) {
+    throw new Error("Gmail is not connected.");
+  }
+
+  const attachedEmails = [];
+
+  for (const gmailMessageId of gmailMessageIds) {
+    // Skip if already attached
+    const existing = await prisma.interactionEmail.findUnique({
+      where: {
+        interactionId_gmailMessageId: {
+          interactionId,
+          gmailMessageId
+        }
+      }
+    });
+
+    if (existing) {
+      attachedEmails.push(existing);
+      continue;
+    }
+
+    // Fetch the email from Gmail
+    const rawMessage = await fetchJson<GmailMessageResponse>(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${gmailMessageId}?${new URLSearchParams({ format: "full" })}`,
+      { headers: { Authorization: `Bearer ${access.accessToken}` } }
+    );
+
+    const structuredEmail = await parseStructuredGmailEmail({
+      message: rawMessage,
+      attachmentFetcher: async (messageId, attachmentId) => {
+        const attachment = await fetchJson<GmailAttachmentResponse>(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/attachments/${attachmentId}`,
+          { headers: { Authorization: `Bearer ${access.accessToken}` } }
+        );
+        if (!attachment.data) {
+          return "";
+        }
+        return Buffer.from(attachment.data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+      }
+    });
+
+    const derived = deriveInteractionFromStructuredEmail(structuredEmail);
+
+    // Store the attached email
+    const interactionEmail = await prisma.interactionEmail.create({
+      data: {
+        interactionId,
+        gmailMessageId,
+        subject: structuredEmail.subject,
+        from: structuredEmail.fromRaw,
+        receivedDate: new Date(structuredEmail.internalDate),
+        extractedData: {
+          derived,
+          structured: {
+            subject: structuredEmail.subject,
+            from: structuredEmail.fromRaw,
+            plainText: structuredEmail.plainText,
+            calendar: structuredEmail.calendar
+          }
+        } as any
+      }
+    });
+
+    attachedEmails.push(interactionEmail);
+
+    // Mark email as used
+    await prisma.gmailMessageState.upsert({
+      where: {
+        auth0Email_messageId: {
+          auth0Email,
+          messageId: gmailMessageId
+        }
+      },
+      create: {
+        auth0Email,
+        jobOpportunityId: interaction.jobOpportunityId,
+        messageId: gmailMessageId,
+        status: "USED"
+      },
+      update: {
+        status: "USED",
+        jobOpportunityId: interaction.jobOpportunityId
+      }
+    });
+  }
+
+  // Re-aggregate once after all emails are attached
+  await aggregateInteractionEmails(interactionId);
+
+  return { attachedEmails };
 }
 
 /**
  * Remove an attached email from an interaction
  */
 export async function removeEmailFromInteraction(params: {
+  auth0Email: string;
   interactionId: string;
   emailId: string;
 }) {
-  const { interactionId, emailId } = params;
+  const { auth0Email, interactionId, emailId } = params;
+
+  // Verify interaction ownership
+  const interaction = await prisma.interaction.findUnique({
+    where: { id: interactionId },
+    select: { ownerEmail: true }
+  });
+
+  if (!interaction) {
+    throw new Error(`Interaction ${interactionId} not found`);
+  }
+
+  if (interaction.ownerEmail !== auth0Email) {
+    throw new Error(`Unauthorized: interaction belongs to ${interaction.ownerEmail}`);
+  }
 
   await prisma.interactionEmail.delete({
     where: { id: emailId }
@@ -248,7 +430,21 @@ export async function removeEmailFromInteraction(params: {
 /**
  * List all emails attached to an interaction
  */
-export async function listInteractionEmails(interactionId: string) {
+export async function listInteractionEmails(auth0Email: string, interactionId: string) {
+  // Verify interaction ownership
+  const interaction = await prisma.interaction.findUnique({
+    where: { id: interactionId },
+    select: { ownerEmail: true }
+  });
+
+  if (!interaction) {
+    throw new Error(`Interaction ${interactionId} not found`);
+  }
+
+  if (interaction.ownerEmail !== auth0Email) {
+    throw new Error(`Unauthorized: interaction belongs to ${interaction.ownerEmail}`);
+  }
+
   return prisma.interactionEmail.findMany({
     where: { interactionId },
     orderBy: { receivedDate: 'desc' }
@@ -259,7 +455,7 @@ export async function listInteractionEmails(interactionId: string) {
  * Re-parse and re-aggregate all attached emails for an interaction
  * Useful when emails have been added/removed or to refresh the summarization
  */
-export async function reparseInteractionEmails(interactionId: string) {
+export async function reparseInteractionEmails(auth0Email: string, interactionId: string) {
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {
@@ -272,6 +468,11 @@ export async function reparseInteractionEmails(interactionId: string) {
 
   if (!interaction) {
     throw new Error(`Interaction ${interactionId} not found`);
+  }
+
+  // Verify ownership
+  if (interaction.jobOpportunity.ownerEmail !== auth0Email) {
+    throw new Error(`Unauthorized: interaction belongs to ${interaction.jobOpportunity.ownerEmail}`);
   }
 
   // Re-fetch and re-parse any emails that have null extractedData

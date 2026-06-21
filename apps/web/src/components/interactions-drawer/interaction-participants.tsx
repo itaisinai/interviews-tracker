@@ -117,6 +117,12 @@ export function InteractionParticipants({
             setPersonDetailModalOpen(false);
             setSelectedPerson(null);
           }}
+          onResearch={(name) => {
+            setPersonDetailModalOpen(false);
+            setSelectedPerson(null);
+            setSelectedPersonName(name);
+            setResearchModalOpen(true);
+          }}
         />
       )}
     </>

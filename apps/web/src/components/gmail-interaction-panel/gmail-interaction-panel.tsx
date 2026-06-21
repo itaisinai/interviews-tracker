@@ -109,10 +109,10 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
           changedInteractionFields={panel.changedInteractionFields}
           isAttachMode={panel.isAttachMode}
           hasParsedInteractionChanges={panel.hasParsedInteractionChanges}
-          changedFieldLabels={panel.changedFieldLabels}
           isAttaching={panel.isAttaching}
-          onAccept={handleAccept}
-          onEdit={() => setShowManualEdit(true)}
+          saveInteractionPending={false}
+          onAcceptChanges={handleAccept}
+          onEditManually={() => setShowManualEdit(true)}
           onCancel={panel.onSelectAnotherEmail}
         />
       </section>
@@ -143,12 +143,15 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
           changedInteractionFields={panel.changedInteractionFields}
           hasParsedInteractionChanges={panel.hasParsedInteractionChanges}
           changedFieldLabels={panel.changedFieldLabels}
+          saveMessage={null}
           saveError={panel.saveError}
+          saveInteractionPending={false}
           isAttaching={panel.isAttaching}
           onDraftChange={panel.onDraftChange}
           onAttachTargetIdChange={panel.onAttachTargetIdChange}
-          onSave={handleSave}
-          onCancel={panel.onSelectAnotherEmail}
+          onSelectAnotherEmail={panel.onSelectAnotherEmail}
+          onSaveInteraction={handleSave}
+          onAttachToExistingInteraction={handleSave}
         />
       </section>
     );

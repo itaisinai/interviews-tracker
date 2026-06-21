@@ -80,7 +80,7 @@ export function InteractionHeader({
             <MaterialIcon name="event" className="text-[14px]" />
             {typeLabel}
           </span>
-          {statusBadge && <Badge label={statusBadge.label} tone={statusBadge.tone} />}
+          {statusBadge && <Badge tone={statusBadge.tone}>{statusBadge.label}</Badge>}
         </div>
       </div>
     </div>

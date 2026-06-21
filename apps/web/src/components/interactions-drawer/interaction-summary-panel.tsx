@@ -78,10 +78,10 @@ export function InteractionSummaryPanel({
     <section className="relative">
       {/* Header */}
       <InteractionHeader
-        stage={interaction.stage}
+        stage={interaction.stage ?? null}
         typeLabel={typeLabel}
         date={interaction.date}
-        endDate={interaction.endDate}
+        endDate={interaction.endDate ?? null}
         durationLabel={durationLabel}
         type={interaction.type}
         statusBadge={headerBadge}
