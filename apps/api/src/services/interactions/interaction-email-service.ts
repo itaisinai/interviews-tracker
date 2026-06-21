@@ -2,6 +2,7 @@ import { prisma } from "../../lib/prisma.js";
 import { parseStructuredGmailEmail, deriveInteractionFromStructuredEmail } from "../gmail/gmail-message-parser.js";
 import { getAccessTokenForEmail } from "../gmail/gmail-auth.js";
 import { fetchJson } from "../gmail/gmail-http.js";
+import { getAiParserService } from "../ai/ai-parser-service.js";
 import type { GmailDerivedInteraction } from "../gmail/gmail-message-parser.js";
 import type { GmailMessageResponse, GmailAttachmentResponse } from "../gmail/gmail-message-utils.js";
 
@@ -93,7 +94,7 @@ export async function aggregateInteractionEmails(interactionId: string) {
   }
 
   const allParticipants = new Set<string>();
-  const allNotes: string[] = [];
+  const allNotes: Array<{ subject: string; from: string; date: string; body: string }> = [];
   let latestDate: string | null = null;
   let latestEndDate: string | null = null;
   let latestType: string | null = null;
@@ -123,9 +124,27 @@ export async function aggregateInteractionEmails(interactionId: string) {
       names.forEach(name => allParticipants.add(name));
     }
 
-    // Combine notes
+    // Collect raw notes with metadata
     if (extracted.notes) {
-      allNotes.push(`[From: ${email.subject}]\n${extracted.notes}`);
+      allNotes.push({
+        subject: email.subject || 'No subject',
+        from: email.from || 'Unknown',
+        date: email.receivedDate?.toISOString() || '',
+        body: extracted.notes
+      });
+    }
+  }
+
+  // Use AI to summarize notes from multiple emails
+  let summarizedNotes: string | null = null;
+  if (allNotes.length > 0) {
+    try {
+      const aiService = getAiParserService();
+      summarizedNotes = await aiService.summarizeMultipleEmails({ emails: allNotes });
+    } catch (error) {
+      console.error('Failed to summarize notes with AI:', error);
+      // Fallback to simple concatenation if AI fails
+      summarizedNotes = allNotes.map(n => n.body).join('\n\n');
     }
   }
 
@@ -141,7 +160,7 @@ export async function aggregateInteractionEmails(interactionId: string) {
       personName: allParticipants.size > 0 ? Array.from(allParticipants).join(', ') : interaction.personName,
       agenda: latestAgenda || interaction.agenda,
       meetingLink: latestMeetingLink || interaction.meetingLink,
-      notes: allNotes.length > 0 ? allNotes.join('\n\n---\n\n') : interaction.notes
+      notes: summarizedNotes || interaction.notes
     }
   });
 }
@@ -170,5 +189,24 @@ export async function listInteractionEmails(interactionId: string) {
   return prisma.interactionEmail.findMany({
     where: { interactionId },
     orderBy: { receivedDate: 'desc' }
+  });
+}
+
+/**
+ * Re-parse and re-aggregate all attached emails for an interaction
+ * Useful when emails have been added/removed or to refresh the summarization
+ */
+export async function reparseInteractionEmails(interactionId: string) {
+  // Simply call aggregation again - it will fetch all emails and re-summarize
+  await aggregateInteractionEmails(interactionId);
+
+  // Return the updated interaction
+  return prisma.interaction.findUnique({
+    where: { id: interactionId },
+    include: {
+      attachedEmails: {
+        orderBy: { receivedDate: 'desc' }
+      }
+    }
   });
 }

@@ -9,7 +9,8 @@ import {
 import {
   attachEmailToInteraction,
   removeEmailFromInteraction,
-  listInteractionEmails
+  listInteractionEmails,
+  reparseInteractionEmails
 } from "../services/interactions/interaction-email-service.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
@@ -62,4 +63,13 @@ interactionsRouter.delete("/:id/emails/:emailId", asyncHandler(async (request, r
   await removeEmailFromInteraction({ interactionId, emailId });
 
   response.status(204).end();
+}));
+
+// Re-parse and re-aggregate all attached emails
+interactionsRouter.post("/:id/reparse", asyncHandler(async (request, response) => {
+  const { id: interactionId } = request.params;
+
+  const updatedInteraction = await reparseInteractionEmails(interactionId);
+
+  response.json(updatedInteraction);
 }));

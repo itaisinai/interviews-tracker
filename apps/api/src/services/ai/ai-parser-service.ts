@@ -47,6 +47,14 @@ export interface AiParserService {
       followUp: string | null;
     };
   }): Promise<z.infer<typeof gmailInteractionDraftSchema>>;
+  summarizeMultipleEmails(input: {
+    emails: Array<{
+      subject: string;
+      from: string;
+      date: string;
+      body: string;
+    }>;
+  }): Promise<string>;
   parseInteractionText(input: {
     companyName: string;
     roleTitle?: string | null;
@@ -317,6 +325,62 @@ export class OpenAiParserService implements AiParserService {
       endDate: aiInteraction.endDate?.trim() ? aiInteraction.endDate : input.derived.endDate,
       notes: [input.derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null
     });
+  }
+
+  async summarizeMultipleEmails(input: {
+    emails: Array<{
+      subject: string;
+      from: string;
+      date: string;
+      body: string;
+    }>;
+  }): Promise<string> {
+    const { buildMultiEmailSummarizationPrompt } = await import("@interviews-tracker/ai");
+
+    // Combine all email content with context
+    const combinedText = input.emails
+      .map((email, index) =>
+        `Email ${index + 1} (${email.date}):\nFrom: ${email.from}\nSubject: ${email.subject}\n\n${email.body}`
+      )
+      .join("\n\n---\n\n");
+
+    const timer = createTimer("llm", "openai summarize_multi_emails", { model: this.model });
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: this.model,
+        input: [
+          {
+            role: "system",
+            content: [
+              {
+                type: "input_text",
+                text: buildMultiEmailSummarizationPrompt()
+              }
+            ]
+          },
+          {
+            role: "user",
+            content: [{ type: "input_text", text: combinedText }]
+          }
+        ]
+      })
+    });
+
+    timer.end();
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
+
+    const result = (await response.json()) as OpenAiResponse;
+    const outputText = result.output?.[0]?.content?.[0]?.text || result.output_text || "";
+
+    return outputText.trim();
   }
 
   async parseInteractionText(input: {

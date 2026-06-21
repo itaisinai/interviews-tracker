@@ -18,6 +18,7 @@ export function AttachedEmailsSection({
   const queryClient = useQueryClient();
   const [removingEmailId, setRemovingEmailId] = useState<string | null>(null);
   const [showAttachModal, setShowAttachModal] = useState(false);
+  const [isReparsing, setIsReparsing] = useState(false);
 
   const { data: emails = [], isLoading } = useQuery({
     queryKey: ["interaction-emails", interactionId],
@@ -49,6 +50,27 @@ export function AttachedEmailsSection({
     }
   };
 
+  const handleReparse = async () => {
+    if (emails.length === 0) return;
+
+    setIsReparsing(true);
+    try {
+      await api.reparseInteractionEmails(interactionId);
+
+      // Invalidate queries to refresh data
+      void queryClient.invalidateQueries({ queryKey: ["interactions"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+
+      // Trigger callback to open edit form
+      onEmailsAttached?.();
+    } catch (error) {
+      console.error("Failed to reparse emails:", error);
+      alert("Failed to reparse emails. Please try again.");
+    } finally {
+      setIsReparsing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="mb-8">
@@ -65,13 +87,26 @@ export function AttachedEmailsSection({
       <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-neutral-900">Attached Emails</h3>
-          <button
-            onClick={() => setShowAttachModal(true)}
-            className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-          >
-            <MaterialIcon name="add" className="text-[14px]" />
-            Attach
-          </button>
+          <div className="flex items-center gap-2">
+            {emails.length > 0 && (
+              <button
+                onClick={handleReparse}
+                disabled={isReparsing}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 disabled:opacity-50"
+                title="Re-parse and summarize all attached emails"
+              >
+                <MaterialIcon name={isReparsing ? "progress_activity" : "refresh"} className={`text-[14px] ${isReparsing ? 'animate-spin' : ''}`} />
+                {isReparsing ? "Re-parsing..." : "Re-parse"}
+              </button>
+            )}
+            <button
+              onClick={() => setShowAttachModal(true)}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+            >
+              <MaterialIcon name="add" className="text-[14px]" />
+              Attach
+            </button>
+          </div>
         </div>
 
         {emails.length === 0 ? (

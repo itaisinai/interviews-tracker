@@ -102,5 +102,6 @@ export const api = {
   getOpportunityContacts: (opportunityId: string) => request<Array<{ id: string; name: string; email: string | null; linkedinUrl: string | null; title: string | null; company: string | null; avatarUrl: string | null; research: unknown }>>(`/opportunities/${opportunityId}/contacts`),
   listInteractionEmails: (interactionId: string) => request<Array<{ id: string; interactionId: string; gmailMessageId: string; subject: string | null; from: string | null; receivedDate: string | null; extractedData: unknown; attachedAt: string }>>(`/interactions/${interactionId}/emails`),
   attachEmailToInteraction: (interactionId: string, gmailMessageId: string) => request<{ id: string; interactionId: string; gmailMessageId: string; subject: string | null; from: string | null; receivedDate: string | null; extractedData: unknown; attachedAt: string }>(`/interactions/${interactionId}/emails`, { method: "POST", body: JSON.stringify({ gmailMessageId }) }),
-  removeEmailFromInteraction: (interactionId: string, emailId: string) => request<void>(`/interactions/${interactionId}/emails/${emailId}`, { method: "DELETE" })
+  removeEmailFromInteraction: (interactionId: string, emailId: string) => request<void>(`/interactions/${interactionId}/emails/${emailId}`, { method: "DELETE" }),
+  reparseInteractionEmails: (interactionId: string) => request<unknown>(`/interactions/${interactionId}/reparse`, { method: "POST" })
 };
