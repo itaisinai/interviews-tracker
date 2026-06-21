@@ -40,8 +40,8 @@ export function AttachedEmailsCard({
         queryClient.refetchQueries({ queryKey: ["opportunity", opportunityId] })
       ]);
 
-      // Now open edit form with fresh data
-      onEmailsAttached?.();
+      // Don't open edit form - drawer state is stale
+      // User can click Edit to see the updated notes
     } catch (error) {
       console.error("Failed to reparse emails:", error);
       alert("Failed to reparse emails. Please try again.");

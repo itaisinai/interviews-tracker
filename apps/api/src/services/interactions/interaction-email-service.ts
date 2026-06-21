@@ -465,6 +465,15 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
         );
 
         console.log(`[REPARSE] Fetched email subject: ${rawMessage.payload?.headers?.find(h => h.name === 'Subject')?.value}`);
+        console.log('[REPARSE] Gmail payload structure:', {
+          mimeType: rawMessage.payload?.mimeType,
+          hasBody: !!rawMessage.payload?.body,
+          bodySize: rawMessage.payload?.body?.size,
+          bodyHasData: !!rawMessage.payload?.body?.data,
+          hasParts: !!rawMessage.payload?.parts,
+          partsCount: rawMessage.payload?.parts?.length,
+          partMimeTypes: rawMessage.payload?.parts?.map(p => p.mimeType)
+        });
 
         const structuredEmail = await parseStructuredGmailEmail({
           message: rawMessage,
@@ -530,7 +539,7 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
   await aggregateInteractionEmails(interactionId);
 
   // Return the updated interaction
-  return prisma.interaction.findUnique({
+  const updated = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {
       attachedEmails: {
@@ -538,4 +547,8 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
       }
     }
   });
+
+  console.log('[REPARSE] Returning interaction with notes:', updated?.notes?.slice(0, 200));
+
+  return updated;
 }
