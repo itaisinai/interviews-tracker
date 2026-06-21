@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { appendSlugCollisionSuffix, compareJobStatuses, createOpportunitySlug, deriveOpportunityStatusFromInteractions } from "@interviews-tracker/core";
 import { prisma } from "../lib/prisma.js";
-import { noteInputSchema, opportunityInputSchema, taskInputSchema } from "../lib/schemas.js";
+import { opportunityInputSchema } from "../lib/schemas.js";
 import type { z } from "zod";
 import {
   normalizeOverdueScheduledInteractionsForRead,
@@ -215,15 +215,4 @@ export async function listOpportunityInteractionsRecord(slugOrId: string, ownerE
   });
 
   return promoteOpportunityInteractionsForRead({ interactions }).interactions;
-}
-
-export type OpportunityNoteInput = z.infer<typeof noteInputSchema>;
-export type OpportunityTaskInput = z.infer<typeof taskInputSchema>;
-
-export async function createOpportunityNoteRecord(opportunityId: string, input: OpportunityNoteInput, ownerEmail: string) {
-  return prisma.note.create({ data: { ...input, jobOpportunityId: opportunityId, ownerEmail } });
-}
-
-export async function createOpportunityTaskRecord(opportunityId: string, input: OpportunityTaskInput, ownerEmail: string) {
-  return prisma.task.create({ data: { ...input, jobOpportunityId: opportunityId, ownerEmail, dueDate: input.dueDate ? new Date(input.dueDate) : null } });
 }

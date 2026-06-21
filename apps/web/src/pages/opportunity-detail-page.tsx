@@ -1,23 +1,30 @@
+import type { Interaction } from "../lib/types";
+import {
+  InlineLoadingState,
+  LoadingButton,
+  MaterialIcon,
+  PageErrorState,
+  PageLoadingState,
+} from "@interviews-tracker/design-system";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
+import {
+  getInteractionBadgeMeta,
+  promoteOverdueInteractionsForRead,
+} from "../lib/interaction-status";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { AddInteractionModal } from "../components/add-interaction-modal";
+import { Badge } from "../components/badge";
+import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
+import { ContactsList } from "../components/contacts/contacts-list";
 import { InteractionsDrawer } from "../components/interactions-drawer";
+import { InterviewPreparation } from "../components/interview-preparation";
 import { PageIntro } from "../components/app-shell";
 import { Timeline } from "../components/timeline";
-import { ContactsList } from "../components/contacts/contacts-list";
-import { InterviewPreparation } from "../components/interview-preparation";
-import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
-import { OpportunitySidePanel } from "../components/opportunity-detail/opportunity-side-panel";
-import type { CompensationDraft, NoteDraft, TaskDraft } from "../components/opportunity-detail/opportunity-detail-types";
-import { AddInteractionModal } from "../components/add-interaction-modal";
 import { api } from "../lib/api";
-import { getInteractionBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
-import { InlineLoadingState, LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 import { labelForPipelineType } from "../lib/enum-labels";
-import { Badge } from "../components/badge";
-import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
-import type { Compensation, Interaction, Note, Task } from "../lib/types";
 
 export function OpportunityDetailPage() {
   const { slugOrId = "" } = useParams();
@@ -29,26 +36,6 @@ export function OpportunityDetailPage() {
     enabled: Boolean(slugOrId),
   });
   const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
-
-  const [noteDraft, setNoteDraft] = useState<NoteDraft>({
-    title: "",
-    category: "general",
-    content: "",
-  });
-  const [taskDraft, setTaskDraft] = useState<TaskDraft>({
-    title: "",
-    status: "pending",
-    priority: "medium",
-    dueDate: "",
-    notes: "",
-  });
-  const [compensationDraft, setCompensationDraft] = useState<CompensationDraft>({
-    baseSalary: "",
-    equity: "",
-    bonus: "",
-    offerStatus: "pending",
-    negotiationNotes: "",
-  });
 
   const opportunityRouteId = data?.slug ?? data?.id ?? slugOrId;
   const opportunityDbId = data?.id ?? slugOrId;
@@ -65,51 +52,6 @@ export function OpportunityDetailPage() {
   const deleteInteraction = useMutation({
     mutationFn: (interactionId: string) => api.deleteInteraction(interactionId),
     onSuccess: refresh,
-  });
-
-  const addNote = useMutation({
-    mutationFn: () => api.createOpportunityNote(opportunityDbId, noteDraft),
-    onSuccess: () => {
-      setNoteDraft({ title: "", category: "general", content: "" });
-      refresh();
-    },
-  });
-  const addTask = useMutation({
-    mutationFn: () => api.createOpportunityTask(opportunityDbId, taskDraft),
-    onSuccess: () => {
-      setTaskDraft({ title: "", status: "pending", priority: "medium", dueDate: "", notes: "" });
-      refresh();
-    },
-  });
-  const saveCompensation = useMutation({
-    mutationFn: () =>
-      api.upsertCompensation({
-        ...compensationDraft,
-        jobOpportunityId: opportunityDbId,
-      }),
-    onSuccess: () => {
-      setCompensationDraft({ baseSalary: "", equity: "", bonus: "", offerStatus: "pending", negotiationNotes: "" });
-      refresh();
-      void queryClient.invalidateQueries({ queryKey: ["compensation"] });
-    },
-  });
-  const deleteNote = useMutation({
-    mutationFn: (note: Note) => api.deleteNote(note.id),
-    onSuccess: refresh,
-  });
-  const deleteTask = useMutation({
-    mutationFn: (task: Task) => api.deleteTask(task.id),
-    onSuccess: () => {
-      refresh();
-      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
-  const deleteCompensation = useMutation({
-    mutationFn: (compensation: Compensation) => api.deleteCompensation(compensation.id),
-    onSuccess: () => {
-      refresh();
-      void queryClient.invalidateQueries({ queryKey: ["compensation"] });
-    },
   });
 
   const displayedInteractions = useMemo(
@@ -155,7 +97,7 @@ export function OpportunityDetailPage() {
     return (
       <PageLoadingState
         title="Opportunity"
-        description="Loading opportunity details, notes, and interaction history."
+        description="Loading opportunity details, interaction history."
       />
     );
   }
@@ -206,7 +148,7 @@ export function OpportunityDetailPage() {
               onClick={() => {
                 if (
                   window.confirm(
-                    `Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions, notes, tasks, and compensation.`,
+                    `Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions.`,
                   )
                 )
                   deleteOpportunity.mutate();
@@ -232,40 +174,16 @@ export function OpportunityDetailPage() {
       </div>
 
       <div id="contacts-section" className="mt-8">
-        <ContactsList opportunityId={opportunityDbId} companyName={data.companyName} />
+        <ContactsList
+          opportunityId={opportunityDbId}
+          companyName={data.companyName}
+        />
       </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <CompanyDetailsModern opportunity={data} />
         </div>
-        <OpportunitySidePanel
-          opportunity={data}
-          note={noteDraft}
-          task={taskDraft}
-          compensation={compensationDraft}
-          onNoteChange={setNoteDraft}
-          onTaskChange={setTaskDraft}
-          onCompensationChange={setCompensationDraft}
-          onAddNote={() => addNote.mutate()}
-          onAddTask={() => addTask.mutate()}
-          onSaveCompensation={() => saveCompensation.mutate()}
-          onDeleteNote={(note) => {
-            if (window.confirm("Delete this note?")) deleteNote.mutate(note);
-          }}
-          onDeleteTask={(task) => {
-            if (window.confirm("Delete this task?")) deleteTask.mutate(task);
-          }}
-          onDeleteCompensation={(compensation) => {
-            if (window.confirm("Delete this compensation record?")) deleteCompensation.mutate(compensation);
-          }}
-          addingNote={addNote.isPending}
-          addingTask={addTask.isPending}
-          savingCompensation={saveCompensation.isPending}
-          deletingNoteId={deleteNote.variables?.id}
-          deletingTaskId={deleteTask.variables?.id}
-          deletingCompensation={deleteCompensation.isPending}
-        />
       </div>
 
       <div className="mt-8">
@@ -286,7 +204,9 @@ export function OpportunityDetailPage() {
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
-        selectedOpportunity={data ? { ...data, interactions: displayedInteractions } : null}
+        selectedOpportunity={
+          data ? { ...data, interactions: displayedInteractions } : null
+        }
         onClose={() => setSelectedInteractionId(null)}
         onSelectInteraction={setSelectedInteractionId}
       />
@@ -331,7 +251,9 @@ function FocusedInteractionCard({
               {interaction.stage || interaction.type}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-body-md text-on-surface-variant">
-              <span>{formatDateTimeRange(interaction.date, interaction.endDate)}</span>
+              <span>
+                {formatDateTimeRange(interaction.date, interaction.endDate)}
+              </span>
               {duration ? <span>· {duration}</span> : null}
               <Badge value={interaction.status} tone={badge.tone}>
                 {badge.label}
