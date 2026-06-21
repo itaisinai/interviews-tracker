@@ -7,7 +7,7 @@ import { AttachEmailModal } from "./attach-email-modal";
 type AttachedEmailsCardProps = {
   interactionId: string;
   opportunityId: string;
-  onEmailsAttached?: () => void;
+  onEmailsAttached?: (aiSuggestion?: any) => void;
 };
 
 export function AttachedEmailsCard({
@@ -38,7 +38,7 @@ export function AttachedEmailsCard({
         aiNotes: result.aiSuggestion?.notes?.slice(0, 100)
       });
 
-      // Store AI suggestion in the opportunity cache
+      // Store result in cache for background sync
       queryClient.setQueryData(
         ["opportunity", opportunityId],
         (old: any) => {
@@ -46,16 +46,14 @@ export function AttachedEmailsCard({
           return {
             ...old,
             interactions: old.interactions.map((int: any) =>
-              int.id === interactionId
-                ? { ...int, aiSuggestion: result.aiSuggestion }
-                : int
+              int.id === interactionId ? result : int
             )
           };
         }
       );
 
-      // Open edit form - it will use aiSuggestion to pre-fill
-      onEmailsAttached?.();
+      // Pass AI suggestion directly to drawer so it can use it immediately
+      onEmailsAttached?.(result.aiSuggestion);
     } catch (error) {
       console.error("Failed to reparse emails:", error);
       alert("Failed to reparse emails. Please try again.");

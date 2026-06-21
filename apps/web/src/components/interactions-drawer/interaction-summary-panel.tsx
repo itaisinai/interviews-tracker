@@ -20,7 +20,7 @@ type InteractionSummaryPanelProps = {
   } | null;
   isEditing: boolean;
   draft: InteractionDraft | null;
-  onToggleEditing: () => void;
+  onToggleEditing: (aiSuggestion?: any) => void;
   onCancelEditing: () => void;
   onDraftChange: Dispatch<SetStateAction<InteractionDraft | null>>;
   onSave: () => void;
