@@ -4,7 +4,9 @@ import {
   createInteractionHandler,
   deleteInteractionHandler,
   listInteractionsHandler,
-  updateInteractionHandler
+  updateInteractionHandler,
+  addFeedbackHandler,
+  listFeedbackHandler
 } from "../controllers/interactions-controller.js";
 import {
   attachEmailToInteraction,
@@ -87,4 +89,14 @@ interactionsRouter.post("/:id/reparse", asyncHandler(async (request, response) =
   const updatedInteraction = await reparseInteractionEmails(auth0Email, interactionId);
 
   response.json(updatedInteraction);
+}));
+
+// Get all feedback for an interaction
+interactionsRouter.get("/:id/feedback", asyncHandler(async (request, response) => {
+  response.json(await listFeedbackHandler(request as AuthenticatedRequest));
+}));
+
+// Add feedback to an interaction (smart-merge with AI)
+interactionsRouter.post("/:id/feedback", asyncHandler(async (request, response) => {
+  response.status(201).json(await addFeedbackHandler(request as AuthenticatedRequest));
 }));

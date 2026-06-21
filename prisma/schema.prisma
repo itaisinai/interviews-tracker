@@ -138,7 +138,8 @@ model Interaction {
   jobOpportunity   JobOpportunity      @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
   notesList        Note[]
   tasks            Task[]
-  attachedEmails   InteractionEmail[]  // Multiple emails can be attached to one interaction
+  attachedEmails   InteractionEmail[]    // Multiple emails can be attached to one interaction
+  feedback         InteractionFeedback[] // Multiple feedback notes can be attached to one interaction
 
   @@index([ownerEmail])
   @@index([ownerEmail, date])
@@ -161,6 +162,18 @@ model InteractionEmail {
   @@unique([interactionId, gmailMessageId]) // Can't attach the same email twice
   @@index([interactionId])
   @@index([gmailMessageId])
+}
+
+model InteractionFeedback {
+  id            String      @id @default(cuid())
+  interactionId String
+  content       String      // Raw feedback text (WhatsApp, text, etc)
+  source        String?     // e.g., "WhatsApp", "Manual"
+  extractedData Json?       // Stores AI extraction metadata
+  attachedAt    DateTime    @default(now())
+  interaction   Interaction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  @@index([interactionId])
 }
 
 model Note {

@@ -1,4 +1,3 @@
-import { z } from "zod";
 import {
   aiParseResponseSchema,
   companyEnrichmentSchema,
@@ -6,10 +5,12 @@ import {
   gmailInteractionDraftSchema,
   interactionDraftSchema
 } from "@interviews-tracker/ai";
-import { interactionTypeSchema } from "@interviews-tracker/core";
-import { createTimer } from "../../lib/logger.js";
 import { buildEmailInteractionParserSystemPrompt, buildInteractionTextParserSystemPrompt, buildJobParserSystemPrompt } from "@interviews-tracker/ai";
+
+import { createTimer } from "../../lib/logger.js";
+import { interactionTypeSchema } from "@interviews-tracker/core";
 import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
+import { z } from "zod";
 
 export type ParsedJobDescription = typeof aiParseResponseSchema._type;
 export type CompanyEnrichment = typeof companyEnrichmentSchema._type;
@@ -70,6 +71,18 @@ export interface AiParserService {
     text: string;
     nowIso: string;
   }): Promise<z.infer<typeof interactionDraftSchema>>;
+  smartMergeFeedback(input: {
+    companyName: string;
+    roleTitle: string;
+    existingNotes: string | null;
+    feedbackItems: Array<{
+      content: string;
+      source: string;
+      date: Date;
+    }>;
+  }): Promise<{
+    mergedNotes: string;
+  }>;
 }
 
 type OpenAiTextOutput = {
@@ -488,6 +501,77 @@ export class OpenAiParserService implements AiParserService {
 
     timer.end({ name: input.name });
     return outputText;
+  }
+
+  async smartMergeFeedback(input: {
+    companyName: string;
+    roleTitle: string;
+    existingNotes: string | null;
+    feedbackItems: Array<{
+      content: string;
+      source: string;
+      date: Date;
+    }>;
+  }): Promise<{ mergedNotes: string }> {
+    console.log('[AI SMART MERGE] Starting smart merge', {
+      companyName: input.companyName,
+      roleTitle: input.roleTitle,
+      existingNotesLength: input.existingNotes?.length ?? 0,
+      feedbackCount: input.feedbackItems.length
+    });
+
+    const systemPrompt = `You are merging feedback into interview notes for ${input.companyName} - ${input.roleTitle}.
+
+Your task:
+1. Read the existing notes (if any)
+2. Read all feedback items (from WhatsApp, manual input, etc.)
+3. Smart-merge them into ONE cohesive, concise note
+
+Rules:
+- Keep the most important interview preparation info (what to expect, who you're meeting, location, format)
+- Add new insights from feedback WITHOUT duplication
+- If feedback contradicts existing notes, prefer the newer feedback
+- Keep it 2-5 sentences, concise and actionable
+- Focus on what helps the candidate prepare
+
+Return ONLY the merged notes text, no JSON, no metadata.`;
+
+    const userPrompt = `
+EXISTING NOTES:
+${input.existingNotes || '(none)'}
+
+NEW FEEDBACK:
+${input.feedbackItems.map((f, i) => `
+[${i + 1}] Source: ${f.source}, Date: ${f.date.toISOString()}
+${f.content}
+`).join('\n')}
+
+Merge them into one concise note:`;
+
+    console.log('[AI SMART MERGE] System prompt length:', systemPrompt.length);
+    console.log('[AI SMART MERGE] User prompt length:', userPrompt.length);
+
+    const mergedNotes = await this.createStructuredOutput({
+      name: "smart_merge_feedback",
+      schema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["mergedNotes"],
+        properties: {
+          mergedNotes: { type: "string" }
+        }
+      },
+      systemPrompt,
+      text: userPrompt
+    });
+
+    const parsed = JSON.parse(mergedNotes) as { mergedNotes?: string };
+
+    console.log('[AI SMART MERGE] Merged notes length:', parsed.mergedNotes?.length ?? 0);
+
+    return {
+      mergedNotes: parsed.mergedNotes ?? ""
+    };
   }
 }
 
