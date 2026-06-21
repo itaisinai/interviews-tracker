@@ -35,11 +35,13 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
   const [researchResult, setResearchResult] = useState<PersonResearchResult | null>(null);
   const [saveForLater, setSaveForLater] = useState(true);
   const [linkedinUrlOverride, setLinkedinUrlOverride] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const resetFlow = () => {
     setStep("confirm");
     setResearchResult(null);
     setLinkedinUrlOverride("");
+    setErrorMessage(null);
     onClose();
   };
 
@@ -56,14 +58,24 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
         linkedinUrl: linkedinUrl || person.linkedinUrl || undefined
       });
 
+      if (!result) {
+        throw new Error(
+          opportunityCompanyName || person.company
+            ? `No matching LinkedIn profile was found for ${person.name} at ${opportunityCompanyName || person.company}. Try adding the person's LinkedIn URL or checking the company name.`
+            : `No LinkedIn profile was found for ${person.name}. Try adding the person's LinkedIn URL.`
+        );
+      }
+
       return result;
     },
     onSuccess: (result) => {
+      setErrorMessage(null);
       setResearchResult(result);
       setStep("review");
     },
     onError: (error) => {
       console.error("Research failed:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Couldn't research this person. Please try again or add a LinkedIn URL.");
       setStep("error");
     }
   });
@@ -119,6 +131,7 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
   };
 
   const handleRetry = () => {
+    setErrorMessage(null);
     setStep("confirm");
   };
 
@@ -157,6 +170,7 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
         isOpen={isOpen && step === "error"}
         onClose={resetFlow}
         onRetry={handleRetry}
+        message={errorMessage || undefined}
       />
     </>
   );
