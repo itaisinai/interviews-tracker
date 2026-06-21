@@ -180,27 +180,26 @@ export function OpportunityDetailPage() {
         />
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-12">
-        <div className="lg:col-span-7">
+      <div className="mt-8 grid gap-8 lg:grid-cols-2">
+        <div>
           <CompanyDetailsModern opportunity={data} />
         </div>
-      </div>
-
-      <div className="mt-8">
-        <Timeline
-          interactions={displayedInteractions}
-          selectedInteractionId={selectedInteractionId}
-          onSelectInteraction={setSelectedInteractionId}
-          onDeleteInteraction={(interactionId) => {
-            if (window.confirm("Delete this interaction?")) {
-              deleteInteraction.mutate(interactionId);
+        <div>
+          <Timeline
+            interactions={displayedInteractions}
+            selectedInteractionId={selectedInteractionId}
+            onSelectInteraction={setSelectedInteractionId}
+            onDeleteInteraction={(interactionId) => {
+              if (window.confirm("Delete this interaction?")) {
+                deleteInteraction.mutate(interactionId);
+              }
+            }}
+            isDeletingInteraction={(interactionId) =>
+              deleteInteraction.isPending &&
+              deleteInteraction.variables === interactionId
             }
-          }}
-          isDeletingInteraction={(interactionId) =>
-            deleteInteraction.isPending &&
-            deleteInteraction.variables === interactionId
-          }
-        />
+          />
+        </div>
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
