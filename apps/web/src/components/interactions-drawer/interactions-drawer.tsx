@@ -16,7 +16,6 @@ import { InteractionDrawerHeader } from "./interaction-drawer-header";
 import { InteractionSummaryPanel } from "./interaction-summary-panel";
 import { InteractionTimelinePanel } from "./interaction-timeline-panel";
 import { useNavigate } from "react-router-dom";
-import { GmailInteractionPanel } from "../gmail-interaction-panel/gmail-interaction-panel";
 
 type InteractionsDrawerProps = {
   selectedInteraction: Interaction | null;
@@ -57,7 +56,6 @@ export function InteractionsDrawer({
   const [mountedInteraction, setMountedInteraction] =
     useState<Interaction | null>(selectedInteraction);
   const [isVisible, setIsVisible] = useState(false);
-  const [showGmailAttach, setShowGmailAttach] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
   const openFrameRef = useRef<number | null>(null);
 
@@ -105,7 +103,6 @@ export function InteractionsDrawer({
 
   useEffect(() => {
     setIsEditing(false);
-    setShowGmailAttach(false);
     setDraft(mountedInteraction ? toDraft(mountedInteraction) : null);
   }, [mountedInteraction?.id]);
 
@@ -203,6 +200,8 @@ export function InteractionsDrawer({
               isEditing={isEditing}
               draft={draft}
               onToggleEditing={() => {
+                // Refresh draft with latest data before toggling
+                setDraft(toDraft(displayInteraction));
                 setIsEditing((current) => !current);
               }}
               onCancelEditing={() => {
@@ -221,22 +220,8 @@ export function InteractionsDrawer({
                 deleteInteraction.isPending &&
                 deleteInteraction.variables === displayInteraction.id
               }
-              onAttachEmail={() => setShowGmailAttach((current) => !current)}
               opportunityCompanyName={opportunity?.companyName}
             />
-
-            {showGmailAttach && opportunity ? (
-              <GmailInteractionPanel
-                opportunityId={opportunity.id}
-                companyName={opportunity.companyName}
-                roleTitle={opportunity.roleTitle}
-                attachToInteractionId={displayInteraction.id}
-                onSaved={() => {
-                  refreshQueries();
-                  setShowGmailAttach(false);
-                }}
-              />
-            ) : null}
 
             <InteractionTimelinePanel
               companyName={opportunity?.companyName ?? "Timeline"}
