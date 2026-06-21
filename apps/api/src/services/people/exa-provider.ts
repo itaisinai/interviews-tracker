@@ -38,6 +38,23 @@ function positionIsCurrent(dates?: string): boolean {
   return /(?:^|[-–—\s])present\b/i.test(dates || "");
 }
 
+function parseExperienceDateLine(line: string): { dates: string; duration?: string } | null {
+  const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{4})\s*[-–—]\s*([A-Z][a-z]{2}\s+\d{4}|Present)(?:\s*(?:[·•]|\()?\s*([^)·•]+?)\s*\)?)?$/);
+
+  if (!dateMatch) {
+    return null;
+  }
+
+  return {
+    dates: `${dateMatch[1]} - ${dateMatch[2]}`,
+    duration: dateMatch[3]?.trim()
+  };
+}
+
+function parseCompanyLine(line: string): string {
+  return stripMarkdownLink(line).split(/[·•]/)[0]?.trim() || "";
+}
+
 function currentCompanyFromExperience(experience: NonNullable<PersonResearchResult["research"]["experience"]>): string | undefined {
   const currentExperience = experience.find((exp) => exp.positions.some((position) => positionIsCurrent(position.dates)));
   return currentExperience?.company || experience[0]?.company;
@@ -152,20 +169,20 @@ export class ExaProvider {
       const nextLine = lines[i + 1];
 
       // Detect sections
-      if (line.match(/^#+\s*Experience/i)) {
+      if (line.match(/^(?:#+\s*)?Experience$/i)) {
         inExperienceSection = true;
         inEducationSection = false;
         continue;
       }
 
-      if (line.match(/^#+\s*Education/i)) {
+      if (line.match(/^(?:#+\s*)?Education$/i)) {
         inExperienceSection = false;
         inEducationSection = true;
         continue;
       }
 
       // Exit both sections if we hit any other major section
-      if (line.match(/^#+\s*(About|Skills|Licenses|Certifications|Volunteer|Projects|Publications|Honors|Languages)/i)) {
+      if (line.match(/^(?:#+\s*)?(About|Skills|Licenses|Certifications|Volunteer|Projects|Publications|Honors|Languages)$/i)) {
         inExperienceSection = false;
         inEducationSection = false;
         continue;
@@ -239,18 +256,43 @@ export class ExaProvider {
               };
             }
           }
-        } else if (currentExperience && !line.startsWith("#")) {
+        } else if (!line.startsWith("#")) {
           // Skip Department/Level metadata lines
           if (line.startsWith("Department:")) {
             continue;
           }
 
+          if (!currentExperience || currentExperience.dates) {
+            const plainTitle = line;
+            const plainCompany = parseCompanyLine(nextLine || "");
+            const plainDate = parseExperienceDateLine(lines[i + 2] || "");
+
+            if (plainCompany && plainDate) {
+              if (currentExperience?.company && currentExperience?.title) {
+                rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
+              }
+
+              currentExperience = {
+                title: plainTitle,
+                company: plainCompany,
+                dates: plainDate.dates,
+                duration: plainDate.duration
+              };
+              i += 2;
+              continue;
+            }
+          }
+
+          if (!currentExperience) {
+            continue;
+          }
+
           // Look for dates with format: "Month Year - Month Year (duration)" or just location info
           if (!currentExperience.dates) {
-            const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{4})\s*-\s*([A-Z][a-z]{2}\s+\d{4}|Present)\s*\(([^)]+)\)/);
-            if (dateMatch) {
-              currentExperience.dates = `${dateMatch[1]} - ${dateMatch[2]}`;
-              currentExperience.duration = dateMatch[3].trim();
+            const dateLine = parseExperienceDateLine(line);
+            if (dateLine) {
+              currentExperience.dates = dateLine.dates;
+              currentExperience.duration = dateLine.duration;
             }
           }
           // Description text (after we have dates, skip metadata and short lines)
