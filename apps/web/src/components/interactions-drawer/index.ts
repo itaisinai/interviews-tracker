@@ -2,3 +2,8 @@ export * from "./interactions-drawer";
 export * from "./interaction-text-parser-panel";
 export * from "./interaction-draft-fields";
 export * from "./gmail-email-states-section";
+export * from "./interaction-summary-compact";
+export * from "./participants-card";
+export * from "./attached-emails-card";
+export * from "./quick-info-card";
+export * from "./notes-card";

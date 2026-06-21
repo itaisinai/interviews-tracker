@@ -13,7 +13,7 @@ import {
   promoteOverdueInteractionsForRead,
 } from "../../lib/interaction-status";
 import { InteractionDrawerHeader } from "./interaction-drawer-header";
-import { InteractionSummaryPanel } from "./interaction-summary-panel";
+import { InteractionSummaryRefactored } from "./interaction-summary-refactored";
 import { InteractionTimelinePanel } from "./interaction-timeline-panel";
 import { useNavigate } from "react-router-dom";
 
@@ -194,7 +194,7 @@ export function InteractionsDrawer({
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
           <div className="space-y-4">
-            <InteractionSummaryPanel
+            <InteractionSummaryRefactored
               interaction={displayInteraction}
               headerBadge={headerBadge}
               isEditing={isEditing}
@@ -212,9 +212,7 @@ export function InteractionsDrawer({
               onSave={() => void updateInteraction.mutate()}
               isSaving={updateInteraction.isPending}
               onDelete={() => {
-                if (window.confirm("Delete this interaction?")) {
-                  deleteInteraction.mutate(displayInteraction.id);
-                }
+                deleteInteraction.mutate(displayInteraction.id);
               }}
               isDeleting={
                 deleteInteraction.isPending &&
