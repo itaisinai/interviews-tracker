@@ -11,6 +11,7 @@ import { formatDurationBetween } from "../../lib/format";
 import { InteractionHeader } from "./interaction-header";
 import { InteractionParticipants } from "./interaction-participants";
 import { AttachedEmailsSection } from "./attached-emails-section";
+import { GmailEmailStatesSection } from "./gmail-email-states-section";
 
 type InteractionSummaryPanelProps = {
   interaction: Interaction;
@@ -121,6 +122,9 @@ export function InteractionSummaryPanel({
         opportunityId={interaction.jobOpportunityId}
         onEmailsAttached={onToggleEditing}
       />
+
+      {/* Gmail Email States (Picked/Hidden) */}
+      <GmailEmailStatesSection opportunityId={interaction.jobOpportunityId} />
 
       {/* Meeting Link */}
       {interaction.meetingLink && (

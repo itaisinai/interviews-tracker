@@ -60,6 +60,7 @@ export function AttachedEmailsSection({
       // Invalidate queries to refresh data
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
 
       // Trigger callback to open edit form
       onEmailsAttached?.();
