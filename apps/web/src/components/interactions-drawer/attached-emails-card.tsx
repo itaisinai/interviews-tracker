@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { AttachEmailModal } from "./attach-email-modal";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { api } from "../../lib/api";
-import { AttachEmailModal } from "./attach-email-modal";
+import { useState } from "react";
 
 type AttachedEmailsCardProps = {
   interactionId: string;
@@ -33,27 +34,19 @@ export function AttachedEmailsCard({
       // API returns interaction with aiSuggestion (NOT saved to DB yet)
       const result = await api.reparseInteractionEmails(interactionId);
 
-      console.log('[REPARSE] AI suggestion from API:', {
-        hasAiSuggestion: !!result.aiSuggestion,
-        aiNotes: result.aiSuggestion?.notes?.slice(0, 100)
+      // Store result in cache for background sync
+      queryClient.setQueryData(["opportunity", opportunityId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          interactions: old.interactions.map((int: any) =>
+            int.id === interactionId ? result : int,
+          ),
+        };
       });
 
-      // Store result in cache for background sync
-      queryClient.setQueryData(
-        ["opportunity", opportunityId],
-        (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            interactions: old.interactions.map((int: any) =>
-              int.id === interactionId ? result : int
-            )
-          };
-        }
-      );
-
       // Pass AI suggestion directly to drawer so it can use it immediately
-      onEmailsAttached?.(result.aiSuggestion);
+      onEmailsAttached?.((result as any).aiSuggestion);
     } catch (error) {
       console.error("Failed to reparse emails:", error);
       alert("Failed to reparse emails. Please try again.");
@@ -77,8 +70,13 @@ export function AttachedEmailsCard({
       <div className="bg-white rounded-lg border border-neutral-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <MaterialIcon name="mail" className="text-[18px] text-neutral-600" />
-            <h3 className="text-sm font-semibold text-neutral-900">Attached Emails</h3>
+            <MaterialIcon
+              name="mail"
+              className="text-[18px] text-neutral-600"
+            />
+            <h3 className="text-sm font-semibold text-neutral-900">
+              Attached Emails
+            </h3>
           </div>
           <div className="flex items-center gap-2">
             {emails.length > 0 && (
@@ -88,7 +86,10 @@ export function AttachedEmailsCard({
                 className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 disabled:opacity-50"
                 title="Re-parse all emails"
               >
-                <MaterialIcon name={isReparsing ? "progress_activity" : "refresh"} className={`text-[14px] ${isReparsing ? 'animate-spin' : ''}`} />
+                <MaterialIcon
+                  name={isReparsing ? "progress_activity" : "refresh"}
+                  className={`text-[14px] ${isReparsing ? "animate-spin" : ""}`}
+                />
                 Re-parse
               </button>
             )}
@@ -119,7 +120,10 @@ export function AttachedEmailsCard({
                 key={email.id}
                 className="flex items-start gap-2 py-2 px-2 rounded hover:bg-neutral-50 transition-colors"
               >
-                <MaterialIcon name="mail" className="text-[16px] text-neutral-400 mt-0.5 flex-shrink-0" />
+                <MaterialIcon
+                  name="mail"
+                  className="text-[16px] text-neutral-400 mt-0.5 flex-shrink-0"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-neutral-900 font-medium truncate">
                     {email.subject || "No subject"}
@@ -129,10 +133,13 @@ export function AttachedEmailsCard({
                     {email.receivedDate && (
                       <>
                         {" • "}
-                        {new Date(email.receivedDate).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {new Date(email.receivedDate).toLocaleDateString(
+                          undefined,
+                          {
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
                       </>
                     )}
                   </div>
