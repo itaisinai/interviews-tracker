@@ -537,7 +537,7 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
 
   // Return interaction for frontend to decide whether to save
   // Don't auto-aggregate here - let frontend show AI results for review
-  const interaction = await prisma.interaction.findUnique({
+  const refreshedInteraction = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {
       attachedEmails: {
@@ -549,13 +549,13 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
     }
   });
 
-  if (!interaction) {
+  if (!refreshedInteraction) {
     throw new Error('Interaction not found after reparse');
   }
 
   // Generate AI results WITHOUT saving to database
   const emails = [];
-  for (const email of interaction.attachedEmails) {
+  for (const email of refreshedInteraction.attachedEmails) {
     const data = email.extractedData as any;
     const structured = data?.structured;
     if (!structured?.plainText) continue;
@@ -578,8 +578,8 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
   if (emails.length > 0) {
     const aiService = getAiParserService();
     aiSuggestion = await aiService.parseMultipleEmailsToInteraction({
-      companyName: interaction.jobOpportunity?.companyName || 'Unknown',
-      roleTitle: interaction.jobOpportunity?.roleTitle || null,
+      companyName: refreshedInteraction.jobOpportunity?.companyName || 'Unknown',
+      roleTitle: refreshedInteraction.jobOpportunity?.roleTitle || null,
       emails
     });
     console.log('[REPARSE] AI suggestion (NOT saved):', aiSuggestion.notes?.slice(0, 200));
@@ -588,7 +588,7 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
   console.log('[REPARSE] Returning interaction with AI suggestion for review');
 
   return {
-    ...interaction,
+    ...refreshedInteraction,
     aiSuggestion // Frontend can use this to pre-fill edit form
   };
 }
