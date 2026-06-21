@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { logger } from "./logger.js";
 import { GmailReconnectRequiredError } from "../services/gmail/gmail-service.js";
+import { PersonResearchProviderError } from "../services/people/exa-provider.js";
 
 export function asyncHandler(handler: (request: Request, response: Response, next: NextFunction) => Promise<unknown>) {
   return (request: Request, response: Response, next: NextFunction) => {
@@ -17,6 +18,10 @@ export function errorHandler(error: unknown, request: Request, response: Respons
   if (error instanceof GmailReconnectRequiredError) {
     const gmailError = error as GmailReconnectRequiredError;
     return response.status(gmailError.statusCode).json({ code: gmailError.code, message: gmailError.message });
+  }
+
+  if (error instanceof PersonResearchProviderError) {
+    return response.status(error.statusCode).json({ code: error.code, message: error.message });
   }
 
   if (error instanceof Error) {

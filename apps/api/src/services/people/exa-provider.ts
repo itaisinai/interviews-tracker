@@ -1,4 +1,4 @@
-import type { PersonResearchInput, PersonResearchResult } from "./person-research-service.js";
+import type { PersonResearchResult } from "./person-research-service.js";
 
 type ExaSearchResult = {
   title: string;
@@ -24,6 +24,16 @@ type ExaContentsResponse = {
     text?: string;
   }>;
 };
+
+export class PersonResearchProviderError extends Error {
+  readonly code = "PERSON_RESEARCH_PROVIDER_ERROR";
+  readonly statusCode = 503;
+
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "PersonResearchProviderError";
+  }
+}
 
 export class ExaProvider {
   private apiKey: string;
@@ -62,8 +72,9 @@ export class ExaProvider {
       });
 
       if (!response.ok) {
-        console.error("Exa search failed:", response.status, await response.text());
-        return null;
+        const errorBody = await response.text();
+        console.error("Exa search failed:", response.status, errorBody);
+        throw new PersonResearchProviderError(`Exa LinkedIn profile search failed with status ${response.status}`);
       }
 
       const data = await response.json() as ExaSearchResponse;
@@ -83,7 +94,7 @@ export class ExaProvider {
 
       if (!text) {
         console.error("No text content returned from Exa");
-        return null;
+        throw new PersonResearchProviderError("Exa LinkedIn profile search returned a result without profile text");
       }
 
       return {
@@ -91,8 +102,12 @@ export class ExaProvider {
         text
       };
     } catch (error) {
+      if (error instanceof PersonResearchProviderError) {
+        throw error;
+      }
+
       console.error("Exa search error:", error);
-      return null;
+      throw new PersonResearchProviderError("Exa LinkedIn profile search failed", { cause: error });
     }
   }
 
@@ -358,15 +373,27 @@ export class ExaProvider {
           })
         });
 
-        if (response.ok) {
-          const data = await response.json() as ExaContentsResponse;
-          const result = data.results[0];
-          if (result?.text) {
-            profileData = { url: linkedinUrl, text: result.text };
-          }
+        if (!response.ok) {
+          const errorBody = await response.text();
+          console.error("Exa contents failed:", response.status, errorBody);
+          throw new PersonResearchProviderError(`Exa LinkedIn profile content fetch failed with status ${response.status}`);
+        }
+
+        const data = await response.json() as ExaContentsResponse;
+        const result = data.results[0];
+        if (result?.text) {
+          profileData = { url: linkedinUrl, text: result.text };
+        } else {
+          console.error("No LinkedIn profile text returned from Exa contents");
+          throw new PersonResearchProviderError("Exa LinkedIn profile content fetch returned no profile text");
         }
       } catch (error) {
+        if (error instanceof PersonResearchProviderError) {
+          throw error;
+        }
+
         console.error("Error fetching LinkedIn content:", error);
+        throw new PersonResearchProviderError("Exa LinkedIn profile content fetch failed", { cause: error });
       }
     }
 
