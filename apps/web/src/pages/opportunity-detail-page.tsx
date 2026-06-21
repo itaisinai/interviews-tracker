@@ -169,10 +169,6 @@ export function OpportunityDetailPage() {
         </div>
       ) : null}
 
-      <div className="mt-8">
-        <InterviewPreparation opportunity={data} />
-      </div>
-
       <div id="contacts-section" className="mt-8">
         <ContactsList
           opportunityId={opportunityDbId}
@@ -181,7 +177,7 @@ export function OpportunityDetailPage() {
       </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <div>
+        <div className="space-y-8">
           <Timeline
             interactions={displayedInteractions}
             selectedInteractionId={selectedInteractionId}
@@ -196,6 +192,7 @@ export function OpportunityDetailPage() {
               deleteInteraction.variables === interactionId
             }
           />
+          <InterviewPreparation opportunity={data} />
         </div>
         <div>
           <CompanyDetailsModern opportunity={data} />
