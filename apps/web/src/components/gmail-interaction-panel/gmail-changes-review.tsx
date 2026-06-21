@@ -1,5 +1,7 @@
-import { Calendar, CheckCircle2, Clock, ExternalLink, Mail, MapPin, MessageSquare, Sparkles, User, Video } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, MapPin, MessageSquare, Sparkles, User, Video } from "lucide-react";
 import type { GmailEmailExtractionAnalysis, GmailInteractionDraft, GmailStructuredEmail, Interaction } from "../../lib/types";
+import { ChangeRow } from "./gmail-change-row";
+import { GmailReviewSidebar } from "./gmail-review-sidebar";
 import { LoadingButton } from "@interviews-tracker/design-system";
 import type { InteractionDiffField } from "./gmail-interaction-panel-helpers";
 import { formatDateTimeRange } from "../../lib/format";
@@ -212,141 +214,7 @@ export function GmailChangesReview({
         </div>
       </div>
 
-      {/* Sidebar - Email Context */}
-      <div className="lg:w-80 space-y-4">
-        {/* Email Preview Card */}
-        <div className="p-4 rounded-xl border border-neutral-200 bg-white">
-          <div className="flex items-start gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-              <Mail className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">
-                Source Email
-              </div>
-              <h3 className="text-sm font-semibold text-neutral-900 leading-snug">
-                {selectedEmail.subject}
-              </h3>
-            </div>
-          </div>
-
-          <div className="space-y-2 text-xs">
-            <div>
-              <span className="text-neutral-500">From:</span>
-              <p className="text-neutral-900 font-medium mt-0.5">{selectedEmail.fromRaw}</p>
-            </div>
-            <div>
-              <span className="text-neutral-500">Received:</span>
-              <p className="text-neutral-900 font-medium mt-0.5">
-                {new Date(selectedEmail.internalDate).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit"
-                })}
-              </p>
-            </div>
-            <div>
-              <span className="text-neutral-500">Confidence:</span>
-              <p className="text-neutral-900 font-medium mt-0.5">
-                <span className={`inline-flex items-center gap-1 ${
-                  confidencePercent >= 90 ? "text-emerald-600" :
-                  confidencePercent >= 70 ? "text-yellow-600" : "text-neutral-600"
-                }`}>
-                  {confidencePercent}%
-                </span>
-              </p>
-            </div>
-          </div>
-
-          {selectedEmail.snippet && (
-            <div className="mt-3 pt-3 border-t border-neutral-100">
-              <p className="text-xs text-neutral-600 line-clamp-3">
-                {selectedEmail.snippet}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Data Source Info */}
-        <div className="p-3 rounded-lg bg-neutral-50 text-xs text-neutral-600">
-          <div className="flex items-start gap-2">
-            <Sparkles className="w-3.5 h-3.5 mt-0.5 text-emerald-600 flex-shrink-0" />
-            <div>
-              <p className="font-medium text-neutral-900 mb-1">AI Extraction</p>
-              <p>
-                {analysis?.dateSource === "calendar"
-                  ? "Details extracted from calendar invite"
-                  : analysis?.dateSource === "text"
-                  ? "Details extracted from email text"
-                  : "Details extracted from email metadata"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type ChangeRowProps = {
-  icon: React.ReactNode;
-  label: string;
-  before?: string | null;
-  after?: string | null;
-  beforeEnd?: string | null;
-  afterEnd?: string | null;
-  changed: boolean;
-  formatValue?: (value: string, endValue?: string | null) => string;
-};
-
-function ChangeRow({ icon, label, before, after, beforeEnd, afterEnd, changed, formatValue }: ChangeRowProps) {
-  const isNew = !before && after;
-  const isUnchanged = !changed && !isNew;
-
-  const displayBefore = before ? (formatValue ? formatValue(before, beforeEnd || null) : before) : "—";
-  const displayAfter = after ? (formatValue ? formatValue(after, afterEnd || null) : after) : "—";
-
-  return (
-    <div className={`flex items-start gap-4 px-4 py-3 rounded-lg border transition-colors ${
-      isNew ? "border-emerald-200 bg-emerald-50/50" :
-      changed ? "border-blue-200 bg-blue-50/50" :
-      "border-neutral-100 bg-neutral-50/30"
-    }`}>
-      <div className={`mt-0.5 ${
-        isNew ? "text-emerald-600" :
-        changed ? "text-blue-600" :
-        "text-neutral-400"
-      }`}>
-        {icon}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
-            {label}
-          </span>
-          {isNew && (
-            <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-medium uppercase tracking-wide">
-              New
-            </span>
-          )}
-          {changed && !isNew && (
-            <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-medium uppercase tracking-wide">
-              Changed
-            </span>
-          )}
-        </div>
-
-        {isUnchanged || isNew ? (
-          <p className="text-sm text-neutral-900 font-medium break-words">{displayAfter}</p>
-        ) : (
-          <div className="space-y-1">
-            <p className="text-xs text-neutral-500 line-through break-words">{displayBefore}</p>
-            <p className="text-sm text-neutral-900 font-medium break-words">{displayAfter}</p>
-          </div>
-        )}
-      </div>
+      <GmailReviewSidebar selectedEmail={selectedEmail} analysis={analysis} confidencePercent={confidencePercent} />
     </div>
   );
 }
