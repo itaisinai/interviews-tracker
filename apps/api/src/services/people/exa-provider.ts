@@ -25,6 +25,29 @@ type ExaContentsResponse = {
   }>;
 };
 
+
+function stripMarkdownLink(value: string): string {
+  return value.match(/^\[([^\]]+)\]/)?.[1] || value;
+}
+
+function normalizeCompanyName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function positionIsCurrent(dates?: string): boolean {
+  return /(?:^|[-–—\s])present\b/i.test(dates || "");
+}
+
+function currentCompanyFromExperience(experience: NonNullable<PersonResearchResult["research"]["experience"]>): string | undefined {
+  const currentExperience = experience.find((exp) => exp.positions.some((position) => positionIsCurrent(position.dates)));
+  return currentExperience?.company || experience[0]?.company;
+}
+
+function currentTitleFromExperience(experience: NonNullable<PersonResearchResult["research"]["experience"]>): string | undefined {
+  const currentExperience = experience.find((exp) => exp.positions.some((position) => positionIsCurrent(position.dates))) || experience[0];
+  return currentExperience?.positions.find((position) => positionIsCurrent(position.dates))?.title || currentExperience?.positions[0]?.title;
+}
+
 export class PersonResearchProviderError extends Error {
   readonly code = "PERSON_RESEARCH_PROVIDER_ERROR";
   readonly statusCode = 503;
@@ -329,16 +352,18 @@ export class ExaProvider {
       }>;
     }>);
 
+    const currentCompany = groupedExperience.length > 0 ? currentCompanyFromExperience(groupedExperience) : undefined;
+    const currentTitle = groupedExperience.length > 0 ? currentTitleFromExperience(groupedExperience) : undefined;
+
     return {
       person: {
         name,
-        title: title || undefined,
-        company: company || undefined,
+        title: currentTitle || title || undefined,
+        company: currentCompany || company || undefined,
         linkedinUrl: linkedInUrl,
         avatarUrl: undefined
       },
       research: {
-        // @ts-ignore
         experience: groupedExperience.length > 0 ? groupedExperience : undefined,
         education: education.length > 0 ? education : undefined,
         sources: [
@@ -409,15 +434,10 @@ export class ExaProvider {
 
     // Validate that the person's current company matches the expected company
     if (companyName && result.person.company) {
-      // Extract company name from markdown format if present: [Company Name](url)
-      const extractedCompany = result.person.company.match(/^\[([^\]]+)\]/)?.[1] || result.person.company;
+      const extractedCompany = stripMarkdownLink(result.person.company);
 
-      // Normalize both company names for comparison (lowercase, remove special chars)
-      const normalizeCompany = (name: string) =>
-        name.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-      const normalizedExpected = normalizeCompany(companyName);
-      const normalizedActual = normalizeCompany(extractedCompany);
+      const normalizedExpected = normalizeCompanyName(companyName);
+      const normalizedActual = normalizeCompanyName(extractedCompany);
 
       console.log(`[Company validation] Expected: "${companyName}" (normalized: "${normalizedExpected}"), Found: "${extractedCompany}" (normalized: "${normalizedActual}")`);
 
