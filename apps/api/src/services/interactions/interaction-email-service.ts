@@ -135,6 +135,9 @@ export async function attachEmailToInteraction(params: {
  * Aggregate data from all attached emails using AI
  */
 export async function aggregateInteractionEmails(interactionId: string) {
+  console.log('[AGGREGATE] ========== START ==========');
+  console.log('[AGGREGATE] Interaction ID:', interactionId);
+
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {
@@ -143,17 +146,42 @@ export async function aggregateInteractionEmails(interactionId: string) {
     }
   });
 
-  if (!interaction || interaction.attachedEmails.length === 0) return;
+  if (!interaction) {
+    console.log('[AGGREGATE] Interaction not found');
+    return;
+  }
 
-  console.log(`[AGGREGATE] Processing ${interaction.attachedEmails.length} emails`);
+  if (interaction.attachedEmails.length === 0) {
+    console.log('[AGGREGATE] No attached emails');
+    return;
+  }
+
+  console.log(`[AGGREGATE] Found ${interaction.attachedEmails.length} attached emails`);
+  console.log('[AGGREGATE] Company:', interaction.jobOpportunity?.companyName);
+  console.log('[AGGREGATE] Role:', interaction.jobOpportunity?.roleTitle);
 
   const emails = [];
   for (const email of interaction.attachedEmails) {
-    const data = email.extractedData as any;
-    const structured = data?.structured;
-    if (!structured?.plainText) continue;
+    console.log(`[AGGREGATE] Email ${email.id}: subject="${email.subject}", from="${email.from}"`);
 
-    emails.push({
+    const data = email.extractedData as any;
+    console.log('[AGGREGATE] extractedData keys:', Object.keys(data || {}));
+
+    const structured = data?.structured;
+    console.log('[AGGREGATE] Has structured:', !!structured);
+    console.log('[AGGREGATE] Has plainText:', !!structured?.plainText);
+
+    if (structured?.plainText) {
+      console.log('[AGGREGATE] plainText length:', structured.plainText.length);
+      console.log('[AGGREGATE] plainText preview:', structured.plainText.slice(0, 200));
+    }
+
+    if (!structured?.plainText) {
+      console.log('[AGGREGATE] ⚠️ SKIPPING - no plainText');
+      continue;
+    }
+
+    const emailData = {
       subject: email.subject || '',
       from: email.from || '',
       date: email.receivedDate?.toISOString() || '',
@@ -164,10 +192,18 @@ export async function aggregateInteractionEmails(interactionId: string) {
         summary: structured.calendar.summary || null,
         location: structured.calendar.location || null
       } : null
-    });
+    };
+
+    console.log('[AGGREGATE] ✅ Added email to AI input');
+    emails.push(emailData);
   }
 
-  if (emails.length === 0) return;
+  if (emails.length === 0) {
+    console.log('[AGGREGATE] ⚠️ No emails with plainText');
+    return;
+  }
+
+  console.log(`[AGGREGATE] Calling AI with ${emails.length} emails`);
 
   const aiService = getAiParserService();
   const parsed = await aiService.parseMultipleEmailsToInteraction({
@@ -176,7 +212,8 @@ export async function aggregateInteractionEmails(interactionId: string) {
     emails
   });
 
-  console.log('[AGGREGATE] AI result:', { date: parsed.date, type: parsed.type });
+  console.log('[AGGREGATE] ✅ AI returned result');
+  console.log('[AGGREGATE] notes:', parsed.notes);
 
   await prisma.interaction.update({
     where: { id: interactionId },
@@ -196,8 +233,12 @@ export async function aggregateInteractionEmails(interactionId: string) {
     }
   });
 
+  console.log('[AGGREGATE] ✅ Database updated');
+
   const { syncOpportunityStatusRecord } = await import("../../repositories/opportunity-repository.js");
   await syncOpportunityStatusRecord(interaction.jobOpportunityId, interaction.ownerEmail);
+
+  console.log('[AGGREGATE] ========== END ==========');
 }
 
 export async function attachMultipleEmailsToInteraction(params: {

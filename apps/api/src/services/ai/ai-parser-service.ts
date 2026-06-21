@@ -351,6 +351,23 @@ export class OpenAiParserService implements AiParserService {
       } | null;
     }>;
   }): Promise<z.infer<typeof interactionDraftSchema>> {
+    console.log('[AI PARSE] Starting parseMultipleEmailsToInteraction');
+    console.log('[AI PARSE] Company:', input.companyName, 'Role:', input.roleTitle);
+    console.log('[AI PARSE] Number of emails:', input.emails.length);
+
+    input.emails.forEach((email, i) => {
+      console.log(`[AI PARSE] Email ${i + 1}:`, {
+        subject: email.subject,
+        from: email.from,
+        date: email.date,
+        bodyLength: email.body.length,
+        bodyPreview: email.body.slice(0, 150) + '...',
+        hasCalendar: !!email.calendar,
+        calendarStart: email.calendar?.start,
+        calendarEnd: email.calendar?.end
+      });
+    });
+
     const emailsText = JSON.stringify(input.emails, null, 2);
 
     const systemPrompt = [
@@ -365,6 +382,9 @@ export class OpenAiParserService implements AiParserService {
       "- Return structured JSON matching the schema"
     ].join("\n");
 
+    console.log('[AI PARSE] System prompt:', systemPrompt);
+    console.log('[AI PARSE] Input text length:', emailsText.length);
+
     const outputText = await this.createStructuredOutput({
       name: "parse_multiple_emails",
       schema: interactionDraftJsonSchema,
@@ -372,7 +392,22 @@ export class OpenAiParserService implements AiParserService {
       text: emailsText
     });
 
-    return interactionDraftSchema.parse(JSON.parse(outputText));
+    console.log('[AI PARSE] Raw AI output:', outputText);
+
+    const parsed = interactionDraftSchema.parse(JSON.parse(outputText));
+
+    console.log('[AI PARSE] Parsed result:', {
+      date: parsed.date,
+      endDate: parsed.endDate,
+      type: parsed.type,
+      stage: parsed.stage,
+      status: parsed.status,
+      personName: parsed.personName,
+      notesLength: parsed.notes?.length,
+      notesPreview: parsed.notes?.slice(0, 200)
+    });
+
+    return parsed;
   }
 
   async parseInteractionText(input: {
