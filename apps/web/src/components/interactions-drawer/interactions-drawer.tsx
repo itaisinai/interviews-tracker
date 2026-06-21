@@ -222,6 +222,7 @@ export function InteractionsDrawer({
                 deleteInteraction.variables === displayInteraction.id
               }
               onAttachEmail={() => setShowGmailAttach((current) => !current)}
+              opportunityCompanyName={opportunity?.companyName}
             />
 
             {showGmailAttach && opportunity ? (

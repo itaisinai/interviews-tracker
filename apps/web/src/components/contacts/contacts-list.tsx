@@ -102,6 +102,7 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
           onClose={() => setResearchPerson(null)}
           onSaved={() => setResearchPerson(null)}
           opportunityId={opportunityId}
+          opportunityCompanyName={companyName}
         />
       )}
     </div>

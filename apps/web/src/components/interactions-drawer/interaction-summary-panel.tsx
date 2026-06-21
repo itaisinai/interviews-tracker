@@ -45,6 +45,7 @@ type InteractionSummaryPanelProps = {
   onDelete: () => void;
   isDeleting: boolean;
   onAttachEmail: () => void;
+  opportunityCompanyName?: string; // For person research validation
 };
 
 export function InteractionSummaryPanel({
@@ -61,6 +62,7 @@ export function InteractionSummaryPanel({
   onDelete,
   isDeleting,
   onAttachEmail,
+  opportunityCompanyName,
 }: InteractionSummaryPanelProps) {
   const [researchModalOpen, setResearchModalOpen] = useState(false);
   const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
@@ -296,9 +298,7 @@ export function InteractionSummaryPanel({
             person={{
               name: selectedPerson.name,
               title: selectedPerson.title || interaction.personRole,
-              company:
-                selectedPerson.company ||
-                interaction.jobOpportunity?.companyName,
+              company: opportunityCompanyName || interaction.jobOpportunity?.companyName,
             }}
             isOpen={researchModalOpen}
             onClose={() => {
@@ -306,6 +306,7 @@ export function InteractionSummaryPanel({
               setSelectedPerson(null);
             }}
             opportunityId={interaction.jobOpportunityId}
+            opportunityCompanyName={opportunityCompanyName || interaction.jobOpportunity?.companyName}
           />
           <PersonDetailModal
             person={selectedPerson}
