@@ -1,10 +1,11 @@
-import { prisma } from "../../lib/prisma.js";
-import { parseStructuredGmailEmail, deriveInteractionFromStructuredEmail } from "../gmail/gmail-message-parser.js";
-import { getAccessTokenForEmail } from "../gmail/gmail-auth.js";
-import { fetchJson } from "../gmail/gmail-http.js";
-import { getAiParserService } from "../ai/ai-parser-service.js";
+import type { GmailAttachmentResponse, GmailMessageResponse } from "../gmail/gmail-message-utils.js";
+import { deriveInteractionFromStructuredEmail, parseStructuredGmailEmail } from "../gmail/gmail-message-parser.js";
+
 import type { GmailDerivedInteraction } from "../gmail/gmail-message-parser.js";
-import type { GmailMessageResponse, GmailAttachmentResponse } from "../gmail/gmail-message-utils.js";
+import { fetchJson } from "../gmail/gmail-http.js";
+import { getAccessTokenForEmail } from "../gmail/gmail-auth.js";
+import { getAiParserService } from "../ai/ai-parser-service.js";
+import { prisma } from "../../lib/prisma.js";
 
 /**
  * Attach a Gmail message to an interaction
@@ -479,26 +480,45 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
           }
         });
 
+        console.log('[REPARSE] Parsed structuredEmail:', {
+          subject: structuredEmail.subject,
+          hasPlainText: !!structuredEmail.plainText,
+          plainTextLength: structuredEmail.plainText?.length,
+          plainTextPreview: structuredEmail.plainText?.slice(0, 200),
+          hasCalendar: !!structuredEmail.calendar,
+          calendarStart: structuredEmail.calendar?.start
+        });
+
         const derived = deriveInteractionFromStructuredEmail(structuredEmail);
+
+        const dataToSave = {
+          subject: structuredEmail.subject,
+          from: structuredEmail.fromRaw,
+          receivedDate: new Date(structuredEmail.internalDate),
+          extractedData: {
+            derived,
+            structured: {
+              subject: structuredEmail.subject,
+              from: structuredEmail.fromRaw,
+              plainText: structuredEmail.plainText,
+              calendar: structuredEmail.calendar
+            }
+          } as any
+        };
+
+        console.log('[REPARSE] Saving to database:', {
+          emailId: email.id,
+          hasPlainText: !!dataToSave.extractedData.structured.plainText,
+          plainTextLength: dataToSave.extractedData.structured.plainText?.length
+        });
 
         // Update the email with parsed data
         await prisma.interactionEmail.update({
           where: { id: email.id },
-          data: {
-            subject: structuredEmail.subject,
-            from: structuredEmail.fromRaw,
-            receivedDate: new Date(structuredEmail.internalDate),
-            extractedData: {
-              derived,
-              structured: {
-                subject: structuredEmail.subject,
-                from: structuredEmail.fromRaw,
-                plainText: structuredEmail.plainText,
-                calendar: structuredEmail.calendar
-              }
-            } as any
-          }
+          data: dataToSave
         });
+
+        console.log('[REPARSE] ✅ Database updated for email', email.id);
       } catch (error) {
         console.error(`Failed to re-parse email ${email.gmailMessageId}:`, error);
         // Continue with other emails even if one fails
