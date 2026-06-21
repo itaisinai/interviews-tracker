@@ -111,8 +111,6 @@ export type Opportunity = {
   workModel?: Option | null;
   domains: Array<{ domain: Option }>;
   interactions: Interaction[];
-  notesList: Note[];
-  tasks: Task[];
   compensation?: Compensation | null;
 };
 
@@ -133,26 +131,6 @@ export type Interaction = {
   notes?: string | null;
   outcome?: string | null;
   followUp?: string | null;
-  jobOpportunity?: Opportunity;
-};
-
-export type Note = {
-  id: string;
-  ownerEmail: string;
-  title: string;
-  content: string;
-  category: string;
-  createdAt: string;
-};
-
-export type Task = {
-  id: string;
-  ownerEmail: string;
-  title: string;
-  status: TaskStatus;
-  priority: Priority;
-  dueDate?: string | null;
-  notes?: string | null;
   jobOpportunity?: Opportunity;
 };
 
@@ -194,7 +172,5 @@ export type CompanyDetail = {
   companyName: string;
   opportunities: Opportunity[];
   interactions: Interaction[];
-  notes: Note[];
-  tasks: Task[];
   compensation: Compensation[];
 };

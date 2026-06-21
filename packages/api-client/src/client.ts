@@ -1,5 +1,5 @@
-import type { CompanyDetail, CompanySummary, Compensation, Interaction, Opportunity, OptionsResponse, Task } from "@interviews-tracker/core";
-import type { CompanyEnrichment, CompanyResearchApplyResponse, CompanyResearchInput, CompanyResearchResult, InteractionDraft, ParsedJobDescription } from "@interviews-tracker/ai";
+import type { CompanyDetail, CompanySummary, Interaction, Opportunity, OptionsResponse } from "@interviews-tracker/core";
+import type { CompanyEnrichment, CompanyResearchApplyResponse, CompanyResearchInput, CompanyResearchResult, InteractionDraft, ParsedJobDescription, PersonResearchInput, PersonResearchResult } from "@interviews-tracker/ai";
 import type { GmailConnectResponse, GmailSearchResponse, GmailStatus, GmailStructuredEmail } from "@interviews-tracker/integrations";
 import { getApiError } from "./error.js";
 
@@ -61,7 +61,6 @@ export const api = {
     activeProcesses: Opportunity[];
     highPriorityPotential: Opportunity[];
     needingFollowUp: Opportunity[];
-    tasksDueThisWeek: Task[];
   }>("/dashboard"),
   options: () => request<OptionsResponse>("/options"),
   addDomain: (label: string) => request("/options/domain", { method: "POST", body: JSON.stringify({ label }) }),
@@ -73,8 +72,6 @@ export const api = {
   deleteOpportunity: (id: string) => request<void>(`/opportunities/${id}`, { method: "DELETE" }),
   createInteraction: (id: string, body: unknown) => request<Interaction>(`/opportunities/${id}/interactions`, { method: "POST", body: JSON.stringify(body) }),
   updateInteraction: (id: string, body: unknown) => request<Interaction>(`/interactions/${id}`, { method: "PUT", body: JSON.stringify(body) }),
-  createOpportunityNote: (id: string, body: unknown) => request(`/opportunities/${id}/notes`, { method: "POST", body: JSON.stringify(body) }),
-  createOpportunityTask: (id: string, body: unknown) => request<Task>(`/opportunities/${id}/tasks`, { method: "POST", body: JSON.stringify(body) }),
   interactions: () => request<Interaction[]>("/interactions"),
   createGlobalInteraction: (body: unknown) => request<Interaction>("/interactions", { method: "POST", body: JSON.stringify(body) }),
   deleteInteraction: (id: string) => request<void>(`/interactions/${id}`, { method: "DELETE" }),
@@ -95,13 +92,12 @@ export const api = {
   gmailRestoreEmail: (id: string, messageId: string) => request<void>(`/opportunities/${id}/gmail/messages/${encodeURIComponent(messageId)}/hide`, { method: "DELETE" }),
   gmailUnpickEmail: (id: string, messageId: string) => request<void>(`/opportunities/${id}/gmail/messages/${encodeURIComponent(messageId)}/used`, { method: "DELETE" }),
   parseOpportunityInteractionText: (id: string, body: { text: string }) => request<{ interaction: InteractionDraft }>(`/opportunities/${id}/interactions/parse-text`, { method: "POST", body: JSON.stringify(body) }),
-  tasks: () => request<Task[]>("/tasks"),
-  createTask: (body: unknown) => request<Task>("/tasks", { method: "POST", body: JSON.stringify(body) }),
-  deleteTask: (id: string) => request<void>(`/tasks/${id}`, { method: "DELETE" }),
-  deleteNote: (id: string) => request<void>(`/notes/${id}`, { method: "DELETE" }),
-  compensation: () => request<Compensation[]>("/compensation"),
-  upsertCompensation: (body: unknown) => request<Compensation>("/compensation", { method: "POST", body: JSON.stringify(body) }),
-  deleteCompensation: (id: string) => request<void>(`/compensation/${id}`, { method: "DELETE" }),
   deleteOption: (kind: string, id: string) => request<void>(`/options/${kind}/${id}`, { method: "DELETE" }),
-  parseJob: (text: string) => request<ParsedJobDescription>("/ai/parse-job-description", { method: "POST", body: JSON.stringify({ text }) })
+  parseJob: (text: string) => request<ParsedJobDescription>("/ai/parse-job-description", { method: "POST", body: JSON.stringify({ text }) }),
+  researchPerson: (body: PersonResearchInput) => request<PersonResearchResult>("/people/research", { method: "POST", body: JSON.stringify(body) }),
+  createPerson: (body: { name: string; email?: string; linkedinUrl?: string; title?: string; company?: string; avatarUrl?: string; jobOpportunityId?: string }) => request<{ id: string; name: string; email: string | null; linkedinUrl: string | null; title: string | null; company: string | null; avatarUrl: string | null; research: unknown }>("/people", { method: "POST", body: JSON.stringify(body) }),
+  savePersonResearch: (personId: string, research: PersonResearchResult["research"]) => request<unknown>(`/people/${personId}/research`, { method: "POST", body: JSON.stringify({ research }) }),
+  getPerson: (personId: string) => request<{ id: string; name: string; email: string | null; linkedinUrl: string | null; title: string | null; company: string | null; avatarUrl: string | null; research: unknown }>(`/people/${personId}`),
+  searchPeople: (query?: string) => request<Array<{ id: string; name: string; email: string | null; linkedinUrl: string | null; title: string | null; company: string | null; avatarUrl: string | null; research: unknown }>>(`/people${query ? `?q=${encodeURIComponent(query)}` : ""}`),
+  getOpportunityContacts: (opportunityId: string) => request<Array<{ id: string; name: string; email: string | null; linkedinUrl: string | null; title: string | null; company: string | null; avatarUrl: string | null; research: unknown }>>(`/opportunities/${opportunityId}/contacts`)
 };

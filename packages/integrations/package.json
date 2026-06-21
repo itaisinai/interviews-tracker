@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
+    "build": "tsup",
+    "dev": "tsup --watch"
   },
   "exports": {
     ".": {

@@ -104,6 +104,7 @@ model JobOpportunity {
   notesList              Note[]
   tasks                  Task[]
   compensation           Compensation?
+  contacts               Person[]
 
   @@unique([ownerEmail, slug])
   @@unique([ownerEmail, companyName, roleTitle])
@@ -277,4 +278,37 @@ model GmailMessageState {
   @@unique([auth0Email, messageId])
   @@index([auth0Email, status])
   @@index([jobOpportunityId])
+}
+
+model Person {
+  id               String           @id @default(cuid())
+  name             String
+  email            String?
+  linkedinUrl      String?
+  title            String?
+  company          String?
+  avatarUrl        String?
+  jobOpportunityId String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  research         PersonResearch?
+  jobOpportunity   JobOpportunity?  @relation(fields: [jobOpportunityId], references: [id], onDelete: SetNull)
+
+  @@unique([email])
+  @@unique([linkedinUrl])
+  @@index([name, company])
+  @@index([jobOpportunityId])
+}
+
+model PersonResearch {
+  id          String                    @id @default(cuid())
+  personId    String                    @unique
+  about       String?
+  experience  Json?
+  education   Json?
+  skills      Json?
+  sources     Json?
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  person      Person                    @relation(fields: [personId], references: [id], onDelete: Cascade)
 }

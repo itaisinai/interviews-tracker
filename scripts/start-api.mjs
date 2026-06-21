@@ -1,25 +1,12 @@
-import fs from "node:fs";
-import path from "node:path";
 import { pathToFileURL } from "node:url";
+import path from "node:path";
+import fs from "node:fs";
 
-const builtCandidates = [
-  "dist/api/server.js",
-  "dist/api/src/server.js",
-  "dist/api/apps/api/src/server.js",
-  "dist/server.js",
-  "apps/api/dist/server.js",
-  "apps/api/dist/src/server.js"
-];
+const builtEntry = "dist/api/server.mjs";
 
-function findFirstExistingFile(paths) {
-  return paths.find((candidate) => fs.existsSync(path.resolve(candidate)));
-}
-
-const builtEntry = findFirstExistingFile(builtCandidates);
-
-if (!builtEntry) {
+if (!fs.existsSync(path.resolve(builtEntry))) {
   console.error("API build artifacts are missing. Run yarn build:api first.");
-  console.error(`Looked for: ${builtCandidates.join(", ")}`);
+  console.error(`Expected: ${builtEntry}`);
   process.exit(1);
 }
 

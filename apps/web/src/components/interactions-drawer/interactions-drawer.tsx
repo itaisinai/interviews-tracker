@@ -13,9 +13,10 @@ import {
   promoteOverdueInteractionsForRead,
 } from "../../lib/interaction-status";
 import { InteractionDrawerHeader } from "./interaction-drawer-header";
-import { InteractionComposerPanel } from "./interaction-composer-panel";
 import { InteractionSummaryPanel } from "./interaction-summary-panel";
 import { InteractionTimelinePanel } from "./interaction-timeline-panel";
+import { useNavigate } from "react-router-dom";
+import { GmailInteractionPanel } from "../gmail-interaction-panel/gmail-interaction-panel";
 
 type InteractionsDrawerProps = {
   selectedInteraction: Interaction | null;
@@ -24,7 +25,6 @@ type InteractionsDrawerProps = {
   onSelectInteraction?: (interactionId: string) => void;
 };
 
-type ComposerMode = "chooser" | "gmail" | "gmail-attach" | "text" | null;
 
 function toDraft(interaction: Interaction): InteractionDraft {
   return {
@@ -50,13 +50,14 @@ export function InteractionsDrawer({
   onClose,
   onSelectInteraction,
 }: InteractionsDrawerProps) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [composer, setComposer] = useState<ComposerMode>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
   const [mountedInteraction, setMountedInteraction] =
     useState<Interaction | null>(selectedInteraction);
   const [isVisible, setIsVisible] = useState(false);
+  const [showGmailAttach, setShowGmailAttach] = useState(false);
   const closeTimerRef = useRef<number | null>(null);
   const openFrameRef = useRef<number | null>(null);
 
@@ -103,8 +104,8 @@ export function InteractionsDrawer({
   }, []);
 
   useEffect(() => {
-    setComposer(null);
     setIsEditing(false);
+    setShowGmailAttach(false);
     setDraft(mountedInteraction ? toDraft(mountedInteraction) : null);
   }, [mountedInteraction?.id]);
 
@@ -169,6 +170,13 @@ export function InteractionsDrawer({
 
   const displayInteraction = selectedTimelineInteraction ?? mountedInteraction;
 
+  const handleOpenFullscreen = () => {
+    if (opportunity) {
+      navigate(`/opportunities/${opportunity.slug ?? opportunity.id}?interaction=${displayInteraction.id}`);
+      onClose();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60]">
       <button
@@ -184,6 +192,7 @@ export function InteractionsDrawer({
           opportunity={opportunity}
           interaction={displayInteraction}
           onClose={onClose}
+          onOpenFullscreen={handleOpenFullscreen}
         />
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
@@ -194,7 +203,6 @@ export function InteractionsDrawer({
               isEditing={isEditing}
               draft={draft}
               onToggleEditing={() => {
-                setComposer(null);
                 setIsEditing((current) => !current);
               }}
               onCancelEditing={() => {
@@ -213,39 +221,27 @@ export function InteractionsDrawer({
                 deleteInteraction.isPending &&
                 deleteInteraction.variables === displayInteraction.id
               }
-              onAttachEmail={() => setComposer("gmail-attach")}
+              onAttachEmail={() => setShowGmailAttach((current) => !current)}
             />
+
+            {showGmailAttach && opportunity ? (
+              <GmailInteractionPanel
+                opportunityId={opportunity.id}
+                companyName={opportunity.companyName}
+                roleTitle={opportunity.roleTitle}
+                attachToInteractionId={displayInteraction.id}
+                onSaved={() => {
+                  refreshQueries();
+                  setShowGmailAttach(false);
+                }}
+              />
+            ) : null}
 
             <InteractionTimelinePanel
               companyName={opportunity?.companyName ?? "Timeline"}
               interactions={timeline}
               selectedInteractionId={displayInteraction.id}
               onSelectInteraction={onSelectInteraction}
-            />
-
-            <InteractionComposerPanel
-              opportunityId={opportunityId}
-              companyName={
-                opportunity?.companyName ??
-                displayInteraction.jobOpportunity?.companyName ??
-                ""
-              }
-              roleTitle={
-                opportunity?.roleTitle ??
-                displayInteraction.jobOpportunity?.roleTitle ??
-                ""
-              }
-              attachToInteractionId={
-                composer === "gmail-attach" ? displayInteraction.id : null
-              }
-              composer={composer}
-              onComposerChange={setComposer}
-              onSaved={(savedInteraction) => {
-                refreshQueries();
-                if (savedInteraction) {
-                  onSelectInteraction?.(savedInteraction.id);
-                }
-              }}
             />
           </div>
         </div>

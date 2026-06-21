@@ -145,6 +145,37 @@ export function useGmailInteractionPanel({ opportunityId, companyName, roleTitle
     }
   }, [attachToInteractionId]);
 
+  // Auto-parse email when re-parsing an existing interaction with gmailMessageId
+  useEffect(() => {
+    const targetInteraction = opportunityQuery.data?.interactions.find((i) => i.id === attachToInteractionId);
+    if (
+      attachToInteractionId &&
+      targetInteraction?.gmailMessageId &&
+      !selectedEmail &&
+      statusQuery.data?.connected &&
+      flowState === "idle"
+    ) {
+      // Trigger parsing of the attached email
+      void (async () => {
+        setFlowState("fetching_email");
+        setMessage("Loading attached email...");
+        setError(null);
+
+        try {
+          const result = await api.gmailParseEmail(opportunityId, { messageId: targetInteraction.gmailMessageId! });
+
+          setSelectedEmail(result.email);
+          setAnalysis(result.analysis);
+          setDraft(result.interaction);
+          setFlowState("ready_for_review");
+          setMessage("Email re-parsed successfully. Review the changes below.");
+        } catch (error) {
+          handleGmailActionError(error, "Failed to load attached email.");
+        }
+      })();
+    }
+  }, [attachToInteractionId, opportunityQuery.data?.interactions, selectedEmail, statusQuery.data?.connected, flowState, opportunityId]);
+
   const searchHint = useMemo(() => `Searching Gmail for "${companyName}" from the last 180 days.`, [companyName]);
   const attachTargetInteraction = useMemo(
     () => opportunityQuery.data?.interactions.find((interaction) => interaction.id === attachTargetId) ?? null,
@@ -225,8 +256,39 @@ export function useGmailInteractionPanel({ opportunityId, companyName, roleTitle
       }
 
       setSearchResults(response.candidates);
-      setFlowState("idle");
-      setMessage(response.candidates.length > 0 ? `Found ${response.candidates.length} candidate email${response.candidates.length === 1 ? "" : "s"}.` : "No matching emails found in Gmail.");
+
+      // Auto-parse the best candidate (highest confidence, relevant email)
+      const bestCandidate = response.candidates.find(c => c.relevance.isRelevant) || response.candidates[0];
+
+      if (bestCandidate) {
+        // Automatically parse the best candidate
+        setSelectedCandidate(bestCandidate);
+        setFlowState("fetching_email");
+        setMessage(`Found best match: "${bestCandidate.subject}". Extracting details...`);
+        setPendingPickedEmailIds((current) => new Set(current).add(bestCandidate.id));
+        queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunityId], (current) =>
+          addPickedEmail(current, { id: bestCandidate.id, subject: bestCandidate.subject, date: bestCandidate.date })
+        );
+
+        await sleep(180);
+        setFlowState("parsing_email");
+        setMessage("Parsing the email into interaction fields.");
+
+        const parseResponse = await api.gmailParseEmail(opportunityId, { messageId: bestCandidate.id });
+        if (activeRunIdRef.current !== runId) {
+          return;
+        }
+
+        setSelectedEmail(parseResponse.email);
+        setAnalysis(parseResponse.analysis);
+        setDraft(parseResponse.interaction);
+        setFlowState("ready_for_review");
+        setMessage("Email parsed successfully. Review the changes below.");
+        void queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+      } else {
+        setFlowState("idle");
+        setMessage("No matching emails found in Gmail.");
+      }
     } catch (caughtError) {
       if (activeRunIdRef.current !== runId) {
         return;
@@ -359,6 +421,7 @@ export function useGmailInteractionPanel({ opportunityId, companyName, roleTitle
       onSaved?.(savedInteraction);
     } catch (caughtError) {
       setSaveError(getErrorMessage(caughtError));
+      throw caughtError;
     } finally {
       setIsAttaching(false);
     }
@@ -509,7 +572,7 @@ export function useGmailInteractionPanel({ opportunityId, companyName, roleTitle
       setAnalysis(null);
       setMessage("Ready to search Gmail again.");
     },
-    onSaveInteraction: () => void saveInteraction.mutate(),
+    onSaveInteraction: () => saveInteraction.mutateAsync(),
     onDraftChange: setDraft,
     onAttachTargetIdChange: setAttachTargetId
   };
