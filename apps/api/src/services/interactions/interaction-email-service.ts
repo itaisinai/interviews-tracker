@@ -131,154 +131,75 @@ export async function attachEmailToInteraction(params: {
  * Aggregate data from all attached emails and update the interaction
  * Strategy: Latest wins for conflicts, merge participants, combine notes
  */
+/**
+ * Aggregate data from all attached emails using AI
+ */
 export async function aggregateInteractionEmails(interactionId: string) {
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {
-      attachedEmails: {
-        orderBy: { receivedDate: 'desc' }
-      }
+      attachedEmails: { orderBy: { receivedDate: 'desc' } },
+      jobOpportunity: { select: { companyName: true, roleTitle: true } }
     }
   });
 
-  if (!interaction) {
-    return;
-  }
+  if (!interaction || interaction.attachedEmails.length === 0) return;
 
-  // Handle legacy interactions with gmailMessageId but no attachedEmails
-  if (interaction.attachedEmails.length === 0 && interaction.gmailMessageId) {
-    // Try to find if this email was already migrated but query didn't include it
-    const existingEmail = await prisma.interactionEmail.findFirst({
-      where: {
-        interactionId: interaction.id,
-        gmailMessageId: interaction.gmailMessageId
-      }
-    });
+  console.log(`[AGGREGATE] Processing ${interaction.attachedEmails.length} emails`);
 
-    if (existingEmail) {
-      // Email exists but wasn't included - refetch
-      interaction.attachedEmails = [existingEmail];
-    }
-  }
-
-  // If still no emails, nothing to aggregate
-  if (interaction.attachedEmails.length === 0) {
-    return;
-  }
-
-  const allParticipants = new Set<string>();
-  const allNotes: Array<{ subject: string; from: string; date: string; body: string }> = [];
-  let latestDate: string | null = null;
-  let latestEndDate: string | null = null;
-  let latestType: string | null = null;
-  let latestStage: string | null = null;
-  let latestStatus: string | null = null;
-  let latestAgenda: string | null = null;
-  let latestMeetingLink: string | null = null;
-  let latestLocation: string | null = null;
-
-  // Process emails from newest to oldest
-  console.log(`[AGGREGATE] Processing ${interaction.attachedEmails.length} emails for interaction ${interactionId}`);
-
+  const emails = [];
   for (const email of interaction.attachedEmails) {
-    console.log(`[AGGREGATE] Email ID: ${email.id}, Gmail ID: ${email.gmailMessageId}, Subject: ${email.subject}`);
-
     const data = email.extractedData as any;
-    // Handle both new structure (with derived/structured) and old structure (direct)
-    const extracted = (data?.derived || data) as GmailDerivedInteraction | null;
     const structured = data?.structured;
+    if (!structured?.plainText) continue;
 
-    if (!extracted) {
-      console.log(`[AGGREGATE] Skipping email ${email.id} - no extractedData`);
-      continue;
-    }
-
-    // Latest wins for scalar fields
-    if (!latestDate && extracted.date) latestDate = extracted.date;
-    if (!latestEndDate && extracted.endDate) latestEndDate = extracted.endDate;
-    if (!latestType && extracted.type) latestType = extracted.type;
-    if (!latestStage && extracted.stage) latestStage = extracted.stage;
-    if (!latestStatus && extracted.status) latestStatus = extracted.status;
-    if (!latestAgenda && extracted.agenda) latestAgenda = extracted.agenda;
-    if (!latestMeetingLink && extracted.meetingLink) latestMeetingLink = extracted.meetingLink;
-
-    // Merge participants (accumulate all unique names)
-    if (extracted.personName) {
-      const names = extracted.personName.split(/\s+and\s+|,\s*/).map(n => n.trim()).filter(Boolean);
-      names.forEach(name => allParticipants.add(name));
-    }
-
-    // Collect email body text for AI summarization
-    // Priority: structured.plainText > old notes field > subject
-    let bodyText = '';
-
-    if (structured?.plainText) {
-      // New format: use clean plainText
-      bodyText = structured.plainText.trim();
-    } else if (extracted.notes) {
-      // Old format: extract body from notes field
-      // Notes field has format: "Subject: ...\nFrom: ...\nBody: actual content"
-      const bodyMatch = extracted.notes.match(/Body:\s*(.+)/s);
-      if (bodyMatch && bodyMatch[1]) {
-        bodyText = bodyMatch[1].trim();
-      } else {
-        // If no Body: prefix, use the whole notes field
-        bodyText = extracted.notes;
-      }
-    }
-
-    // Only add if we have actual content (not just metadata)
-    if (bodyText && bodyText.length > 20) {
-      allNotes.push({
-        subject: email.subject || 'No subject',
-        from: email.from || 'Unknown',
-        date: email.receivedDate?.toISOString() || '',
-        body: bodyText.slice(0, 2000) // Limit to avoid token overload
-      });
-    }
+    emails.push({
+      subject: email.subject || '',
+      from: email.from || '',
+      date: email.receivedDate?.toISOString() || '',
+      body: structured.plainText.slice(0, 2000),
+      calendar: structured.calendar ? {
+        start: structured.calendar.start || null,
+        end: structured.calendar.end || null,
+        summary: structured.calendar.summary || null,
+        location: structured.calendar.location || null
+      } : null
+    });
   }
 
-  // Use AI to summarize notes from multiple emails
-  let summarizedNotes: string | null = null;
-  if (allNotes.length > 0) {
-    console.log(`[AGGREGATE] Summarizing ${allNotes.length} email bodies with AI`);
-    console.log(`[AGGREGATE] Email bodies preview:`, allNotes.map(n => ({ subject: n.subject, bodyPreview: n.body.slice(0, 100) })));
+  if (emails.length === 0) return;
 
-    try {
-      const aiService = getAiParserService();
-      summarizedNotes = await aiService.summarizeMultipleEmails({ emails: allNotes });
-      console.log('[AGGREGATE] AI returned notes:', summarizedNotes);
-    } catch (error) {
-      console.error('Failed to summarize notes with AI:', error);
-      // Fallback to simple concatenation if AI fails
-      summarizedNotes = allNotes.map(n => n.body).join('\n\n');
-    }
-  }
+  const aiService = getAiParserService();
+  const parsed = await aiService.parseMultipleEmailsToInteraction({
+    companyName: interaction.jobOpportunity?.companyName || 'Unknown',
+    roleTitle: interaction.jobOpportunity?.roleTitle || null,
+    emails
+  });
 
-  // Update the interaction with aggregated data
+  console.log('[AGGREGATE] AI result:', { date: parsed.date, type: parsed.type });
+
   await prisma.interaction.update({
     where: { id: interactionId },
     data: {
-      date: latestDate ? new Date(latestDate) : undefined,
-      endDate: latestEndDate ? new Date(latestEndDate) : null,
-      type: latestType || interaction.type,
-      stage: latestStage || interaction.stage,
-      status: latestStatus as any || interaction.status,
-      personName: allParticipants.size > 0 ? Array.from(allParticipants).join(', ') : interaction.personName,
-      agenda: latestAgenda || interaction.agenda,
-      meetingLink: latestMeetingLink || interaction.meetingLink,
-      notes: summarizedNotes || interaction.notes
+      date: new Date(parsed.date),
+      endDate: parsed.endDate ? new Date(parsed.endDate) : null,
+      type: parsed.type,
+      stage: parsed.stage || null,
+      status: parsed.status as any,
+      personName: parsed.personName || null,
+      personRole: parsed.personRole || null,
+      agenda: parsed.agenda || null,
+      meetingLink: parsed.meetingLink || null,
+      notes: parsed.notes || null,
+      outcome: parsed.outcome || null,
+      followUp: parsed.followUp || null
     }
   });
 
-  // Re-sync opportunity status since interaction data may have changed
   const { syncOpportunityStatusRecord } = await import("../../repositories/opportunity-repository.js");
   await syncOpportunityStatusRecord(interaction.jobOpportunityId, interaction.ownerEmail);
 }
 
-/**
- * Attach multiple Gmail messages to an interaction in a single transaction
- */
 export async function attachMultipleEmailsToInteraction(params: {
   auth0Email: string;
   interactionId: string;
