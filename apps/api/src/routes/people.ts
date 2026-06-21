@@ -13,6 +13,16 @@ peopleRouter.post("/research", asyncHandler(async (request, response) => {
   const service = getPersonResearchService();
   const result = await service.researchPerson(input);
 
+  if (!result) {
+    response.status(404).json({
+      code: "PERSON_RESEARCH_NOT_FOUND",
+      message: input.companyName
+        ? `No matching LinkedIn profile was found for ${input.name} at ${input.companyName}. Try adding the person's LinkedIn URL or checking the company name.`
+        : `No LinkedIn profile was found for ${input.name}. Try adding the person's LinkedIn URL.`
+    });
+    return;
+  }
+
   response.json(result);
 }));
 
