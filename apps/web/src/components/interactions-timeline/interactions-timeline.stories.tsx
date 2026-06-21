@@ -113,7 +113,6 @@ export const DrawerOpen: Story = {
             isSaving={false}
             onDelete={() => void 0}
             isDeleting={false}
-            onAttachEmail={() => void 0}
           />
           <InteractionTimelinePanel
           companyName={reevolOpportunity.companyName}
@@ -197,7 +196,6 @@ export const CombinedState: Story = {
                 isSaving={false}
                 onDelete={() => void 0}
                 isDeleting={false}
-                onAttachEmail={() => void 0}
               />
               <InteractionTimelinePanel
                 companyName={reevolOpportunity.companyName}

@@ -735,6 +735,27 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
   const status = inferStatusFromEmail(email, meeting.date);
   const agenda = email.calendar?.summary || null;
   const meetingUrl = extractMeetingUrlFromStructuredEmail(email);
+
+  // Extract participant names from calendar attendees
+  let participantNames: string | null = null;
+  if (email.calendar?.attendees && email.calendar.attendees.length > 0) {
+    // Parse email addresses to extract names
+    const attendeeNames = email.calendar.attendees
+      .map(attendee => {
+        // Try to extract name from "Name <email>" or just use email
+        const mailbox = parseMailbox(attendee);
+        return mailbox.name || mailbox.email?.split('@')[0];
+      })
+      .filter(Boolean);
+
+    if (attendeeNames.length > 0) {
+      participantNames = attendeeNames.join(', ');
+    }
+  }
+
+  // Fallback to sender name if no attendees
+  const personName = participantNames || email.senderName;
+
   const notesParts = [
     `Subject: ${email.subject}`,
     `From: ${email.fromRaw}`,
@@ -753,7 +774,7 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
     type,
     stage,
     status,
-    personName: email.senderName,
+    personName,
     personRole: null,
     agenda,
     meetingLink: meetingUrl,

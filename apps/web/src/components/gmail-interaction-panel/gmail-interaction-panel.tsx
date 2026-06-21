@@ -1,12 +1,12 @@
-import { ProcessStateCard, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { ProcessStateCard } from "@interviews-tracker/design-system";
 import type { Interaction } from "../../lib/types";
 import { GmailAiSearch } from "./gmail-ai-search";
 import { GmailChangesReview } from "./gmail-changes-review";
 import { GmailSuccessState } from "./gmail-success-state";
 import { GmailReviewPanel } from "./gmail-review-panel";
+import { GmailConnectionPrompt } from "./gmail-connection-prompt";
 import { useGmailInteractionPanel } from "./use-gmail-interaction-panel";
 import { useState } from "react";
-import type { TrackedGmailEmail } from "./gmail-interaction-panel-helpers";
 
 type GmailInteractionPanelProps = {
   opportunityId: string;
@@ -22,6 +22,7 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
   const [savedInteraction, setSavedInteraction] = useState<Interaction | undefined>(undefined);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Loading state
   if (panel.statusLoading) {
     return (
       <section className="rounded-xl border border-neutral-200 bg-white p-6">
@@ -39,55 +40,14 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
   // Not connected - show connection UI
   if (!panel.connected) {
     return (
-      <section className="rounded-xl border border-neutral-200 bg-white p-8">
-        <div className="max-w-2xl">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <MaterialIcon name="mail" className="text-[24px]" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-neutral-900 mb-1">
-                Connect Gmail
-              </h3>
-              <p className="text-sm text-neutral-600">
-                Import interactions directly from your Gmail calendar invites and emails.
-              </p>
-            </div>
-          </div>
-
-          {!panel.configured ? (
-            <div className="p-4 rounded-lg border border-red-200 bg-red-50 text-sm text-red-800">
-              Gmail OAuth is not configured on this environment.
-            </div>
-          ) : (
-            <LoadingButton
-              className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 transition-colors inline-flex items-center gap-2"
-              loading={panel.flowState === "connecting_gmail"}
-              loadingLabel="Connecting..."
-              onClick={panel.connectGmail}
-            >
-              <MaterialIcon name="link" className="text-[16px]" />
-              {panel.shouldReconnect ? "Reconnect Gmail" : "Connect Gmail"}
-            </LoadingButton>
-          )}
-
-          {panel.error && panel.flowState === "failed" && (
-            <div className="mt-4 p-4 rounded-lg border border-red-200 bg-red-50">
-              <p className="font-medium text-sm text-red-900 mb-1">Connection failed</p>
-              <p className="text-sm text-red-800">{panel.error}</p>
-              {panel.needsReconnect && (
-                <LoadingButton
-                  className="mt-3 px-4 py-2 rounded-lg bg-red-600 text-white font-medium text-sm hover:bg-red-700 transition-colors"
-                  loading={false}
-                  onClick={panel.connectGmail}
-                >
-                  Reconnect Gmail
-                </LoadingButton>
-              )}
-            </div>
-          )}
-        </div>
-      </section>
+      <GmailConnectionPrompt
+        configured={panel.configured}
+        flowState={panel.flowState}
+        shouldReconnect={panel.shouldReconnect}
+        error={panel.error}
+        needsReconnect={panel.needsReconnect}
+        onConnect={panel.connectGmail}
+      />
     );
   }
 
@@ -150,192 +110,52 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
           isAttachMode={panel.isAttachMode}
           hasParsedInteractionChanges={panel.hasParsedInteractionChanges}
           isAttaching={panel.isAttaching}
-          saveInteractionPending={panel.saveInteractionPending}
+          saveInteractionPending={false}
           onAcceptChanges={handleAccept}
           onEditManually={() => setShowManualEdit(true)}
-          onCancel={() => {
-            panel.onSelectAnotherEmail();
-            setShowManualEdit(false);
-          }}
+          onCancel={panel.onSelectAnotherEmail}
         />
       </section>
     );
   }
 
-  // Manual edit mode (fallback to old UI)
+  // Review panel with manual edit
   if (showManualEdit && panel.draft && panel.selectedEmail) {
+    const handleSave = async () => {
+      if (panel.isAttachMode) {
+        await panel.attachToExistingInteraction();
+      } else {
+        await panel.onSaveInteraction();
+      }
+      setShowSuccess(true);
+    };
+
     return (
-      <section className="rounded-xl border border-neutral-200 bg-white p-6">
+      <section className="rounded-xl border border-neutral-200 bg-white p-8">
         <GmailReviewPanel
           draft={panel.draft}
           selectedEmail={panel.selectedEmail}
           analysis={panel.analysis}
+          isAttachMode={panel.isAttachMode}
           attachTargetInteraction={panel.attachTargetInteraction}
           attachTargetId={panel.attachTargetId}
-          isAttachMode={panel.isAttachMode}
-          hasParsedInteractionChanges={panel.hasParsedInteractionChanges}
-          changedInteractionFields={panel.changedInteractionFields}
-          changedFieldLabels={panel.changedFieldLabels}
-          saveMessage={panel.saveMessage}
-          saveError={panel.saveError}
-          saveInteractionPending={panel.saveInteractionPending}
-          isAttaching={panel.isAttaching}
           opportunityInteractions={panel.opportunityInteractions}
-          onSelectAnotherEmail={() => {
-            panel.onSelectAnotherEmail();
-            setShowManualEdit(false);
-          }}
-          onSaveInteraction={async () => {
-            await panel.onSaveInteraction();
-            setShowSuccess(true);
-            setShowManualEdit(false);
-          }}
-          onAttachToExistingInteraction={async () => {
-            await panel.attachToExistingInteraction();
-            setShowSuccess(true);
-            setShowManualEdit(false);
-          }}
-          onAttachTargetIdChange={panel.onAttachTargetIdChange}
+          changedInteractionFields={panel.changedInteractionFields}
+          hasParsedInteractionChanges={panel.hasParsedInteractionChanges}
+          changedFieldLabels={panel.changedFieldLabels}
+          saveMessage={null}
+          saveError={panel.saveError}
+          saveInteractionPending={false}
+          isAttaching={panel.isAttaching}
           onDraftChange={panel.onDraftChange}
+          onAttachTargetIdChange={panel.onAttachTargetIdChange}
+          onSelectAnotherEmail={panel.onSelectAnotherEmail}
+          onSaveInteraction={handleSave}
+          onAttachToExistingInteraction={handleSave}
         />
       </section>
     );
   }
 
-  // Idle state - show CTA
-  return (
-    <section className="rounded-xl border border-neutral-200 bg-white p-8">
-      <div className="max-w-2xl">
-        <div className="flex items-start gap-4 mb-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-            <MaterialIcon name="auto_awesome" className="text-[24px]" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-1">
-              AI-Powered Gmail Import
-            </h3>
-            <p className="text-sm text-neutral-600 mb-4">
-              Let AI find and extract interaction details from your recent Gmail threads for {props.companyName}.
-            </p>
-            <LoadingButton
-              className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 transition-colors inline-flex items-center gap-2"
-              loading={panel.actionDisabled}
-              loadingLabel="Searching..."
-              onClick={panel.searchEmails}
-            >
-              <MaterialIcon name="search" className="text-[16px]" />
-              Add interaction from Gmail
-            </LoadingButton>
-          </div>
-        </div>
-
-        <GmailDebugState
-          pickedEmails={panel.pickedEmails}
-          removedEmails={panel.removedEmails}
-          fetching={panel.gmailMessageStatesFetching}
-          clearingEmailId={panel.clearingEmailId}
-          onUnpickEmail={panel.unpickEmail}
-          onRestoreEmail={panel.restoreEmail}
-        />
-
-        {panel.error && panel.flowState === "failed" && (
-          <div className="p-4 rounded-lg border border-red-200 bg-red-50">
-            <p className="font-medium text-sm text-red-900 mb-1">Search failed</p>
-            <p className="text-sm text-red-800">{panel.error}</p>
-            <div className="mt-3 flex items-center gap-2">
-              {panel.needsReconnect ? (
-                <LoadingButton
-                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium text-sm hover:bg-red-700 transition-colors"
-                  loading={false}
-                  onClick={panel.connectGmail}
-                >
-                  Reconnect Gmail
-                </LoadingButton>
-              ) : (
-                <LoadingButton
-                  className="px-4 py-2 rounded-lg border border-neutral-200 text-neutral-700 font-medium text-sm hover:bg-neutral-50 transition-colors"
-                  loading={false}
-                  onClick={panel.retryLastAction}
-                >
-                  Retry
-                </LoadingButton>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function GmailDebugState({
-  pickedEmails,
-  removedEmails,
-  fetching,
-  clearingEmailId,
-  onUnpickEmail,
-  onRestoreEmail,
-}: {
-  pickedEmails: TrackedGmailEmail[];
-  removedEmails: TrackedGmailEmail[];
-  fetching: boolean;
-  clearingEmailId: string | null;
-  onUnpickEmail: (email: TrackedGmailEmail) => void;
-  onRestoreEmail: (email: TrackedGmailEmail) => void;
-}) {
-  if (!pickedEmails.length && !removedEmails.length && !fetching) return null;
-
-  return (
-    <div className="mt-6 rounded-xl border border-dashed border-neutral-200 bg-neutral-50 p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <MaterialIcon name="bug_report" className="text-[16px] text-neutral-500" />
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-          Gmail debug state {fetching ? "· loading" : ""}
-        </p>
-      </div>
-      <DebugEmailList title="Picked emails" empty="No picked emails tracked." emails={pickedEmails} actionLabel="Unpick" clearingEmailId={clearingEmailId} onAction={onUnpickEmail} />
-      <div className="mt-3">
-        <DebugEmailList title="Cleared emails" empty="No cleared emails." emails={removedEmails} actionLabel="Restore" clearingEmailId={clearingEmailId} onAction={onRestoreEmail} />
-      </div>
-    </div>
-  );
-}
-
-function DebugEmailList({
-  title,
-  empty,
-  emails,
-  actionLabel,
-  clearingEmailId,
-  onAction,
-}: {
-  title: string;
-  empty: string;
-  emails: TrackedGmailEmail[];
-  actionLabel: string;
-  clearingEmailId: string | null;
-  onAction: (email: TrackedGmailEmail) => void;
-}) {
-  return (
-    <div>
-      <p className="text-xs font-medium text-neutral-700">{title}</p>
-      {emails.length ? (
-        <div className="mt-2 space-y-2">
-          {emails.map((email) => (
-            <div key={email.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-neutral-900">{email.subject}</p>
-                <p className="text-xs text-neutral-500">{new Date(email.date).toLocaleString()} · {email.id}</p>
-              </div>
-              <button type="button" className="rounded-md border border-neutral-200 px-2 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50" disabled={clearingEmailId === email.id} onClick={() => onAction(email)}>
-                {clearingEmailId === email.id ? "Working..." : actionLabel}
-              </button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-1 text-xs text-neutral-500">{empty}</p>
-      )}
-    </div>
-  );
+  return null;
 }

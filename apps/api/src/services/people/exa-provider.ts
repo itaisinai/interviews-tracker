@@ -380,6 +380,37 @@ export class ExaProvider {
 
     const result = this.parseLinkedInContent(profileData.text, name, profileData.url);
 
+    // Validate that the person's current company matches the expected company
+    if (companyName && result.person.company) {
+      // Extract company name from markdown format if present: [Company Name](url)
+      const extractedCompany = result.person.company.match(/^\[([^\]]+)\]/)?.[1] || result.person.company;
+
+      // Normalize both company names for comparison (lowercase, remove special chars)
+      const normalizeCompany = (name: string) =>
+        name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      const normalizedExpected = normalizeCompany(companyName);
+      const normalizedActual = normalizeCompany(extractedCompany);
+
+      console.log(`[Company validation] Expected: "${companyName}" (normalized: "${normalizedExpected}"), Found: "${extractedCompany}" (normalized: "${normalizedActual}")`);
+
+      // Check if the actual company contains the expected company or vice versa
+      // This handles cases like "Toko" vs "Toko Health" or "toko.health"
+      const isMatch = normalizedActual.includes(normalizedExpected) ||
+                     normalizedExpected.includes(normalizedActual);
+
+      if (!isMatch) {
+        console.log(`[Company mismatch] Rejecting LinkedIn profile ${profileData.url} - person works at "${extractedCompany}", not "${companyName}"`);
+        return null; // Don't return results for wrong company
+      }
+
+      console.log(`[Company match] Accepted - person works at the correct company`);
+    } else if (!companyName) {
+      console.log(`[Company validation] Skipped - no company name provided for validation`);
+    } else if (!result.person.company) {
+      console.log(`[Company validation] Warning - no company found in LinkedIn profile, allowing result`);
+    }
+
     return result;
   }
 }

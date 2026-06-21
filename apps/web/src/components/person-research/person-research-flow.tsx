@@ -24,11 +24,12 @@ type PersonResearchFlowProps = {
   onClose: () => void;
   onSaved?: () => void;
   opportunityId?: string;
+  opportunityCompanyName?: string; // For company validation
 };
 
 type FlowStep = "confirm" | "loading" | "review" | "error";
 
-export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportunityId }: PersonResearchFlowProps) {
+export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportunityId, opportunityCompanyName }: PersonResearchFlowProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("confirm");
   const [researchResult, setResearchResult] = useState<PersonResearchResult | null>(null);
@@ -50,7 +51,7 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
 
       const result = await api.researchPerson({
         name: person.name,
-        companyName: person.company || undefined,
+        companyName: opportunityCompanyName || person.company || undefined,
         roleTitle: person.title || undefined,
         linkedinUrl: linkedinUrl || person.linkedinUrl || undefined
       });
@@ -105,8 +106,11 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
       // Show success toast - would integrate with app toast system
       console.log("Research saved successfully");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Save failed:", error);
+      // Extract error message from API response
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to save contact. Please try again.";
+      alert(errorMessage);
     }
   });
 
