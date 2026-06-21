@@ -57,7 +57,7 @@ export async function attachEmailToInteraction(params: {
 
   const derived = deriveInteractionFromStructuredEmail(structuredEmail);
 
-  // Store the attached email
+  // Store the attached email with both derived and structured data
   const interactionEmail = await prisma.interactionEmail.create({
     data: {
       interactionId,
@@ -65,7 +65,15 @@ export async function attachEmailToInteraction(params: {
       subject: structuredEmail.subject,
       from: structuredEmail.fromRaw,
       receivedDate: new Date(structuredEmail.internalDate),
-      extractedData: derived as any
+      extractedData: {
+        derived,
+        structured: {
+          subject: structuredEmail.subject,
+          from: structuredEmail.fromRaw,
+          plainText: structuredEmail.plainText,
+          calendar: structuredEmail.calendar
+        }
+      } as any
     }
   });
 
@@ -106,7 +114,11 @@ export async function aggregateInteractionEmails(interactionId: string) {
 
   // Process emails from newest to oldest
   for (const email of interaction.attachedEmails) {
-    const extracted = email.extractedData as GmailDerivedInteraction | null;
+    const data = email.extractedData as any;
+    // Handle both new structure (with derived/structured) and old structure (direct)
+    const extracted = (data?.derived || data) as GmailDerivedInteraction | null;
+    const structured = data?.structured;
+
     if (!extracted) continue;
 
     // Latest wins for scalar fields
@@ -124,13 +136,15 @@ export async function aggregateInteractionEmails(interactionId: string) {
       names.forEach(name => allParticipants.add(name));
     }
 
-    // Collect raw notes with metadata
-    if (extracted.notes) {
+    // Collect clean email body text for AI summarization
+    // Use structured.plainText if available (cleaner), fallback to subject
+    const bodyText = structured?.plainText?.trim() || email.subject || '';
+    if (bodyText) {
       allNotes.push({
         subject: email.subject || 'No subject',
         from: email.from || 'Unknown',
         date: email.receivedDate?.toISOString() || '',
-        body: extracted.notes
+        body: bodyText.slice(0, 2000) // Limit length to avoid token overload
       });
     }
   }
