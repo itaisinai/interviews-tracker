@@ -41,8 +41,16 @@ export async function buildOpportunityInputFromParsedJobDescription(parsed: Pars
   });
 }
 
-export async function createOpportunityFromText(text: string) {
+export async function createOpportunityFromText(text: string, ownerEmail?: string) {
   const parsed = await getAiParserService().parseJobDescription(text);
   const input = await buildOpportunityInputFromParsedJobDescription(parsed);
-  return createOpportunity(input);
+
+  // For webhook calls without auth, use ALLOWED_EMAIL as the owner
+  const owner = ownerEmail ?? process.env.ALLOWED_EMAIL?.trim().toLowerCase();
+
+  if (!owner) {
+    throw new Error("Cannot create opportunity: no owner email provided and ALLOWED_EMAIL not configured");
+  }
+
+  return createOpportunity(input, owner);
 }
