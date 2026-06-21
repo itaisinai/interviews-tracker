@@ -223,22 +223,13 @@ export function InteractionSummaryPanel({
                   work.isCurrent,
               )?.title;
 
-              return (
+              return personRecord ? (
+                // Researched contact - clickable card
                 <button
                   key={index}
                   type="button"
                   onClick={() => {
-                    const personToShow: Person = personRecord || {
-                      id: "",
-                      name: name,
-                      email: null,
-                      linkedinUrl: null,
-                      title: interaction.personRole || null,
-                      company: interaction.jobOpportunity?.companyName || null,
-                      avatarUrl: null,
-                      research: null,
-                    };
-                    setSelectedPerson(personToShow);
+                    setSelectedPerson(personRecord);
                     setPersonDetailModalOpen(true);
                   }}
                   className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors text-left group"
@@ -255,36 +246,44 @@ export function InteractionSummaryPanel({
                       </div>
                     )}
                   </div>
-                  {!personRecord && (
-                    <button
-                      type="button"
-                      className="ml-auto p-1 rounded hover:bg-neutral-100 text-neutral-400 hover:text-emerald-600"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const personToShow: Person = {
-                          id: "",
-                          name: name,
-                          email: null,
-                          linkedinUrl: null,
-                          title: interaction.personRole || null,
-                          company:
-                            interaction.jobOpportunity?.companyName || null,
-                          avatarUrl: null,
-                          research: null,
-                        };
-                        setSelectedPerson(personToShow);
-                        setResearchModalOpen(true);
-                      }}
-                      aria-label={`Research ${name}`}
-                      title={`Research ${name}`}
-                    >
-                      <MaterialIcon
-                        name="travel_explore"
-                        className="text-[14px]"
-                      />
-                    </button>
-                  )}
                 </button>
+              ) : (
+                // Not researched - simple row with research button right next to name
+                <div
+                  key={index}
+                  className="flex items-center gap-2 py-2"
+                >
+                  <UserRound className="w-4 h-4 text-neutral-400" />
+                  <div className="text-sm font-medium text-neutral-700">
+                    {name}
+                  </div>
+                  <button
+                    type="button"
+                    className="p-1 rounded-lg hover:bg-emerald-50 text-neutral-400 hover:text-emerald-600 transition-colors"
+                    onClick={() => {
+                      const personToShow: Person = {
+                        id: "",
+                        name: name,
+                        email: null,
+                        linkedinUrl: null,
+                        title: interaction.personRole || null,
+                        company:
+                          interaction.jobOpportunity?.companyName || null,
+                        avatarUrl: null,
+                        research: null,
+                      };
+                      setSelectedPerson(personToShow);
+                      setResearchModalOpen(true);
+                    }}
+                    aria-label={`Research ${name}`}
+                    title={`Research ${name}`}
+                  >
+                    <MaterialIcon
+                      name="travel_explore"
+                      className="text-[16px]"
+                    />
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -408,31 +407,6 @@ export function InteractionSummaryPanel({
         </div>
       ) : null}
 
-      {/* Interview Preparation Section */}
-      {!isEditing && (
-        <div className="mb-8 rounded-xl border border-neutral-200 bg-white p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-2">Interview Preparation <span className="ml-2 align-middle text-xs font-normal text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Beta</span></h3>
-          <p className="text-sm text-neutral-600 mb-4">
-            AI-powered preparation based on this opportunity and participants.
-          </p>
-          <div className="mb-4 grid grid-cols-2 gap-2">
-            <MiniPrepCard icon="business" title="Company context" />
-            <MiniPrepCard icon="work" title="Role details" />
-            <MiniPrepCard icon="groups" title="Interviewers" />
-            <MiniPrepCard icon="stars" title="Talking points" />
-          </div>
-          <button
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 transition-colors"
-            onClick={() => {
-              // Scroll to preparation section on opportunity page
-              document.getElementById('interview-preparation-section')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            <MaterialIcon name="stars" className="text-[16px]" />
-            Open preparation
-          </button>
-        </div>
-      )}
 
       {/* Quick Info Section */}
       {!isEditing && (
