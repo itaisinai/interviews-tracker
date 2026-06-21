@@ -10,7 +10,6 @@ import { ParticipantsCard } from "./participants-card";
 import { AttachedEmailsCard } from "./attached-emails-card";
 import { QuickInfoCard } from "./quick-info-card";
 import { NotesCard } from "./notes-card";
-import { GmailEmailStatesSection } from "./gmail-email-states-section";
 
 type InteractionSummaryPanelProps = {
   interaction: Interaction;
@@ -116,9 +115,6 @@ export function InteractionSummaryPanel({
           onEmailsAttached={onToggleEditing}
         />
       </div>
-
-      {/* Gmail Email States */}
-      <GmailEmailStatesSection opportunityId={interaction.jobOpportunityId} />
 
       {/* Quick Info */}
       <QuickInfoCard interaction={interaction} />
