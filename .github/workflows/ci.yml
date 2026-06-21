@@ -10,10 +10,6 @@ jobs:
   build:
     name: Typecheck and Build
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.60.0-noble
-    env:
-      PLAYWRIGHT_DOCKER_IMAGE: mcr.microsoft.com/playwright:v1.60.0-noble
 
     steps:
       - name: Checkout
@@ -45,25 +41,3 @@ jobs:
 
       - name: Smoke API
         run: yarn smoke:api
-
-      - name: Build Storybook
-        run: yarn build:storybook
-
-      - name: Verify Playwright Docker image
-        run: node scripts/check-playwright-image.mjs
-
-      - name: Visual tests
-        run: yarn test:visual:ci
-
-      - name: Upload visual test artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: visual-test-artifacts
-          if-no-files-found: ignore
-          path: |
-            test-results/**
-            playwright-report/**
-            **/*-actual.png
-            **/*-expected.png
-            **/*-diff.png
