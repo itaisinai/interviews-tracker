@@ -105,8 +105,13 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
       // Show success toast - would integrate with app toast system
       console.log("Research saved successfully");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Save failed:", error);
+      // Handle validation errors
+      if (error?.message?.includes("Company mismatch") || error?.message?.includes("Duplicate contact")) {
+        // Show user-friendly error in the UI
+        alert(error.message || "Failed to save contact. Please check the details.");
+      }
     }
   });
 

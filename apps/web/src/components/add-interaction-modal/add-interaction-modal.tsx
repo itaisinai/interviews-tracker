@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Modal, MaterialIcon } from "@interviews-tracker/design-system";
 import { ManualInteractionForm } from "./manual-interaction-form";
 import { GmailImportFlow } from "./gmail-import-flow";
+import { TextParseFlow } from "./text-parse-flow";
+import type { InteractionDraft } from "../../lib/types";
 
 export type AddInteractionModalProps = {
   isOpen: boolean;
@@ -12,7 +14,7 @@ export type AddInteractionModalProps = {
   onSaved: () => void;
 };
 
-type InputMode = "chooser" | "manual" | "gmail";
+type InputMode = "chooser" | "manual" | "gmail" | "text-parse" | "text-review";
 
 export function AddInteractionModal({
   isOpen,
@@ -23,15 +25,22 @@ export function AddInteractionModal({
   onSaved,
 }: AddInteractionModalProps) {
   const [mode, setMode] = useState<InputMode>("chooser");
+  const [parsedDraft, setParsedDraft] = useState<InteractionDraft | null>(null);
 
   const handleClose = () => {
     setMode("chooser");
+    setParsedDraft(null);
     onClose();
   };
 
   const handleSaved = () => {
     onSaved();
     handleClose();
+  };
+
+  const handleTextParsed = (draft: InteractionDraft) => {
+    setParsedDraft(draft);
+    setMode("text-review");
   };
 
   return (
@@ -43,7 +52,11 @@ export function AddInteractionModal({
           ? "Add Interaction"
           : mode === "gmail"
             ? "Import from Gmail"
-            : "Add Interaction Manually"
+            : mode === "text-parse"
+              ? "Parse from Text"
+              : mode === "text-review"
+                ? "Review Parsed Interaction"
+                : "Add Interaction Manually"
       }
       size="lg"
     >
@@ -54,7 +67,7 @@ export function AddInteractionModal({
               Choose how you'd like to add an interaction for{" "}
               <span className="font-medium">{companyName}</span>
             </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <button
                 onClick={() => setMode("gmail")}
                 className="flex flex-col items-start gap-3 rounded-xl border-2 border-neutral-200 bg-white p-6 text-left transition-all hover:border-emerald-500 hover:shadow-md"
@@ -68,6 +81,23 @@ export function AddInteractionModal({
                   </h3>
                   <p className="mt-1 text-sm text-neutral-600">
                     Search your emails and auto-extract details
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setMode("text-parse")}
+                className="flex flex-col items-start gap-3 rounded-xl border-2 border-neutral-200 bg-white p-6 text-left transition-all hover:border-emerald-500 hover:shadow-md"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <MaterialIcon name="auto_awesome" className="text-[24px]" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-neutral-900">
+                    Parse from Text
+                  </h3>
+                  <p className="mt-1 text-sm text-neutral-600">
+                    Paste a message and extract details
                   </p>
                 </div>
               </button>
@@ -99,6 +129,27 @@ export function AddInteractionModal({
             roleTitle={roleTitle}
             onSaved={handleSaved}
             onBack={() => setMode("chooser")}
+          />
+        )}
+
+        {mode === "text-parse" && (
+          <TextParseFlow
+            opportunityId={opportunityId}
+            companyName={companyName}
+            roleTitle={roleTitle}
+            onParsed={handleTextParsed}
+            onBack={() => setMode("chooser")}
+          />
+        )}
+
+        {mode === "text-review" && parsedDraft && (
+          <ManualInteractionForm
+            opportunityId={opportunityId}
+            companyName={companyName}
+            roleTitle={roleTitle}
+            initialDraft={parsedDraft}
+            onSaved={handleSaved}
+            onCancel={() => setMode("chooser")}
           />
         )}
 

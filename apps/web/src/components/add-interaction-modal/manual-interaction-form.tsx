@@ -9,6 +9,7 @@ export type ManualInteractionFormProps = {
   opportunityId: string;
   companyName: string;
   roleTitle: string;
+  initialDraft?: InteractionDraft;
   onSaved: () => void;
   onCancel: () => void;
 };
@@ -17,10 +18,11 @@ export function ManualInteractionForm({
   opportunityId,
   companyName,
   roleTitle,
+  initialDraft,
   onSaved,
   onCancel,
 }: ManualInteractionFormProps) {
-  const [draft, setDraft] = useState<InteractionDraft>({
+  const [draft, setDraft] = useState<InteractionDraft>(initialDraft ?? {
     date: new Date().toISOString(),
     endDate: null,
     type: "Interview",
@@ -43,6 +45,17 @@ export function ManualInteractionForm({
 
   return (
     <div className="space-y-6">
+      {initialDraft && (
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+          <div className="flex items-start gap-2">
+            <span className="text-blue-600 text-sm">✨</span>
+            <p className="text-sm text-blue-900">
+              We've extracted these details from your message. Review and edit as needed before saving.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-lg border border-neutral-200 bg-neutral-50/50 p-4">
         <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
           Adding to

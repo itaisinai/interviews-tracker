@@ -67,6 +67,54 @@ peopleRouter.get("/:personId", asyncHandler(async (request, response) => {
 peopleRouter.post("/", asyncHandler(async (request, response) => {
   const { name, email, linkedinUrl, title, company, avatarUrl, jobOpportunityId } = request.body;
 
+  // If linking to an opportunity, validate company match and check for duplicates
+  if (jobOpportunityId) {
+    const opportunity = await prisma.jobOpportunity.findUnique({
+      where: { id: jobOpportunityId },
+      select: { companyName: true }
+    });
+
+    if (!opportunity) {
+      response.status(404).json({ error: "Opportunity not found" });
+      return;
+    }
+
+    // Check if a person with the same name already exists for this opportunity
+    const existingPerson = await prisma.person.findFirst({
+      where: {
+        name,
+        jobOpportunityId
+      }
+    });
+
+    if (existingPerson) {
+      response.status(409).json({
+        error: "Duplicate contact",
+        message: `A contact named "${name}" already exists for this opportunity`,
+        existingPersonId: existingPerson.id
+      });
+      return;
+    }
+
+    // Validate that the person's company matches the opportunity's company
+    if (company && company !== opportunity.companyName) {
+      // Extract company name from markdown link if present: [Company Name](url)
+      const companyMatch = company.match(/^\[([^\]]+)\]/);
+      const extractedCompany = companyMatch ? companyMatch[1] : company;
+
+      // Check if extracted company matches
+      if (extractedCompany !== opportunity.companyName) {
+        response.status(400).json({
+          error: "Company mismatch",
+          message: `Person's current company "${extractedCompany}" doesn't match opportunity company "${opportunity.companyName}". This person may not work at this company.`,
+          personCompany: extractedCompany,
+          opportunityCompany: opportunity.companyName
+        });
+        return;
+      }
+    }
+  }
+
   // Try to find existing person by email or linkedinUrl
   let person = null;
 
