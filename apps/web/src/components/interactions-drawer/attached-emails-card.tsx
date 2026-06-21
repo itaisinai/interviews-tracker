@@ -30,16 +30,15 @@ export function AttachedEmailsCard({
 
     setIsReparsing(true);
     try {
-      // API returns the fresh interaction with AI-generated notes
-      const updatedInteraction = await api.reparseInteractionEmails(interactionId);
+      // API returns interaction with aiSuggestion (NOT saved to DB yet)
+      const result = await api.reparseInteractionEmails(interactionId);
 
-      console.log('[REPARSE] Fresh interaction from API:', {
-        id: updatedInteraction.id,
-        notesLength: updatedInteraction.notes?.length,
-        notesPreview: updatedInteraction.notes?.slice(0, 100)
+      console.log('[REPARSE] AI suggestion from API:', {
+        hasAiSuggestion: !!result.aiSuggestion,
+        aiNotes: result.aiSuggestion?.notes?.slice(0, 100)
       });
 
-      // Update the opportunity query cache with fresh interaction
+      // Store AI suggestion in the opportunity cache
       queryClient.setQueryData(
         ["opportunity", opportunityId],
         (old: any) => {
@@ -47,17 +46,15 @@ export function AttachedEmailsCard({
           return {
             ...old,
             interactions: old.interactions.map((int: any) =>
-              int.id === interactionId ? updatedInteraction : int
+              int.id === interactionId
+                ? { ...int, aiSuggestion: result.aiSuggestion }
+                : int
             )
           };
         }
       );
 
-      // Also invalidate to refetch in background
-      queryClient.invalidateQueries({ queryKey: ["interactions"] });
-      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-
-      // Now open edit form - data is already fresh in cache
+      // Open edit form - it will use aiSuggestion to pre-fill
       onEmailsAttached?.();
     } catch (error) {
       console.error("Failed to reparse emails:", error);

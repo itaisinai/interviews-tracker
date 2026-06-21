@@ -535,20 +535,60 @@ export async function reparseInteractionEmails(auth0Email: string, interactionId
     }
   }
 
-  // Now aggregate all emails (both newly parsed and existing ones)
-  await aggregateInteractionEmails(interactionId);
-
-  // Return the updated interaction
-  const updated = await prisma.interaction.findUnique({
+  // Return interaction for frontend to decide whether to save
+  // Don't auto-aggregate here - let frontend show AI results for review
+  const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {
       attachedEmails: {
         orderBy: { receivedDate: 'desc' }
+      },
+      jobOpportunity: {
+        select: { companyName: true, roleTitle: true }
       }
     }
   });
 
-  console.log('[REPARSE] Returning interaction with notes:', updated?.notes?.slice(0, 200));
+  if (!interaction) {
+    throw new Error('Interaction not found after reparse');
+  }
 
-  return updated;
+  // Generate AI results WITHOUT saving to database
+  const emails = [];
+  for (const email of interaction.attachedEmails) {
+    const data = email.extractedData as any;
+    const structured = data?.structured;
+    if (!structured?.plainText) continue;
+
+    emails.push({
+      subject: email.subject || '',
+      from: email.from || '',
+      date: email.receivedDate?.toISOString() || '',
+      body: structured.plainText.slice(0, 2000),
+      calendar: structured.calendar ? {
+        start: structured.calendar.start || null,
+        end: structured.calendar.end || null,
+        summary: structured.calendar.summary || null,
+        location: structured.calendar.location || null
+      } : null
+    });
+  }
+
+  let aiSuggestion = null;
+  if (emails.length > 0) {
+    const aiService = getAiParserService();
+    aiSuggestion = await aiService.parseMultipleEmailsToInteraction({
+      companyName: interaction.jobOpportunity?.companyName || 'Unknown',
+      roleTitle: interaction.jobOpportunity?.roleTitle || null,
+      emails
+    });
+    console.log('[REPARSE] AI suggestion (NOT saved):', aiSuggestion.notes?.slice(0, 200));
+  }
+
+  console.log('[REPARSE] Returning interaction with AI suggestion for review');
+
+  return {
+    ...interaction,
+    aiSuggestion // Frontend can use this to pre-fill edit form
+  };
 }

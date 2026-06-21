@@ -26,6 +26,31 @@ type InteractionsDrawerProps = {
 
 
 function toDraft(interaction: Interaction): InteractionDraft {
+  // If AI suggestion exists (from reparse), use it to pre-fill the draft
+  const aiSuggestion = (interaction as any).aiSuggestion;
+
+  if (aiSuggestion) {
+    console.log('[DRAWER] Using AI suggestion for draft:', {
+      notes: aiSuggestion.notes?.slice(0, 100)
+    });
+    return {
+      date: aiSuggestion.date || interaction.date,
+      endDate: aiSuggestion.endDate ?? null,
+      type: normalizeInteractionType(aiSuggestion.type || interaction.type),
+      stage: aiSuggestion.stage ?? null,
+      status: aiSuggestion.status || interaction.status,
+      personName: aiSuggestion.personName ?? null,
+      personRole: aiSuggestion.personRole ?? null,
+      agenda: aiSuggestion.agenda ?? null,
+      meetingLink: aiSuggestion.meetingLink ?? null,
+      gmailMessageId: interaction.gmailMessageId ?? null,
+      notes: aiSuggestion.notes ?? null,
+      outcome: aiSuggestion.outcome ?? null,
+      followUp: aiSuggestion.followUp ?? null,
+    };
+  }
+
+  // Normal draft from existing interaction
   return {
     date: interaction.date,
     endDate: interaction.endDate ?? null,
