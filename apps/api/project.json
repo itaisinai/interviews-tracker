@@ -9,7 +9,7 @@
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/dist/api"],
       "options": {
-        "command": "yarn prisma:generate && node scripts/clean-api-build.mjs && tsc -p apps/api/tsconfig.json && node scripts/clean-package-js.mjs && node scripts/check-runtime-package-exports.mjs"
+        "command": "yarn prisma:generate && cd apps/api && tsup"
       }
     },
     "typecheck": {
