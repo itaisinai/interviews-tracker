@@ -360,9 +360,10 @@ type ErrorModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onRetry: () => void;
+  message?: string;
 };
 
-export function ResearchErrorModal({ isOpen, onClose, onRetry }: ErrorModalProps) {
+export function ResearchErrorModal({ isOpen, onClose, onRetry, message }: ErrorModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Research failed" size="sm">
       <div className="py-4 text-center">
@@ -372,7 +373,7 @@ export function ResearchErrorModal({ isOpen, onClose, onRetry }: ErrorModalProps
           </div>
         </div>
         <p className="mt-4 text-body-md text-on-surface-variant">
-          Couldn't research this person. Please try again or add a LinkedIn URL.
+          {message || "Couldn't research this person. Please try again or add a LinkedIn URL."}
         </p>
       </div>
 
