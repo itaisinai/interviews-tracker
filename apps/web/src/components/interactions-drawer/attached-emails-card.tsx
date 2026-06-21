@@ -30,18 +30,35 @@ export function AttachedEmailsCard({
 
     setIsReparsing(true);
     try {
-      await api.reparseInteractionEmails(interactionId);
+      // API returns the fresh interaction with AI-generated notes
+      const updatedInteraction = await api.reparseInteractionEmails(interactionId);
 
-      // Invalidate and wait for refetch to complete
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["interactions"] }),
-        queryClient.invalidateQueries({ queryKey: ["opportunities"] }),
-        queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] }),
-        queryClient.refetchQueries({ queryKey: ["opportunity", opportunityId] })
-      ]);
+      console.log('[REPARSE] Fresh interaction from API:', {
+        id: updatedInteraction.id,
+        notesLength: updatedInteraction.notes?.length,
+        notesPreview: updatedInteraction.notes?.slice(0, 100)
+      });
 
-      // Don't open edit form - drawer state is stale
-      // User can click Edit to see the updated notes
+      // Update the opportunity query cache with fresh interaction
+      queryClient.setQueryData(
+        ["opportunity", opportunityId],
+        (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            interactions: old.interactions.map((int: any) =>
+              int.id === interactionId ? updatedInteraction : int
+            )
+          };
+        }
+      );
+
+      // Also invalidate to refetch in background
+      queryClient.invalidateQueries({ queryKey: ["interactions"] });
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+
+      // Now open edit form - data is already fresh in cache
+      onEmailsAttached?.();
     } catch (error) {
       console.error("Failed to reparse emails:", error);
       alert("Failed to reparse emails. Please try again.");
