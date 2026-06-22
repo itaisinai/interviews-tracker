@@ -15,6 +15,7 @@ import {
 import { InteractionDrawerHeader } from "./interaction-drawer-header";
 import { InteractionSummaryPanel } from "./interaction-summary-panel";
 import { InteractionTimelinePanel } from "./interaction-timeline-panel";
+import { interactionToDraft } from "./interaction-draft";
 import { useNavigate } from "react-router-dom";
 
 type InteractionsDrawerProps = {
@@ -24,49 +25,6 @@ type InteractionsDrawerProps = {
   onSelectInteraction?: (interactionId: string) => void;
 };
 
-
-function toDraft(interaction: Interaction): InteractionDraft {
-  // If AI suggestion exists (from reparse), use it to pre-fill the draft
-  const aiSuggestion = (interaction as any).aiSuggestion;
-
-  if (aiSuggestion) {
-    console.log('[DRAWER] Using AI suggestion for draft:', {
-      notes: aiSuggestion.notes?.slice(0, 100)
-    });
-    return {
-      date: aiSuggestion.date || interaction.date,
-      endDate: aiSuggestion.endDate ?? null,
-      type: normalizeInteractionType(aiSuggestion.type || interaction.type),
-      stage: aiSuggestion.stage ?? null,
-      status: aiSuggestion.status || interaction.status,
-      personName: aiSuggestion.personName ?? null,
-      personRole: aiSuggestion.personRole ?? null,
-      agenda: aiSuggestion.agenda ?? null,
-      meetingLink: aiSuggestion.meetingLink ?? null,
-      gmailMessageId: interaction.gmailMessageId ?? null,
-      notes: aiSuggestion.notes ?? null,
-      outcome: aiSuggestion.outcome ?? null,
-      followUp: aiSuggestion.followUp ?? null,
-    };
-  }
-
-  // Normal draft from existing interaction
-  return {
-    date: interaction.date,
-    endDate: interaction.endDate ?? null,
-    type: normalizeInteractionType(interaction.type),
-    stage: interaction.stage ?? null,
-    status: interaction.status,
-    personName: interaction.personName ?? null,
-    personRole: interaction.personRole ?? null,
-    agenda: interaction.agenda ?? null,
-    meetingLink: interaction.meetingLink ?? null,
-    gmailMessageId: interaction.gmailMessageId ?? null,
-    notes: interaction.notes ?? null,
-    outcome: interaction.outcome ?? null,
-    followUp: interaction.followUp ?? null,
-  };
-}
 
 export function InteractionsDrawer({
   selectedInteraction,
@@ -128,7 +86,7 @@ export function InteractionsDrawer({
 
   useEffect(() => {
     setIsEditing(false);
-    setDraft(mountedInteraction ? toDraft(mountedInteraction) : null);
+    setDraft(mountedInteraction ? interactionToDraft(mountedInteraction) : null);
   }, [mountedInteraction?.id]);
 
   const opportunity =
@@ -200,7 +158,7 @@ export function InteractionsDrawer({
       refreshQueries();
 
       setIsEditing(false);
-      setDraft(toDraft(savedInteraction));
+      setDraft(interactionToDraft(savedInteraction));
     },
   });
 
@@ -263,13 +221,13 @@ export function InteractionsDrawer({
                   });
                 } else {
                   // Normal edit - use current interaction data
-                  setDraft(toDraft(displayInteraction));
+                  setDraft(interactionToDraft(displayInteraction));
                 }
                 setIsEditing(true);
               }}
               onCancelEditing={() => {
                 setIsEditing(false);
-                setDraft(toDraft(displayInteraction));
+                setDraft(interactionToDraft(displayInteraction));
               }}
               onDraftChange={setDraft}
               onSave={() => void updateInteraction.mutate()}

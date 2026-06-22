@@ -100,7 +100,7 @@ export function InteractionSummaryPanel({
       <InteractionSummaryCompact
         interaction={interaction}
         statusBadge={headerBadge}
-        onEdit={onToggleEditing}
+        onEdit={() => onToggleEditing()}
         onCancelEditing={onCancelEditing}
         onDelete={() => {
           if (window.confirm("Delete this interaction?")) {

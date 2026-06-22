@@ -41,21 +41,6 @@ export function InteractionSummaryCompact({
     interaction.endDate,
   );
 
-  // Calculate duration
-  let duration = "";
-  if (interaction.endDate) {
-    const start = new Date(interaction.date);
-    const end = new Date(interaction.endDate);
-    const minutes = Math.round((end.getTime() - start.getTime()) / 60000);
-    if (minutes < 60) {
-      duration = `${minutes}min`;
-    } else {
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      duration = mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
-    }
-  }
-
   return (
     <div className="flex items-start gap-4 p-4 bg-white rounded-lg border border-neutral-200">
       {/* Icon */}
@@ -73,12 +58,6 @@ export function InteractionSummaryCompact({
             <div className="flex items-center gap-2 text-sm text-neutral-600">
               <MaterialIcon name="schedule" className="text-[16px]" />
               <span>{dateTimeRange}</span>
-              {duration && (
-                <>
-                  <span>•</span>
-                  <span>{duration}</span>
-                </>
-              )}
             </div>
             {interaction.stage && (
               <div className="flex items-center gap-2 mt-2">
@@ -105,7 +84,13 @@ export function InteractionSummaryCompact({
               <MessageSquare className="w-4 h-4" />
             </button>
             <button
-              onClick={isEditing ? onCancelEditing : onEdit}
+              onClick={() => {
+                if (isEditing) {
+                  onCancelEditing();
+                } else {
+                  onEdit();
+                }
+              }}
               className="p-2 rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors"
               title="Edit"
             >
