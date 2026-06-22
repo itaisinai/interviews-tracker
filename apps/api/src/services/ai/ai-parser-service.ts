@@ -8,12 +8,17 @@ import {
 import { buildEmailInteractionParserSystemPrompt, buildInteractionTextParserSystemPrompt, buildJobParserSystemPrompt } from "@interviews-tracker/ai";
 
 import { createTimer } from "../../lib/logger.js";
-import { interactionTypeSchema } from "@interviews-tracker/core";
+import { interactionStatusSchema, interactionTypeSchema } from "@interviews-tracker/core";
 import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
 import { z } from "zod";
 
 export type ParsedJobDescription = typeof aiParseResponseSchema._type;
 export type CompanyEnrichment = typeof companyEnrichmentSchema._type;
+export type SmartMergeFeedbackResult = {
+  mergedNotes: string;
+  suggestedStatus: z.infer<typeof interactionStatusSchema> | null;
+  suggestedOutcome: string | null;
+};
 
 export interface AiParserService {
   parseJobDescription(text: string): Promise<ParsedJobDescription>;
@@ -80,9 +85,7 @@ export interface AiParserService {
       source: string;
       date: Date;
     }>;
-  }): Promise<{
-    mergedNotes: string;
-  }>;
+  }): Promise<SmartMergeFeedbackResult>;
 }
 
 type OpenAiTextOutput = {
@@ -514,7 +517,7 @@ export class OpenAiParserService implements AiParserService {
       source: string;
       date: Date;
     }>;
-  }): Promise<{ mergedNotes: string; suggestedStatus?: string | null; suggestedOutcome?: string | null }> {
+  }): Promise<SmartMergeFeedbackResult> {
     console.log('[AI SMART MERGE] Starting smart merge', {
       companyName: input.companyName,
       roleTitle: input.roleTitle,
@@ -585,7 +588,11 @@ Merge them into one concise note:`;
       text: userPrompt
     });
 
-    const parsed = JSON.parse(result) as { mergedNotes?: string; suggestedStatus?: string | null; suggestedOutcome?: string | null };
+    const parsed = JSON.parse(result) as {
+      mergedNotes?: string;
+      suggestedStatus?: z.infer<typeof interactionStatusSchema> | null;
+      suggestedOutcome?: string | null;
+    };
 
     console.log('[AI SMART MERGE] Result:', {
       mergedNotesLength: parsed.mergedNotes?.length ?? 0,
