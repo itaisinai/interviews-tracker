@@ -16,7 +16,16 @@ dashboardRouter.get("/", asyncHandler(async (request, response) => {
   await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
   const [opportunities, interactions] = await Promise.all([
     prisma.jobOpportunity.findMany({ where: { ownerEmail }, include: { interactions: true, domains: { include: { domain: true } } }, orderBy: { updatedAt: "desc" } }),
-    prisma.interaction.findMany({ where: { ownerEmail, date: { gte: today } }, include: { jobOpportunity: true }, orderBy: { date: "asc" }, take: 8 })
+    prisma.interaction.findMany({
+      where: {
+        ownerEmail,
+        date: { gte: today },
+        status: { notIn: ["DONE", "REJECTED", "CANCELLED"] }
+      },
+      include: { jobOpportunity: true },
+      orderBy: { date: "asc" },
+      take: 8
+    })
   ]);
 
   response.json({
