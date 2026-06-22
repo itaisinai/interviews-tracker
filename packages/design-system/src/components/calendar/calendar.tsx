@@ -16,6 +16,7 @@ export type CalendarProps<Event extends CalendarEvent = CalendarEvent> = {
   multipleEventsLabel?: string;
   eventCountLabel?: (count: number) => string;
   renderEvent?: (event: Event) => ReactNode;
+  onEventClick?: (event: Event) => void;
   onPreviousMonth?: () => void;
   onNextMonth?: () => void;
   onToday?: () => void;
@@ -51,6 +52,7 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
   eventCountLabel = (count) =>
     `${count} ${count === 1 ? "meeting" : "meetings"}`,
   renderEvent,
+  onEventClick,
   onPreviousMonth,
   onNextMonth,
   onToday,
@@ -168,7 +170,19 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
                 <ul className="space-y-2">
                   {day.events.map((event) => (
                     <li key={event.id}>
-                      {renderEvent ? (
+                      {onEventClick ? (
+                        <button
+                          type="button"
+                          className="w-full text-left transition-colors hover:opacity-70"
+                          onClick={() => onEventClick(event)}
+                        >
+                          {renderEvent ? (
+                            renderEvent(event)
+                          ) : (
+                            <DefaultCalendarEvent event={event} />
+                          )}
+                        </button>
+                      ) : renderEvent ? (
                         renderEvent(event)
                       ) : (
                         <DefaultCalendarEvent event={event} />

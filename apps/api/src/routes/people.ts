@@ -3,6 +3,7 @@ import { asyncHandler } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
 import { personResearchInputSchema } from "../lib/schemas.js";
 import { getPersonResearchService } from "../services/people/person-research-service.js";
+import { parseCurrentJobDescription, applyParsedJobToTimeline } from "../services/people/parse-current-job-service.js";
 
 export const peopleRouter = Router();
 
@@ -30,6 +31,95 @@ peopleRouter.post("/research", asyncHandler(async (request, response) => {
   }
 
   response.json(result);
+}));
+
+// Parse current job description
+peopleRouter.post("/:personId/parse-current-job", asyncHandler(async (request, response) => {
+  const { personId } = request.params;
+  const { jobDescriptionText } = request.body;
+
+  if (!jobDescriptionText || typeof jobDescriptionText !== "string") {
+    response.status(400).json({ error: "jobDescriptionText is required" });
+    return;
+  }
+
+  // Get person with research
+  const person = await prisma.person.findUnique({
+    where: { id: personId },
+    include: { research: true }
+  });
+
+  if (!person) {
+    response.status(404).json({ error: "Person not found" });
+    return;
+  }
+
+  if (!person.research?.experience) {
+    response.status(400).json({ error: "Person has no existing experience data to update" });
+    return;
+  }
+
+  const currentExperience = person.research.experience as Array<{
+    company: string;
+    companyUrl?: string;
+    totalDuration?: string;
+    positions: Array<{
+      title: string;
+      dates?: string;
+      duration?: string;
+      description?: string;
+    }>;
+  }>;
+
+  console.log('[PARSE CURRENT JOB] Person research experience:', JSON.stringify(currentExperience, null, 2));
+
+  // Parse the job description
+  const parsedJob = await parseCurrentJobDescription(jobDescriptionText, currentExperience);
+
+  // Apply to timeline for preview
+  const updatedTimeline = applyParsedJobToTimeline(parsedJob, currentExperience);
+
+  response.json({
+    parsedJob,
+    updatedTimeline,
+    currentTimeline: currentExperience
+  });
+}));
+
+// Apply parsed job update to person's research
+peopleRouter.post("/:personId/apply-job-update", asyncHandler(async (request, response) => {
+  const { personId } = request.params;
+  const { updatedTimeline } = request.body;
+
+  if (!updatedTimeline || !Array.isArray(updatedTimeline)) {
+    response.status(400).json({ error: "updatedTimeline is required" });
+    return;
+  }
+
+  // Update person research with new timeline
+  const updated = await prisma.personResearch.update({
+    where: { personId },
+    data: {
+      experience: updatedTimeline
+    },
+    include: {
+      person: true
+    }
+  });
+
+  // Also update person's current company and title from the new timeline
+  const currentJob = updatedTimeline[0];
+  if (currentJob) {
+    await prisma.person.update({
+      where: { id: personId },
+      data: {
+        company: currentJob.company,
+        title: currentJob.positions[0]?.title || null
+      }
+    });
+  }
+
+  response.json(updated);
 }));
 
 // Save person research
@@ -61,6 +151,30 @@ peopleRouter.post("/:personId/research", asyncHandler(async (request, response) 
   });
 
   response.json(saved);
+}));
+
+// Update person
+peopleRouter.put("/:personId", asyncHandler(async (request, response) => {
+  const { personId } = request.params;
+  const { name, email, linkedinUrl, title, company, avatarUrl } = request.body;
+
+  console.log('[UPDATE PERSON] Updating person:', personId);
+
+  const person = await prisma.person.update({
+    where: { id: personId },
+    data: {
+      name: name || undefined,
+      email: email || undefined,
+      linkedinUrl: linkedinUrl || undefined,
+      title: title || undefined,
+      company: company || undefined,
+      avatarUrl: avatarUrl || undefined
+    },
+    include: { research: true }
+  });
+
+  console.log('[UPDATE PERSON] Successfully updated');
+  response.json(person);
 }));
 
 // Delete person (must come before GET /:personId)
@@ -103,37 +217,9 @@ peopleRouter.get("/:personId", asyncHandler(async (request, response) => {
 peopleRouter.post("/", asyncHandler(async (request, response) => {
   const { name, email, linkedinUrl, title, company, avatarUrl, jobOpportunityId } = request.body;
 
-  // If linking to an opportunity, validate company match and check for duplicates
-  if (jobOpportunityId) {
-    const opportunity = await prisma.jobOpportunity.findUnique({
-      where: { id: jobOpportunityId },
-      select: { companyName: true }
-    });
-
-    if (!opportunity) {
-      response.status(404).json({ error: "Opportunity not found" });
-      return;
-    }
-
-    // Check if a person with the same name already exists for this opportunity
-    const existingPerson = await prisma.person.findFirst({
-      where: {
-        name,
-        jobOpportunityId
-      }
-    });
-
-    if (existingPerson) {
-      response.status(409).json({
-        error: "Duplicate contact",
-        message: `A contact named "${name}" already exists for this opportunity`,
-        existingPersonId: existingPerson.id
-      });
-      return;
-    }
-
-    // Skip company validation - Exa data is often stale, trust user's judgment
-  }
+  // Removed: No longer checking for duplicate names per opportunity
+  // Multiple people can have the same name in one opportunity
+  // Uniqueness is enforced by email and linkedinUrl instead
 
   // Try to find existing person by email or linkedinUrl
   let person = null;

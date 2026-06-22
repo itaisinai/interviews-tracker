@@ -259,6 +259,7 @@ export function DashboardPage() {
             <AppCalendar
               eyebrow="Calendar"
               events={calendarEvents}
+              onEventClick={(event) => setSelectedInteractionId(event.id)}
             />
 
             <section className="panel p-6">

@@ -86,23 +86,29 @@ export async function addFeedbackToInteraction(params: {
 
   const allFeedback = [...existingFeedback, feedbackRecord];
 
+  console.log('[FEEDBACK] AI suggestions:', {
+    suggestedStatus: result.suggestedStatus,
+    suggestedOutcome: result.suggestedOutcome ? 'present' : 'null'
+  });
+
   // Return interaction with AI suggestion (NOT saved yet - user must review)
   return {
     ...interaction,
     feedback: allFeedback,
     aiSuggestion: {
       notes: result.mergedNotes,
+      // Use AI-suggested status and outcome if provided, otherwise keep unchanged
+      status: result.suggestedStatus || interaction.status,
+      outcome: result.suggestedOutcome || interaction.outcome,
       // Keep other fields unchanged
       date: interaction.date,
       endDate: interaction.endDate,
       type: interaction.type,
       stage: interaction.stage,
-      status: interaction.status,
       personName: interaction.personName,
       personRole: interaction.personRole,
       agenda: interaction.agenda,
       meetingLink: interaction.meetingLink,
-      outcome: interaction.outcome,
       followUp: interaction.followUp,
     }
   };

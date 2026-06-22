@@ -707,6 +707,53 @@ export function extractMeetingUrlFromStructuredEmail(email: GmailStructuredEmail
   return meetingUrl ?? null;
 }
 
+function parseEndTimeFromText(startDate: string, text: string): string | null {
+  // Try to find time range patterns like "12:00 - 14:00" or "12:00 PM - 2:00 PM"
+  const patterns = [
+    /(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)\s*[-–—]\s*(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)(?:\s*\(([^)]+)\))?/gi,
+  ];
+
+  for (const pattern of patterns) {
+    const matches = text.matchAll(pattern);
+    for (const match of matches) {
+      const endTimeStr = match[2];
+      if (!endTimeStr) continue;
+
+      const endClock = parseClockTime(endTimeStr);
+      if (!endClock) continue;
+
+      const startDateObj = new Date(startDate);
+      const offsetHours = parseTimezoneOffset(match[3] ?? "");
+      let endDate: Date;
+
+      if (offsetHours === null) {
+        endDate = new Date(startDateObj);
+        endDate.setUTCHours(endClock.hour, endClock.minute, 0, 0);
+      } else {
+        const localStartDate = new Date(
+          startDateObj.getTime() + offsetHours * 60 * 60 * 1000,
+        );
+        endDate = new Date(localTimeToIso({
+          year: localStartDate.getUTCFullYear(),
+          month: localStartDate.getUTCMonth() + 1,
+          day: localStartDate.getUTCDate(),
+          hour: endClock.hour,
+          minute: endClock.minute,
+        }, offsetHours));
+      }
+
+      // If end time is before start time, assume it's the next day
+      if (endDate.getTime() <= startDateObj.getTime()) {
+        endDate.setUTCDate(endDate.getUTCDate() + 1);
+      }
+
+      return endDate.toISOString();
+    }
+  }
+
+  return null;
+}
+
 export function extractStructuredEmailMeetingDate(email: GmailStructuredEmail) {
   if (email.calendar?.start) {
     return { date: email.calendar.start, dateSource: "calendar" as const };
@@ -742,6 +789,13 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
   const agenda = email.calendar?.summary || null;
   const meetingUrl = extractMeetingUrlFromStructuredEmail(email);
 
+  // Try to get end date from calendar, or parse from text if not available
+  let endDate = email.calendar?.end ?? null;
+  if (!endDate && meeting.date) {
+    // Try to extract end time from text patterns like "12:00 - 14:00"
+    endDate = parseEndTimeFromText(meeting.date, text);
+  }
+
   // Extract participant names from calendar attendees
   let participantNames: string | null = null;
   if (email.calendar?.attendees && email.calendar.attendees.length > 0) {
@@ -775,7 +829,7 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
 
   return {
     date: meeting.date,
-    endDate: email.calendar?.end ?? null,
+    endDate,
     dateSource: meeting.dateSource,
     type,
     stage,

@@ -8,12 +8,17 @@ import {
 import { buildEmailInteractionParserSystemPrompt, buildInteractionTextParserSystemPrompt, buildJobParserSystemPrompt } from "@interviews-tracker/ai";
 
 import { createTimer } from "../../lib/logger.js";
-import { interactionTypeSchema } from "@interviews-tracker/core";
+import { interactionStatusSchema, interactionTypeSchema } from "@interviews-tracker/core";
 import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
 import { z } from "zod";
 
 export type ParsedJobDescription = typeof aiParseResponseSchema._type;
 export type CompanyEnrichment = typeof companyEnrichmentSchema._type;
+export type SmartMergeFeedbackResult = {
+  mergedNotes: string;
+  suggestedStatus: z.infer<typeof interactionStatusSchema> | null;
+  suggestedOutcome: string | null;
+};
 
 export interface AiParserService {
   parseJobDescription(text: string): Promise<ParsedJobDescription>;
@@ -80,9 +85,7 @@ export interface AiParserService {
       source: string;
       date: Date;
     }>;
-  }): Promise<{
-    mergedNotes: string;
-  }>;
+  }): Promise<SmartMergeFeedbackResult>;
 }
 
 type OpenAiTextOutput = {
@@ -388,6 +391,8 @@ export class OpenAiParserService implements AiParserService {
       "",
       "Rules:",
       "- Use the LATEST calendar time if multiple exist",
+      "- IMPORTANT: If calendar.start and calendar.end are provided, use calendar.start for 'date' and calendar.end for 'endDate'",
+      "- Set endDate to null only if no calendar end time is available",
       "- Combine all unique participant names with 'and'",
       "- For notes: write 2-4 sentence summary of key info (location, parking, what to bring, who you're meeting)",
       "- Do NOT include metadata like 'Subject:', 'From:', etc. in notes",
@@ -512,7 +517,7 @@ export class OpenAiParserService implements AiParserService {
       source: string;
       date: Date;
     }>;
-  }): Promise<{ mergedNotes: string }> {
+  }): Promise<SmartMergeFeedbackResult> {
     console.log('[AI SMART MERGE] Starting smart merge', {
       companyName: input.companyName,
       roleTitle: input.roleTitle,
@@ -526,15 +531,28 @@ Your task:
 1. Read the existing notes (if any)
 2. Read all feedback items (from WhatsApp, manual input, etc.)
 3. Smart-merge them into ONE cohesive, concise note
+4. Detect if the feedback indicates the interview status changed (rejected, accepted, waiting, etc.)
+5. Extract the interview outcome if mentioned
 
-Rules:
+Rules for mergedNotes:
 - Keep the most important interview preparation info (what to expect, who you're meeting, location, format)
 - Add new insights from feedback WITHOUT duplication
 - If feedback contradicts existing notes, prefer the newer feedback
 - Keep it 2-5 sentences, concise and actionable
 - Focus on what helps the candidate prepare
 
-Return ONLY the merged notes text, no JSON, no metadata.`;
+Rules for suggestedStatus:
+- Return "REJECTED" if feedback indicates they decided NOT to move forward/continue (לא להמשיך, לא ממשיכים, החליטו לא)
+- Return "DONE" if this was the completed interview (not about next steps)
+- Return null if no status change is indicated
+- Valid values: "SCHEDULED", "DONE", "REJECTED", "CANCELLED", "NEEDS_FOLLOW_UP", or null
+
+Rules for suggestedOutcome:
+- Summarize what happened and the decision in 1-2 sentences
+- Include reasons if given (e.g., "They need someone with deeper backend experience")
+- Return null if no clear outcome mentioned
+
+Return JSON with all three fields.`;
 
     const userPrompt = `
 EXISTING NOTES:
@@ -551,26 +569,41 @@ Merge them into one concise note:`;
     console.log('[AI SMART MERGE] System prompt length:', systemPrompt.length);
     console.log('[AI SMART MERGE] User prompt length:', userPrompt.length);
 
-    const mergedNotes = await this.createStructuredOutput({
+    const result = await this.createStructuredOutput({
       name: "smart_merge_feedback",
       schema: {
         type: "object",
         additionalProperties: false,
-        required: ["mergedNotes"],
+        required: ["mergedNotes", "suggestedStatus", "suggestedOutcome"],
         properties: {
-          mergedNotes: { type: "string" }
+          mergedNotes: { type: "string" },
+          suggestedStatus: {
+            type: ["string", "null"],
+            enum: ["SCHEDULED", "DONE", "REJECTED", "CANCELLED", "NEEDS_FOLLOW_UP", null]
+          },
+          suggestedOutcome: { type: ["string", "null"] }
         }
       },
       systemPrompt,
       text: userPrompt
     });
 
-    const parsed = JSON.parse(mergedNotes) as { mergedNotes?: string };
+    const parsed = JSON.parse(result) as {
+      mergedNotes?: string;
+      suggestedStatus?: z.infer<typeof interactionStatusSchema> | null;
+      suggestedOutcome?: string | null;
+    };
 
-    console.log('[AI SMART MERGE] Merged notes length:', parsed.mergedNotes?.length ?? 0);
+    console.log('[AI SMART MERGE] Result:', {
+      mergedNotesLength: parsed.mergedNotes?.length ?? 0,
+      suggestedStatus: parsed.suggestedStatus,
+      suggestedOutcomeLength: parsed.suggestedOutcome?.length ?? 0
+    });
 
     return {
-      mergedNotes: parsed.mergedNotes ?? ""
+      mergedNotes: parsed.mergedNotes ?? "",
+      suggestedStatus: parsed.suggestedStatus ?? null,
+      suggestedOutcome: parsed.suggestedOutcome ?? null
     };
   }
 }

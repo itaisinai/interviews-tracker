@@ -3,6 +3,7 @@ import type { CompanyExperience } from "@interviews-tracker/design-system";
 
 import type { Person } from "../../lib/types";
 import { useState } from "react";
+import { detectCompanyMismatch } from "../../lib/person-utils";
 
 type PersonDetailModalProps = {
   person: Person;
@@ -10,6 +11,8 @@ type PersonDetailModalProps = {
   onClose: () => void;
   onResearch: (name: string, title?: string) => void;
   onDelete?: (personId: string) => void;
+  opportunityCompanyName?: string;
+  onFixCompanyMismatch?: () => void;
 };
 
 export function PersonDetailModal({
@@ -18,6 +21,8 @@ export function PersonDetailModal({
   onClose,
   onResearch,
   onDelete,
+  opportunityCompanyName,
+  onFixCompanyMismatch,
 }: PersonDetailModalProps) {
   const [showAllExperience, setShowAllExperience] = useState(false);
   const [showAllEducation, setShowAllEducation] = useState(false);
@@ -67,12 +72,40 @@ export function PersonDetailModal({
   const skills = (person.research?.skills as string[]) || [];
 
   const hasResearch = !!person.research;
+  const hasMismatch = opportunityCompanyName && detectCompanyMismatch(person, opportunityCompanyName);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" title={person.name}>
       <div className="flex flex-col">
         {/* Content */}
         <div className="max-h-[60vh] overflow-y-auto p-6">
+          {/* Company Mismatch Warning */}
+          {hasMismatch && onFixCompanyMismatch && (
+            <div className="mb-4 rounded-lg border border-warning bg-warning/10 p-4">
+              <div className="flex items-start gap-3">
+                <MaterialIcon name="warning" className="text-[24px] text-warning" />
+                <div className="flex-1">
+                  <p className="text-body-md font-medium text-on-surface">
+                    Company mismatch detected
+                  </p>
+                  <p className="mt-1 text-body-sm text-on-surface-variant">
+                    This contact's LinkedIn shows they work at {person.company}, but this opportunity is for {opportunityCompanyName}.
+                  </p>
+                  <button
+                    onClick={() => {
+                      onFixCompanyMismatch();
+                      onClose();
+                    }}
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg bg-warning px-4 py-2 font-medium text-white transition-colors hover:bg-warning/90"
+                  >
+                    <MaterialIcon name="edit" className="text-[20px]" />
+                    Fix Company Mismatch
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {!hasResearch ? (
             <div className="flex flex-col items-center justify-center py-12">
               <MaterialIcon
