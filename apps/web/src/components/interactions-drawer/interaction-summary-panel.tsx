@@ -62,9 +62,13 @@ export function InteractionSummaryPanel({
     enabled: !!interaction.jobOpportunityId && !!interaction.personName,
   });
 
-  const personRecords = personNames.map((name) =>
-    (contacts as Person[]).find((c) => c.name === name),
-  );
+  const personRecords = personNames.map((name) => {
+    // If name looks like an email, match by email, otherwise match by name
+    const isEmail = name.includes('@');
+    return (contacts as Person[]).find((c) =>
+      isEmail ? c.email === name : c.name === name
+    );
+  });
 
   const handleAddFeedback = async (content: string, source?: string) => {
     console.log('[FEEDBACK] Submitting feedback', { interactionId: interaction.id, contentLength: content.length, source });

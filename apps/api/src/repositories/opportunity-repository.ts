@@ -169,6 +169,7 @@ export async function syncOpportunityStatusRecord(id: string, ownerEmail: string
     select: {
       id: true,
       status: true,
+      pipelineType: true,
       interactions: {
         select: {
           type: true,
@@ -198,9 +199,16 @@ export async function syncOpportunityStatusRecord(id: string, ownerEmail: string
     return opportunity.status;
   }
 
+  // Auto-archive when rejected or marked not relevant
+  const shouldArchive = nextStatus === "REJECTED" || nextStatus === "NOT_RELEVANT";
+  const nextPipelineType = shouldArchive ? "ARCHIVED" : opportunity.pipelineType;
+
   await prisma.jobOpportunity.update({
     where: { id: opportunity.id },
-    data: { status: nextStatus }
+    data: {
+      status: nextStatus,
+      ...(shouldArchive && { pipelineType: nextPipelineType })
+    }
   });
 
   return nextStatus;

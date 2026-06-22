@@ -5,6 +5,7 @@ export type BadgeTone =
   | "blue"
   | "violet"
   | "red"
+  | "rose"
   | "neutral"
   | "muted"
   | "warning"
@@ -16,6 +17,7 @@ const tones: Record<BadgeTone, string> = {
   blue: "bg-tertiary-container text-on-tertiary-container",
   violet: "bg-tertiary-container text-on-tertiary-container",
   red: "bg-error-container text-on-error-container",
+  rose: "bg-red-50 text-red-600",
   neutral: "bg-surface-container-highest text-on-surface-variant",
   muted: "bg-surface-container text-on-surface-variant",
   warning: "bg-secondary-container text-on-secondary-container",

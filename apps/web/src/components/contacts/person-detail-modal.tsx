@@ -9,6 +9,7 @@ type PersonDetailModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onResearch: (name: string, title?: string) => void;
+  onDelete?: (personId: string) => void;
 };
 
 export function PersonDetailModal({
@@ -16,6 +17,7 @@ export function PersonDetailModal({
   isOpen,
   onClose,
   onResearch,
+  onDelete,
 }: PersonDetailModalProps) {
   const [showAllExperience, setShowAllExperience] = useState(false);
   const [showAllEducation, setShowAllEducation] = useState(false);
@@ -234,22 +236,40 @@ export function PersonDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-outline-variant p-6">
-          {hasResearch && (
+        <div className="flex items-center justify-between border-t border-outline-variant p-6">
+          <div>
+            {onDelete && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete ${person.name}? This will remove all their research data.`)) {
+                    onDelete(person.id);
+                    onClose();
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-error px-4 py-2 font-medium text-error transition-colors hover:bg-error/10"
+              >
+                <MaterialIcon name="delete" className="text-[20px]" />
+                Delete Contact
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {hasResearch && (
+              <button
+                onClick={() => onResearch(person.name, person.title || undefined)}
+                className="inline-flex items-center gap-2 rounded-lg border border-outline px-4 py-2 font-medium text-primary transition-colors hover:bg-surface-container"
+              >
+                <MaterialIcon name="refresh" className="text-[20px]" />
+                Refresh Research
+              </button>
+            )}
             <button
-              onClick={() => onResearch(person.name, person.title || undefined)}
-              className="inline-flex items-center gap-2 rounded-lg border border-outline px-4 py-2 font-medium text-primary transition-colors hover:bg-surface-container"
+              onClick={onClose}
+              className="rounded-lg bg-primary px-6 py-2 font-medium text-on-primary transition-colors hover:bg-primary/90"
             >
-              <MaterialIcon name="refresh" className="text-[20px]" />
-              Refresh Research
+              Close
             </button>
-          )}
-          <button
-            onClick={onClose}
-            className="rounded-lg bg-primary px-6 py-2 font-medium text-on-primary transition-colors hover:bg-primary/90"
-          >
-            Close
-          </button>
+          </div>
         </div>
       </div>
     </Modal>

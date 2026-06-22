@@ -25,6 +25,46 @@ type ExaContentsResponse = {
   }>;
 };
 
+
+function stripMarkdownLink(value: string): string {
+  return value.match(/^\[([^\]]+)\]/)?.[1] || value;
+}
+
+function normalizeCompanyName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function positionIsCurrent(dates?: string): boolean {
+  return /(?:^|[-–—\s])present\b/i.test(dates || "");
+}
+
+function parseExperienceDateLine(line: string): { dates: string; duration?: string } | null {
+  const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{4})\s*[-–—]\s*([A-Z][a-z]{2}\s+\d{4}|Present)(?:\s*(?:[·•]|\()?\s*([^)·•]+?)\s*\)?)?$/);
+
+  if (!dateMatch) {
+    return null;
+  }
+
+  return {
+    dates: `${dateMatch[1]} - ${dateMatch[2]}`,
+    duration: dateMatch[3]?.trim()
+  };
+}
+
+function parseCompanyLine(line: string): string {
+  return stripMarkdownLink(line).split(/[·•]/)[0]?.trim() || "";
+}
+
+function currentCompanyFromExperience(experience: NonNullable<PersonResearchResult["research"]["experience"]>): string | undefined {
+  const currentExperience = experience.find((exp) => exp.positions.some((position) => positionIsCurrent(position.dates)));
+  return currentExperience?.company || experience[0]?.company;
+}
+
+function currentTitleFromExperience(experience: NonNullable<PersonResearchResult["research"]["experience"]>): string | undefined {
+  const currentExperience = experience.find((exp) => exp.positions.some((position) => positionIsCurrent(position.dates))) || experience[0];
+  return currentExperience?.positions.find((position) => positionIsCurrent(position.dates))?.title || currentExperience?.positions[0]?.title;
+}
+
 export class PersonResearchProviderError extends Error {
   readonly code = "PERSON_RESEARCH_PROVIDER_ERROR";
   readonly statusCode = 503;
@@ -48,6 +88,8 @@ export class ExaProvider {
     const query = companyName
       ? `${name} from ${companyName}`
       : name;
+
+    console.log('[EXA] Query:', query);
 
     try {
       const response = await fetch(`${this.baseUrl}/search`, {
@@ -114,6 +156,16 @@ export class ExaProvider {
   parseLinkedInContent(content: string, name: string, linkedInUrl: string): PersonResearchResult {
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
 
+    // Extract actual name from first line (LinkedIn profiles start with the person's name)
+    let actualName = name; // fallback to search name
+    if (lines.length > 0) {
+      const firstLine = lines[0];
+      // First line is usually the person's name, unless it's a heading marker
+      if (!firstLine.startsWith('#') && !firstLine.match(/^(About|Experience|Education|Contact)/i)) {
+        actualName = firstLine;
+      }
+    }
+
     let title = "";
     let company = "";
     const rawExperience: Array<{ company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string }> = [];
@@ -129,20 +181,20 @@ export class ExaProvider {
       const nextLine = lines[i + 1];
 
       // Detect sections
-      if (line.match(/^#+\s*Experience/i)) {
+      if (line.match(/^(?:#+\s*)?Experience$/i)) {
         inExperienceSection = true;
         inEducationSection = false;
         continue;
       }
 
-      if (line.match(/^#+\s*Education/i)) {
+      if (line.match(/^(?:#+\s*)?Education$/i)) {
         inExperienceSection = false;
         inEducationSection = true;
         continue;
       }
 
       // Exit both sections if we hit any other major section
-      if (line.match(/^#+\s*(About|Skills|Licenses|Certifications|Volunteer|Projects|Publications|Honors|Languages)/i)) {
+      if (line.match(/^(?:#+\s*)?(About|Skills|Licenses|Certifications|Volunteer|Projects|Publications|Honors|Languages)$/i)) {
         inExperienceSection = false;
         inEducationSection = false;
         continue;
@@ -216,18 +268,43 @@ export class ExaProvider {
               };
             }
           }
-        } else if (currentExperience && !line.startsWith("#")) {
+        } else if (!line.startsWith("#")) {
           // Skip Department/Level metadata lines
           if (line.startsWith("Department:")) {
             continue;
           }
 
+          if (!currentExperience || currentExperience.dates) {
+            const plainTitle = line;
+            const plainCompany = parseCompanyLine(nextLine || "");
+            const plainDate = parseExperienceDateLine(lines[i + 2] || "");
+
+            if (plainCompany && plainDate) {
+              if (currentExperience?.company && currentExperience?.title) {
+                rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
+              }
+
+              currentExperience = {
+                title: plainTitle,
+                company: plainCompany,
+                dates: plainDate.dates,
+                duration: plainDate.duration
+              };
+              i += 2;
+              continue;
+            }
+          }
+
+          if (!currentExperience) {
+            continue;
+          }
+
           // Look for dates with format: "Month Year - Month Year (duration)" or just location info
           if (!currentExperience.dates) {
-            const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{4})\s*-\s*([A-Z][a-z]{2}\s+\d{4}|Present)\s*\(([^)]+)\)/);
-            if (dateMatch) {
-              currentExperience.dates = `${dateMatch[1]} - ${dateMatch[2]}`;
-              currentExperience.duration = dateMatch[3].trim();
+            const dateLine = parseExperienceDateLine(line);
+            if (dateLine) {
+              currentExperience.dates = dateLine.dates;
+              currentExperience.duration = dateLine.duration;
             }
           }
           // Description text (after we have dates, skip metadata and short lines)
@@ -329,16 +406,18 @@ export class ExaProvider {
       }>;
     }>);
 
+    const currentCompany = groupedExperience.length > 0 ? currentCompanyFromExperience(groupedExperience) : undefined;
+    const currentTitle = groupedExperience.length > 0 ? currentTitleFromExperience(groupedExperience) : undefined;
+
     return {
       person: {
-        name,
-        title: title || undefined,
-        company: company || undefined,
+        name: actualName,
+        title: currentTitle || title || undefined,
+        company: currentCompany || company || undefined,
         linkedinUrl: linkedInUrl,
         avatarUrl: undefined
       },
       research: {
-        // @ts-ignore
         experience: groupedExperience.length > 0 ? groupedExperience : undefined,
         education: education.length > 0 ? education : undefined,
         sources: [
@@ -407,34 +486,8 @@ export class ExaProvider {
 
     const result = this.parseLinkedInContent(profileData.text, name, profileData.url);
 
-    // Validate that the person's current company matches the expected company
-    if (companyName && result.person.company) {
-      // Extract company name from markdown format if present: [Company Name](url)
-      const extractedCompany = result.person.company.match(/^\[([^\]]+)\]/)?.[1] || result.person.company;
-
-      // Normalize both company names for comparison (lowercase, remove special chars)
-      const normalizeCompany = (name: string) =>
-        name.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-      const normalizedExpected = normalizeCompany(companyName);
-      const normalizedActual = normalizeCompany(extractedCompany);
-
-      console.log(`[Company validation] Expected: "${companyName}" (normalized: "${normalizedExpected}"), Found: "${extractedCompany}" (normalized: "${normalizedActual}")`);
-
-      // Check if the actual company contains the expected company or vice versa
-      // This handles cases like "Toko" vs "Toko Health" or "toko.health"
-      const isMatch = normalizedActual.includes(normalizedExpected) ||
-                     normalizedExpected.includes(normalizedActual);
-
-      if (!isMatch) {
-        console.log(`[Company mismatch] Rejecting LinkedIn profile ${profileData.url} - person works at "${extractedCompany}", not "${companyName}"`);
-        return null; // Don't return results for wrong company
-      }
-
-      console.log(`[Company match] Accepted - person works at the correct company`);
-    } else if (!companyName) {
-      console.log(`[Company validation] Skipped - no company name provided for validation`);
-    } else if (!result.person.company) {
+    // Simple validation: just check we have a result
+    if (!result.person.company) {
       console.log(`[Company validation] Warning - no company found in LinkedIn profile, allowing result`);
     }
 

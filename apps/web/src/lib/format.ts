@@ -85,7 +85,7 @@ export function formatDateTimeRange(
 
 export function statusTone(status: JobStatus | string) {
   if (status === "DONE") return "green";
-  if (status === "REJECTED") return "red";
+  if (status === "REJECTED") return "rose";
   if (status === "SCHEDULED") return "blue";
   if (status === "CANCELLED") return "muted";
   if (status === "NEEDS_FOLLOW_UP") return "warning";
