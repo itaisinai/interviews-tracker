@@ -185,7 +185,10 @@ export function applyParsedJobToTimeline(
     description?: string;
   }>;
 }> {
-  const newExperience = [...currentExperience];
+  const newExperience = currentExperience.map((experience) => ({
+    ...experience,
+    positions: experience.positions.map((position) => ({ ...position })),
+  }));
 
   // Update adjusted previous job if needed
   if (parsedJob.adjustedPreviousJob) {

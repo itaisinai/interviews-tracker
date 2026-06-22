@@ -710,7 +710,7 @@ export function extractMeetingUrlFromStructuredEmail(email: GmailStructuredEmail
 function parseEndTimeFromText(startDate: string, text: string): string | null {
   // Try to find time range patterns like "12:00 - 14:00" or "12:00 PM - 2:00 PM"
   const patterns = [
-    /(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)\s*[-–—]\s*(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)/gi,
+    /(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)\s*[-–—]\s*(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)(?:\s*\(([^)]+)\))?/gi,
   ];
 
   for (const pattern of patterns) {
@@ -722,10 +722,25 @@ function parseEndTimeFromText(startDate: string, text: string): string | null {
       const endClock = parseClockTime(endTimeStr);
       if (!endClock) continue;
 
-      // Use the same date as start, just different time
       const startDateObj = new Date(startDate);
-      const endDate = new Date(startDateObj);
-      endDate.setUTCHours(endClock.hour, endClock.minute, 0, 0);
+      const offsetHours = parseTimezoneOffset(match[3] ?? "");
+      let endDate: Date;
+
+      if (offsetHours === null) {
+        endDate = new Date(startDateObj);
+        endDate.setUTCHours(endClock.hour, endClock.minute, 0, 0);
+      } else {
+        const localStartDate = new Date(
+          startDateObj.getTime() + offsetHours * 60 * 60 * 1000,
+        );
+        endDate = new Date(localTimeToIso({
+          year: localStartDate.getUTCFullYear(),
+          month: localStartDate.getUTCMonth() + 1,
+          day: localStartDate.getUTCDate(),
+          hour: endClock.hour,
+          minute: endClock.minute,
+        }, offsetHours));
+      }
 
       // If end time is before start time, assume it's the next day
       if (endDate.getTime() <= startDateObj.getTime()) {

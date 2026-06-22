@@ -15,6 +15,7 @@ test("parses Unframe interview email with calendar-safe date and generic intervi
   assert.equal(email.senderName, "Noam Shchori");
   assert.equal(email.senderEmail, "noam.shchori@unframe.ai");
   assert.equal(derived.date, "2026-06-08T08:30:00.000Z");
+  assert.equal(derived.endDate, "2026-06-08T08:50:00.000Z");
   assert.equal(derived.dateSource, "text");
   assert.equal(derived.type, "Interview");
   assert.equal(derived.stage, "Interview");
