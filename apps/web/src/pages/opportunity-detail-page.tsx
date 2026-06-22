@@ -1,5 +1,3 @@
-import type { FormEvent } from "react";
-import type { Interaction, Opportunity } from "../lib/types";
 import {
   InlineLoadingState,
   LoadingButton,
@@ -7,6 +5,7 @@ import {
   PageErrorState,
   PageLoadingState,
 } from "@interviews-tracker/design-system";
+import type { Interaction, Opportunity } from "../lib/types";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
 import {
@@ -20,6 +19,7 @@ import { AddInteractionModal } from "../components/add-interaction-modal";
 import { Badge } from "../components/badge";
 import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
 import { ContactsList } from "../components/contacts/contacts-list";
+import type { FormEvent } from "react";
 import { InteractionsDrawer } from "../components/interactions-drawer";
 import { InterviewPreparation } from "../components/interview-preparation";
 import { PageIntro } from "../components/app-shell";
@@ -268,7 +268,6 @@ export function OpportunityDetailPage() {
   );
 }
 
-
 function EditableTitleField({
   ariaLabel,
   className,
@@ -309,7 +308,10 @@ function EditableTitleField({
 
   if (isEditing) {
     return (
-      <form className="group/title-edit flex max-w-full items-center gap-2" onSubmit={submit}>
+      <form
+        className="group/title-edit flex max-w-full items-center gap-2"
+        onSubmit={submit}
+      >
         <input
           aria-label={ariaLabel}
           autoFocus

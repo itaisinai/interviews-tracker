@@ -1,27 +1,44 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../lib/api";
-import { MaterialIcon } from "@interviews-tracker/design-system";
-import { PersonResearchFlow } from "../person-research/person-research-flow";
-import { PersonDetailModal } from "./person-detail-modal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { FixCompanyMismatchModal } from "./fix-company-mismatch-modal";
 import { ManualJobUpdateModal } from "./manual-job-update-modal";
-import { ReviewJobTimelineModal } from "./review-job-timeline-modal";
-import { detectCompanyMismatch } from "../../lib/person-utils";
+import { MaterialIcon } from "@interviews-tracker/design-system";
 import type { Person } from "../../lib/types";
+import { PersonDetailModal } from "./person-detail-modal";
+import { PersonResearchFlow } from "../person-research/person-research-flow";
+import { ReviewJobTimelineModal } from "./review-job-timeline-modal";
+import { api } from "../../lib/api";
+import { detectCompanyMismatch } from "../../lib/person-utils";
+import { useState } from "react";
 
 type ContactsListProps = {
   opportunityId: string;
   companyName: string;
 };
 
-export function ContactsList({ opportunityId, companyName }: ContactsListProps) {
+export function ContactsList({
+  opportunityId,
+  companyName,
+}: ContactsListProps) {
   const queryClient = useQueryClient();
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [researchPerson, setResearchPerson] = useState<{ id?: string; name: string; title?: string; company: string } | null>(null);
-  const [researchPersonId, setResearchPersonId] = useState<string | undefined>(undefined); // Explicit ID for updates
-  const [fixMismatchPerson, setFixMismatchPerson] = useState<Person | null>(null);
-  const [manualUpdatePerson, setManualUpdatePerson] = useState<Person | null>(null);
+  const [researchPerson, setResearchPerson] = useState<{
+    id?: string;
+    name: string;
+    title?: string;
+    company: string;
+    linkedinUrl?: string;
+    email?: string;
+  } | null>(null);
+  const [researchPersonId, setResearchPersonId] = useState<string | undefined>(
+    undefined,
+  ); // Explicit ID for updates
+  const [fixMismatchPerson, setFixMismatchPerson] = useState<Person | null>(
+    null,
+  );
+  const [manualUpdatePerson, setManualUpdatePerson] = useState<Person | null>(
+    null,
+  );
   const [reviewTimeline, setReviewTimeline] = useState<{
     person: Person;
     currentTimeline: any;
@@ -30,7 +47,7 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
 
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ["opportunity-contacts", opportunityId],
-    queryFn: () => api.getOpportunityContacts(opportunityId)
+    queryFn: () => api.getOpportunityContacts(opportunityId),
   });
 
   const deletePerson = useMutation({
@@ -38,45 +55,63 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
       await api.deletePerson(personId);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunityId] });
+      void queryClient.invalidateQueries({
+        queryKey: ["opportunity-contacts", opportunityId],
+      });
       void queryClient.invalidateQueries({ queryKey: ["people"] });
-    }
+    },
   });
 
   const parseJob = useMutation({
-    mutationFn: async ({ personId, jobDescriptionText }: { personId: string; jobDescriptionText: string }) => {
+    mutationFn: async ({
+      personId,
+      jobDescriptionText,
+    }: {
+      personId: string;
+      jobDescriptionText: string;
+    }) => {
       return await api.parseCurrentJob(personId, jobDescriptionText);
     },
     onSuccess: (data, variables) => {
-      const person = typedContacts.find(c => c.id === variables.personId);
+      const person = typedContacts.find((c) => c.id === variables.personId);
       if (person) {
         setReviewTimeline({
           person,
           currentTimeline: data.currentTimeline,
-          updatedTimeline: data.updatedTimeline
+          updatedTimeline: data.updatedTimeline,
         });
       }
       setManualUpdatePerson(null);
     },
     onError: (error: any) => {
       console.error("Parse job failed:", error);
-      alert(error?.message || "Failed to parse job description. Please try again.");
-    }
+      alert(
+        error?.message || "Failed to parse job description. Please try again.",
+      );
+    },
   });
 
   const applyJobUpdate = useMutation({
-    mutationFn: async ({ personId, updatedTimeline }: { personId: string; updatedTimeline: any }) => {
+    mutationFn: async ({
+      personId,
+      updatedTimeline,
+    }: {
+      personId: string;
+      updatedTimeline: any;
+    }) => {
       return await api.applyJobUpdate(personId, updatedTimeline);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunityId] });
+      void queryClient.invalidateQueries({
+        queryKey: ["opportunity-contacts", opportunityId],
+      });
       void queryClient.invalidateQueries({ queryKey: ["people"] });
       setReviewTimeline(null);
     },
     onError: (error: any) => {
       console.error("Apply job update failed:", error);
       alert(error?.message || "Failed to apply changes. Please try again.");
-    }
+    },
   });
 
   // Cast contacts to Person type
@@ -112,14 +147,18 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
                 className="flex min-w-0 flex-1 items-start gap-3 text-left"
               >
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <MaterialIcon name="person" className="text-[20px] text-primary" />
+                  <MaterialIcon
+                    name="person"
+                    className="text-[20px] text-primary"
+                  />
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-title-sm text-title-sm font-bold text-on-surface">
-                        {contact.name}{contact.email ? ` (${contact.email})` : ""}
+                        {contact.name}
+                        {contact.email ? ` (${contact.email})` : ""}
                       </p>
                       {contact.title && (
                         <p className="truncate text-body-sm text-on-surface-variant">
@@ -136,8 +175,13 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
                   <div className="mt-1 flex items-center gap-2">
                     {contact.research && (
                       <div className="flex items-center gap-1.5">
-                        <MaterialIcon name="check_circle" className="text-[16px] text-tertiary" />
-                        <span className="text-body-xs text-tertiary">Researched</span>
+                        <MaterialIcon
+                          name="check_circle"
+                          className="text-[16px] text-tertiary"
+                        />
+                        <span className="text-body-xs text-tertiary">
+                          Researched
+                        </span>
                       </div>
                     )}
                     {detectCompanyMismatch(contact, companyName) && (
@@ -149,8 +193,13 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
                         className="flex items-center gap-1 rounded-md bg-warning/10 px-2 py-1 transition-colors hover:bg-warning/20"
                         title="Company mismatch detected"
                       >
-                        <MaterialIcon name="warning" className="text-[14px] text-warning" />
-                        <span className="text-body-xs font-medium text-warning">Company mismatch</span>
+                        <MaterialIcon
+                          name="warning"
+                          className="text-[14px] text-warning"
+                        />
+                        <span className="text-body-xs font-medium text-warning">
+                          Company mismatch
+                        </span>
                       </button>
                     )}
                   </div>
@@ -218,14 +267,17 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
           opportunityCompanyName={companyName}
           onAutoRefresh={() => {
             // Trigger auto-refresh by re-running person research WITH existing person ID
-            console.log('[AUTO REFRESH] Setting personId:', fixMismatchPerson.id);
+            console.log(
+              "[AUTO REFRESH] Setting personId:",
+              fixMismatchPerson.id,
+            );
             setResearchPersonId(fixMismatchPerson.id); // Set ID separately for clarity
             setResearchPerson({
               name: fixMismatchPerson.name,
               title: fixMismatchPerson.title || undefined,
               company: companyName,
               linkedinUrl: fixMismatchPerson.linkedinUrl || undefined,
-              email: fixMismatchPerson.email || undefined
+              email: fixMismatchPerson.email || undefined,
             });
             setFixMismatchPerson(null);
           }}
@@ -245,7 +297,7 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
           onSubmit={(jobDescription) => {
             parseJob.mutate({
               personId: manualUpdatePerson.id,
-              jobDescriptionText: jobDescription
+              jobDescriptionText: jobDescription,
             });
           }}
           isLoading={parseJob.isPending}
@@ -262,7 +314,7 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
           onApply={() => {
             applyJobUpdate.mutate({
               personId: reviewTimeline.person.id,
-              updatedTimeline: reviewTimeline.updatedTimeline
+              updatedTimeline: reviewTimeline.updatedTimeline,
             });
           }}
           isApplying={applyJobUpdate.isPending}
