@@ -64,21 +64,29 @@ export function InteractionSummaryPanel({
 
   const personRecords = personNames.map((name) => {
     // If name looks like an email, match by email, otherwise match by name
-    const isEmail = name.includes('@');
+    const isEmail = name.includes("@");
     return (contacts as Person[]).find((c) =>
-      isEmail ? c.email === name : c.name === name
+      isEmail ? c.email === name : c.name === name,
     );
   });
 
   const handleAddFeedback = async (content: string, source?: string) => {
-    console.log('[FEEDBACK] Submitting feedback', { interactionId: interaction.id, contentLength: content.length, source });
+    console.log("[FEEDBACK] Submitting feedback", {
+      interactionId: interaction.id,
+      contentLength: content.length,
+      source,
+    });
 
     // Call API to add feedback and get AI suggestion
-    const result = await api.addFeedbackToInteraction(interaction.id, content, source);
+    const result = await api.addFeedbackToInteraction(
+      interaction.id,
+      content,
+      source,
+    );
 
-    console.log('[FEEDBACK] Got AI suggestion from API', {
+    console.log("[FEEDBACK] Got AI suggestion from API", {
       hasAiSuggestion: !!(result as any).aiSuggestion,
-      aiNotes: (result as any).aiSuggestion?.notes?.slice(0, 100)
+      aiNotes: (result as any).aiSuggestion?.notes?.slice(0, 100),
     });
 
     // Pass AI suggestion to edit form (same flow as reparse). This action is
@@ -93,6 +101,7 @@ export function InteractionSummaryPanel({
         interaction={interaction}
         statusBadge={headerBadge}
         onEdit={onToggleEditing}
+        onCancelEditing={onCancelEditing}
         onDelete={() => {
           if (window.confirm("Delete this interaction?")) {
             onDelete();
@@ -104,6 +113,7 @@ export function InteractionSummaryPanel({
           }
         }}
         isAddFeedbackDisabled={isEditing}
+        isEditing={isEditing}
       />
 
       {/* Edit Form */}
@@ -146,9 +156,6 @@ export function InteractionSummaryPanel({
         />
       </div>
 
-      {/* Gmail Email States */}
-      <GmailEmailStatesSection opportunityId={interaction.jobOpportunityId} />
-
       {/* Quick Info */}
       <QuickInfoCard interaction={interaction} />
 
@@ -158,16 +165,24 @@ export function InteractionSummaryPanel({
       {/* Outcome */}
       {!isEditing && interaction.outcome && (
         <div className="bg-white rounded-lg border border-neutral-200 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-2">Outcome</h3>
-          <p className="text-sm text-neutral-700 whitespace-pre-wrap">{interaction.outcome}</p>
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            Outcome
+          </h3>
+          <p className="text-sm text-neutral-700 whitespace-pre-wrap">
+            {interaction.outcome}
+          </p>
         </div>
       )}
 
       {/* Follow-up */}
       {!isEditing && interaction.followUp && (
         <div className="bg-white rounded-lg border border-neutral-200 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-2">Follow-up</h3>
-          <p className="text-sm text-neutral-700 whitespace-pre-wrap">{interaction.followUp}</p>
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
+            Follow-up
+          </h3>
+          <p className="text-sm text-neutral-700 whitespace-pre-wrap">
+            {interaction.followUp}
+          </p>
         </div>
       )}
 
@@ -177,6 +192,9 @@ export function InteractionSummaryPanel({
         onClose={() => setShowFeedbackModal(false)}
         onSubmit={handleAddFeedback}
       />
+
+      {/* Gmail Email States */}
+      <GmailEmailStatesSection opportunityId={interaction.jobOpportunityId} />
     </div>
   );
 }

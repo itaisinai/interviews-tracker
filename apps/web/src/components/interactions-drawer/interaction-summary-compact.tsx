@@ -1,9 +1,13 @@
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { MessageSquare, Pencil, PencilOff, Trash2 } from "lucide-react";
+import {
+  displayLabelForEnumValue,
+  normalizeInteractionType,
+} from "../../lib/enum-labels";
+
 import { Badge } from "../badge";
-import { Pencil, Trash2, MessageSquare } from "lucide-react";
 import type { Interaction } from "../../lib/types";
+import { MaterialIcon } from "@interviews-tracker/design-system";
 import { formatDateTimeRange } from "../../lib/format";
-import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
 
 type InteractionSummaryCompactProps = {
   interaction: Interaction;
@@ -12,21 +16,30 @@ type InteractionSummaryCompactProps = {
     tone: "blue" | "green" | "red" | "muted" | "warning";
   } | null;
   onEdit: () => void;
+  onCancelEditing: () => void;
   onDelete: () => void;
   onAddFeedback: () => void;
   isAddFeedbackDisabled?: boolean;
+  isEditing?: boolean;
 };
 
 export function InteractionSummaryCompact({
   interaction,
   statusBadge,
   onEdit,
+  onCancelEditing,
   onDelete,
   onAddFeedback,
   isAddFeedbackDisabled = false,
+  isEditing = false,
 }: InteractionSummaryCompactProps) {
-  const typeLabel = displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ?? interaction.type;
-  const dateTimeRange = formatDateTimeRange(interaction.date, interaction.endDate);
+  const typeLabel =
+    displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ??
+    interaction.type;
+  const dateTimeRange = formatDateTimeRange(
+    interaction.date,
+    interaction.endDate,
+  );
 
   // Calculate duration
   let duration = "";
@@ -83,16 +96,24 @@ export function InteractionSummaryCompact({
               onClick={onAddFeedback}
               disabled={isAddFeedbackDisabled}
               className="p-2 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-neutral-200 disabled:text-neutral-400 disabled:hover:bg-transparent transition-colors"
-              title={isAddFeedbackDisabled ? "Save or cancel edits before adding feedback" : "Add Feedback"}
+              title={
+                isAddFeedbackDisabled
+                  ? "Save or cancel edits before adding feedback"
+                  : "Add Feedback"
+              }
             >
               <MessageSquare className="w-4 h-4" />
             </button>
             <button
-              onClick={onEdit}
+              onClick={isEditing ? onCancelEditing : onEdit}
               className="p-2 rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors"
               title="Edit"
             >
-              <Pencil className="w-4 h-4" />
+              {isEditing ? (
+                <PencilOff className="w-4 h-4" />
+              ) : (
+                <Pencil className="w-4 h-4" />
+              )}
             </button>
             <button
               onClick={onDelete}

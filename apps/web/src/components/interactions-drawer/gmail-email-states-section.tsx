@@ -1,13 +1,16 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { api } from "../../lib/api";
+import { useState } from "react";
 
 type GmailEmailStatesSectionProps = {
   opportunityId: string;
 };
 
-export function GmailEmailStatesSection({ opportunityId }: GmailEmailStatesSectionProps) {
+export function GmailEmailStatesSection({
+  opportunityId,
+}: GmailEmailStatesSectionProps) {
   const queryClient = useQueryClient();
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [unpickingId, setUnpickingId] = useState<string | null>(null);
@@ -26,8 +29,12 @@ export function GmailEmailStatesSection({ opportunityId }: GmailEmailStatesSecti
       await api.gmailRestoreEmail(opportunityId, messageId);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      void queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      void queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunityId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunityId],
+      });
       setRestoringId(null);
     },
     onError: (error) => {
@@ -42,8 +49,12 @@ export function GmailEmailStatesSection({ opportunityId }: GmailEmailStatesSecti
       await api.gmailUnpickEmail(opportunityId, messageId);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      void queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      void queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunityId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunityId],
+      });
       setUnpickingId(null);
     },
     onError: (error) => {
@@ -64,14 +75,7 @@ export function GmailEmailStatesSection({ opportunityId }: GmailEmailStatesSecti
   };
 
   if (isLoading) {
-    return (
-      <div className="mb-8">
-        <h3 className="text-sm font-medium text-neutral-900 mb-3">Gmail Email States</h3>
-        <div className="flex items-center justify-center py-4 text-neutral-400 text-sm">
-          Loading...
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const hasRemovedEmails = data && data.removedEmails.length > 0;
@@ -111,44 +115,50 @@ export function GmailEmailStatesSection({ opportunityId }: GmailEmailStatesSecti
               </button>
               {hiddenExpanded && (
                 <div className="space-y-1">
-            {data.removedEmails.map((email) => (
-              <div
-                key={email.id}
-                className="flex items-start gap-3 p-3 rounded-lg bg-neutral-50 hover:bg-neutral-100 transition-colors group"
-              >
-                <MaterialIcon
-                  name="visibility_off"
-                  className="text-[16px] text-neutral-400 mt-0.5 flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-neutral-700 font-medium truncate">
-                    {email.subject || "No subject"}
-                  </div>
-                  <div className="text-xs text-neutral-500">
-                    {new Date(email.date).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleRestore(email.id)}
-                  disabled={restoringId === email.id}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded text-xs font-medium text-blue-600 hover:bg-blue-50 flex-shrink-0 flex items-center gap-1"
-                  title="Restore to search results"
-                >
-                  {restoringId === email.id ? (
-                    <MaterialIcon name="progress_activity" className="text-[14px] animate-spin" />
-                  ) : (
-                    <>
-                      <MaterialIcon name="restore" className="text-[14px]" />
-                      Restore
-                    </>
-                  )}
-                </button>
-              </div>
-            ))}
+                  {data.removedEmails.map((email) => (
+                    <div
+                      key={email.id}
+                      className="flex items-start gap-3 p-3 rounded-lg bg-neutral-50 hover:bg-neutral-100 transition-colors group"
+                    >
+                      <MaterialIcon
+                        name="visibility_off"
+                        className="text-[16px] text-neutral-400 mt-0.5 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-neutral-700 font-medium truncate">
+                          {email.subject || "No subject"}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {new Date(email.date).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRestore(email.id)}
+                        disabled={restoringId === email.id}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded text-xs font-medium text-blue-600 hover:bg-blue-50 flex-shrink-0 flex items-center gap-1"
+                        title="Restore to search results"
+                      >
+                        {restoringId === email.id ? (
+                          <MaterialIcon
+                            name="progress_activity"
+                            className="text-[14px] animate-spin"
+                          />
+                        ) : (
+                          <>
+                            <MaterialIcon
+                              name="restore"
+                              className="text-[14px]"
+                            />
+                            Restore
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -169,44 +179,47 @@ export function GmailEmailStatesSection({ opportunityId }: GmailEmailStatesSecti
               </button>
               {pickedExpanded && (
                 <div className="space-y-1">
-            {data.pickedEmails.map((email) => (
-              <div
-                key={email.id}
-                className="flex items-start gap-3 p-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 transition-colors group"
-              >
-                <MaterialIcon
-                  name="check_circle"
-                  className="text-[16px] text-emerald-600 mt-0.5 flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-neutral-900 font-medium truncate">
-                    {email.subject || "No subject"}
-                  </div>
-                  <div className="text-xs text-neutral-600">
-                    {new Date(email.date).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleUnpick(email.id)}
-                  disabled={unpickingId === email.id}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-100 flex-shrink-0 flex items-center gap-1"
-                  title="Mark as not picked"
-                >
-                  {unpickingId === email.id ? (
-                    <MaterialIcon name="progress_activity" className="text-[14px] animate-spin" />
-                  ) : (
-                    <>
-                      <MaterialIcon name="undo" className="text-[14px]" />
-                      Unpick
-                    </>
-                  )}
-                </button>
-              </div>
-            ))}
+                  {data.pickedEmails.map((email) => (
+                    <div
+                      key={email.id}
+                      className="flex items-start gap-3 p-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 transition-colors group"
+                    >
+                      <MaterialIcon
+                        name="check_circle"
+                        className="text-[16px] text-emerald-600 mt-0.5 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-neutral-900 font-medium truncate">
+                          {email.subject || "No subject"}
+                        </div>
+                        <div className="text-xs text-neutral-600">
+                          {new Date(email.date).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleUnpick(email.id)}
+                        disabled={unpickingId === email.id}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-100 flex-shrink-0 flex items-center gap-1"
+                        title="Mark as not picked"
+                      >
+                        {unpickingId === email.id ? (
+                          <MaterialIcon
+                            name="progress_activity"
+                            className="text-[14px] animate-spin"
+                          />
+                        ) : (
+                          <>
+                            <MaterialIcon name="undo" className="text-[14px]" />
+                            Unpick
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
