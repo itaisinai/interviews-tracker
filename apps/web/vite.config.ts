@@ -23,6 +23,12 @@ export default defineConfig({
     port: 5173,
     fs: {
       allow: [repoRoot]
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      }
     }
   },
   build: {

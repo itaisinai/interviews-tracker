@@ -6,6 +6,12 @@ import { getPersonResearchService } from "../services/people/person-research-ser
 
 export const peopleRouter = Router();
 
+// Log all requests to people routes
+peopleRouter.use((req, res, next) => {
+  console.log('[PEOPLE ROUTER]', req.method, req.path);
+  next();
+});
+
 // Research a person
 peopleRouter.post("/research", asyncHandler(async (request, response) => {
   const input = personResearchInputSchema.parse(request.body);
@@ -55,6 +61,25 @@ peopleRouter.post("/:personId/research", asyncHandler(async (request, response) 
   });
 
   response.json(saved);
+}));
+
+// Delete person (must come before GET /:personId)
+peopleRouter.delete("/:personId", asyncHandler(async (request, response) => {
+  const { personId } = request.params;
+  console.log('[DELETE PERSON] Deleting person:', personId);
+
+  // Delete research first (if exists)
+  await prisma.personResearch.deleteMany({
+    where: { personId }
+  });
+
+  // Delete person
+  await prisma.person.delete({
+    where: { id: personId }
+  });
+
+  console.log('[DELETE PERSON] Successfully deleted');
+  response.json({ success: true });
 }));
 
 // Get person with research
@@ -107,33 +132,7 @@ peopleRouter.post("/", asyncHandler(async (request, response) => {
       return;
     }
 
-    // Validate that the person's company matches the opportunity's company
-    if (company && company !== opportunity.companyName) {
-      // Extract company name from markdown link if present: [Company Name](url)
-      const companyMatch = company.match(/^\[([^\]]+)\]/);
-      const extractedCompany = companyMatch ? companyMatch[1] : company;
-
-      // Normalize both company names for comparison (lowercase, remove special chars)
-      const normalizeCompany = (name: string) =>
-        name.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-      const normalizedExpected = normalizeCompany(opportunity.companyName);
-      const normalizedActual = normalizeCompany(extractedCompany);
-
-      // Check if the actual company contains the expected company or vice versa
-      const isMatch = normalizedActual.includes(normalizedExpected) ||
-                     normalizedExpected.includes(normalizedActual);
-
-      if (!isMatch) {
-        response.status(400).json({
-          error: "Company mismatch",
-          message: `Person's current company "${extractedCompany}" doesn't match opportunity company "${opportunity.companyName}". This person may not work at this company.`,
-          personCompany: extractedCompany,
-          opportunityCompany: opportunity.companyName
-        });
-        return;
-      }
-    }
+    // Skip company validation - Exa data is often stale, trust user's judgment
   }
 
   // Try to find existing person by email or linkedinUrl

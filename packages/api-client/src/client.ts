@@ -70,6 +70,7 @@ export const api = {
   createOpportunity: (body: unknown) => request<Opportunity>("/opportunities", { method: "POST", body: JSON.stringify(body) }),
   updateOpportunity: (id: string, body: unknown) => request<Opportunity>(`/opportunities/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteOpportunity: (id: string) => request<void>(`/opportunities/${id}`, { method: "DELETE" }),
+  deletePerson: (id: string) => request<void>(`/people/${id}`, { method: "DELETE" }),
   createInteraction: (id: string, body: unknown) => request<Interaction>(`/opportunities/${id}/interactions`, { method: "POST", body: JSON.stringify(body) }),
   updateInteraction: (id: string, body: unknown) => request<Interaction>(`/interactions/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   interactions: () => request<Interaction[]>("/interactions"),

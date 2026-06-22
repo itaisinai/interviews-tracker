@@ -89,6 +89,8 @@ export class ExaProvider {
       ? `${name} from ${companyName}`
       : name;
 
+    console.log('[EXA] Query:', query);
+
     try {
       const response = await fetch(`${this.baseUrl}/search`, {
         method: "POST",
@@ -153,6 +155,16 @@ export class ExaProvider {
 
   parseLinkedInContent(content: string, name: string, linkedInUrl: string): PersonResearchResult {
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
+
+    // Extract actual name from first line (LinkedIn profiles start with the person's name)
+    let actualName = name; // fallback to search name
+    if (lines.length > 0) {
+      const firstLine = lines[0];
+      // First line is usually the person's name, unless it's a heading marker
+      if (!firstLine.startsWith('#') && !firstLine.match(/^(About|Experience|Education|Contact)/i)) {
+        actualName = firstLine;
+      }
+    }
 
     let title = "";
     let company = "";
@@ -399,7 +411,7 @@ export class ExaProvider {
 
     return {
       person: {
-        name,
+        name: actualName,
         title: currentTitle || title || undefined,
         company: currentCompany || company || undefined,
         linkedinUrl: linkedInUrl,
@@ -474,29 +486,8 @@ export class ExaProvider {
 
     const result = this.parseLinkedInContent(profileData.text, name, profileData.url);
 
-    // Validate that the person's current company matches the expected company
-    if (companyName && result.person.company) {
-      const extractedCompany = stripMarkdownLink(result.person.company);
-
-      const normalizedExpected = normalizeCompanyName(companyName);
-      const normalizedActual = normalizeCompanyName(extractedCompany);
-
-      console.log(`[Company validation] Expected: "${companyName}" (normalized: "${normalizedExpected}"), Found: "${extractedCompany}" (normalized: "${normalizedActual}")`);
-
-      // Check if the actual company contains the expected company or vice versa
-      // This handles cases like "Toko" vs "Toko Health" or "toko.health"
-      const isMatch = normalizedActual.includes(normalizedExpected) ||
-                     normalizedExpected.includes(normalizedActual);
-
-      if (!isMatch) {
-        console.log(`[Company mismatch] Rejecting LinkedIn profile ${profileData.url} - person works at "${extractedCompany}", not "${companyName}"`);
-        return null; // Don't return results for wrong company
-      }
-
-      console.log(`[Company match] Accepted - person works at the correct company`);
-    } else if (!companyName) {
-      console.log(`[Company validation] Skipped - no company name provided for validation`);
-    } else if (!result.person.company) {
+    // Simple validation: just check we have a result
+    if (!result.person.company) {
       console.log(`[Company validation] Warning - no company found in LinkedIn profile, allowing result`);
     }
 
