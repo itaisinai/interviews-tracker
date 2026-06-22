@@ -86,10 +86,14 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
         throw new Error("No research result to save");
       }
 
+      // Detect if the original person.name is an email
+      const isEmail = person.name.includes('@');
+      const emailToStore = isEmail ? person.name : (person.email || undefined);
+
       // Create or find person
       const personRecord = await api.createPerson({
         name: researchResult.person.name,
-        email: person.email || undefined,
+        email: emailToStore,
         linkedinUrl: linkedinUrlOverride || researchResult.person.linkedinUrl || undefined,
         title: researchResult.person.title || undefined,
         company: researchResult.person.company || undefined,

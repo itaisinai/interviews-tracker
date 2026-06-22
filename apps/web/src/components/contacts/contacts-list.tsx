@@ -71,7 +71,7 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-title-sm text-title-sm font-bold text-on-surface">
-                        {contact.name}
+                        {contact.name}{contact.email ? ` (${contact.email})` : ""}
                       </p>
                       {contact.title && (
                         <p className="truncate text-body-sm text-on-surface-variant">
