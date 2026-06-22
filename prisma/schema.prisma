@@ -326,9 +326,9 @@ model Person {
 
   @@unique([email])
   @@unique([linkedinUrl])
-  @@unique([name, jobOpportunityId])
   @@index([name, company])
   @@index([jobOpportunityId])
+  @@index([name, jobOpportunityId])
 }
 
 model PersonResearch {

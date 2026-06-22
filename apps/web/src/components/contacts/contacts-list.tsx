@@ -4,6 +4,10 @@ import { api } from "../../lib/api";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
 import { PersonDetailModal } from "./person-detail-modal";
+import { FixCompanyMismatchModal } from "./fix-company-mismatch-modal";
+import { ManualJobUpdateModal } from "./manual-job-update-modal";
+import { ReviewJobTimelineModal } from "./review-job-timeline-modal";
+import { detectCompanyMismatch } from "../../lib/person-utils";
 import type { Person } from "../../lib/types";
 
 type ContactsListProps = {
@@ -14,7 +18,15 @@ type ContactsListProps = {
 export function ContactsList({ opportunityId, companyName }: ContactsListProps) {
   const queryClient = useQueryClient();
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
-  const [researchPerson, setResearchPerson] = useState<{ name: string; title?: string; company: string } | null>(null);
+  const [researchPerson, setResearchPerson] = useState<{ id?: string; name: string; title?: string; company: string } | null>(null);
+  const [researchPersonId, setResearchPersonId] = useState<string | undefined>(undefined); // Explicit ID for updates
+  const [fixMismatchPerson, setFixMismatchPerson] = useState<Person | null>(null);
+  const [manualUpdatePerson, setManualUpdatePerson] = useState<Person | null>(null);
+  const [reviewTimeline, setReviewTimeline] = useState<{
+    person: Person;
+    currentTimeline: any;
+    updatedTimeline: any;
+  } | null>(null);
 
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ["opportunity-contacts", opportunityId],
@@ -28,6 +40,42 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunityId] });
       void queryClient.invalidateQueries({ queryKey: ["people"] });
+    }
+  });
+
+  const parseJob = useMutation({
+    mutationFn: async ({ personId, jobDescriptionText }: { personId: string; jobDescriptionText: string }) => {
+      return await api.parseCurrentJob(personId, jobDescriptionText);
+    },
+    onSuccess: (data, variables) => {
+      const person = typedContacts.find(c => c.id === variables.personId);
+      if (person) {
+        setReviewTimeline({
+          person,
+          currentTimeline: data.currentTimeline,
+          updatedTimeline: data.updatedTimeline
+        });
+      }
+      setManualUpdatePerson(null);
+    },
+    onError: (error: any) => {
+      console.error("Parse job failed:", error);
+      alert(error?.message || "Failed to parse job description. Please try again.");
+    }
+  });
+
+  const applyJobUpdate = useMutation({
+    mutationFn: async ({ personId, updatedTimeline }: { personId: string; updatedTimeline: any }) => {
+      return await api.applyJobUpdate(personId, updatedTimeline);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunityId] });
+      void queryClient.invalidateQueries({ queryKey: ["people"] });
+      setReviewTimeline(null);
+    },
+    onError: (error: any) => {
+      console.error("Apply job update failed:", error);
+      alert(error?.message || "Failed to apply changes. Please try again.");
     }
   });
 
@@ -85,12 +133,27 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
                     />
                   </div>
 
-                  {contact.research && (
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <MaterialIcon name="check_circle" className="text-[16px] text-tertiary" />
-                      <span className="text-body-xs text-tertiary">Researched</span>
-                    </div>
-                  )}
+                  <div className="mt-1 flex items-center gap-2">
+                    {contact.research && (
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon name="check_circle" className="text-[16px] text-tertiary" />
+                        <span className="text-body-xs text-tertiary">Researched</span>
+                      </div>
+                    )}
+                    {detectCompanyMismatch(contact, companyName) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFixMismatchPerson(contact);
+                        }}
+                        className="flex items-center gap-1 rounded-md bg-warning/10 px-2 py-1 transition-colors hover:bg-warning/20"
+                        title="Company mismatch detected"
+                      >
+                        <MaterialIcon name="warning" className="text-[14px] text-warning" />
+                        <span className="text-body-xs font-medium text-warning">Company mismatch</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </button>
 
@@ -121,6 +184,11 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
             setResearchPerson({ name, title, company: companyName });
           }}
           onDelete={(personId) => deletePerson.mutate(personId)}
+          opportunityCompanyName={companyName}
+          onFixCompanyMismatch={() => {
+            setFixMismatchPerson(selectedPerson);
+            setSelectedPerson(null);
+          }}
         />
       )}
 
@@ -128,10 +196,76 @@ export function ContactsList({ opportunityId, companyName }: ContactsListProps) 
         <PersonResearchFlow
           person={researchPerson}
           isOpen={!!researchPerson}
-          onClose={() => setResearchPerson(null)}
-          onSaved={() => setResearchPerson(null)}
+          onClose={() => {
+            setResearchPerson(null);
+            setResearchPersonId(undefined);
+          }}
+          onSaved={() => {
+            setResearchPerson(null);
+            setResearchPersonId(undefined);
+          }}
           opportunityId={opportunityId}
           opportunityCompanyName={companyName}
+          personId={researchPersonId} // Use explicit ID state
+        />
+      )}
+
+      {fixMismatchPerson && (
+        <FixCompanyMismatchModal
+          isOpen={!!fixMismatchPerson}
+          onClose={() => setFixMismatchPerson(null)}
+          person={fixMismatchPerson}
+          opportunityCompanyName={companyName}
+          onAutoRefresh={() => {
+            // Trigger auto-refresh by re-running person research WITH existing person ID
+            console.log('[AUTO REFRESH] Setting personId:', fixMismatchPerson.id);
+            setResearchPersonId(fixMismatchPerson.id); // Set ID separately for clarity
+            setResearchPerson({
+              name: fixMismatchPerson.name,
+              title: fixMismatchPerson.title || undefined,
+              company: companyName,
+              linkedinUrl: fixMismatchPerson.linkedinUrl || undefined,
+              email: fixMismatchPerson.email || undefined
+            });
+            setFixMismatchPerson(null);
+          }}
+          onManualUpdate={() => {
+            setManualUpdatePerson(fixMismatchPerson);
+            setFixMismatchPerson(null);
+          }}
+        />
+      )}
+
+      {manualUpdatePerson && (
+        <ManualJobUpdateModal
+          isOpen={!!manualUpdatePerson}
+          onClose={() => setManualUpdatePerson(null)}
+          person={manualUpdatePerson}
+          opportunityCompanyName={companyName}
+          onSubmit={(jobDescription) => {
+            parseJob.mutate({
+              personId: manualUpdatePerson.id,
+              jobDescriptionText: jobDescription
+            });
+          }}
+          isLoading={parseJob.isPending}
+        />
+      )}
+
+      {reviewTimeline && (
+        <ReviewJobTimelineModal
+          isOpen={!!reviewTimeline}
+          onClose={() => setReviewTimeline(null)}
+          personName={reviewTimeline.person.name}
+          currentTimeline={reviewTimeline.currentTimeline}
+          updatedTimeline={reviewTimeline.updatedTimeline}
+          onApply={() => {
+            applyJobUpdate.mutate({
+              personId: reviewTimeline.person.id,
+              updatedTimeline: reviewTimeline.updatedTimeline
+            });
+          }}
+          isApplying={applyJobUpdate.isPending}
         />
       )}
     </div>
