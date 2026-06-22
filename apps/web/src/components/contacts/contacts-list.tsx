@@ -143,7 +143,11 @@ export function ContactsList({
               className="group flex w-full items-start gap-3 rounded-lg border border-outline-variant bg-surface p-3 transition-colors hover:bg-surface-container"
             >
               <button
-                onClick={() => setSelectedPerson(contact)}
+                onClick={() =>
+                  detectCompanyMismatch(contact, companyName)
+                    ? setFixMismatchPerson(contact)
+                    : setSelectedPerson(contact)
+                }
                 className="flex min-w-0 flex-1 items-start gap-3 text-left"
               >
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -185,14 +189,7 @@ export function ContactsList({
                       </div>
                     )}
                     {detectCompanyMismatch(contact, companyName) && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFixMismatchPerson(contact);
-                        }}
-                        className="flex items-center gap-1 rounded-md bg-warning/10 px-2 py-1 transition-colors hover:bg-warning/20"
-                        title="Company mismatch detected"
-                      >
+                      <div className="flex items-center gap-1.5">
                         <MaterialIcon
                           name="warning"
                           className="text-[14px] text-warning"
@@ -200,7 +197,7 @@ export function ContactsList({
                         <span className="text-body-xs font-medium text-warning">
                           Company mismatch
                         </span>
-                      </button>
+                      </div>
                     )}
                   </div>
                 </div>
