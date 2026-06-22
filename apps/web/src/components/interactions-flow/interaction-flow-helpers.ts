@@ -124,11 +124,12 @@ export function buildInteractionCalendarEvents(
     const date = new Date(interaction.date);
     const isFuture = date.getTime() > Date.now();
     const duration = formatDurationBetween(interaction.date, interaction.endDate);
-    const interactionTitle = `${interaction.stage || labelForInteractionType(interaction.type)}${duration ? ` (${duration})` : ""}`;
+
+    // Build title parts: Company · Stage/Type · Duration (no brackets, use bullet separator)
     const titleParts = [
       interaction.jobOpportunity?.companyName,
-      interactionTitle,
-      interaction.personName,
+      interaction.stage || labelForInteractionType(interaction.type),
+      duration,
     ].filter(Boolean);
 
     return {

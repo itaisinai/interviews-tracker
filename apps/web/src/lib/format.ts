@@ -49,7 +49,6 @@ export function formatDateTime(
 export function formatDateTimeRange(
   startValue?: string | null,
   endValue?: string | null,
-  referenceDate: Date = new Date(),
 ) {
   if (!startValue) return "-";
 
@@ -64,19 +63,21 @@ export function formatDateTimeRange(
   const endDate = new Date(endValue);
   const endTime = endDate.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
 
-  // Calculate duration
+  // Calculate duration (full format: 2 hours, 1 hour 30 minutes, 45 minutes)
   const totalMinutes = Math.round((endDate.getTime() - startDate.getTime()) / 60_000);
   let durationText = "";
 
   if (totalMinutes < 60) {
-    durationText = `${totalMinutes} minutes`;
+    durationText = `${totalMinutes} minute${totalMinutes === 1 ? "" : "s"}`;
   } else {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     if (minutes === 0) {
       durationText = hours === 1 ? "1 hour" : `${hours} hours`;
     } else {
-      durationText = `${hours}.${Math.round(minutes / 6)} hours`;
+      const hourLabel = `${hours} hour${hours === 1 ? "" : "s"}`;
+      const minuteLabel = `${minutes} minute${minutes === 1 ? "" : "s"}`;
+      durationText = `${hourLabel} ${minuteLabel}`;
     }
   }
 
@@ -121,6 +122,7 @@ export function formatDurationBetween(startValue: string, endValue?: string | nu
     return null;
   }
 
+  // Full format: 2 hours, 1 hour 30 minutes, 45 minutes
   if (totalMinutes < 60) {
     return `${totalMinutes} minute${totalMinutes === 1 ? "" : "s"}`;
   }

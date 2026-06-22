@@ -388,6 +388,8 @@ export class OpenAiParserService implements AiParserService {
       "",
       "Rules:",
       "- Use the LATEST calendar time if multiple exist",
+      "- IMPORTANT: If calendar.start and calendar.end are provided, use calendar.start for 'date' and calendar.end for 'endDate'",
+      "- Set endDate to null only if no calendar end time is available",
       "- Combine all unique participant names with 'and'",
       "- For notes: write 2-4 sentence summary of key info (location, parking, what to bring, who you're meeting)",
       "- Do NOT include metadata like 'Subject:', 'From:', etc. in notes",
