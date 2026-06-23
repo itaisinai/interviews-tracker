@@ -84,11 +84,17 @@ export function ParticipantsCard({
             return (
               <div
                 key={name}
-                className="flex items-center justify-between py-2 px-2 rounded hover:bg-neutral-50 transition-colors"
+                className="flex items-center justify-between py-2 px-2 rounded hover:bg-neutral-50 transition-colors group"
+                title={person?.title || undefined}
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <MaterialIcon name="person" className="text-[18px] text-neutral-400 flex-shrink-0" />
-                  <span className="text-sm text-neutral-900 truncate">{name}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-neutral-900 truncate">{name}</div>
+                    {person?.title && (
+                      <div className="text-xs text-neutral-500 truncate">{person.title}</div>
+                    )}
+                  </div>
                 </div>
 
                 <button
@@ -102,7 +108,7 @@ export function ParticipantsCard({
                     }
                   }}
                   className="flex-shrink-0 p-1 rounded hover:bg-neutral-100 transition-colors"
-                  title="Research person"
+                  title={person?.research ? "View details" : "Research person"}
                 >
                   <MaterialIcon
                     name={person?.research ? "badge" : "search"}

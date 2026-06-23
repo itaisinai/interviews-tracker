@@ -10,6 +10,7 @@ import { ReviewJobTimelineModal } from "./review-job-timeline-modal";
 import { api } from "../../lib/api";
 import { detectCompanyMismatch } from "../../lib/person-utils";
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 type ContactsListProps = {
   opportunityId: string;
@@ -21,6 +22,7 @@ export function ContactsList({
   companyName,
 }: ContactsListProps) {
   const queryClient = useQueryClient();
+  const [isExpanded, setIsExpanded] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [researchPerson, setResearchPerson] = useState<{
     id?: string;
@@ -132,16 +134,31 @@ export function ContactsList({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex w-full items-center justify-between rounded-lg p-2 transition-colors hover:bg-surface-container"
+      >
         <h3 className="font-title-md text-title-md font-bold uppercase tracking-wide text-on-surface">
           Contacts
         </h3>
-      </div>
+        <div className="flex items-center gap-2">
+          {typedContacts.length > 0 && (
+            <span className="text-body-sm text-on-surface-variant">
+              {typedContacts.length}
+            </span>
+          )}
+          <ChevronDown
+            className={`h-5 w-5 text-on-surface-variant transition-transform ${isExpanded ? "rotate-180" : ""}`}
+          />
+        </div>
+      </button>
 
-      {typedContacts.length === 0 ? (
-        <p className="text-body-sm text-on-surface-variant">No contacts yet</p>
-      ) : (
-        <div className="space-y-2">
+      {isExpanded && (
+        <>
+          {typedContacts.length === 0 ? (
+            <p className="text-body-sm text-on-surface-variant">No contacts yet</p>
+          ) : (
+            <div className="space-y-2">
           {typedContacts.map((contact) => (
             <div
               key={contact.id}
@@ -222,7 +239,9 @@ export function ContactsList({
               </button>
             </div>
           ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {selectedPerson && (

@@ -210,6 +210,7 @@ export function OpportunityDetailPage() {
         <div className="mt-8">
           <FocusedInteractionCard
             interaction={focusedInteraction}
+            opportunityId={opportunityDbId}
             onOpen={() => setSelectedInteractionId(focusedInteraction.id)}
           />
         </div>
@@ -396,13 +397,29 @@ function buildOpportunityInput(
 
 function FocusedInteractionCard({
   interaction,
+  opportunityId,
   onOpen,
 }: {
   interaction: Interaction;
+  opportunityId: string;
   onOpen: () => void;
 }) {
   const badge = getInteractionBadgeMeta(interaction);
   const duration = formatDurationBetween(interaction.date, interaction.endDate);
+
+  // Fetch contacts to get job titles
+  const { data: contacts = [] } = useQuery({
+    queryKey: ["opportunity-contacts", opportunityId],
+    queryFn: () => api.getOpportunityContacts(opportunityId),
+  });
+
+  // Helper to find contact by name
+  const findContactByName = (name: string) => {
+    const trimmedName = name.trim();
+    return contacts.find((contact: any) =>
+      contact.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+  };
 
   return (
     <section className="rounded-2xl border border-outline-variant bg-white p-5 shadow-sm">
@@ -450,21 +467,27 @@ function FocusedInteractionCard({
       </div>
       {interaction.personName ? (
         <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-          {interaction.personName.split(/\s+and\s+|,\s*/).map((name) => (
-            <div
-              key={name}
-              className="rounded-xl border border-outline-variant bg-surface-container-low/50 px-4 py-3"
-            >
-              <p className="font-label-md text-label-md font-bold text-on-background">
-                {name}
-              </p>
-              {interaction.personRole ? (
-                <p className="mt-1 text-body-sm text-on-surface-variant">
-                  {interaction.personRole}
+          {interaction.personName.split(/\s+and\s+|,\s*/).map((name) => {
+            const contact = findContactByName(name);
+            const jobTitle = contact?.title || interaction.personRole;
+
+            return (
+              <div
+                key={name}
+                className="group rounded-xl border border-outline-variant bg-surface-container-low/50 px-4 py-3 transition-colors hover:bg-surface-container"
+                title={jobTitle || undefined}
+              >
+                <p className="font-label-md text-label-md font-bold text-on-background">
+                  {name}
                 </p>
-              ) : null}
-            </div>
-          ))}
+                {jobTitle && (
+                  <p className="mt-1 text-body-sm text-on-surface-variant">
+                    {jobTitle}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       ) : null}
     </section>
