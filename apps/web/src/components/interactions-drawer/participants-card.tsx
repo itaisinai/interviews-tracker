@@ -3,6 +3,8 @@ import { MaterialIcon } from "@interviews-tracker/design-system";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
 import { PersonDetailModal } from "../contacts/person-detail-modal";
 import type { Person } from "../../lib/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../../lib/api";
 
 type ParticipantsCardProps = {
   personNames: string[];
@@ -17,11 +19,31 @@ export function ParticipantsCard({
   opportunityId,
   opportunityCompanyName
 }: ParticipantsCardProps) {
+  const queryClient = useQueryClient();
   const [researchModalOpen, setResearchModalOpen] = useState(false);
   const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [selectedPersonName, setSelectedPersonName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const markAsWrong = useMutation({
+    mutationFn: async (personId: string) => {
+      if (!opportunityId) throw new Error("No opportunity ID");
+      return api.markPersonAsWrong(personId, opportunityId, selectedPersonName, undefined);
+    },
+    onSuccess: () => {
+      // Refresh contacts list
+      if (opportunityId) {
+        void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunityId] });
+      }
+      setPersonDetailModalOpen(false);
+      setSelectedPerson(null);
+    },
+    onError: (error) => {
+      console.error("Failed to mark person as wrong:", error);
+      alert("Failed to mark person as wrong. Please try again.");
+    }
+  });
 
   const filteredPersons = personNames.filter(name =>
     name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -122,6 +144,13 @@ export function ParticipantsCard({
             setSelectedPerson(null);
             setSelectedPersonName(name);
             setResearchModalOpen(true);
+          }}
+          opportunityId={opportunityId}
+          opportunityCompanyName={opportunityCompanyName}
+          onMarkAsWrong={() => {
+            if (selectedPerson) {
+              markAsWrong.mutate(selectedPerson.id);
+            }
           }}
         />
       )}

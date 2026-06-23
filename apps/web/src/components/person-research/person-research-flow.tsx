@@ -56,12 +56,14 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
       setLinkedinUrlOverride(linkedinUrl);
       setStep("loading");
 
+      // Cast to any to add opportunityId since it's not in the PersonResearchInput type yet
       const result = await api.researchPerson({
         name: person.name,
         companyName: opportunityCompanyName || person.company || undefined,
         roleTitle: person.title || undefined,
-        linkedinUrl: linkedinUrl || person.linkedinUrl || undefined
-      });
+        linkedinUrl: linkedinUrl || person.linkedinUrl || undefined,
+        opportunityId
+      } as any);
 
       if (!result) {
         throw new Error(

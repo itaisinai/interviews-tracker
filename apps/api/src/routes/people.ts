@@ -16,9 +16,11 @@ peopleRouter.use((req, res, next) => {
 // Research a person
 peopleRouter.post("/research", asyncHandler(async (request, response) => {
   const input = personResearchInputSchema.parse(request.body);
-  console.log('[Research request]', JSON.stringify(input));
+  const { opportunityId } = request.body; // Optional: for filtering wrong candidates
+
+  console.log('[Research request]', JSON.stringify(input), 'opportunityId:', opportunityId);
   const service = getPersonResearchService();
-  const result = await service.researchPerson(input);
+  const result = await service.researchPerson(input, opportunityId);
 
   if (!result) {
     response.status(404).json({
@@ -256,6 +258,62 @@ peopleRouter.post("/", asyncHandler(async (request, response) => {
   }
 
   response.json(person);
+}));
+
+// Mark person as wrong candidate
+peopleRouter.post("/:personId/mark-wrong", asyncHandler(async (request, response) => {
+  const { personId } = request.params;
+  const { opportunityId, searchContext, notes } = request.body;
+
+  if (!opportunityId) {
+    response.status(400).json({ error: "opportunityId is required" });
+    return;
+  }
+
+  // Get person details
+  const person = await prisma.person.findUnique({
+    where: { id: personId },
+    include: { research: true }
+  });
+
+  if (!person) {
+    response.status(404).json({ error: "Person not found" });
+    return;
+  }
+
+  // Create wrong candidate record
+  const wrongCandidate = await prisma.wrongPersonCandidate.create({
+    data: {
+      opportunityId,
+      searchContext: searchContext || person.name,
+      personName: person.name,
+      linkedinUrl: person.linkedinUrl || null,
+      company: person.company || null,
+      title: person.title || null,
+      avatarUrl: person.avatarUrl || null,
+      notes: notes || null
+    }
+  });
+
+  // Delete the person and their research
+  await prisma.person.delete({
+    where: { id: personId }
+  });
+
+  console.log('[MARK WRONG PERSON] Created wrong candidate record and deleted person:', wrongCandidate.id);
+  response.json({ success: true, wrongCandidateId: wrongCandidate.id });
+}));
+
+// Get wrong person candidates for an opportunity
+peopleRouter.get("/wrong-candidates/:opportunityId", asyncHandler(async (request, response) => {
+  const { opportunityId } = request.params;
+
+  const wrongCandidates = await prisma.wrongPersonCandidate.findMany({
+    where: { opportunityId },
+    orderBy: { rejectedAt: "desc" }
+  });
+
+  response.json(wrongCandidates);
 }));
 
 // Search people

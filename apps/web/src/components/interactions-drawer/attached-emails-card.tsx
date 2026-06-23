@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { AttachEmailModal } from "./attach-email-modal";
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { MaterialIcon, Button } from "@interviews-tracker/design-system";
 import { api } from "../../lib/api";
 import { useState } from "react";
 
@@ -80,26 +80,26 @@ export function AttachedEmailsCard({
           </div>
           <div className="flex items-center gap-2">
             {emails.length > 0 && (
-              <button
+              <Button
                 onClick={handleReparse}
                 disabled={isReparsing}
-                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 disabled:opacity-50"
+                variant="outlined"
+                size="sm"
+                leadingIcon="refresh"
+                loading={isReparsing}
                 title="Re-parse all emails"
               >
-                <MaterialIcon
-                  name={isReparsing ? "progress_activity" : "refresh"}
-                  className={`text-[14px] ${isReparsing ? "animate-spin" : ""}`}
-                />
                 Re-parse
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               onClick={() => setShowAttachModal(true)}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+              variant="outlined"
+              size="sm"
+              leadingIcon="add"
             >
-              <MaterialIcon name="add" className="text-[14px]" />
               Attach
-            </button>
+            </Button>
           </div>
         </div>
 

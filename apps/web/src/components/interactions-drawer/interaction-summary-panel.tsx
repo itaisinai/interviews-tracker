@@ -63,11 +63,39 @@ export function InteractionSummaryPanel({
   });
 
   const personRecords = personNames.map((name) => {
-    // If name looks like an email, match by email, otherwise match by name
+    // If name looks like an email, match by email
     const isEmail = name.includes("@");
-    return (contacts as Person[]).find((c) =>
-      isEmail ? c.email === name : c.name === name,
+    if (isEmail) {
+      return (contacts as Person[]).find((c) => c.email === name);
+    }
+
+    // Otherwise, try multiple name matching strategies:
+    // 1. Exact match
+    const exactMatch = (contacts as Person[]).find((c) => c.name === name);
+    if (exactMatch) return exactMatch;
+
+    // 2. Case-insensitive match
+    const caseInsensitiveMatch = (contacts as Person[]).find(
+      (c) => c.name.toLowerCase() === name.toLowerCase()
     );
+    if (caseInsensitiveMatch) return caseInsensitiveMatch;
+
+    // 3. First name match (e.g., "Rotem Zikorel" matches "Rotem")
+    const firstNameMatch = (contacts as Person[]).find((c) => {
+      const contactFirstName = c.name.split(' ')[0].toLowerCase();
+      const nameFirstName = name.split(' ')[0].toLowerCase();
+      return contactFirstName === nameFirstName;
+    });
+    if (firstNameMatch) return firstNameMatch;
+
+    // 4. Full name contains contact name (e.g., "Rotem Zikorel" contains "Rotem")
+    const containsMatch = (contacts as Person[]).find((c) => {
+      const nameLower = name.toLowerCase();
+      const contactNameLower = c.name.toLowerCase();
+      return nameLower.includes(contactNameLower) || contactNameLower.includes(nameLower);
+    });
+
+    return containsMatch;
   });
 
   const handleAddFeedback = async (content: string, source?: string) => {
