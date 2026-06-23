@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tantml:react-query";
 
 import { FixCompanyMismatchModal } from "./fix-company-mismatch-modal";
 import { ManualJobUpdateModal } from "./manual-job-update-modal";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import type { Person } from "../../lib/types";
-import { PersonDetailModal } from "./person-detail-modal";
+import { PersonInfoModal } from "./person-info-modal";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
 import { ReviewJobTimelineModal } from "./review-job-timeline-modal";
 import { api } from "../../lib/api";
@@ -221,19 +221,30 @@ export function ContactsList({
       )}
 
       {selectedPerson && (
-        <PersonDetailModal
+        <PersonInfoModal
           person={selectedPerson}
           isOpen={!!selectedPerson}
           onClose={() => setSelectedPerson(null)}
-          onResearch={(name, title) => {
+          onRefreshResearch={() => {
+            setResearchPerson({
+              name: selectedPerson.name,
+              title: selectedPerson.title || undefined,
+              company: companyName,
+              linkedinUrl: selectedPerson.linkedinUrl || undefined,
+              email: selectedPerson.email || undefined,
+            });
+            setResearchPersonId(selectedPerson.id);
             setSelectedPerson(null);
-            setResearchPerson({ name, title, company: companyName });
           }}
-          onDelete={(personId) => deletePerson.mutate(personId)}
-          opportunityCompanyName={companyName}
-          onFixCompanyMismatch={() => {
+          onMarkAsWrong={() => {
             setFixMismatchPerson(selectedPerson);
             setSelectedPerson(null);
+          }}
+          onDelete={() => {
+            if (window.confirm(`Delete ${selectedPerson.name}? This will remove all their research data.`)) {
+              deletePerson.mutate(selectedPerson.id);
+              setSelectedPerson(null);
+            }
           }}
         />
       )}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
-import { PersonDetailModal } from "../contacts/person-detail-modal";
+import { PersonInfoModal } from "../contacts/person-info-modal";
 import type { Person } from "../../lib/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -135,28 +135,39 @@ export function ParticipantsCard({
         onSaved={() => setResearchModalOpen(false)}
       />
 
-      {/* Person Detail Modal */}
+      {/* Person Info Modal */}
       {selectedPerson && (
-        <PersonDetailModal
+        <PersonInfoModal
           person={selectedPerson}
           isOpen={personDetailModalOpen}
           onClose={() => {
             setPersonDetailModalOpen(false);
             setSelectedPerson(null);
           }}
-          onResearch={(name, title, linkedinUrl) => {
+          onRefreshResearch={() => {
             setPersonDetailModalOpen(false);
-            setSelectedPerson(null);
-            setSelectedPersonName(name);
-            setSelectedLinkedinUrl(linkedinUrl || null);
+            setSelectedPersonName(selectedPerson.name);
+            setSelectedLinkedinUrl(selectedPerson.linkedinUrl || null);
             setResearchModalOpen(true);
           }}
-          opportunityId={opportunityId}
-          opportunityCompanyName={opportunityCompanyName}
           onMarkAsWrong={() => {
-            if (selectedPerson) {
+            if (selectedPerson && window.confirm(`Mark ${selectedPerson.name} as the wrong person? This will help future searches exclude this candidate.`)) {
               markAsWrong.mutate(selectedPerson.id);
+              setPersonDetailModalOpen(false);
+              setSelectedPerson(null);
             }
+          }}
+          onDelete={() => {
+            if (selectedPerson && window.confirm(`Delete ${selectedPerson.name}? This will remove all their research data.`)) {
+              // You would implement delete here if needed
+              setPersonDetailModalOpen(false);
+              setSelectedPerson(null);
+            }
+          }}
+          showActions={{
+            refreshResearch: true,
+            markAsWrong: !!opportunityId,
+            delete: false, // Don't show delete in interaction drawer
           }}
         />
       )}
