@@ -24,6 +24,7 @@ export function ParticipantsCard({
   const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [selectedPersonName, setSelectedPersonName] = useState<string>("");
+  const [selectedLinkedinUrl, setSelectedLinkedinUrl] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const markAsWrong = useMutation({
@@ -122,7 +123,11 @@ export function ParticipantsCard({
 
       {/* Research Modal */}
       <PersonResearchFlow
-        person={{ name: selectedPersonName, title: null }}
+        person={{
+          name: selectedPersonName,
+          title: null,
+          linkedinUrl: selectedLinkedinUrl
+        }}
         opportunityId={opportunityId}
         opportunityCompanyName={opportunityCompanyName}
         isOpen={researchModalOpen}
@@ -139,10 +144,11 @@ export function ParticipantsCard({
             setPersonDetailModalOpen(false);
             setSelectedPerson(null);
           }}
-          onResearch={(name) => {
+          onResearch={(name, title, linkedinUrl) => {
             setPersonDetailModalOpen(false);
             setSelectedPerson(null);
             setSelectedPersonName(name);
+            setSelectedLinkedinUrl(linkedinUrl || null);
             setResearchModalOpen(true);
           }}
           opportunityId={opportunityId}

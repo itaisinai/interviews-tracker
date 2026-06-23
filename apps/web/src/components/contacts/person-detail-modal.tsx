@@ -9,7 +9,7 @@ type PersonDetailModalProps = {
   person: Person;
   isOpen: boolean;
   onClose: () => void;
-  onResearch: (name: string, title?: string) => void;
+  onResearch: (name: string, title?: string, linkedinUrl?: string) => void;
   onDelete?: (personId: string) => void;
   opportunityCompanyName?: string;
   onFixCompanyMismatch?: () => void;
@@ -125,7 +125,7 @@ export function PersonDetailModal({
               </p>
               <button
                 onClick={() =>
-                  onResearch(person.name, person.title || undefined)
+                  onResearch(person.name, person.title || undefined, person.linkedinUrl || undefined)
                 }
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-on-primary transition-colors hover:bg-primary/90"
               >
@@ -307,7 +307,7 @@ export function PersonDetailModal({
           <div className="flex items-center gap-3">
             {hasResearch && (
               <button
-                onClick={() => onResearch(person.name, person.title || undefined)}
+                onClick={() => onResearch(person.name, person.title || undefined, person.linkedinUrl || undefined)}
                 className="inline-flex items-center gap-2 rounded-lg border border-outline px-4 py-2 font-medium text-primary transition-colors hover:bg-surface-container"
               >
                 <MaterialIcon name="refresh" className="text-[20px]" />
