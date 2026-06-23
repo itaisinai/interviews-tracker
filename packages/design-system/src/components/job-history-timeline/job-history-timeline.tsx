@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 export type JobPosition = {
   title: string;
@@ -21,6 +21,34 @@ export type CompanyExperience = {
 export type JobHistoryTimelineProps = {
   companies: CompanyExperience[];
 };
+
+type DescriptionProps = {
+  text: string;
+};
+
+function ExpandableDescription({ text }: DescriptionProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="mt-2">
+      <p
+        className={`text-body-sm text-on-surface-variant leading-relaxed ${
+          isExpanded ? "" : "line-clamp-2"
+        }`}
+      >
+        {text}
+      </p>
+      {text.length > 150 && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="mt-1 text-body-sm font-medium text-on-surface-variant hover:text-primary transition-colors"
+        >
+          ...{isExpanded ? "less" : "more"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function JobHistoryTimeline({ companies }: JobHistoryTimelineProps) {
   return (
@@ -84,9 +112,7 @@ export function JobHistoryTimeline({ companies }: JobHistoryTimelineProps) {
 
                 {/* Description */}
                 {company.positions[0].description && (
-                  <p className="mt-2 text-body-sm text-on-surface-variant leading-relaxed">
-                    {company.positions[0].description}
-                  </p>
+                  <ExpandableDescription text={company.positions[0].description} />
                 )}
               </>
             ) : (
@@ -148,9 +174,7 @@ export function JobHistoryTimeline({ companies }: JobHistoryTimelineProps) {
 
                         {/* Description */}
                         {position.description && (
-                          <p className="mt-2 text-body-sm text-on-surface-variant leading-relaxed">
-                            {position.description}
-                          </p>
+                          <ExpandableDescription text={position.description} />
                         )}
                       </div>
                     </div>

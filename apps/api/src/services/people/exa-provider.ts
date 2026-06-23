@@ -399,8 +399,43 @@ export class ExaProvider {
       console.log(`[EXA PARSE] [${idx}] Duration: ${exp.duration || 'NO DURATION'}`);
     });
 
+    // Clean up markdown artifacts from company names and titles
+    const cleanedExperience = rawExperience.map(exp => {
+      // Remove markdown syntax from company names: "### Title at [Company](url)" or "[Company](url)"
+      let cleanCompany = exp.company;
+      let cleanCompanyUrl = exp.companyUrl;
+
+      // Extract from markdown link if present: [Company](url)
+      const linkMatch = cleanCompany.match(/\[([^\]]+)\]\(([^)]+)\)/);
+      if (linkMatch) {
+        cleanCompany = linkMatch[1];
+        cleanCompanyUrl = cleanCompanyUrl || linkMatch[2];
+      }
+
+      // Remove ### prefix if it somehow got through
+      cleanCompany = cleanCompany.replace(/^###\s*/, '').trim();
+
+      // Remove "Title at " prefix if the full line got captured as company name
+      const atMatch = cleanCompany.match(/^(.+?)\s+at\s+(.+)$/);
+      if (atMatch && !exp.title) {
+        // This means "Title at Company" was captured as company, split it
+        return {
+          ...exp,
+          title: atMatch[1].trim(),
+          company: atMatch[2].trim(),
+          companyUrl: cleanCompanyUrl
+        };
+      }
+
+      return {
+        ...exp,
+        company: cleanCompany,
+        companyUrl: cleanCompanyUrl
+      };
+    });
+
     // Group experiences by company
-    const groupedExperience = rawExperience.reduce((acc, exp) => {
+    const groupedExperience = cleanedExperience.reduce((acc, exp) => {
       const existing = acc.find((g) => g.company === exp.company);
       if (existing) {
         existing.positions.push({
