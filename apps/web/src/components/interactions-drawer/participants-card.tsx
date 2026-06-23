@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { MaterialIcon, ParticipantList } from "@interviews-tracker/design-system";
-import type { Participant } from "@interviews-tracker/design-system";
+import { MaterialIcon } from "@interviews-tracker/design-system";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
 import { PersonInfoModal } from "../contacts/person-info-modal";
 import type { Person } from "../../lib/types";
@@ -26,7 +25,6 @@ export function ParticipantsCard({
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [selectedPersonName, setSelectedPersonName] = useState<string>("");
   const [selectedLinkedinUrl, setSelectedLinkedinUrl] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const markAsWrong = useMutation({
     mutationFn: async (personId: string) => {
@@ -47,32 +45,9 @@ export function ParticipantsCard({
     }
   });
 
-  const filteredPersons = personNames.filter(name =>
-    name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   if (personNames.length === 0) {
     return null;
   }
-
-  const participants: Participant[] = filteredPersons.map((name) => {
-    const index = personNames.indexOf(name);
-    const person = personRecords[index];
-
-    return {
-      name,
-      title: person?.title || undefined,
-      hasResearch: !!person?.research,
-      onViewDetails: person?.research ? () => {
-        setSelectedPerson(person);
-        setPersonDetailModalOpen(true);
-      } : undefined,
-      onResearch: !person?.research ? () => {
-        setSelectedPersonName(name);
-        setResearchModalOpen(true);
-      } : undefined,
-    };
-  });
 
   return (
     <>
@@ -84,12 +59,49 @@ export function ParticipantsCard({
           </div>
         </div>
 
-        <ParticipantList
-          participants={participants}
-          onSearch={setSearchQuery}
-          searchPlaceholder="Search participants..."
-          emptyMessage="No participants found"
-        />
+        {/* Participants List */}
+        <div className="grid grid-cols-2 gap-2">
+          {personNames.map((name, index) => {
+            const person = personRecords[index];
+
+            return (
+              <div
+                key={name}
+                className="flex items-center justify-between rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 transition-colors hover:bg-neutral-100"
+                title={person?.title || undefined}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <MaterialIcon name="person" className="text-[18px] text-neutral-400 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-neutral-900 truncate">{name}</div>
+                    {person?.title && (
+                      <div className="text-xs text-neutral-600 truncate mt-0.5">{person.title}</div>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (person?.research) {
+                      setSelectedPerson(person);
+                      setPersonDetailModalOpen(true);
+                    } else {
+                      setSelectedPersonName(name);
+                      setResearchModalOpen(true);
+                    }
+                  }}
+                  className="flex-shrink-0 rounded-lg p-1.5 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-emerald-600"
+                  title={person?.research ? "View details" : "Research person"}
+                >
+                  <MaterialIcon
+                    name={person?.research ? "badge" : "search"}
+                    className="text-[18px]"
+                  />
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Research Modal */}

@@ -4,9 +4,7 @@ import {
   MaterialIcon,
   PageErrorState,
   PageLoadingState,
-  ParticipantList,
 } from "@interviews-tracker/design-system";
-import type { Participant } from "@interviews-tracker/design-system";
 import type { Interaction, Opportunity } from "../lib/types";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
@@ -28,6 +26,7 @@ import { PageIntro } from "../components/app-shell";
 import { Timeline } from "../components/timeline";
 import { api } from "../lib/api";
 import { labelForPipelineType } from "../lib/enum-labels";
+import { ParticipantsCard } from "../components/interactions-drawer/participants-card";
 
 export function OpportunityDetailPage() {
   const { slugOrId = "" } = useParams();
@@ -213,6 +212,7 @@ export function OpportunityDetailPage() {
           <FocusedInteractionCard
             interaction={focusedInteraction}
             opportunityId={opportunityDbId}
+            opportunityCompanyName={data.companyName}
             onOpen={() => setSelectedInteractionId(focusedInteraction.id)}
           />
         </div>
@@ -399,28 +399,35 @@ function buildOpportunityInput(
 function FocusedInteractionCard({
   interaction,
   opportunityId,
+  opportunityCompanyName,
   onOpen,
 }: {
   interaction: Interaction;
   opportunityId: string;
+  opportunityCompanyName: string;
   onOpen: () => void;
 }) {
   const badge = getInteractionBadgeMeta(interaction);
   const duration = formatDurationBetween(interaction.date, interaction.endDate);
 
-  // Fetch contacts to get job titles
+  // Fetch contacts to get job titles and research status
   const { data: contacts = [] } = useQuery({
     queryKey: ["opportunity-contacts", opportunityId],
     queryFn: () => api.getOpportunityContacts(opportunityId),
   });
 
-  // Helper to find contact by name
-  const findContactByName = (name: string) => {
+  // Parse participant names
+  const personNames = interaction.personName
+    ? interaction.personName.split(/\s+and\s+|,\s*/).map(name => name.trim())
+    : [];
+
+  // Match contacts by name
+  const personRecords = personNames.map((name) => {
     const trimmedName = name.trim();
     return contacts.find((contact: any) =>
       contact.name.toLowerCase() === trimmedName.toLowerCase()
     );
-  };
+  });
 
   return (
     <section className="rounded-2xl border border-outline-variant bg-white p-5 shadow-sm">
@@ -466,25 +473,13 @@ function FocusedInteractionCard({
           </button>
         </div>
       </div>
-      {interaction.personName ? (
+      {personNames.length > 0 ? (
         <div className="mt-5">
-          <ParticipantList
-            participants={interaction.personName.split(/\s+and\s+|,\s*/).map((name): Participant => {
-              const contact = findContactByName(name);
-              return {
-                name: name.trim(),
-                title: contact?.title || undefined,
-                hasResearch: !!contact?.research,
-                onViewDetails: contact?.research ? () => {
-                  // TODO: Open person details modal
-                  console.log("View details for:", name);
-                } : undefined,
-                onResearch: !contact?.research ? () => {
-                  // TODO: Open research flow
-                  console.log("Research:", name);
-                } : undefined,
-              };
-            })}
+          <ParticipantsCard
+            personNames={personNames}
+            personRecords={personRecords}
+            opportunityId={opportunityId}
+            opportunityCompanyName={opportunityCompanyName}
           />
         </div>
       ) : null}
