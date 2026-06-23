@@ -293,27 +293,6 @@ export class ExaProvider {
             continue;
           }
 
-          if (!currentExperience || currentExperience.dates) {
-            const plainTitle = line;
-            const plainCompany = parseCompanyLine(nextLine || "");
-            const plainDate = parseExperienceDateLine(lines[i + 2] || "");
-
-            if (plainCompany && plainDate) {
-              if (currentExperience?.company && currentExperience?.title) {
-                rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
-              }
-
-              currentExperience = {
-                title: plainTitle,
-                company: plainCompany,
-                dates: plainDate.dates,
-                duration: plainDate.duration
-              };
-              i += 2;
-              continue;
-            }
-          }
-
           if (!currentExperience) {
             continue;
           }
