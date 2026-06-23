@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, LoadingButton, MaterialIcon, JobHistoryTimeline } from "@interviews-tracker/design-system";
 import type { CompanyExperience } from "@interviews-tracker/design-system";
 import type { PersonResearchResult } from "../../lib/types";
@@ -23,6 +23,11 @@ export function ConfirmResearchModal({ isOpen, onClose, person, onStartResearch 
   const [linkedinUrl, setLinkedinUrl] = useState(person.linkedinUrl || "");
   const [saveForLater, setSaveForLater] = useState(true);
   const [urlError, setUrlError] = useState<string | null>(null);
+
+  // Update LinkedIn URL when person changes (e.g., when refreshing research)
+  useEffect(() => {
+    setLinkedinUrl(person.linkedinUrl || "");
+  }, [person.linkedinUrl]);
 
   const validateAndStart = () => {
     setUrlError(null);

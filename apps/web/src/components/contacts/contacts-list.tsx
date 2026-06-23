@@ -4,12 +4,13 @@ import { FixCompanyMismatchModal } from "./fix-company-mismatch-modal";
 import { ManualJobUpdateModal } from "./manual-job-update-modal";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import type { Person } from "../../lib/types";
-import { PersonDetailModal } from "./person-detail-modal";
+import { PersonInfoModal } from "./person-info-modal";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
 import { ReviewJobTimelineModal } from "./review-job-timeline-modal";
 import { api } from "../../lib/api";
 import { detectCompanyMismatch } from "../../lib/person-utils";
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 type ContactsListProps = {
   opportunityId: string;
@@ -21,7 +22,8 @@ export function ContactsList({
   companyName,
 }: ContactsListProps) {
   const queryClient = useQueryClient();
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [researchPerson, setResearchPerson] = useState<{
     id?: string;
     name: string;
@@ -117,6 +119,11 @@ export function ContactsList({
   // Cast contacts to Person type
   const typedContacts = contacts as Person[];
 
+  // Derive selectedPerson from the latest contacts data
+  const selectedPerson = selectedPersonId
+    ? typedContacts.find((c) => c.id === selectedPersonId) || null
+    : null;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -127,16 +134,31 @@ export function ContactsList({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex w-full items-center justify-between rounded-lg p-2 transition-colors hover:bg-surface-container"
+      >
         <h3 className="font-title-md text-title-md font-bold uppercase tracking-wide text-on-surface">
           Contacts
         </h3>
-      </div>
+        <div className="flex items-center gap-2">
+          {typedContacts.length > 0 && (
+            <span className="text-body-sm text-on-surface-variant">
+              {typedContacts.length}
+            </span>
+          )}
+          <ChevronDown
+            className={`h-5 w-5 text-on-surface-variant transition-transform ${isExpanded ? "rotate-180" : ""}`}
+          />
+        </div>
+      </button>
 
-      {typedContacts.length === 0 ? (
-        <p className="text-body-sm text-on-surface-variant">No contacts yet</p>
-      ) : (
-        <div className="space-y-2">
+      {isExpanded && (
+        <>
+          {typedContacts.length === 0 ? (
+            <p className="text-body-sm text-on-surface-variant">No contacts yet</p>
+          ) : (
+            <div className="space-y-2">
           {typedContacts.map((contact) => (
             <div
               key={contact.id}
@@ -146,7 +168,7 @@ export function ContactsList({
                 onClick={() =>
                   detectCompanyMismatch(contact, companyName)
                     ? setFixMismatchPerson(contact)
-                    : setSelectedPerson(contact)
+                    : setSelectedPersonId(contact.id)
                 }
                 className="flex min-w-0 flex-1 items-start gap-3 text-left"
               >
@@ -217,23 +239,40 @@ export function ContactsList({
               </button>
             </div>
           ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {selectedPerson && (
-        <PersonDetailModal
+        <PersonInfoModal
           person={selectedPerson}
           isOpen={!!selectedPerson}
-          onClose={() => setSelectedPerson(null)}
-          onResearch={(name, title) => {
-            setSelectedPerson(null);
-            setResearchPerson({ name, title, company: companyName });
+          onClose={() => setSelectedPersonId(null)}
+          onRefreshResearch={() => {
+            setResearchPerson({
+              name: selectedPerson.name,
+              title: selectedPerson.title || undefined,
+              company: companyName,
+              linkedinUrl: selectedPerson.linkedinUrl || undefined,
+              email: selectedPerson.email || undefined,
+            });
+            setResearchPersonId(selectedPerson.id);
+            setSelectedPersonId(null);
           }}
-          onDelete={(personId) => deletePerson.mutate(personId)}
-          opportunityCompanyName={companyName}
-          onFixCompanyMismatch={() => {
+          onMarkAsWrong={() => {
             setFixMismatchPerson(selectedPerson);
-            setSelectedPerson(null);
+            setSelectedPersonId(null);
+          }}
+          onDelete={() => {
+            if (
+              window.confirm(
+                `Delete ${selectedPerson.name}? This will remove all their research data.`,
+              )
+            ) {
+              deletePerson.mutate(selectedPerson.id);
+              setSelectedPersonId(null);
+            }
           }}
         />
       )}

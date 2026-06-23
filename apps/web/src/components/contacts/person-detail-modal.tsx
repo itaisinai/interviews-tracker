@@ -9,10 +9,12 @@ type PersonDetailModalProps = {
   person: Person;
   isOpen: boolean;
   onClose: () => void;
-  onResearch: (name: string, title?: string) => void;
+  onResearch: (name: string, title?: string, linkedinUrl?: string) => void;
   onDelete?: (personId: string) => void;
   opportunityCompanyName?: string;
   onFixCompanyMismatch?: () => void;
+  opportunityId?: string;
+  onMarkAsWrong?: () => void;
 };
 
 export function PersonDetailModal({
@@ -23,6 +25,8 @@ export function PersonDetailModal({
   onDelete,
   opportunityCompanyName,
   onFixCompanyMismatch,
+  opportunityId,
+  onMarkAsWrong,
 }: PersonDetailModalProps) {
   const [showAllExperience, setShowAllExperience] = useState(false);
   const [showAllEducation, setShowAllEducation] = useState(false);
@@ -121,7 +125,7 @@ export function PersonDetailModal({
               </p>
               <button
                 onClick={() =>
-                  onResearch(person.name, person.title || undefined)
+                  onResearch(person.name, person.title || undefined, person.linkedinUrl || undefined)
                 }
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-on-primary transition-colors hover:bg-primary/90"
               >
@@ -270,7 +274,7 @@ export function PersonDetailModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-outline-variant p-6">
-          <div>
+          <div className="flex gap-3">
             {onDelete && (
               <button
                 onClick={() => {
@@ -285,11 +289,25 @@ export function PersonDetailModal({
                 Delete Contact
               </button>
             )}
+            {hasResearch && onMarkAsWrong && opportunityId && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`Mark ${person.name} as the wrong person? This will help future searches exclude this candidate.`)) {
+                    onMarkAsWrong();
+                    onClose();
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-lg border border-warning px-4 py-2 font-medium text-warning transition-colors hover:bg-warning/10"
+              >
+                <MaterialIcon name="person_off" className="text-[20px]" />
+                Mark as Wrong Person
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {hasResearch && (
               <button
-                onClick={() => onResearch(person.name, person.title || undefined)}
+                onClick={() => onResearch(person.name, person.title || undefined, person.linkedinUrl || undefined)}
                 className="inline-flex items-center gap-2 rounded-lg border border-outline px-4 py-2 font-medium text-primary transition-colors hover:bg-surface-container"
               >
                 <MaterialIcon name="refresh" className="text-[20px]" />

@@ -40,3 +40,5 @@ export { DiffReviewRow } from "./components/diff-review-row/index.js";
 export type { DiffReviewRowProps } from "./components/diff-review-row/index.js";
 export { PreparationCard } from "./components/preparation-card/index.js";
 export type { PreparationCardProps } from "./components/preparation-card/index.js";
+export { ParticipantList } from "./components/participant-list/index.js";
+export type { Participant } from "./components/participant-list/index.js";

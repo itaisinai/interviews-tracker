@@ -343,3 +343,20 @@ model PersonResearch {
   updatedAt   DateTime                  @updatedAt
   person      Person                    @relation(fields: [personId], references: [id], onDelete: Cascade)
 }
+
+model WrongPersonCandidate {
+  id            String   @id @default(cuid())
+  opportunityId String
+  searchContext String   // What name/company/title was being searched
+  personName    String
+  linkedinUrl   String?
+  company       String?
+  title         String?
+  avatarUrl     String?
+  rejectedAt    DateTime @default(now())
+  notes         String?
+
+  @@unique([opportunityId, linkedinUrl])
+  @@index([opportunityId])
+  @@index([linkedinUrl])
+}

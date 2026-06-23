@@ -5,7 +5,7 @@ import {
   PageErrorState,
   PageLoadingState,
 } from "@interviews-tracker/design-system";
-import type { Interaction, Opportunity } from "../lib/types";
+import type { Interaction, Opportunity, Person } from "../lib/types";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
 import {
@@ -23,6 +23,7 @@ import type { FormEvent } from "react";
 import { InteractionsDrawer } from "../components/interactions-drawer";
 import { InterviewPreparation } from "../components/interview-preparation";
 import { PageIntro } from "../components/app-shell";
+import { ParticipantsCard } from "../components/interactions-drawer/participants-card";
 import { Timeline } from "../components/timeline";
 import { api } from "../lib/api";
 import { labelForPipelineType } from "../lib/enum-labels";
@@ -210,17 +211,12 @@ export function OpportunityDetailPage() {
         <div className="mt-8">
           <FocusedInteractionCard
             interaction={focusedInteraction}
+            opportunityId={opportunityDbId}
+            opportunityCompanyName={data.companyName}
             onOpen={() => setSelectedInteractionId(focusedInteraction.id)}
           />
         </div>
       ) : null}
-
-      <div id="contacts-section" className="mt-8">
-        <ContactsList
-          opportunityId={opportunityDbId}
-          companyName={data.companyName}
-        />
-      </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <div className="space-y-8">
@@ -238,6 +234,12 @@ export function OpportunityDetailPage() {
               deleteInteraction.variables === interactionId
             }
           />
+          <div id="contacts-section">
+            <ContactsList
+              opportunityId={opportunityDbId}
+              companyName={data.companyName}
+            />
+          </div>
           <InterviewPreparation opportunity={data} />
         </div>
         <div>
@@ -396,13 +398,37 @@ function buildOpportunityInput(
 
 function FocusedInteractionCard({
   interaction,
+  opportunityId,
+  opportunityCompanyName,
   onOpen,
 }: {
   interaction: Interaction;
+  opportunityId: string;
+  opportunityCompanyName: string;
   onOpen: () => void;
 }) {
   const badge = getInteractionBadgeMeta(interaction);
   const duration = formatDurationBetween(interaction.date, interaction.endDate);
+
+  // Fetch contacts to get job titles and research status
+  const { data: contacts = [] } = useQuery({
+    queryKey: ["opportunity-contacts", opportunityId],
+    queryFn: () => api.getOpportunityContacts(opportunityId),
+  });
+
+  // Parse participant names
+  const personNames = interaction.personName
+    ? interaction.personName.split(/\s+and\s+|,\s*/).map((name) => name.trim())
+    : [];
+
+  // Match contacts by name
+  const personRecords = personNames.map((name) => {
+    const trimmedName = name.trim();
+    return contacts.find(
+      (contact: any) =>
+        contact.name.toLowerCase() === trimmedName.toLowerCase(),
+    ) as Person | undefined;
+  }) as (Person | undefined)[];
 
   return (
     <section className="rounded-2xl border border-outline-variant bg-white p-5 shadow-sm">
@@ -415,7 +441,7 @@ function FocusedInteractionCard({
             <p className="font-label-sm text-label-sm uppercase tracking-widest text-primary">
               Interview focus
             </p>
-            <h2 className="mt-1 font-title-lg text-title-lg font-bold text-on-background">
+            <h2 className="mt-1 font-title-xl text-title-xl font-bold text-on-background">
               {interaction.stage || interaction.type}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-body-md text-on-surface-variant">
@@ -448,23 +474,14 @@ function FocusedInteractionCard({
           </button>
         </div>
       </div>
-      {interaction.personName ? (
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-          {interaction.personName.split(/\s+and\s+|,\s*/).map((name) => (
-            <div
-              key={name}
-              className="rounded-xl border border-outline-variant bg-surface-container-low/50 px-4 py-3"
-            >
-              <p className="font-label-md text-label-md font-bold text-on-background">
-                {name}
-              </p>
-              {interaction.personRole ? (
-                <p className="mt-1 text-body-sm text-on-surface-variant">
-                  {interaction.personRole}
-                </p>
-              ) : null}
-            </div>
-          ))}
+      {personNames.length > 0 ? (
+        <div className="mt-5">
+          <ParticipantsCard
+            personNames={personNames}
+            personRecords={personRecords}
+            opportunityId={opportunityId}
+            opportunityCompanyName={opportunityCompanyName}
+          />
         </div>
       ) : null}
     </section>

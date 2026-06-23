@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { MaterialIcon } from "../material-icon/index.js";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "outlined" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -26,6 +26,8 @@ const variantClasses: Record<ButtonVariant, string> = {
     "border border-transparent bg-primary text-on-primary shadow-none hover:brightness-110",
   secondary:
     "border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low",
+  outlined:
+    "border border-primary bg-transparent text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0",
   ghost:
     "border border-transparent bg-transparent text-on-surface-variant hover:bg-surface-container-low",
   danger:
