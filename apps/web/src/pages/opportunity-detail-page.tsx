@@ -5,7 +5,7 @@ import {
   PageErrorState,
   PageLoadingState,
 } from "@interviews-tracker/design-system";
-import type { Interaction, Opportunity } from "../lib/types";
+import type { Interaction, Opportunity, Person } from "../lib/types";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
 import {
@@ -23,10 +23,10 @@ import type { FormEvent } from "react";
 import { InteractionsDrawer } from "../components/interactions-drawer";
 import { InterviewPreparation } from "../components/interview-preparation";
 import { PageIntro } from "../components/app-shell";
+import { ParticipantsCard } from "../components/interactions-drawer/participants-card";
 import { Timeline } from "../components/timeline";
 import { api } from "../lib/api";
 import { labelForPipelineType } from "../lib/enum-labels";
-import { ParticipantsCard } from "../components/interactions-drawer/participants-card";
 
 export function OpportunityDetailPage() {
   const { slugOrId = "" } = useParams();
@@ -418,16 +418,17 @@ function FocusedInteractionCard({
 
   // Parse participant names
   const personNames = interaction.personName
-    ? interaction.personName.split(/\s+and\s+|,\s*/).map(name => name.trim())
+    ? interaction.personName.split(/\s+and\s+|,\s*/).map((name) => name.trim())
     : [];
 
   // Match contacts by name
   const personRecords = personNames.map((name) => {
     const trimmedName = name.trim();
-    return contacts.find((contact: any) =>
-      contact.name.toLowerCase() === trimmedName.toLowerCase()
-    );
-  });
+    return contacts.find(
+      (contact: any) =>
+        contact.name.toLowerCase() === trimmedName.toLowerCase(),
+    ) as Person | undefined;
+  }) as (Person | undefined)[];
 
   return (
     <section className="rounded-2xl border border-outline-variant bg-white p-5 shadow-sm">
