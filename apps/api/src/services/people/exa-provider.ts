@@ -161,6 +161,9 @@ export class ExaProvider {
     console.log('[EXA PARSE] Search name:', name);
     console.log('[EXA PARSE] Content length:', content.length, 'chars');
     console.log('[EXA PARSE] First 500 chars:', content.substring(0, 500));
+    console.log('[EXA PARSE] ======== FULL CONTENT ========');
+    console.log(content);
+    console.log('[EXA PARSE] ======== END FULL CONTENT ========');
 
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
     console.log('[EXA PARSE] Total lines after trim:', lines.length);
