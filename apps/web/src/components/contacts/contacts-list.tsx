@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tantml:react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { FixCompanyMismatchModal } from "./fix-company-mismatch-modal";
 import { ManualJobUpdateModal } from "./manual-job-update-modal";
@@ -21,7 +21,7 @@ export function ContactsList({
   companyName,
 }: ContactsListProps) {
   const queryClient = useQueryClient();
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [researchPerson, setResearchPerson] = useState<{
     id?: string;
     name: string;
@@ -117,6 +117,11 @@ export function ContactsList({
   // Cast contacts to Person type
   const typedContacts = contacts as Person[];
 
+  // Derive selectedPerson from the latest contacts data
+  const selectedPerson = selectedPersonId
+    ? typedContacts.find((c) => c.id === selectedPersonId) || null
+    : null;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -146,7 +151,7 @@ export function ContactsList({
                 onClick={() =>
                   detectCompanyMismatch(contact, companyName)
                     ? setFixMismatchPerson(contact)
-                    : setSelectedPerson(contact)
+                    : setSelectedPersonId(contact.id)
                 }
                 className="flex min-w-0 flex-1 items-start gap-3 text-left"
               >
@@ -224,7 +229,7 @@ export function ContactsList({
         <PersonInfoModal
           person={selectedPerson}
           isOpen={!!selectedPerson}
-          onClose={() => setSelectedPerson(null)}
+          onClose={() => setSelectedPersonId(null)}
           onRefreshResearch={() => {
             setResearchPerson({
               name: selectedPerson.name,
@@ -234,16 +239,20 @@ export function ContactsList({
               email: selectedPerson.email || undefined,
             });
             setResearchPersonId(selectedPerson.id);
-            setSelectedPerson(null);
+            setSelectedPersonId(null);
           }}
           onMarkAsWrong={() => {
             setFixMismatchPerson(selectedPerson);
-            setSelectedPerson(null);
+            setSelectedPersonId(null);
           }}
           onDelete={() => {
-            if (window.confirm(`Delete ${selectedPerson.name}? This will remove all their research data.`)) {
+            if (
+              window.confirm(
+                `Delete ${selectedPerson.name}? This will remove all their research data.`,
+              )
+            ) {
               deletePerson.mutate(selectedPerson.id);
-              setSelectedPerson(null);
+              setSelectedPersonId(null);
             }
           }}
         />

@@ -1,5 +1,8 @@
-import { Modal, MaterialIcon } from "@interviews-tracker/design-system";
+import { useState } from "react";
+import { Modal, MaterialIcon, JobHistoryTimeline } from "@interviews-tracker/design-system";
+import type { CompanyExperience } from "@interviews-tracker/design-system";
 import type { Person } from "../../lib/types";
+import { ChevronDown } from "lucide-react";
 
 type PersonInfoModalProps = {
   person: Person;
@@ -28,23 +31,29 @@ export function PersonInfoModal({
     delete: true,
   },
 }: PersonInfoModalProps) {
+  const [showAllExperience, setShowAllExperience] = useState(false);
   const hasResearch = !!person.research;
 
-  // Transform experience data
-  const rawExperience = person.research?.experience as Array<{
-    company: string;
-    companyUrl?: string;
-    totalDuration?: string;
-    positions: Array<{
-      title: string;
-      dates?: string;
-      duration?: string;
-      location?: string;
-      employmentType?: string;
-    }>;
-  }> | undefined;
+  // Transform experience data to match JobHistoryTimeline format
+  const experienceData: CompanyExperience[] = ((person.research?.experience || []) as any[]).map((exp: any) => {
+    const positions = (exp.positions || []).map((pos: any) => {
+      const [startDate = "", endDate = ""] = (pos.dates || "").split(" - ");
+      return {
+        title: pos.title,
+        startDate: startDate.trim(),
+        endDate: endDate.trim() || "Present",
+        duration: pos.duration || "",
+        description: pos.description,
+      };
+    });
 
-  const experiences = rawExperience || [];
+    return {
+      companyName: exp.company,
+      companyUrl: exp.companyUrl,
+      totalDuration: exp.totalDuration || "",
+      positions,
+    };
+  });
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" title={person.name}>
@@ -98,82 +107,26 @@ export function PersonInfoModal({
           ) : (
             <div className="space-y-6">
               {/* Experience */}
-              {experiences.length > 0 && (
+              {experienceData.length > 0 && (
                 <div>
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">
-                      Experience
-                    </h3>
-                    {experiences.length > 3 && (
-                      <button className="text-body-sm font-medium text-primary transition-colors hover:text-primary/80">
-                        Show all ({experiences.length})
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-6">
-                    {experiences.slice(0, 3).map((exp, expIndex) => (
-                      <div key={expIndex} className="flex gap-3">
-                        {/* Company Logo Placeholder */}
-                        <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-surface-container" />
-
-                        <div className="min-w-0 flex-1">
-                          {exp.positions.length === 1 ? (
-                            /* Single position */
-                            <>
-                              <h4 className="text-body-lg font-bold text-on-surface">
-                                {exp.positions[0].title}
-                              </h4>
-                              {exp.companyUrl ? (
-                                <a
-                                  href={exp.companyUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="mt-0.5 text-body-sm text-on-surface-variant transition-colors hover:text-primary"
-                                >
-                                  {exp.company}
-                                </a>
-                              ) : (
-                                <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                                  {exp.company}
-                                </p>
-                              )}
-                              {exp.positions[0].dates && (
-                                <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                                  {exp.positions[0].dates}
-                                  {exp.positions[0].duration &&
-                                    ` · ${exp.positions[0].duration}`}
-                                </p>
-                              )}
-                            </>
-                          ) : (
-                            /* Multiple positions */
-                            <>
-                              {exp.companyUrl ? (
-                                <a
-                                  href={exp.companyUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-body-lg font-bold text-on-surface transition-colors hover:text-primary"
-                                >
-                                  {exp.company}
-                                </a>
-                              ) : (
-                                <h4 className="text-body-lg font-bold text-on-surface">
-                                  {exp.company}
-                                </h4>
-                              )}
-                              {exp.totalDuration && (
-                                <p className="text-body-sm text-on-surface-variant">
-                                  {exp.totalDuration}
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <h3 className="mb-4 font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">
+                    Experience
+                  </h3>
+                  <JobHistoryTimeline
+                    companies={showAllExperience ? experienceData : experienceData.slice(0, 2)}
+                  />
+                  {experienceData.length > 2 && (
+                    <button
+                      type="button"
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-surface-container-lowest px-4 py-2.5 text-body-md font-medium text-on-surface transition-all duration-200 hover:bg-surface-container"
+                      onClick={() => setShowAllExperience(!showAllExperience)}
+                    >
+                      <span className={`transition-transform duration-300 ${showAllExperience ? "rotate-180" : "rotate-0"}`}>
+                        <ChevronDown className="h-4 w-4" />
+                      </span>
+                      {showAllExperience ? "Show less" : `Show ${experienceData.length - 2} more`}
+                    </button>
+                  )}
                 </div>
               )}
 
