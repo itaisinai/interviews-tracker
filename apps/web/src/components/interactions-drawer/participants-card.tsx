@@ -87,6 +87,7 @@ export function ParticipantsCard({
                       setPersonDetailModalOpen(true);
                     } else {
                       setSelectedPersonName(name);
+                      setSelectedLinkedinUrl(null); // Clear stale LinkedIn URL for new searches
                       setResearchModalOpen(true);
                     }
                   }}

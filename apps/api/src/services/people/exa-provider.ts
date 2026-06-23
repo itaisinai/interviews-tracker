@@ -293,7 +293,36 @@ export class ExaProvider {
             continue;
           }
 
+          // Plain LinkedIn format detection: if no currentExperience and line looks like a title
+          // (not a date, not location, not a metadata line)
           if (!currentExperience) {
+            // Check if this might be a plain title line (before we have company info)
+            // It should be substantial text without special patterns that indicate metadata
+            const isLikelyTitle =
+              line.length > 5 &&
+              !line.match(/^\w{3}\s+\d{4}/) && // Not a date like "Jun 2026"
+              !line.includes(" · ") && // Not a company/metadata line with dots
+              !line.match(/^[A-Z][a-z]+,/) && // Not a location like "Tel Aviv,"
+              !line.includes("District") && // Not location
+              !line.includes("@"); // Not email/handle
+
+            if (isLikelyTitle) {
+              // Start new experience with title, company will come next
+              console.log('[EXA PARSE] Found plain title line:', line);
+              currentExperience = {
+                title: line.trim(),
+                company: ""
+              };
+              continue;
+            }
+            continue;
+          }
+
+          // If we have a title but no company yet, check if this is the company line
+          if (currentExperience.title && !currentExperience.company && line.includes(" · ")) {
+            const companyParts = line.split(" · ");
+            currentExperience.company = companyParts[0]?.trim() || "";
+            console.log('[EXA PARSE] Found plain company line:', currentExperience.company);
             continue;
           }
 
