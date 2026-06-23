@@ -4,7 +4,9 @@ import {
   MaterialIcon,
   PageErrorState,
   PageLoadingState,
+  ParticipantList,
 } from "@interviews-tracker/design-system";
+import type { Participant } from "@interviews-tracker/design-system";
 import type { Interaction, Opportunity } from "../lib/types";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
@@ -216,13 +218,6 @@ export function OpportunityDetailPage() {
         </div>
       ) : null}
 
-      <div id="contacts-section" className="mt-8">
-        <ContactsList
-          opportunityId={opportunityDbId}
-          companyName={data.companyName}
-        />
-      </div>
-
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <div className="space-y-8">
           <Timeline
@@ -239,6 +234,12 @@ export function OpportunityDetailPage() {
               deleteInteraction.variables === interactionId
             }
           />
+          <div id="contacts-section">
+            <ContactsList
+              opportunityId={opportunityDbId}
+              companyName={data.companyName}
+            />
+          </div>
           <InterviewPreparation opportunity={data} />
         </div>
         <div>
@@ -432,7 +433,7 @@ function FocusedInteractionCard({
             <p className="font-label-sm text-label-sm uppercase tracking-widest text-primary">
               Interview focus
             </p>
-            <h2 className="mt-1 font-title-lg text-title-lg font-bold text-on-background">
+            <h2 className="mt-1 font-title-xl text-title-xl font-bold text-on-background">
               {interaction.stage || interaction.type}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-body-md text-on-surface-variant">
@@ -466,28 +467,25 @@ function FocusedInteractionCard({
         </div>
       </div>
       {interaction.personName ? (
-        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-          {interaction.personName.split(/\s+and\s+|,\s*/).map((name) => {
-            const contact = findContactByName(name);
-            const jobTitle = contact?.title || interaction.personRole;
-
-            return (
-              <div
-                key={name}
-                className="group rounded-xl border border-outline-variant bg-surface-container-low/50 px-4 py-3 transition-colors hover:bg-surface-container"
-                title={jobTitle || undefined}
-              >
-                <p className="font-label-md text-label-md font-bold text-on-background">
-                  {name}
-                </p>
-                {jobTitle && (
-                  <p className="mt-1 text-body-sm text-on-surface-variant">
-                    {jobTitle}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+        <div className="mt-5">
+          <ParticipantList
+            participants={interaction.personName.split(/\s+and\s+|,\s*/).map((name): Participant => {
+              const contact = findContactByName(name);
+              return {
+                name: name.trim(),
+                title: contact?.title || undefined,
+                hasResearch: !!contact?.research,
+                onViewDetails: contact?.research ? () => {
+                  // TODO: Open person details modal
+                  console.log("View details for:", name);
+                } : undefined,
+                onResearch: !contact?.research ? () => {
+                  // TODO: Open research flow
+                  console.log("Research:", name);
+                } : undefined,
+              };
+            })}
+          />
         </div>
       ) : null}
     </section>

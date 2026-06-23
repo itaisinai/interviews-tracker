@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { MaterialIcon, ParticipantList } from "@interviews-tracker/design-system";
+import type { Participant } from "@interviews-tracker/design-system";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
 import { PersonInfoModal } from "../contacts/person-info-modal";
 import type { Person } from "../../lib/types";
@@ -54,6 +55,25 @@ export function ParticipantsCard({
     return null;
   }
 
+  const participants: Participant[] = filteredPersons.map((name) => {
+    const index = personNames.indexOf(name);
+    const person = personRecords[index];
+
+    return {
+      name,
+      title: person?.title || undefined,
+      hasResearch: !!person?.research,
+      onViewDetails: person?.research ? () => {
+        setSelectedPerson(person);
+        setPersonDetailModalOpen(true);
+      } : undefined,
+      onResearch: !person?.research ? () => {
+        setSelectedPersonName(name);
+        setResearchModalOpen(true);
+      } : undefined,
+    };
+  });
+
   return (
     <>
       <div className="bg-white rounded-lg border border-neutral-200 p-4">
@@ -64,67 +84,12 @@ export function ParticipantsCard({
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-3">
-          <MaterialIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-neutral-400" />
-          <input
-            type="text"
-            placeholder="Search participants..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Participants List */}
-        <div className="space-y-2">
-          {filteredPersons.map((name, index) => {
-            const person = personRecords[index];
-
-            return (
-              <div
-                key={name}
-                className="flex items-center justify-between py-2 px-2 rounded hover:bg-neutral-50 transition-colors group"
-                title={person?.title || undefined}
-              >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <MaterialIcon name="person" className="text-[18px] text-neutral-400 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm text-neutral-900 truncate">{name}</div>
-                    {person?.title && (
-                      <div className="text-xs text-neutral-500 truncate">{person.title}</div>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    if (person?.research) {
-                      setSelectedPerson(person);
-                      setPersonDetailModalOpen(true);
-                    } else {
-                      setSelectedPersonName(name);
-                      setResearchModalOpen(true);
-                    }
-                  }}
-                  className="flex-shrink-0 p-1 rounded hover:bg-neutral-100 transition-colors"
-                  title={person?.research ? "View details" : "Research person"}
-                >
-                  <MaterialIcon
-                    name={person?.research ? "badge" : "search"}
-                    className="text-[16px] text-neutral-500 hover:text-emerald-600"
-                  />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {filteredPersons.length === 0 && (
-          <p className="text-sm text-neutral-500 text-center py-2">
-            No participants found
-          </p>
-        )}
+        <ParticipantList
+          participants={participants}
+          onSearch={setSearchQuery}
+          searchPlaceholder="Search participants..."
+          emptyMessage="No participants found"
+        />
       </div>
 
       {/* Research Modal */}
