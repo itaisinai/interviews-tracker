@@ -39,7 +39,9 @@ function positionIsCurrent(dates?: string): boolean {
 }
 
 function parseExperienceDateLine(line: string): { dates: string; duration?: string } | null {
-  const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{4})\s*[-–—]\s*([A-Z][a-z]{2}\s+\d{4}|Present)(?:\s*(?:[·•]|\()?\s*([^)·•]+?)\s*\)?)?$/);
+  // Updated regex to handle location suffix (e.g., "in Tel Aviv District, Israel")
+  // Removed trailing $ and made duration capture more flexible
+  const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{4})\s*[-–—]\s*([A-Z][a-z]{2}\s+\d{4}|Present)(?:\s*[·•]?\s*\(([^)]+)\))?/);
 
   if (!dateMatch) {
     return null;
@@ -154,7 +156,14 @@ export class ExaProvider {
   }
 
   parseLinkedInContent(content: string, name: string, linkedInUrl: string): PersonResearchResult {
+    console.log('[EXA PARSE] ======== START PARSING ========');
+    console.log('[EXA PARSE] LinkedIn URL:', linkedInUrl);
+    console.log('[EXA PARSE] Search name:', name);
+    console.log('[EXA PARSE] Content length:', content.length, 'chars');
+    console.log('[EXA PARSE] First 500 chars:', content.substring(0, 500));
+
     const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
+    console.log('[EXA PARSE] Total lines after trim:', lines.length);
 
     // Extract actual name from first line (LinkedIn profiles start with the person's name)
     let actualName = name; // fallback to search name
@@ -165,6 +174,7 @@ export class ExaProvider {
         actualName = firstLine;
       }
     }
+    console.log('[EXA PARSE] Extracted name:', actualName);
 
     let title = "";
     let company = "";
@@ -209,10 +219,14 @@ export class ExaProvider {
 
       // Parse Experience section
       if (inExperienceSection) {
+        console.log('[EXA PARSE] Processing experience line:', line);
+
         // IMPORTANT: Check for #### BEFORE ### because startsWith("###") matches both!
         if (line.startsWith("####")) {
+          console.log('[EXA PARSE] Found sub-position (####)');
           // Sub-position under a company - save previous position first
           if (currentExperience?.company && currentExperience?.title) {
+            console.log('[EXA PARSE] Saving previous sub-position:', currentExperience);
             rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
           }
 
@@ -225,7 +239,9 @@ export class ExaProvider {
             companyUrl: currentExperience?.companyUrl,
             title: positionTitle
           };
+          console.log('[EXA PARSE] Started new sub-position:', currentExperience);
         } else if (line.startsWith("###")) {
+          console.log('[EXA PARSE] Found company/position header (###)');
           // Save previous experience
           if (currentExperience?.company && currentExperience?.title) {
             rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
@@ -303,8 +319,11 @@ export class ExaProvider {
           if (!currentExperience.dates) {
             const dateLine = parseExperienceDateLine(line);
             if (dateLine) {
+              console.log('[EXA PARSE] Found date line:', line, '→ parsed:', dateLine);
               currentExperience.dates = dateLine.dates;
               currentExperience.duration = dateLine.duration;
+            } else {
+              console.log('[EXA PARSE] Line did not match date pattern:', line);
             }
           }
           // Description text (after we have dates, skip metadata and short lines)
@@ -364,11 +383,21 @@ export class ExaProvider {
 
     // Save last experience/education if any
     if (currentExperience?.company && currentExperience?.title) {
+      console.log('[EXA PARSE] Saving final experience:', currentExperience);
       rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
     }
     if (currentEducation?.institution && currentEducation?.degree) {
       education.push(currentEducation as { institution: string; degree?: string; dates?: string });
     }
+
+    console.log('[EXA PARSE] ======== RAW EXPERIENCE ========');
+    console.log('[EXA PARSE] Total experiences:', rawExperience.length);
+    rawExperience.forEach((exp, idx) => {
+      console.log(`[EXA PARSE] [${idx}] Company: ${exp.company}`);
+      console.log(`[EXA PARSE] [${idx}] Title: ${exp.title}`);
+      console.log(`[EXA PARSE] [${idx}] Dates: ${exp.dates || 'NO DATES'}`);
+      console.log(`[EXA PARSE] [${idx}] Duration: ${exp.duration || 'NO DURATION'}`);
+    });
 
     // Group experiences by company
     const groupedExperience = rawExperience.reduce((acc, exp) => {
@@ -408,6 +437,17 @@ export class ExaProvider {
 
     const currentCompany = groupedExperience.length > 0 ? currentCompanyFromExperience(groupedExperience) : undefined;
     const currentTitle = groupedExperience.length > 0 ? currentTitleFromExperience(groupedExperience) : undefined;
+
+    console.log('[EXA PARSE] ======== GROUPED EXPERIENCE ========');
+    groupedExperience.forEach((group, idx) => {
+      console.log(`[EXA PARSE] Company [${idx}]: ${group.company}`);
+      group.positions.forEach((pos, posIdx) => {
+        console.log(`[EXA PARSE]   Position [${posIdx}]: ${pos.title}`);
+        console.log(`[EXA PARSE]   Dates: ${pos.dates || 'NO DATES'}`);
+        console.log(`[EXA PARSE]   Duration: ${pos.duration || 'NO DURATION'}`);
+      });
+    });
+    console.log('[EXA PARSE] ======== END PARSING ========');
 
     return {
       person: {
