@@ -26,7 +26,10 @@ export function GmailImportFlow({
   const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("searching");
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
+  const [allGmailMessageIds, setAllGmailMessageIds] = useState<string[]>([]);
+  const [isParsing, setIsParsing] = useState(false);
 
   const { data: searchResults, isLoading: isSearching, isError: searchFailed, error: searchError, refetch: refetchSearch } = useQuery({
     queryKey: ["gmail-search", opportunityId],
@@ -72,12 +75,26 @@ export function GmailImportFlow({
   });
 
   const createInteraction = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!draft) throw new Error("No draft available");
-      return api.createInteraction(opportunityId, draft);
+
+      // Create the interaction
+      const interaction = await api.createInteraction(opportunityId, draft);
+
+      // Attach all Gmail messages to the InteractionEmail table
+      if (allGmailMessageIds.length > 0) {
+        await Promise.all(
+          allGmailMessageIds.map(messageId =>
+            api.attachEmailToInteraction(interaction.id, messageId)
+          )
+        );
+      }
+
+      return interaction;
     },
     onSuccess: onSaved,
   });
+
 
   useEffect(() => {
     if (searchFailed) {
@@ -98,6 +115,8 @@ export function GmailImportFlow({
 
       if (searchResults.candidates.length === 1) {
         setSelectedMessageId(highConfidenceEmail.id);
+        // Store the message ID so it gets attached after creation
+        setAllGmailMessageIds([highConfidenceEmail.id]);
         parseEmail.mutate(highConfidenceEmail.id);
       } else {
         setStep("select-candidate");
@@ -153,13 +172,68 @@ export function GmailImportFlow({
     );
   }
 
+  const handleToggleEmail = (messageId: string) => {
+    setSelectedMessageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(messageId)) {
+        next.delete(messageId);
+      } else {
+        next.add(messageId);
+      }
+      return next;
+    });
+  };
+
+  const handleSubmitSelected = async () => {
+    if (selectedMessageIds.size === 0) return;
+
+    setIsParsing(true);
+
+    try {
+      // Send all message IDs at once - backend will merge them into a single interaction
+      const messageIdsArray = Array.from(selectedMessageIds);
+      const result = await api.gmailParseEmail(opportunityId, {
+        messageIds: messageIdsArray
+      });
+
+      // Set the single merged draft
+      setDraft(result.interaction);
+      // Store all message IDs to attach them after creation
+      setAllGmailMessageIds((result as any).allGmailMessageIds || messageIdsArray);
+      setStep("review-changes");
+    } catch (error) {
+      console.error("Failed to parse emails:", error);
+      alert("Failed to parse emails. Please try again.");
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
   if (step === "select-candidate" && searchResults?.candidates) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 relative">
+        {/* Loading overlay */}
+        {isParsing && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-emerald-600"></div>
+              </div>
+              <h3 className="text-lg font-semibold text-neutral-900">
+                Parsing emails...
+              </h3>
+              <p className="mt-2 text-sm text-neutral-600">
+                Processing {selectedMessageIds.size} email{selectedMessageIds.size !== 1 ? "s" : ""}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
           <div className="flex items-center justify-between gap-4">
             <p className="text-sm text-neutral-700">
-              Found {searchResults.candidates.length} potential emails. Select one to import:
+              Found {searchResults.candidates.length} potential email{searchResults.candidates.length !== 1 ? "s" : ""}.
+              {selectedMessageIds.size > 0 && ` ${selectedMessageIds.size} selected.`}
             </p>
             <button
               onClick={() => {
@@ -167,6 +241,7 @@ export function GmailImportFlow({
                 void refetchSearch();
               }}
               className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+              disabled={isParsing}
             >
               <MaterialIcon name="refresh" className="text-[16px]" />
               Refresh
@@ -175,29 +250,69 @@ export function GmailImportFlow({
         </div>
 
         <div className="space-y-2">
-          {searchResults.candidates.map((candidate) => (
-            <button
-              key={candidate.id}
-              onClick={() => {
-                setSelectedMessageId(candidate.id);
-                parseEmail.mutate(candidate.id);
-              }}
-              className="flex w-full items-start gap-3 rounded-lg border-2 border-neutral-200 bg-white p-4 text-left transition-all hover:border-emerald-500 hover:shadow-sm"
-            >
-              <MaterialIcon name="mail" className="mt-0.5 text-[20px] text-neutral-400" />
-              <div className="min-w-0 flex-1">
-                <div className="font-medium text-neutral-900">{candidate.subject}</div>
-                <div className="mt-1 text-sm text-neutral-600">{candidate.from}</div>
-                <div className="mt-1 text-xs text-neutral-500">
-                  {new Date(candidate.date).toLocaleDateString()}
+          {searchResults.candidates.map((candidate) => {
+            const isSelected = selectedMessageIds.has(candidate.id);
+            return (
+              <button
+                key={candidate.id}
+                onClick={() => handleToggleEmail(candidate.id)}
+                disabled={isParsing}
+                className={`flex w-full items-start gap-3 rounded-lg border-2 p-4 text-left transition-all ${
+                  isSelected
+                    ? "border-emerald-500 bg-emerald-50"
+                    : "border-neutral-200 bg-white hover:border-emerald-300 hover:shadow-sm"
+                } ${isParsing ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {/* Checkbox */}
+                <div className="flex-shrink-0 mt-0.5">
+                  <div
+                    className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                      isSelected
+                        ? "bg-emerald-600 border-emerald-600"
+                        : "border-neutral-300 bg-white"
+                    }`}
+                  >
+                    {isSelected && (
+                      <MaterialIcon name="check" className="text-[16px] text-white" />
+                    )}
+                  </div>
                 </div>
-              </div>
-              <MaterialIcon name="arrow_forward" className="text-[20px] text-neutral-400" />
-            </button>
-          ))}
+
+                <MaterialIcon name="mail" className="mt-0.5 text-[20px] text-neutral-400 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-neutral-900">{candidate.subject}</div>
+                  <div className="mt-1 text-sm text-neutral-600">{candidate.from}</div>
+                  <div className="mt-1 text-xs text-neutral-500">
+                    {new Date(candidate.date).toLocaleDateString()}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        <button onClick={onBack} className="btn btn-secondary w-full">
+        <div className="flex gap-2">
+          <button
+            onClick={onBack}
+            className="btn btn-secondary flex-1"
+            disabled={isParsing}
+          >
+            <MaterialIcon name="arrow_back" />
+            Back
+          </button>
+          <LoadingButton
+            onClick={handleSubmitSelected}
+            disabled={selectedMessageIds.size === 0}
+            loading={isParsing}
+            loadingLabel={`Parsing ${selectedMessageIds.size} email${selectedMessageIds.size !== 1 ? "s" : ""}...`}
+            className="btn btn-primary flex-1"
+          >
+            <MaterialIcon name="download" />
+            Import {selectedMessageIds.size > 0 ? `${selectedMessageIds.size} ` : ""}Selected
+          </LoadingButton>
+        </div>
+
+        <button onClick={onBack} className="hidden">
           <MaterialIcon name="arrow_back" />
           Back
         </button>
@@ -215,15 +330,20 @@ export function GmailImportFlow({
   }
 
   if (step === "review-changes" && draft) {
+    const emailCount = selectedMessageIds.size;
+    const wasMultipleEmails = emailCount > 1;
+
     return (
       <div className="space-y-6">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-700">
             <MaterialIcon name="check_circle" className="text-[18px]" />
-            Interaction extracted from email
+            Interaction extracted from {wasMultipleEmails ? `${emailCount} emails` : "email"}
           </div>
           <p className="text-sm text-emerald-900">
-            Review the changes below and accept to create the interaction.
+            {wasMultipleEmails
+              ? `Combined data from ${emailCount} related emails into one interaction.`
+              : "Review the changes below and accept to create the interaction."}
           </p>
         </div>
 
@@ -278,7 +398,7 @@ export function GmailImportFlow({
                   href={draft.meetingLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-emerald-600 hover:underline"
+                  className="text-emerald-600 hover:underline break-all"
                 >
                   {draft.meetingLink}
                 </a>
@@ -291,7 +411,7 @@ export function GmailImportFlow({
             <DiffReviewRow
               label="Agenda"
               currentValue=""
-              newValue={<span className="line-clamp-3">{draft.agenda}</span>}
+              newValue={<span className="whitespace-pre-wrap">{draft.agenda}</span>}
               isChanged={true}
             />
           )}
@@ -310,6 +430,7 @@ export function GmailImportFlow({
           <button
             onClick={() => setStep("select-candidate")}
             className="btn btn-secondary"
+            disabled={createInteraction.isPending}
           >
             Back
           </button>
