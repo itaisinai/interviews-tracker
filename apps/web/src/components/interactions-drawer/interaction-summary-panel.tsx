@@ -176,6 +176,7 @@ export function InteractionSummaryPanel({
           personRecords={personRecords}
           opportunityId={interaction.jobOpportunityId}
           opportunityCompanyName={opportunityCompanyName}
+          columns={1}
         />
         <AttachedEmailsCard
           interactionId={interaction.id}

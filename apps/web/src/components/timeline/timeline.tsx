@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Mail,
   PhoneCall,
+  Plus,
   Reply,
   Trash2,
 } from "lucide-react";
@@ -27,6 +28,7 @@ type TimelineProps = {
   selectedInteractionId?: string | null;
   onSelectInteraction?: (interactionId: string) => void;
   onDeleteInteraction?: (interactionId: string) => void;
+  onAddInteraction?: () => void;
   isDeletingInteraction?: (interactionId: string) => boolean;
   referenceDate?: Date;
 };
@@ -39,6 +41,7 @@ export function Timeline({
   selectedInteractionId = null,
   onSelectInteraction,
   onDeleteInteraction,
+  onAddInteraction,
   isDeletingInteraction,
   referenceDate = new Date(),
 }: TimelineProps) {
@@ -57,14 +60,26 @@ export function Timeline({
   return (
     <section className={`relative ${className}`}>
       {showHeader ? (
-        <div className="relative z-10 mb-4 flex items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary shadow-sm">
-            <CalendarDays className="h-5 w-5" />
+        <div className="relative z-10 mb-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-on-primary shadow-sm">
+              <CalendarDays className="h-5 w-5" />
+            </div>
+            <h3 className="font-title-md text-title-md font-bold">Timeline</h3>
+            <span className="font-label-md text-label-md text-on-surface-variant">
+              {title}
+            </span>
           </div>
-          <h3 className="font-title-md text-title-md font-bold">Timeline</h3>
-          <span className="font-label-md text-label-md text-on-surface-variant">
-            {title}
-          </span>
+          {onAddInteraction ? (
+            <button
+              type="button"
+              onClick={onAddInteraction}
+              className="inline-flex items-center gap-2 rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary-container"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Interaction</span>
+            </button>
+          ) : null}
         </div>
       ) : null}
 

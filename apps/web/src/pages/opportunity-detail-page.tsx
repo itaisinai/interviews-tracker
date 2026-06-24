@@ -224,6 +224,7 @@ export function OpportunityDetailPage() {
             interactions={displayedInteractions}
             selectedInteractionId={selectedInteractionId}
             onSelectInteraction={setSelectedInteractionId}
+            onAddInteraction={() => setShowAddInteractionModal(true)}
             onDeleteInteraction={(interactionId) => {
               if (window.confirm("Delete this interaction?")) {
                 deleteInteraction.mutate(interactionId);
@@ -421,14 +422,42 @@ function FocusedInteractionCard({
     ? interaction.personName.split(/\s+and\s+|,\s*/).map((name) => name.trim())
     : [];
 
-  // Match contacts by name
+  // Match contacts by name with multiple strategies
   const personRecords = personNames.map((name) => {
-    const trimmedName = name.trim();
-    return contacts.find(
-      (contact: any) =>
-        contact.name.toLowerCase() === trimmedName.toLowerCase(),
-    ) as Person | undefined;
-  }) as (Person | undefined)[];
+    // If name looks like an email, match by email
+    const isEmail = name.includes("@");
+    if (isEmail) {
+      return (contacts as Person[]).find((c) => c.email === name);
+    }
+
+    // Otherwise, try multiple name matching strategies:
+    // 1. Exact match
+    const exactMatch = (contacts as Person[]).find((c) => c.name === name);
+    if (exactMatch) return exactMatch;
+
+    // 2. Case-insensitive match
+    const caseInsensitiveMatch = (contacts as Person[]).find(
+      (c) => c.name.toLowerCase() === name.toLowerCase()
+    );
+    if (caseInsensitiveMatch) return caseInsensitiveMatch;
+
+    // 3. First name match (e.g., "Rotem Zikorel" matches "Rotem")
+    const firstNameMatch = (contacts as Person[]).find((c) => {
+      const contactFirstName = c.name.split(' ')[0]?.toLowerCase();
+      const nameFirstName = name.split(' ')[0]?.toLowerCase();
+      return contactFirstName === nameFirstName;
+    });
+    if (firstNameMatch) return firstNameMatch;
+
+    // 4. Full name contains contact name (e.g., "Rotem Zikorel" contains "Rotem")
+    const containsMatch = (contacts as Person[]).find((c) => {
+      const nameLower = name.toLowerCase();
+      const contactNameLower = c.name.toLowerCase();
+      return nameLower.includes(contactNameLower) || contactNameLower.includes(nameLower);
+    });
+
+    return containsMatch;
+  });
 
   return (
     <section className="rounded-2xl border border-outline-variant bg-white p-5 shadow-sm">

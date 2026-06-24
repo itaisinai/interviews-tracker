@@ -11,13 +11,15 @@ type ParticipantsCardProps = {
   personRecords: Array<Person | undefined>;
   opportunityId?: string;
   opportunityCompanyName?: string;
+  columns?: 1 | 2; // 1 for single column (drawer), 2 for two columns (opportunity page)
 };
 
 export function ParticipantsCard({
   personNames,
   personRecords,
   opportunityId,
-  opportunityCompanyName
+  opportunityCompanyName,
+  columns = 2
 }: ParticipantsCardProps) {
   const queryClient = useQueryClient();
   const [researchModalOpen, setResearchModalOpen] = useState(false);
@@ -60,7 +62,7 @@ export function ParticipantsCard({
         </div>
 
         {/* Participants List */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className={columns === 1 ? "space-y-2" : "grid grid-cols-2 gap-2"}>
           {personNames.map((name, index) => {
             const person = personRecords[index];
 
