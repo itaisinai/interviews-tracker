@@ -23,6 +23,8 @@ type InteractionsDrawerProps = {
   selectedOpportunity: Opportunity | null;
   onClose: () => void;
   onSelectInteraction?: (interactionId: string) => void;
+  onOperationStart?: () => void;
+  onOperationEnd?: () => void;
 };
 
 
@@ -31,6 +33,8 @@ export function InteractionsDrawer({
   selectedOpportunity,
   onClose,
   onSelectInteraction,
+  onOperationStart,
+  onOperationEnd,
 }: InteractionsDrawerProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -122,10 +126,12 @@ export function InteractionsDrawer({
 
   const deleteInteraction = useMutation({
     mutationFn: (interactionId: string) => api.deleteInteraction(interactionId),
+    onMutate: () => onOperationStart?.(),
     onSuccess: () => {
       refreshQueries();
       onClose();
     },
+    onSettled: () => onOperationEnd?.(),
   });
 
   const updateInteraction = useMutation({
@@ -136,6 +142,7 @@ export function InteractionsDrawer({
 
       return api.updateInteraction(selectedTimelineInteraction.slug || selectedTimelineInteraction.id, draft);
     },
+    onMutate: () => onOperationStart?.(),
     onSuccess: (savedInteraction) => {
       // Update the opportunity cache with saved interaction
       queryClient.setQueryData(
@@ -160,6 +167,7 @@ export function InteractionsDrawer({
       setIsEditing(false);
       setDraft(interactionToDraft(savedInteraction));
     },
+    onSettled: () => onOperationEnd?.(),
   });
 
   if (!mountedInteraction) {
