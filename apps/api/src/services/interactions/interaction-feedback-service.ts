@@ -1,5 +1,6 @@
 import { getAiParserService } from "../ai/ai-parser-service.js";
 import { prisma } from "../../lib/prisma.js";
+import { resolveInteractionId } from "../../repositories/interaction-repository.js";
 
 /**
  * Add feedback to an interaction and smart-merge with existing notes
@@ -10,7 +11,11 @@ export async function addFeedbackToInteraction(params: {
   feedbackContent: string;
   source?: string;
 }) {
-  const { auth0Email, interactionId, feedbackContent, source = "Manual" } = params;
+  const { auth0Email, interactionId: interactionSlugOrId, feedbackContent, source = "Manual" } = params;
+  const interactionId = await resolveInteractionId(interactionSlugOrId, auth0Email);
+  if (!interactionId) {
+    throw new Error(`Interaction ${interactionSlugOrId} not found`);
+  }
 
   console.log('[FEEDBACK] Starting addFeedbackToInteraction', { interactionId, contentLength: feedbackContent.length });
 
@@ -121,7 +126,11 @@ export async function listInteractionFeedback(params: {
   auth0Email: string;
   interactionId: string;
 }) {
-  const { auth0Email, interactionId } = params;
+  const { auth0Email, interactionId: interactionSlugOrId } = params;
+  const interactionId = await resolveInteractionId(interactionSlugOrId, auth0Email);
+  if (!interactionId) {
+    throw new Error(`Interaction ${interactionSlugOrId} not found`);
+  }
 
   // Verify interaction ownership
   const interaction = await prisma.interaction.findUnique({

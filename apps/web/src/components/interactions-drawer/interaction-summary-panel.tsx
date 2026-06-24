@@ -107,7 +107,7 @@ export function InteractionSummaryPanel({
 
     // Call API to add feedback and get AI suggestion
     const result = await api.addFeedbackToInteraction(
-      interaction.id,
+      interaction.slug || interaction.id,
       content,
       source,
     );
@@ -179,7 +179,7 @@ export function InteractionSummaryPanel({
           columns={1}
         />
         <AttachedEmailsCard
-          interactionId={interaction.id}
+          interactionId={interaction.slug || interaction.id}
           opportunityId={interaction.jobOpportunityId}
           onEmailsAttached={onToggleEditing}
         />

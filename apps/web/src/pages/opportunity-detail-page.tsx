@@ -38,6 +38,7 @@ export function OpportunityDetailPage() {
     enabled: Boolean(slugOrId),
   });
   const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
+  const [isInteractionOperationPending, setIsInteractionOperationPending] = useState(false);
 
   const opportunityRouteId = data?.slug ?? data?.id ?? slugOrId;
   const opportunityDbId = data?.id ?? slugOrId;
@@ -53,7 +54,9 @@ export function OpportunityDetailPage() {
   });
   const deleteInteraction = useMutation({
     mutationFn: (interactionId: string) => api.deleteInteraction(interactionId),
+    onMutate: () => setIsInteractionOperationPending(true),
     onSuccess: refresh,
+    onSettled: () => setIsInteractionOperationPending(false),
   });
   const updateOpportunityTitle = useMutation({
     mutationFn: (updates: Pick<Opportunity, "companyName" | "roleTitle">) => {
@@ -254,6 +257,8 @@ export function OpportunityDetailPage() {
         }
         onClose={() => setSelectedInteractionId(null)}
         onSelectInteraction={setSelectedInteractionId}
+        onOperationStart={() => setIsInteractionOperationPending(true)}
+        onOperationEnd={() => setIsInteractionOperationPending(false)}
       />
 
       <AddInteractionModal
@@ -263,10 +268,27 @@ export function OpportunityDetailPage() {
         companyName={data.companyName}
         roleTitle={data.roleTitle}
         onSaved={() => {
+          setIsInteractionOperationPending(true);
           refresh();
           setShowAddInteractionModal(false);
+          // Wait for the query to refetch before removing loader
+          setTimeout(() => setIsInteractionOperationPending(false), 1000);
         }}
       />
+
+      {/* Loading overlay for interaction operations */}
+      {isInteractionOperationPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-center gap-4">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-200 border-t-emerald-600"></div>
+              <span className="text-lg font-medium text-neutral-900">
+                Updating interactions...
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

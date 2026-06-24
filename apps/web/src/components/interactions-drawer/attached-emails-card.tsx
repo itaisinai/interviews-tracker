@@ -16,13 +16,14 @@ export function AttachedEmailsCard({
   opportunityId,
   onEmailsAttached,
 }: AttachedEmailsCardProps) {
+  const interactionSlug = interactionId;
   const queryClient = useQueryClient();
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [isReparsing, setIsReparsing] = useState(false);
 
   const { data: emails = [], isLoading } = useQuery({
     queryKey: ["interaction-emails", interactionId],
-    queryFn: () => api.listInteractionEmails(interactionId),
+    queryFn: () => api.listInteractionEmails(interactionSlug),
     enabled: !!interactionId,
   });
 
@@ -32,7 +33,7 @@ export function AttachedEmailsCard({
     setIsReparsing(true);
     try {
       // API returns interaction with aiSuggestion (NOT saved to DB yet)
-      const result = await api.reparseInteractionEmails(interactionId);
+      const result = await api.reparseInteractionEmails(interactionSlug);
 
       // Store result in cache for background sync
       queryClient.setQueryData(["opportunity", opportunityId], (old: any) => {

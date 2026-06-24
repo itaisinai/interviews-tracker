@@ -119,6 +119,7 @@ model JobOpportunity {
 model Interaction {
   id               String              @id @default(cuid())
   ownerEmail       String
+  slug             String
   jobOpportunityId String
   date             DateTime
   endDate          DateTime?
@@ -141,6 +142,7 @@ model Interaction {
   attachedEmails   InteractionEmail[]    // Multiple emails can be attached to one interaction
   feedback         InteractionFeedback[] // Multiple feedback notes can be attached to one interaction
 
+  @@unique([ownerEmail, slug])
   @@index([ownerEmail])
   @@index([ownerEmail, date])
   @@index([date])

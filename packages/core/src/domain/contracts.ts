@@ -116,6 +116,7 @@ export type Opportunity = {
 
 export type Interaction = {
   id: string;
+  slug: string;
   ownerEmail: string;
   jobOpportunityId: string;
   date: string;
