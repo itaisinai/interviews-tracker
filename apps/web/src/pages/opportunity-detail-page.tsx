@@ -224,6 +224,7 @@ export function OpportunityDetailPage() {
             interactions={displayedInteractions}
             selectedInteractionId={selectedInteractionId}
             onSelectInteraction={setSelectedInteractionId}
+            onAddInteraction={() => setShowAddInteractionModal(true)}
             onDeleteInteraction={(interactionId) => {
               if (window.confirm("Delete this interaction?")) {
                 deleteInteraction.mutate(interactionId);
