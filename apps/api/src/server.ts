@@ -18,7 +18,7 @@ import { completeGmailOAuth } from "./services/gmail/gmail-service.js";
 import { validateDevModeOnStartup } from "./lib/dev-mode.js";
 
 const app = express();
-const localOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"];
+const localOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5176", "http://127.0.0.1:5176"];
 const productionOrigins = ["https://interviews-tracker.vercel.app"];
 const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? "")
   .split(",")
