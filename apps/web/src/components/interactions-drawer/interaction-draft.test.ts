@@ -7,6 +7,7 @@ import { interactionToDraft } from "./interaction-draft.js";
 test("initializes every editable field from the current interaction", () => {
   const interaction: Interaction = {
     id: "interaction-1",
+    slug: "alta-interview-technical",
     ownerEmail: "owner@example.com",
     jobOpportunityId: "opportunity-1",
     date: "2026-06-22T09:00:00.000Z",

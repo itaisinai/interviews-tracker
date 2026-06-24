@@ -134,7 +134,7 @@ export function InteractionsDrawer({
         throw new Error("No interaction is ready to update.");
       }
 
-      return api.updateInteraction(selectedTimelineInteraction.id, draft);
+      return api.updateInteraction(selectedTimelineInteraction.slug || selectedTimelineInteraction.id, draft);
     },
     onSuccess: (savedInteraction) => {
       // Update the opportunity cache with saved interaction
@@ -233,7 +233,7 @@ export function InteractionsDrawer({
               onSave={() => void updateInteraction.mutate()}
               isSaving={updateInteraction.isPending}
               onDelete={() => {
-                deleteInteraction.mutate(displayInteraction.id);
+                deleteInteraction.mutate(displayInteraction.slug || displayInteraction.id);
               }}
               isDeleting={
                 deleteInteraction.isPending &&

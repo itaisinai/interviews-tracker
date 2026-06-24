@@ -15,6 +15,7 @@ export function AttachedEmailsSection({
   opportunityId,
   onEmailsAttached,
 }: AttachedEmailsSectionProps) {
+  const interactionSlug = interactionId;
   const queryClient = useQueryClient();
   const [removingEmailId, setRemovingEmailId] = useState<string | null>(null);
   const [showAttachModal, setShowAttachModal] = useState(false);
@@ -22,7 +23,7 @@ export function AttachedEmailsSection({
 
   const { data: emails = [], isLoading } = useQuery({
     queryKey: ["interaction-emails", interactionId],
-    queryFn: () => api.listInteractionEmails(interactionId),
+    queryFn: () => api.listInteractionEmails(interactionSlug),
     enabled: !!interactionId,
   });
 
@@ -55,7 +56,7 @@ export function AttachedEmailsSection({
 
     setIsReparsing(true);
     try {
-      await api.reparseInteractionEmails(interactionId);
+      await api.reparseInteractionEmails(interactionSlug);
 
       // Invalidate queries to refresh data
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });

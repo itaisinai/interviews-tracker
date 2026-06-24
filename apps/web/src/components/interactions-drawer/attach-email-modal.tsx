@@ -19,6 +19,7 @@ export function AttachEmailModal({
   opportunityId,
   onAttached
 }: AttachEmailModalProps) {
+  const interactionSlug = interactionId;
   const queryClient = useQueryClient();
   const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(new Set());
   const [isAttaching, setIsAttaching] = useState(false);
@@ -33,7 +34,7 @@ export function AttachEmailModal({
   // Get already attached emails to filter them out
   const { data: attachedEmails = [] } = useQuery({
     queryKey: ["interaction-emails", interactionId],
-    queryFn: () => api.listInteractionEmails(interactionId),
+    queryFn: () => api.listInteractionEmails(interactionSlug),
     enabled: isOpen && !!interactionId,
   });
 
