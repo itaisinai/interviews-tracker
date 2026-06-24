@@ -417,9 +417,12 @@ function FocusedInteractionCard({
     queryFn: () => api.getOpportunityContacts(opportunityId),
   });
 
-  // Parse participant names
+  // Parse participant names and filter out blank entries
   const personNames = interaction.personName
-    ? interaction.personName.split(/\s+and\s+|,\s*/).map((name) => name.trim())
+    ? interaction.personName
+        .split(/\s+and\s+|,\s*/)
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0)
     : [];
 
   // Match contacts by name with multiple strategies
@@ -441,22 +444,18 @@ function FocusedInteractionCard({
     );
     if (caseInsensitiveMatch) return caseInsensitiveMatch;
 
-    // 3. First name match (e.g., "Rotem Zikorel" matches "Rotem")
-    const firstNameMatch = (contacts as Person[]).find((c) => {
-      const contactFirstName = c.name.split(' ')[0]?.toLowerCase();
-      const nameFirstName = name.split(' ')[0]?.toLowerCase();
-      return contactFirstName === nameFirstName;
-    });
-    if (firstNameMatch) return firstNameMatch;
+    // 3. Full name contains contact name (e.g., "Rotem Zikorel" contains "Rotem")
+    // Guard against blank names to prevent matching empty strings
+    if (name.length > 0) {
+      const containsMatch = (contacts as Person[]).find((c) => {
+        const nameLower = name.toLowerCase();
+        const contactNameLower = c.name.toLowerCase();
+        return nameLower.includes(contactNameLower) || contactNameLower.includes(nameLower);
+      });
+      if (containsMatch) return containsMatch;
+    }
 
-    // 4. Full name contains contact name (e.g., "Rotem Zikorel" contains "Rotem")
-    const containsMatch = (contacts as Person[]).find((c) => {
-      const nameLower = name.toLowerCase();
-      const contactNameLower = c.name.toLowerCase();
-      return nameLower.includes(contactNameLower) || contactNameLower.includes(nameLower);
-    });
-
-    return containsMatch;
+    return undefined;
   });
 
   return (
