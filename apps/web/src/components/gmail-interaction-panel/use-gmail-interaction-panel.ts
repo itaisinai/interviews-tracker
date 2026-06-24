@@ -94,6 +94,15 @@ export function useGmailInteractionPanel({
     handleGmailActionError: connectionHandlers.handleGmailActionError
   });
 
+  // Computed values
+  const attachTargetInteraction = useMemo(
+    () =>
+      opportunityQuery.data?.interactions.find(
+        (interaction) => interaction.id === state.attachTargetId
+      ) ?? null,
+    [state.attachTargetId, opportunityQuery.data?.interactions]
+  );
+
   // Save logic
   const saveHandlers = useGmailSave({
     opportunityId,
@@ -101,6 +110,7 @@ export function useGmailInteractionPanel({
     draft: state.draft,
     selectedEmail: state.selectedEmail,
     attachTargetId: state.attachTargetId,
+    attachTargetSlug: attachTargetInteraction?.slug || state.attachTargetId,
     onSaved,
     setError: state.setError,
     setSaveMessage: state.setSaveMessage,
@@ -145,15 +155,6 @@ export function useGmailInteractionPanel({
     setError: state.setError,
     handleGmailActionError: connectionHandlers.handleGmailActionError
   });
-
-  // Computed values
-  const attachTargetInteraction = useMemo(
-    () =>
-      opportunityQuery.data?.interactions.find(
-        (interaction) => interaction.id === state.attachTargetId
-      ) ?? null,
-    [state.attachTargetId, opportunityQuery.data?.interactions]
-  );
 
   const changedInteractionFields = useMemo(
     () => getChangedInteractionFields(attachTargetInteraction, state.draft),

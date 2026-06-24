@@ -104,7 +104,7 @@ export function Timeline({
             const isUpcoming =
               new Date(item.date).getTime() > referenceDate.getTime();
             const isClickable = Boolean(onSelectInteraction);
-            const isDeleting = isDeletingInteraction?.(item.id) ?? false;
+            const isDeleting = isDeletingInteraction?.(item.slug || item.id) ?? false;
 
             return (
               <li
@@ -195,7 +195,7 @@ export function Timeline({
                           aria-label="Delete interaction"
                           onClick={(event) => {
                             event.stopPropagation();
-                            onDeleteInteraction(item.id);
+                            onDeleteInteraction(item.slug || item.id);
                           }}
                           disabled={isDeleting}
                         >

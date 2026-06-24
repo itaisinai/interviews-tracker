@@ -6,6 +6,7 @@ import { fetchJson } from "../gmail/gmail-http.js";
 import { getAccessTokenForEmail } from "../gmail/gmail-auth.js";
 import { getAiParserService } from "../ai/ai-parser-service.js";
 import { prisma } from "../../lib/prisma.js";
+import { resolveInteractionId } from "../../repositories/interaction-repository.js";
 
 /**
  * Attach a Gmail message to an interaction
@@ -15,7 +16,11 @@ export async function attachEmailToInteraction(params: {
   interactionId: string;
   gmailMessageId: string;
 }) {
-  const { auth0Email, interactionId, gmailMessageId } = params;
+  const { auth0Email, interactionId: interactionSlugOrId, gmailMessageId } = params;
+  const interactionId = await resolveInteractionId(interactionSlugOrId, auth0Email);
+  if (!interactionId) {
+    throw new Error(`Interaction ${interactionSlugOrId} not found`);
+  }
 
   // Verify interaction ownership
   const interaction = await prisma.interaction.findUnique({
@@ -247,7 +252,11 @@ export async function attachMultipleEmailsToInteraction(params: {
   interactionId: string;
   gmailMessageIds: string[];
 }) {
-  const { auth0Email, interactionId, gmailMessageIds } = params;
+  const { auth0Email, interactionId: interactionSlugOrId, gmailMessageIds } = params;
+  const interactionId = await resolveInteractionId(interactionSlugOrId, auth0Email);
+  if (!interactionId) {
+    throw new Error(`Interaction ${interactionSlugOrId} not found`);
+  }
 
   // Verify interaction ownership
   const interaction = await prisma.interaction.findUnique({
@@ -366,7 +375,11 @@ export async function removeEmailFromInteraction(params: {
   interactionId: string;
   emailId: string;
 }) {
-  const { auth0Email, interactionId, emailId } = params;
+  const { auth0Email, interactionId: interactionSlugOrId, emailId } = params;
+  const interactionId = await resolveInteractionId(interactionSlugOrId, auth0Email);
+  if (!interactionId) {
+    throw new Error(`Interaction ${interactionSlugOrId} not found`);
+  }
 
   // Verify interaction ownership
   const interaction = await prisma.interaction.findUnique({
@@ -393,7 +406,12 @@ export async function removeEmailFromInteraction(params: {
 /**
  * List all emails attached to an interaction
  */
-export async function listInteractionEmails(auth0Email: string, interactionId: string) {
+export async function listInteractionEmails(auth0Email: string, interactionSlugOrId: string) {
+  const interactionId = await resolveInteractionId(interactionSlugOrId, auth0Email);
+  if (!interactionId) {
+    throw new Error(`Interaction ${interactionSlugOrId} not found`);
+  }
+
   // Verify interaction ownership
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
@@ -418,7 +436,12 @@ export async function listInteractionEmails(auth0Email: string, interactionId: s
  * Re-parse and re-aggregate all attached emails for an interaction
  * Useful when emails have been added/removed or to refresh the summarization
  */
-export async function reparseInteractionEmails(auth0Email: string, interactionId: string) {
+export async function reparseInteractionEmails(auth0Email: string, interactionSlugOrId: string) {
+  const interactionId = await resolveInteractionId(interactionSlugOrId, auth0Email);
+  if (!interactionId) {
+    throw new Error(`Interaction ${interactionSlugOrId} not found`);
+  }
+
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {

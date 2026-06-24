@@ -9,6 +9,7 @@ type GmailSaveHandlers = {
   draft: GmailInteractionDraft | null;
   selectedEmail: GmailStructuredEmail | null;
   attachTargetId: string;
+  attachTargetSlug: string;
   onSaved?: (interaction?: Interaction) => void;
   setError: (value: string | null) => void;
   setSaveMessage: (value: string) => void;
@@ -32,6 +33,7 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
     draft,
     selectedEmail,
     attachTargetId,
+    attachTargetSlug,
     onSaved,
     setError,
     setSaveMessage,
@@ -89,7 +91,7 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
 
     try {
       // Attach the email - backend will parse, aggregate, and update the interaction
-      await api.attachEmailToInteraction(attachTargetId, selectedEmail.id);
+      await api.attachEmailToInteraction(attachTargetSlug, selectedEmail.id);
 
       void queryClient.invalidateQueries({ queryKey: ["interaction-emails", attachTargetId] });
       void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
