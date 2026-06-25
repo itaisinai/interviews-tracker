@@ -1,4 +1,4 @@
-import type { QueryResponse } from "./telegram-query-service.js";
+import type { QueryResponse } from "./telegram-query-answerer.js";
 
 /**
  * Formats a query response into a Telegram message with markdown and links

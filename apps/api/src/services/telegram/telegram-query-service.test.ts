@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { messageIntentSchema, queryResponseSchema } from "./telegram-query-service.js";
+import { messageIntentSchema } from "./telegram-intent-classifier.js";
+import { queryResponseSchema } from "./telegram-query-answerer.js";
 
 test("messageIntentSchema validates QUERY intent", () => {
   const intent = {
