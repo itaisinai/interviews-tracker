@@ -63,28 +63,31 @@ export function createMonthCalendar<Event extends CalendarEvent>({
     eventsByDay.set(key, dayEvents);
   }
 
-  const dayCount = Math.floor(
-    (calendarEnd.getTime() - calendarStart.getTime()) / (1000 * 60 * 60 * 24),
-  ) + 1;
+  const days: Array<CalendarDay<Event>> = [];
 
-  const days = Array.from({ length: dayCount }, (_, index) => {
+  for (
     const date = new Date(calendarStart);
-    date.setDate(calendarStart.getDate() + index);
-    const isCurrentMonth = date.getFullYear() === monthStart.getFullYear() && date.getMonth() === monthStart.getMonth();
-    const key = formatCalendarDateKey(date);
+    date <= calendarEnd;
+    date.setDate(date.getDate() + 1)
+  ) {
+    const dayDate = new Date(date);
+    const isCurrentMonth =
+      dayDate.getFullYear() === monthStart.getFullYear() &&
+      dayDate.getMonth() === monthStart.getMonth();
+    const key = formatCalendarDateKey(dayDate);
     const dayEvents = [...(eventsByDay.get(key) ?? [])].sort(
       (left, right) => new Date(left.date).getTime() - new Date(right.date).getTime(),
     );
 
-    return {
+    days.push({
       key,
-      date,
+      date: dayDate,
       events: dayEvents,
       tone: getCalendarEventTone(dayEvents.length),
-      isToday: isSameCalendarDate(date, today),
+      isToday: isSameCalendarDate(dayDate, today),
       isCurrentMonth,
-    };
-  });
+    });
+  }
 
   return {
     monthLabel: monthFormatter.format(monthStart),

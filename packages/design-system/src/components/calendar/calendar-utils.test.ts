@@ -71,3 +71,20 @@ test("calendar only counts events from the requested month in the month total", 
   assert.equal(calendar.days[0].events[0]?.id, "previous");
   assert.equal(calendar.days.at(-1)?.events[0]?.id, "next");
 });
+
+test("calendar preserves final week days across daylight saving time", () => {
+  const calendar = createMonthCalendar({
+    month: new Date(2026, 2, 1),
+    events: [
+      {
+        id: "last-visible-day",
+        date: new Date(2026, 3, 4, 9),
+        title: "Last visible day",
+      },
+    ],
+  });
+
+  assert.equal(calendar.days.length, 35);
+  assert.equal(calendar.days.at(-1)?.key, "2026-04-04");
+  assert.equal(calendar.days.at(-1)?.events[0]?.id, "last-visible-day");
+});
