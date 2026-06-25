@@ -23,7 +23,7 @@ export const queryResponseSchema = z.object({
     id: z.string(),
     companyName: z.string(),
     roleTitle: z.string(),
-    slug: z.string().optional()
+    slug: z.string().nullable()
   })).optional()
 });
 
@@ -177,7 +177,7 @@ export async function answerOpportunityQuery(input: {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["id", "companyName", "roleTitle"],
+          required: ["id", "companyName", "roleTitle", "slug"],
           properties: {
             id: { type: "string" },
             companyName: { type: "string" },

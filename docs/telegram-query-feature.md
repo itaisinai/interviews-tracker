@@ -103,7 +103,17 @@ I couldn't find any company called 'Alta' in your opportunities.
 WEB_APP_BASE_URL=http://localhost:3000  # or production URL
 ALLOWED_EMAIL=your-email@example.com    # User email for filtering
 OPENAI_API_KEY=your-openai-key          # AI classification & answering
+
+# Authorization - at least one must be configured
+TELEGRAM_ALLOWED_USER_IDS=123456789,987654321  # Comma-separated Telegram user IDs
+TELEGRAM_ALLOWED_CHAT_IDS=                     # Comma-separated chat IDs (optional)
 ```
+
+**Important:** For security, you MUST configure at least one of:
+- `TELEGRAM_ALLOWED_USER_IDS` - Telegram user IDs who can query data
+- `TELEGRAM_ALLOWED_CHAT_IDS` - Chat IDs that can access the bot
+
+If neither is configured, all query requests will be denied. To find your Telegram user ID, message [@userinfobot](https://t.me/userinfobot) on Telegram.
 
 ---
 

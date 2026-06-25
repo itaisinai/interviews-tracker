@@ -107,6 +107,29 @@ function isCommand(text: string): boolean {
   return text.startsWith("/");
 }
 
+function isAuthorizedTelegramUser(userId: number | null, chatId: string | number): boolean {
+  // Check if user is authorized via user ID or chat ID
+  const allowedUserIds = process.env.TELEGRAM_ALLOWED_USER_IDS?.split(",").map(id => id.trim()).filter(Boolean) || [];
+  const allowedChatIds = process.env.TELEGRAM_ALLOWED_CHAT_IDS?.split(",").map(id => id.trim()).filter(Boolean) || [];
+
+  // If no restrictions configured, deny access (fail-safe)
+  if (allowedUserIds.length === 0 && allowedChatIds.length === 0) {
+    return false;
+  }
+
+  // Check user ID if provided
+  if (userId !== null && allowedUserIds.includes(String(userId))) {
+    return true;
+  }
+
+  // Check chat ID
+  if (allowedChatIds.includes(String(chatId))) {
+    return true;
+  }
+
+  return false;
+}
+
 async function handleStartCommand(chatId: string | number) {
   const welcomeMessage = `👋 *Welcome to Opportunity Tracker!*
 
@@ -208,6 +231,11 @@ async function handleOpportunityQuery(message: { chatId: string | number; messag
   const loadingMessageId = (loadingResponse as { result?: { message_id?: number } }).result?.message_id;
 
   try {
+    // Authorize the telegram user before accessing sensitive data
+    if (!isAuthorizedTelegramUser(message.fromUserId ?? null, message.chatId)) {
+      throw new Error("Unauthorized: This bot can only be used by authorized users");
+    }
+
     // Get owner email (same logic as opportunity creation)
     const ownerEmail = process.env.ALLOWED_EMAIL?.trim().toLowerCase();
 

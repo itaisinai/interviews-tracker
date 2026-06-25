@@ -55,6 +55,26 @@ test("queryResponseSchema validates query response with opportunities", () => {
   assert.strictEqual(result.answer, "Your next interview is tomorrow at 2pm with Google.");
   assert.strictEqual(result.needsClarification, false);
   assert.strictEqual(result.relevantOpportunities?.length, 1);
+  assert.strictEqual(result.relevantOpportunities?.[0]?.slug, "google-senior-engineer");
+});
+
+test("queryResponseSchema validates query response with null slug", () => {
+  const response = {
+    answer: "Your next interview is tomorrow.",
+    needsClarification: false,
+    clarificationQuestion: null,
+    relevantOpportunities: [
+      {
+        id: "123",
+        companyName: "Google",
+        roleTitle: "Senior Engineer",
+        slug: null
+      }
+    ]
+  };
+
+  const result = queryResponseSchema.parse(response);
+  assert.strictEqual(result.relevantOpportunities?.[0]?.slug, null);
 });
 
 test("queryResponseSchema validates clarification response", () => {
