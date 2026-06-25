@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { logError, logInfo } from "../../lib/logger.js";
+import { classifyMessageIntent, answerOpportunityQuery } from "./telegram-query-service.js";
+import { formatOpportunitiesForAI } from "../opportunities/opportunity-query-data-service.js";
+import { formatQueryResponseForTelegram, formatOpportunityCreatedMessage, formatErrorMessage } from "./telegram-response-formatter.js";
 
 export const telegramUpdateSchema = z.object({
   update_id: z.number().optional(),
@@ -107,17 +110,18 @@ function isCommand(text: string): boolean {
 async function handleStartCommand(chatId: string | number) {
   const welcomeMessage = `👋 *Welcome to Opportunity Tracker!*
 
-I help you track job opportunities by extracting details from descriptions.
+I help you track job opportunities and answer questions about your process.
 
-*How to use:*
-Simply send me a job description and I'll create an opportunity for you.
+*What I can do:*
+📝 Create opportunities from job descriptions
+🔍 Answer questions about your opportunities
 
-*Example:*
-_"Senior Software Engineer at Google
-Remote, $180k-$220k
-Applied through LinkedIn"_
+*Examples:*
+_Create: "Senior Software Engineer at Google, Remote, $180k-$220k"_
+_Query: "What's my next interview?"_
+_Query: "What are my active processes?"_
 
-Ready? Just paste your opportunity! 🚀`;
+Ready? Just send me a message! 🚀`;
 
   await sendTelegramMessage(chatId, welcomeMessage, "Markdown");
 }
@@ -125,32 +129,25 @@ Ready? Just paste your opportunity! 🚀`;
 async function handleHelpCommand(chatId: string | number) {
   const helpMessage = `📋 *How to use this bot:*
 
-*1. Send a job description*
-Just paste any job opportunity details:
-• Company name
-• Role title
-• Location (optional)
-• Compensation (optional)
-• How you heard about it (optional)
+*Create Opportunities*
+Just paste job details and I'll create an opportunity:
+_"Senior Backend Engineer at Stripe
+$180k-$220k, Remote
+Applied through referral"_
 
-*2. I'll extract the details*
-My AI will automatically parse:
-✓ Company name
-✓ Role title
-✓ Status & priority
-✓ Notes
-
-*3. Opportunity created!*
-You'll get a confirmation with the opportunity details.
+*Query Your Data*
+Ask me questions about your opportunities:
+• "What's my next interview?"
+• "What's the next interaction at company X?"
+• "What are my active processes?"
+• "Who are the participants in my X interview?"
+• "What are the instructions for my next interview?"
 
 *Commands:*
 /start - Show welcome message
 /help - Show this help message
 
-*Example opportunity:*
-_Senior Backend Engineer at Stripe
-$180k-$220k, Remote
-Applied through referral_`;
+I'll automatically detect if you're creating an opportunity or asking a question! 🤖`;
 
   await sendTelegramMessage(chatId, helpMessage, "Markdown");
 }
@@ -172,15 +169,8 @@ async function handleOpportunityCreation(message: { chatId: string | number; mes
     });
 
     const opportunity = result.opportunity;
-    const companyName = opportunity?.companyName || "Unknown Company";
-    const roleTitle = opportunity?.roleTitle || "Position";
-
-    const successMessage = `✅ *Opportunity Created!*
-
-📊 *${companyName}*
-💼 ${roleTitle}
-
-The opportunity has been added to your tracker.`;
+    const webAppBaseUrl = process.env.WEB_APP_BASE_URL || "https://localhost:3000";
+    const successMessage = formatOpportunityCreatedMessage(opportunity || {}, webAppBaseUrl);
 
     // Update the loading message with success
     if (loadingMessageId) {
@@ -196,11 +186,66 @@ The opportunity has been added to your tracker.`;
       error: error instanceof Error ? error.message : "Unknown error"
     });
 
-    const errorMessage = `❌ *Failed to create opportunity*
+    const errorMessage = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");
 
-${error instanceof Error ? error.message : "An unknown error occurred"}
+    // Update the loading message with error
+    if (loadingMessageId) {
+      await editTelegramMessage(message.chatId, loadingMessageId, errorMessage);
+    } else {
+      await sendTelegramMessage(message.chatId, errorMessage, "Markdown");
+    }
 
-Please try again or check the format of your message.`;
+    return { ignored: false, ok: false };
+  }
+}
+
+async function handleOpportunityQuery(message: { chatId: string | number; messageId: number; text: string; fromUserId?: number | null; username?: string | null }) {
+  // Send loading message
+  const loadingResponse = await sendTelegramMessage(
+    message.chatId,
+    "🔍 Looking up your opportunities..."
+  );
+  const loadingMessageId = (loadingResponse as { result?: { message_id?: number } }).result?.message_id;
+
+  try {
+    // Get owner email (same logic as opportunity creation)
+    const ownerEmail = process.env.ALLOWED_EMAIL?.trim().toLowerCase();
+
+    if (!ownerEmail) {
+      throw new Error("Cannot query opportunities: ALLOWED_EMAIL not configured");
+    }
+
+    // Fetch opportunities data filtered by user email
+    const opportunitiesData = await formatOpportunitiesForAI(ownerEmail);
+
+    // Get web app base URL for links
+    const webAppBaseUrl = process.env.WEB_APP_BASE_URL || "https://localhost:3000";
+
+    // Use AI to answer the query
+    const queryResponse = await answerOpportunityQuery({
+      query: message.text,
+      opportunitiesData,
+      webAppBaseUrl
+    });
+
+    // Format response with markdown and links
+    const responseMessage = formatQueryResponseForTelegram(queryResponse, webAppBaseUrl);
+
+    // Update the loading message with the response
+    if (loadingMessageId) {
+      await editTelegramMessage(message.chatId, loadingMessageId, responseMessage);
+    } else {
+      await sendTelegramMessage(message.chatId, responseMessage, "Markdown");
+    }
+
+    return { ignored: false, ok: true, queryResponse };
+  } catch (error) {
+    logError("telegram", "Failed to answer query", {
+      messageId: message.messageId,
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+
+    const errorMessage = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");
 
     // Update the loading message with error
     if (loadingMessageId) {
@@ -248,6 +293,30 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     return { ignored: false, ok: false, command: "unknown" };
   }
 
-  // Handle opportunity creation
-  return handleOpportunityCreation(message);
+  // Classify message intent
+  try {
+    const intent = await classifyMessageIntent(message.text);
+
+    logInfo("telegram", "Classified message intent", {
+      messageId: message.messageId,
+      intent: intent.intent,
+      confidence: intent.confidence,
+      reasoning: intent.reasoning
+    });
+
+    // Route based on intent
+    if (intent.intent === "QUERY") {
+      return handleOpportunityQuery(message);
+    } else {
+      return handleOpportunityCreation(message);
+    }
+  } catch (error) {
+    // If classification fails, fall back to opportunity creation (old behavior)
+    logError("telegram", "Intent classification failed, falling back to opportunity creation", {
+      messageId: message.messageId,
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+
+    return handleOpportunityCreation(message);
+  }
 }
