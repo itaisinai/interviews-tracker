@@ -142,9 +142,7 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
           <div key={day.key} className="group relative">
             <div
               className={`flex min-h-12 flex-col items-center justify-center rounded-xl border transition-all ${
-                day.events.length > 0
-                  ? "border-primary/15 bg-primary/5 text-on-background hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/10 hover:shadow-sm"
-                  : "border-transparent bg-surface-container-low/60 text-on-surface-variant hover:bg-surface-container-low"
+                getDayTileClassName(day.isCurrentMonth, day.events.length)
               } ${day.isToday ? "ring-2 ring-primary ring-offset-2 ring-offset-white" : ""}`}
               aria-label={getAccessibleLabel(day.date, day.events)}
               tabIndex={0}
@@ -201,6 +199,18 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
       </div>
     </section>
   );
+}
+
+function getDayTileClassName(isCurrentMonth: boolean, eventCount: number) {
+  if (!isCurrentMonth) {
+    return eventCount > 0
+      ? "border-outline-variant/60 bg-surface-container-low/35 text-on-surface-variant/70 opacity-75 hover:bg-surface-container-low/60"
+      : "border-transparent bg-surface-container-low/25 text-on-surface-variant/55 opacity-70 hover:bg-surface-container-low/50";
+  }
+
+  return eventCount > 0
+    ? "border-primary/15 bg-primary/5 text-on-background hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/10 hover:shadow-sm"
+    : "border-transparent bg-surface-container-low/60 text-on-surface-variant hover:bg-surface-container-low";
 }
 
 function CalendarLegendDot({
