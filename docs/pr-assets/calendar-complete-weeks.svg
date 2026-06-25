@@ -1,0 +1,73 @@
+<svg width="940" height="880" viewBox="0 0 940 880" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="940" height="880" fill="#f4f1ec"/>
+  <rect x="28" y="24" width="884" height="832" rx="22" fill="white" stroke="#b8c5b8" stroke-width="2"/>
+  <text x="76" y="94" fill="#007953" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="8">CALENDAR</text>
+  <text x="76" y="148" fill="#10202f" font-family="Inter, Arial, sans-serif" font-size="38" font-weight="800">June 2026</text>
+  <circle cx="376" cy="106" r="34" fill="white" stroke="#b8c5b8" stroke-width="2"/>
+  <text x="362" y="119" fill="#51605a" font-family="Arial" font-size="42">‹</text>
+  <rect x="426" y="72" width="158" height="68" rx="34" fill="white" stroke="#b8c5b8" stroke-width="2"/>
+  <text x="498" y="114" fill="#51605a" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" text-anchor="middle">Today</text>
+  <circle cx="635" cy="106" r="34" fill="white" stroke="#b8c5b8" stroke-width="2"/>
+  <text x="623" y="119" fill="#51605a" font-family="Arial" font-size="42">›</text>
+  <rect x="688" y="83" width="176" height="46" rx="23" fill="#f4f1ec"/>
+  <text x="776" y="114" fill="#51605a" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" text-anchor="middle">26 meetings</text>
+
+  <circle cx="84" cy="207" r="10" fill="#bec9be"/><text x="105" y="215" fill="#51605a" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">Empty</text>
+  <circle cx="204" cy="207" r="10" fill="#007953"/><text x="226" y="215" fill="#51605a" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">1 meeting</text>
+  <circle cx="360" cy="207" r="10" fill="#fbbf24"/><text x="382" y="215" fill="#51605a" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">Multiple</text>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#51605a" text-anchor="middle">
+    <text x="124" y="274">Sun</text><text x="239" y="274">Mon</text><text x="354" y="274">Tue</text><text x="469" y="274">Wed</text><text x="584" y="274">Thu</text><text x="699" y="274">Fri</text><text x="814" y="274">Sat</text>
+  </g>
+
+  <defs>
+    <g id="dot-empty"><circle cx="0" cy="0" r="8" fill="#bec9be"/></g>
+    <g id="dot-single"><circle cx="0" cy="0" r="13" fill="#dcebe5"/><circle cx="0" cy="0" r="8" fill="#007953"/></g>
+    <g id="dot-multiple"><circle cx="0" cy="0" r="13" fill="#fff1c2"/><circle cx="0" cy="0" r="8" fill="#fbbf24"/></g>
+  </defs>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="25" font-weight="800" text-anchor="middle">
+    <!-- row 1 includes previous month to complete the week -->
+    <rect x="75" y="300" width="98" height="90" rx="20" fill="#f5f5f2" opacity="0.45"/><text x="124" y="344" fill="#7f8984" opacity="0.75">31</text><use href="#dot-empty" x="124" y="367" opacity="0.65"/>
+    <rect x="190" y="300" width="98" height="90" rx="20" fill="#faf9f7"/><text x="239" y="344" fill="#51605a">1</text><use href="#dot-empty" x="239" y="367"/>
+    <rect x="305" y="300" width="98" height="90" rx="20" fill="#faf9f7"/><text x="354" y="344" fill="#51605a">2</text><use href="#dot-empty" x="354" y="367"/>
+    <rect x="420" y="300" width="98" height="90" rx="20" fill="#faf9f7"/><text x="469" y="344" fill="#51605a">3</text><use href="#dot-empty" x="469" y="367"/>
+    <rect x="535" y="300" width="98" height="90" rx="20" fill="#faf9f7"/><text x="584" y="344" fill="#51605a">4</text><use href="#dot-empty" x="584" y="367"/>
+    <rect x="650" y="300" width="98" height="90" rx="20" fill="#faf9f7"/><text x="699" y="344" fill="#51605a">5</text><use href="#dot-empty" x="699" y="367"/>
+    <rect x="765" y="300" width="98" height="90" rx="20" fill="#faf9f7"/><text x="814" y="344" fill="#51605a">6</text><use href="#dot-empty" x="814" y="367"/>
+
+    <rect x="75" y="405" width="98" height="90" rx="20" fill="#faf9f7"/><text x="124" y="449" fill="#51605a">7</text><use href="#dot-empty" x="124" y="472"/>
+    <rect x="190" y="405" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="239" y="449" fill="#10202f">8</text><use href="#dot-multiple" x="239" y="472"/>
+    <rect x="305" y="405" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="354" y="449" fill="#10202f">9</text><use href="#dot-multiple" x="354" y="472"/>
+    <rect x="420" y="405" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="469" y="449" fill="#10202f">10</text><use href="#dot-single" x="469" y="472"/>
+    <rect x="535" y="405" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="584" y="449" fill="#10202f">11</text><use href="#dot-single" x="584" y="472"/>
+    <rect x="650" y="405" width="98" height="90" rx="20" fill="#faf9f7"/><text x="699" y="449" fill="#51605a">12</text><use href="#dot-empty" x="699" y="472"/>
+    <rect x="765" y="405" width="98" height="90" rx="20" fill="#faf9f7"/><text x="814" y="449" fill="#51605a">13</text><use href="#dot-empty" x="814" y="472"/>
+
+    <rect x="75" y="510" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="124" y="554" fill="#10202f">14</text><use href="#dot-multiple" x="124" y="577"/>
+    <rect x="190" y="510" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="239" y="554" fill="#10202f">15</text><use href="#dot-multiple" x="239" y="577"/>
+    <rect x="305" y="510" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="354" y="554" fill="#10202f">16</text><use href="#dot-empty" x="354" y="577"/>
+    <rect x="420" y="510" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="469" y="554" fill="#10202f">17</text><use href="#dot-single" x="469" y="577"/>
+    <rect x="535" y="510" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="584" y="554" fill="#10202f">18</text><use href="#dot-multiple" x="584" y="577"/>
+    <rect x="650" y="510" width="98" height="90" rx="20" fill="#faf9f7"/><text x="699" y="554" fill="#51605a">19</text><use href="#dot-empty" x="699" y="577"/>
+    <rect x="765" y="510" width="98" height="90" rx="20" fill="#faf9f7"/><text x="814" y="554" fill="#51605a">20</text><use href="#dot-empty" x="814" y="577"/>
+
+    <rect x="75" y="615" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="124" y="659" fill="#10202f">21</text><use href="#dot-multiple" x="124" y="682"/>
+    <rect x="190" y="615" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="239" y="659" fill="#10202f">22</text><use href="#dot-single" x="239" y="682"/>
+    <rect x="305" y="615" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="354" y="659" fill="#10202f">23</text><use href="#dot-single" x="354" y="682"/>
+    <rect x="420" y="615" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="469" y="659" fill="#10202f">24</text><use href="#dot-multiple" x="469" y="682"/>
+    <rect x="535" y="615" width="98" height="90" rx="20" fill="#eef6f3" stroke="#007953" stroke-width="4"/><text x="584" y="650" fill="#51605a">25</text><use href="#dot-empty" x="584" y="672"/><rect x="546" y="687" width="76" height="35" rx="17" fill="#007953"/><text x="584" y="713" fill="white" font-size="23">Today</text>
+    <rect x="650" y="615" width="98" height="90" rx="20" fill="#faf9f7"/><text x="699" y="659" fill="#51605a">26</text><use href="#dot-empty" x="699" y="682"/>
+    <rect x="765" y="615" width="98" height="90" rx="20" fill="#faf9f7"/><text x="814" y="659" fill="#51605a">27</text><use href="#dot-empty" x="814" y="682"/>
+  </g>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="25" font-weight="800" text-anchor="middle" transform="translate(0,105)">
+    <rect x="75" y="615" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="124" y="659" fill="#10202f">28</text><use href="#dot-single" x="124" y="682"/>
+    <rect x="190" y="615" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="239" y="659" fill="#10202f">29</text><use href="#dot-single" x="239" y="682"/>
+    <rect x="305" y="615" width="98" height="90" rx="20" fill="#eef6f3" stroke="#c7ded7" stroke-width="2"/><text x="354" y="659" fill="#10202f">30</text><use href="#dot-single" x="354" y="682"/>
+    <rect x="420" y="615" width="98" height="90" rx="20" fill="#f5f5f2" opacity="0.45"/><text x="469" y="659" fill="#7f8984" opacity="0.75">1</text><use href="#dot-empty" x="469" y="682" opacity="0.65"/>
+    <rect x="535" y="615" width="98" height="90" rx="20" fill="#f5f5f2" opacity="0.45"/><text x="584" y="659" fill="#7f8984" opacity="0.75">2</text><use href="#dot-empty" x="584" y="682" opacity="0.65"/>
+    <rect x="650" y="615" width="98" height="90" rx="20" fill="#f5f5f2" opacity="0.45"/><text x="699" y="659" fill="#7f8984" opacity="0.75">3</text><use href="#dot-empty" x="699" y="682" opacity="0.65"/>
+    <rect x="765" y="615" width="98" height="90" rx="20" fill="#f5f5f2" opacity="0.45"/><text x="814" y="659" fill="#7f8984" opacity="0.75">4</text><use href="#dot-empty" x="814" y="682" opacity="0.65"/>
+  </g>
+</svg>

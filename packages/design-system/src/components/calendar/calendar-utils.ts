@@ -13,6 +13,7 @@ export type CalendarDay<Event extends CalendarEvent = CalendarEvent> = {
   events: Event[];
   tone: CalendarEventTone;
   isToday: boolean;
+  isCurrentMonth: boolean;
 };
 
 export type CalendarMonth<Event extends CalendarEvent = CalendarEvent> = {
@@ -38,21 +39,21 @@ export function createMonthCalendar<Event extends CalendarEvent>({
 }): CalendarMonth<Event> {
   const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
   const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
-  const endOfMonth = new Date(
-    monthEnd.getFullYear(),
-    monthEnd.getMonth(),
-    monthEnd.getDate(),
-    23,
-    59,
-    59,
-    999,
-  );
+  const calendarStart = new Date(monthStart);
+  calendarStart.setDate(monthStart.getDate() - monthStart.getDay());
+
+  const calendarEnd = new Date(monthEnd);
+  calendarEnd.setDate(monthEnd.getDate() + (6 - monthEnd.getDay()));
+
+  const calendarEndExclusive = new Date(calendarEnd);
+  calendarEndExclusive.setDate(calendarEnd.getDate() + 1);
+
   const eventsByDay = new Map<string, Event[]>();
 
   for (const event of events) {
     const eventDate = new Date(event.date);
 
-    if (eventDate < monthStart || eventDate > endOfMonth) {
+    if (eventDate < calendarStart || eventDate >= calendarEndExclusive) {
       continue;
     }
 
@@ -62,27 +63,40 @@ export function createMonthCalendar<Event extends CalendarEvent>({
     eventsByDay.set(key, dayEvents);
   }
 
-  const days = Array.from({ length: monthEnd.getDate() }, (_, index) => {
-    const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), index + 1);
-    const key = formatCalendarDateKey(date);
+  const days: Array<CalendarDay<Event>> = [];
+
+  for (
+    const date = new Date(calendarStart);
+    date <= calendarEnd;
+    date.setDate(date.getDate() + 1)
+  ) {
+    const dayDate = new Date(date);
+    const isCurrentMonth =
+      dayDate.getFullYear() === monthStart.getFullYear() &&
+      dayDate.getMonth() === monthStart.getMonth();
+    const key = formatCalendarDateKey(dayDate);
     const dayEvents = [...(eventsByDay.get(key) ?? [])].sort(
       (left, right) => new Date(left.date).getTime() - new Date(right.date).getTime(),
     );
 
-    return {
+    days.push({
       key,
-      date,
+      date: dayDate,
       events: dayEvents,
       tone: getCalendarEventTone(dayEvents.length),
-      isToday: isSameCalendarDate(date, today),
-    };
-  });
+      isToday: isSameCalendarDate(dayDate, today),
+      isCurrentMonth,
+    });
+  }
 
   return {
     monthLabel: monthFormatter.format(monthStart),
-    leadingBlankDays: monthStart.getDay(),
+    leadingBlankDays: 0,
     days,
-    totalEvents: days.reduce((total, day) => total + day.events.length, 0),
+    totalEvents: days.reduce(
+      (total, day) => total + (day.isCurrentMonth ? day.events.length : 0),
+      0,
+    ),
   };
 }
 
