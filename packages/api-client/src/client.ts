@@ -112,5 +112,20 @@ export const api = {
   listInteractionFeedback: (interactionSlug: string) => request<Array<{ id: string; interactionId: string; content: string; source: string | null; extractedData: unknown; attachedAt: string }>>(`/interactions/${interactionSlug}/feedback`),
   addFeedbackToInteraction: (interactionSlug: string, content: string, source?: string) => request<unknown>(`/interactions/${interactionSlug}/feedback`, { method: "POST", body: JSON.stringify({ content, source }) }),
   markPersonAsWrong: (personId: string, opportunityId: string, searchContext: string, notes?: string) => request<{ success: boolean; wrongCandidateId: string }>(`/people/${personId}/mark-wrong`, { method: "POST", body: JSON.stringify({ opportunityId, searchContext, notes }) }),
-  getWrongPersonCandidates: (opportunityId: string) => request<Array<{ id: string; opportunityId: string; searchContext: string; personName: string; linkedinUrl: string | null; company: string | null; title: string | null; avatarUrl: string | null; rejectedAt: string; notes: string | null }>>(`/people/wrong-candidates/${opportunityId}`)
+  getWrongPersonCandidates: (opportunityId: string) => request<Array<{ id: string; opportunityId: string; searchContext: string; personName: string; linkedinUrl: string | null; company: string | null; title: string | null; avatarUrl: string | null; rejectedAt: string; notes: string | null }>>(`/people/wrong-candidates/${opportunityId}`),
+  telegramTest: (text: string) => request<{
+    success: boolean;
+    intent?: {
+      type: string;
+      confidence: number;
+      reasoning: string;
+    };
+    messages: Array<{
+      role: "user" | "bot";
+      text: string;
+      timestamp: string;
+    }>;
+    data?: unknown;
+    error?: string;
+  }>("/telegram/test", { method: "POST", body: JSON.stringify({ text }) })
 };
