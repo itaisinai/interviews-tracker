@@ -290,7 +290,7 @@ export function OpportunitiesPage() {
                   className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
                   onClick={() => setPipeline("")}
                 >
-                  <span>pipeline: {pipelineTypeOptions.find(opt => opt.value === pipeline)?.label || "All"}</span>
+                  <span>pipeline: {(pipelineTypeOptions.find(opt => opt.value === pipeline)?.label || "all").toLowerCase()}</span>
                   <MaterialIcon name="close" className="text-[16px]" />
                 </button>
               ) : null}
@@ -299,7 +299,7 @@ export function OpportunitiesPage() {
                   className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
                   onClick={() => setStatus("")}
                 >
-                  <span>status: {jobStatusOptions.find(opt => opt.value === status)?.label}</span>
+                  <span>status: {jobStatusOptions.find(opt => opt.value === status)?.label.toLowerCase()}</span>
                   <MaterialIcon name="close" className="text-[16px]" />
                 </button>
               ) : null}
@@ -308,7 +308,7 @@ export function OpportunitiesPage() {
                   className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
                   onClick={() => setPriority("")}
                 >
-                  <span>priority: {priorityOptions.find(opt => opt.value === priority)?.label}</span>
+                  <span>priority: {priorityOptions.find(opt => opt.value === priority)?.label.toLowerCase()}</span>
                   <MaterialIcon name="close" className="text-[16px]" />
                 </button>
               ) : null}
@@ -317,7 +317,7 @@ export function OpportunitiesPage() {
                   className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
                   onClick={() => setDomainId("")}
                 >
-                  <span>domain: {options?.domains.find(opt => opt.id === domainId)?.label}</span>
+                  <span>domain: {options?.domains.find(opt => opt.id === domainId)?.label.toLowerCase()}</span>
                   <MaterialIcon name="close" className="text-[16px]" />
                 </button>
               ) : null}
