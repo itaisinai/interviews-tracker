@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -60,14 +60,14 @@ export function OpportunitiesPage() {
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
     }
   });
-  const handleSort = (column: string) => {
+  const handleSort = useCallback((column: string) => {
     if (sort === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSort(column);
       setSortDirection("desc");
     }
-  };
+  }, [sort, sortDirection]);
 
   const columns = useMemo<ColumnDef<Opportunity>[]>(() => [
     {
