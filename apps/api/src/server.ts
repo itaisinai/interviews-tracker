@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 // Initialize Sentry as early as possible
-import { initSentry, requestHandler, sentryErrorHandler, tracingHandler } from "./lib/sentry.js";
+import { initSentry, Sentry } from "./lib/sentry.js";
 initSentry();
 
 import cors from "cors";
@@ -46,10 +46,6 @@ const corsOptions: cors.CorsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Opportunity-Webhook-Secret", "X-Telegram-Bot-Api-Secret-Token"],
   optionsSuccessStatus: 204
 };
-
-// Sentry request handler must be the first middleware
-app.use(requestHandler());
-app.use(tracingHandler());
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
@@ -130,8 +126,8 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-// Sentry error handler must be before other error handlers
-app.use(sentryErrorHandler());
+// Setup Sentry error handler - must be after all routes and before other error handlers
+Sentry.setupExpressErrorHandler(app);
 
 app.use(errorHandler);
 

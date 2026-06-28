@@ -641,8 +641,8 @@ This endpoint throws a test error to verify Sentry is capturing exceptions corre
 
 ### How It Works
 
-- Sentry is initialized as early as possible in `server.ts`
-- Request and error handlers capture unhandled exceptions
+- Sentry is initialized as early as possible in `server.ts` (after dotenv)
+- `Sentry.setupExpressErrorHandler(app)` captures unhandled exceptions
 - Performance tracing samples 10% of requests in production
 - Existing error handlers and API responses work unchanged
 - No secrets are exposed to Sentry

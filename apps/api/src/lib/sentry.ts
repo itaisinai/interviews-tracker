@@ -48,12 +48,5 @@ export function initSentry() {
   }
 }
 
-// Export Sentry for middleware and error capture
+// Export Sentry for error capture
 export { Sentry };
-
-// Export middleware functions
-export {
-  requestHandler,
-  errorHandler as sentryErrorHandler,
-  tracingHandler
-} from "@sentry/node";
