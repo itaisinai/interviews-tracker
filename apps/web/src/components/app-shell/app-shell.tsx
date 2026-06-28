@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { NotificationsBell } from "../notifications";
 import { GlobalSearchBox } from "./global-search-box";
-import { TelegramTestBot } from "../telegram-test-bot";
+import { TelegramBot } from "../telegram-bot";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
@@ -298,7 +298,7 @@ export function AppShell() {
           <Outlet />
         </div>
       </main>
-      <TelegramTestBot />
+      <TelegramBot />
     </div>
   );
 }

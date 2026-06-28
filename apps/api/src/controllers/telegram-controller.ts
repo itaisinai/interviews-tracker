@@ -10,13 +10,13 @@ import {
   formatErrorMessage
 } from "../services/telegram/telegram-response-formatter.js";
 
-const telegramTestMessageSchema = z.object({
+const telegramMessageSchema = z.object({
   text: z.string().trim().min(1)
 });
 
-export async function testTelegramMessageHandler(request: Request, response: Response) {
-  const input = telegramTestMessageSchema.parse(request.body);
-  const timer = createTimer("telegram-test", "process test message", {
+export async function telegramMessageHandler(request: Request, response: Response) {
+  const input = telegramMessageSchema.parse(request.body);
+  const timer = createTimer("telegram", "process message", {
     text: input.text.substring(0, 50)
   });
 
@@ -30,12 +30,12 @@ export async function testTelegramMessageHandler(request: Request, response: Res
   });
 
   try {
-    logInfo("telegram-test", "Processing test message", { text: input.text });
+    logInfo("telegram", "Processing message", { text: input.text });
 
     // Step 1: Classify the intent (same as real Telegram flow)
     const intent = await classifyMessageIntent(input.text);
 
-    logInfo("telegram-test", "Intent classified", {
+    logInfo("telegram", "Intent classified", {
       intent: intent.intent,
       confidence: intent.confidence,
       reasoning: intent.reasoning
@@ -63,7 +63,7 @@ export async function testTelegramMessageHandler(request: Request, response: Res
         botResponse = formatOpportunityCreatedMessage(opportunity, webAppBaseUrl);
         opportunityData = opportunity;
       } catch (error) {
-        logError("telegram-test", "Failed to create opportunity", {
+        logError("telegram", "Failed to create opportunity", {
           error: error instanceof Error ? error.message : "Unknown error"
         });
         botResponse = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");
@@ -87,7 +87,7 @@ export async function testTelegramMessageHandler(request: Request, response: Res
         botResponse = formatQueryResponseForTelegram(queryResponse, webAppBaseUrl);
         queryResponseData = queryResponse;
       } catch (error) {
-        logError("telegram-test", "Failed to answer query", {
+        logError("telegram", "Failed to answer query", {
           error: error instanceof Error ? error.message : "Unknown error"
         });
         botResponse = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");
