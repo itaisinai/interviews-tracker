@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body{font:14px system-ui,sans-serif;min-width:260px;padding:12px}button,input{box-sizing:border-box;width:100%;padding:8px}label{display:block;margin:0 0 8px}.hint{color:#555;font-size:12px;margin:4px 0 10px}#status{margin-top:10px;white-space:pre-wrap}.secondary{margin-top:6px}
+    </style>
+  </head>
+  <body>
+    <label>
+      API bearer token (production Auth0)
+      <input id="token" type="password" autocomplete="off" placeholder="Paste Auth0 access token">
+    </label>
+    <div class="hint">Local dev can use API dev auth. Production requires a valid Auth0 API access token; no secrets are bundled.</div>
+    <button id="save-token" class="secondary">Save token locally</button>
+    <button id="import">Import job</button>
+    <div id="status" role="status"></div>
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

@@ -21,6 +21,7 @@ export type SmartMergeFeedbackResult = {
 };
 
 export interface AiParserService {
+  createStructuredOutput(input: { name: string; schema: unknown; systemPrompt: string; text: string }): Promise<string>;
   parseJobDescription(text: string): Promise<ParsedJobDescription>;
   parseCompanyEnrichment(text: string): Promise<CompanyEnrichment>;
   classifyGmailEmails(input: {
@@ -442,7 +443,7 @@ export class OpenAiParserService implements AiParserService {
     return promoteOverdueInteractionStatusForRead(interactionDraftSchema.parse(JSON.parse(outputText)));
   }
 
-  private async createStructuredOutput(input: { name: string; schema: unknown; systemPrompt: string; text: string }) {
+  async createStructuredOutput(input: { name: string; schema: unknown; systemPrompt: string; text: string }) {
     const timer = createTimer("llm", `openai ${input.name}`, { model: this.model });
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",

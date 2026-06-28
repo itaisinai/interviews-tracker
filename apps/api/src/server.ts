@@ -10,6 +10,7 @@ import { dashboardRouter } from "./routes/dashboard.js";
 import { gmailRouter } from "./routes/gmail.js";
 import { healthRouter } from "./routes/health.js";
 import { interactionsRouter } from "./routes/interactions.js";
+import { jobImportsRouter } from "./routes/job-imports.js";
 import { opportunitiesRouter } from "./routes/opportunities.js";
 import { optionsRouter } from "./routes/options.js";
 import { peopleRouter } from "./routes/people.js";
@@ -28,7 +29,11 @@ const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
-const allowedOrigins = new Set([...productionOrigins, ...frontendOrigins, ...localOrigins]);
+const extensionOrigins = (process.env.CHROME_EXTENSION_ORIGIN ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedOrigins = new Set([...productionOrigins, ...frontendOrigins, ...extensionOrigins, ...localOrigins]);
 
 const corsOptions: cors.CorsOptions = {
   origin(origin, callback) {
@@ -112,6 +117,7 @@ app.use("/api/integrations/gmail", gmailRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/opportunities", opportunitiesRouter);
 app.use("/api/interactions", interactionsRouter);
+app.use("/api/job-imports", jobImportsRouter);
 app.use("/api/companies", companiesRouter);
 app.use("/api/options", optionsRouter);
 app.use("/api/ai", aiRouter);

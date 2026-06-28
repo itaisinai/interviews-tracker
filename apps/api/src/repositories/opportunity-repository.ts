@@ -30,6 +30,8 @@ function toWrite(input: OpportunityInput, ownerEmail: string): Omit<Prisma.JobOp
     source: rest.source ?? null,
     jobUrl: rest.jobUrl ?? null,
     linkedinUrl: rest.linkedinUrl ?? null,
+    linkedinJobId: rest.linkedinJobId ?? null,
+    sourceUrl: rest.sourceUrl ?? null,
     nextStep: rest.nextStep ?? null,
     notes: rest.notes ?? null,
     location: rest.location ?? null,
