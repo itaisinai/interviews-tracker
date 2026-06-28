@@ -12,6 +12,8 @@ export const opportunityInputSchema = z.object({
   source: z.string().nullish(),
   jobUrl: z.string().nullish(),
   linkedinUrl: z.string().url().nullish(),
+  linkedinJobId: z.string().nullish(),
+  sourceUrl: z.string().url().nullish(),
   nextStep: z.string().nullish(),
   notes: z.string().nullish(),
   employeesRangeId: z.string().nullish(),
@@ -92,6 +94,8 @@ export type Opportunity = {
   source?: string | null;
   jobUrl?: string | null;
   linkedinUrl?: string | null;
+  linkedinJobId?: string | null;
+  sourceUrl?: string | null;
   nextStep?: string | null;
   notes?: string | null;
   employeesRangeId?: string | null;

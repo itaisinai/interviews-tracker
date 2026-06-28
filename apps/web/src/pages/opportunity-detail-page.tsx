@@ -402,6 +402,8 @@ function buildOpportunityInput(
     source: opportunity.source ?? null,
     jobUrl: opportunity.jobUrl ?? null,
     linkedinUrl: opportunity.linkedinUrl ?? null,
+    linkedinJobId: opportunity.linkedinJobId ?? null,
+    sourceUrl: opportunity.sourceUrl ?? null,
     nextStep: opportunity.nextStep ?? null,
     notes: opportunity.notes ?? null,
     employeesRangeId: opportunity.employeesRange?.id ?? null,
