@@ -3,6 +3,12 @@
  * Exports all tools and their schemas
  */
 
+import { getNextInteractionsTool } from "./get-next-interactions.js";
+import { getOpportunitiesByStatusTool } from "./get-opportunities-by-status.js";
+import { getInteractionDetailsTool } from "./get-interaction-details.js";
+import { searchOpportunitiesTool } from "./search-opportunities.js";
+import { getNextInteractionForCompanyTool } from "./get-next-interaction-for-company.js";
+
 export { getNextInteractions, getNextInteractionsTool, type NextInteraction } from "./get-next-interactions.js";
 export { getOpportunitiesByStatus, getOpportunitiesByStatusTool, type OpportunitySummary } from "./get-opportunities-by-status.js";
 export { getInteractionDetails, getInteractionDetailsTool, type InteractionDetails } from "./get-interaction-details.js";
