@@ -16,8 +16,20 @@ const telegramTestMessageSchema = z.object({
 
 export async function testTelegramMessageHandler(request: Request, response: Response) {
   const input = telegramTestMessageSchema.parse(request.body);
+
+  // Get authenticated user email (set by requireAuth middleware)
+  const ownerEmail = request.auth?.email;
+  if (!ownerEmail) {
+    response.status(401).json({
+      success: false,
+      error: "Authentication required"
+    });
+    return;
+  }
+
   const timer = createTimer("telegram-test", "process test message", {
-    text: input.text.substring(0, 50)
+    text: input.text.substring(0, 50),
+    ownerEmail
   });
 
   const messages: Array<{ role: "user" | "bot"; text: string; timestamp: Date }> = [];
@@ -30,7 +42,7 @@ export async function testTelegramMessageHandler(request: Request, response: Res
   });
 
   try {
-    logInfo("telegram-test", "Processing test message", { text: input.text });
+    logInfo("telegram-test", "Processing test message", { text: input.text, ownerEmail });
 
     // Step 1: Classify the intent (same as real Telegram flow)
     const intent = await classifyMessageIntent(input.text);
@@ -58,7 +70,7 @@ export async function testTelegramMessageHandler(request: Request, response: Res
 
     if (intent.intent === "CREATE_OPPORTUNITY") {
       try {
-        const opportunity = await createOpportunityFromText(input.text);
+        const opportunity = await createOpportunityFromText(input.text, ownerEmail);
         const webAppBaseUrl = process.env.WEB_APP_BASE_URL || "http://localhost:3000";
         botResponse = formatOpportunityCreatedMessage(opportunity, webAppBaseUrl);
         opportunityData = opportunity;
@@ -71,12 +83,6 @@ export async function testTelegramMessageHandler(request: Request, response: Res
       }
     } else {
       try {
-        // Get owner email for queries
-        const ownerEmail = process.env.ALLOWED_EMAIL?.trim().toLowerCase();
-        if (!ownerEmail) {
-          throw new Error("Cannot query opportunities: ALLOWED_EMAIL not configured");
-        }
-
         const webAppBaseUrl = process.env.WEB_APP_BASE_URL || "http://localhost:3000";
         const queryResponse = await answerOpportunityQuery({
           query: input.text,
