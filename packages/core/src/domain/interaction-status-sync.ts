@@ -73,9 +73,15 @@ function deriveStatusFromInteraction(interaction: InteractionLike): JobStatus | 
     return "FINAL_STAGE";
   }
 
-  // Check for recruiter screen first (before general phone patterns)
-  if (hasAny(text, [/recruiter screen/, /recruiter call/])) {
-    return isDone ? "PHONE_DONE" : "PHONE_SCHEDULED";
+  // Check for recruiter-specific interactions first
+  if (hasAny(text, [/recruiter screen/])) {
+    // Recruiter screen = initial contact/screening, not full phone interview
+    return isDone ? "PHONE_SCHEDULED" : "RECRUITER_REACHED_OUT";
+  }
+
+  if (hasAny(text, [/recruiter call/])) {
+    // Recruiter call passed = phone scheduled
+    return isDone ? "PHONE_SCHEDULED" : "RECRUITER_REACHED_OUT";
   }
 
   if (hasAny(text, [/recruiter/, /reached out/, /contacted/, /reach out/, /פנתה/, /פנה/, /יצרה קשר/, /פנה אל/])) {
