@@ -280,20 +280,24 @@ function FilterChip({
   options: Array<{ value: string; label: string }>;
 }) {
   const displayValue = value ? options.find(opt => opt.value === value)?.label : "All";
+  const displayText = value ? displayValue : `${label}: All`;
 
   return (
-    <div className="relative min-w-[140px] flex-1 md:min-w-0">
+    <div className="relative min-w-[160px] flex-1 md:min-w-0">
       <span className="sr-only">{label}</span>
       <select
         aria-label={label}
         title={`${label}: ${displayValue}`}
-        className="appearance-none w-full rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-3.5 py-1.5 pr-9 text-[13px] font-medium text-[#20303d] shadow-sm outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10 hover:bg-[#dce8f4]"
+        className="appearance-none w-full rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-3.5 py-1.5 pr-9 text-[13px] font-medium text-[#20303d] shadow-sm outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10 hover:bg-[#dce8f4] truncate"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
-        <option value="">{label}: All</option>
+        <option value="">All</option>
         {options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
       </select>
+      <div className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center">
+        <span className="text-[13px] font-medium text-[#20303d] truncate pr-6">{displayText}</span>
+      </div>
       <MaterialIcon name="keyboard_arrow_down" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant" />
     </div>
   );
