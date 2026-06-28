@@ -5,6 +5,7 @@ import { aiRouter } from "./routes/ai.js";
 import { companiesRouter } from "./routes/companies.js";
 import { dashboardRouter } from "./routes/dashboard.js";
 import { gmailRouter } from "./routes/gmail.js";
+import { healthRouter } from "./routes/health.js";
 import { interactionsRouter } from "./routes/interactions.js";
 import { opportunitiesRouter } from "./routes/opportunities.js";
 import { optionsRouter } from "./routes/options.js";
@@ -46,8 +47,9 @@ app.options("*", cors(corsOptions));
 app.use(apiRequestLogger);
 app.use(express.json({ limit: "2mb" }));
 
-app.get("/health", (_request, response) => response.json({ ok: true, service: "api" }));
-app.get("/api/health", (_request, response) => response.json({ ok: true, service: "api" }));
+// Mount health routes (no auth required)
+app.use("/health", healthRouter);
+app.use("/api/health", healthRouter);
 app.get("/api/gmail/callback", async (request, response, next) => {
   try {
     const code = typeof request.query.code === "string" ? request.query.code : undefined;
