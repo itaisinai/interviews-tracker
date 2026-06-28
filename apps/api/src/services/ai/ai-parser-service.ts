@@ -88,19 +88,6 @@ export interface AiParserService {
   }): Promise<SmartMergeFeedbackResult>;
 }
 
-type OpenAiTextOutput = {
-  type: "output_text";
-  text: string;
-};
-
-type OpenAiResponse = {
-  output?: Array<{
-    type?: string;
-    content?: OpenAiTextOutput[];
-  }>;
-  output_text?: string;
-};
-
 const parsedJobDescriptionJsonSchema = {
   type: "object",
   additionalProperties: false,
@@ -457,7 +444,7 @@ export class OpenAiParserService implements AiParserService {
 
   private async createStructuredOutput(input: { name: string; schema: unknown; systemPrompt: string; text: string }) {
     const timer = createTimer("llm", `openai ${input.name}`, { model: this.model });
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
@@ -465,24 +452,19 @@ export class OpenAiParserService implements AiParserService {
       },
       body: JSON.stringify({
         model: this.model,
-        input: [
+        messages: [
           {
             role: "system",
-            content: [
-              {
-                type: "input_text",
-                text: input.systemPrompt
-              }
-            ]
+            content: input.systemPrompt
           },
           {
             role: "user",
-            content: [{ type: "input_text", text: input.text }]
+            content: input.text
           }
         ],
-        text: {
-          format: {
-            type: "json_schema",
+        response_format: {
+          type: "json_schema",
+          json_schema: {
             name: input.name,
             strict: true,
             schema: input.schema
@@ -496,8 +478,14 @@ export class OpenAiParserService implements AiParserService {
       throw new Error(`OpenAI parser failed: ${response.status} ${await response.text()}`);
     }
 
-    const payload = (await response.json()) as OpenAiResponse;
-    const outputText = payload.output_text ?? payload.output?.flatMap((item) => item.content ?? []).find((item) => item.type === "output_text")?.text;
+    const payload = (await response.json()) as {
+      choices?: Array<{
+        message?: {
+          content?: string;
+        };
+      }>;
+    };
+    const outputText = payload.choices?.[0]?.message?.content;
 
     if (!outputText) {
       timer.fail(new Error("OpenAI parser returned no text output."), { name: input.name });

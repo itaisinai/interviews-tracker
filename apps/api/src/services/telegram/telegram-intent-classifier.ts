@@ -70,7 +70,7 @@ export async function classifyMessageIntent(message: string): Promise<MessageInt
 
   const timer = createTimer("llm", "classify telegram message intent", {});
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -78,19 +78,19 @@ export async function classifyMessageIntent(message: string): Promise<MessageInt
     },
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-      input: [
+      messages: [
         {
           role: "system",
-          content: [{ type: "input_text", text: INTENT_CLASSIFICATION_PROMPT }]
+          content: INTENT_CLASSIFICATION_PROMPT
         },
         {
           role: "user",
-          content: [{ type: "input_text", text: message }]
+          content: message
         }
       ],
-      text: {
-        format: {
-          type: "json_schema",
+      response_format: {
+        type: "json_schema",
+        json_schema: {
           name: "classify_message_intent",
           strict: true,
           schema: intentClassificationSchema
@@ -105,15 +105,14 @@ export async function classifyMessageIntent(message: string): Promise<MessageInt
   }
 
   const payload = await response.json() as {
-    output_text?: string;
-    output?: Array<{
-      content?: Array<{ type?: string; text?: string }>;
+    choices?: Array<{
+      message?: {
+        content?: string;
+      };
     }>;
   };
 
-  const outputText = payload.output_text ??
-    payload.output?.flatMap(item => item.content ?? [])
-      .find(item => item.type === "output_text")?.text;
+  const outputText = payload.choices?.[0]?.message?.content;
 
   if (!outputText) {
     timer.fail(new Error("Intent classification returned no text output"), {});
