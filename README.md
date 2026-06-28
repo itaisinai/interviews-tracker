@@ -611,6 +611,42 @@ To verify a real production `invalid_grant` root cause end-to-end, inspect the f
 5. Complete reconnect, confirm Google returned a new `refresh_token` in the callback, then import Gmail again.
 6. Simulate or force `invalid_grant` by revoking app access from the Google account, run a Gmail action, verify the UI shows `Reconnect Gmail`, reconnect, and verify import works again without database edits.
 
+## Error Tracking with Sentry
+
+The API integrates Sentry for error tracking and performance monitoring in production.
+
+### Configuration
+
+Set these environment variables in `.env`:
+
+```env
+SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+SENTRY_ENVIRONMENT=production
+```
+
+- **SENTRY_DSN**: Your Sentry project DSN (optional, error tracking disabled if not set)
+- **SENTRY_ENVIRONMENT**: Environment name (defaults to NODE_ENV if not set)
+
+The API will start successfully even if `SENTRY_DSN` is not configured.
+
+### Testing Sentry Integration
+
+In non-production environments, a debug endpoint is available:
+
+```sh
+curl http://localhost:4000/debug/sentry
+```
+
+This endpoint throws a test error to verify Sentry is capturing exceptions correctly. It is **automatically disabled in production**.
+
+### How It Works
+
+- Sentry is initialized as early as possible in `server.ts`
+- Request and error handlers capture unhandled exceptions
+- Performance tracing samples 10% of requests in production
+- Existing error handlers and API responses work unchanged
+- No secrets are exposed to Sentry
+
 ## Scripts
 
 - `yarn dev`: start API and web app.

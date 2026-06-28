@@ -1,4 +1,9 @@
 import "dotenv/config";
+
+// Initialize Sentry as early as possible
+import { initSentry, requestHandler, sentryErrorHandler, tracingHandler } from "./lib/sentry.js";
+initSentry();
+
 import cors from "cors";
 import express from "express";
 import { aiRouter } from "./routes/ai.js";
@@ -41,6 +46,10 @@ const corsOptions: cors.CorsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Opportunity-Webhook-Secret", "X-Telegram-Bot-Api-Secret-Token"],
   optionsSuccessStatus: 204
 };
+
+// Sentry request handler must be the first middleware
+app.use(requestHandler());
+app.use(tracingHandler());
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
@@ -113,6 +122,17 @@ app.use("/api/companies", companiesRouter);
 app.use("/api/options", optionsRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/people", peopleRouter);
+
+// Debug endpoint for Sentry (non-production only)
+if (process.env.NODE_ENV !== "production") {
+  app.get("/debug/sentry", (_request, _response) => {
+    throw new Error("Sentry test error - this is intentional");
+  });
+}
+
+// Sentry error handler must be before other error handlers
+app.use(sentryErrorHandler());
+
 app.use(errorHandler);
 
 // Validate dev mode configuration before starting server
