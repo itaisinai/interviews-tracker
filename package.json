@@ -51,6 +51,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.62.2",
     "@storybook/addon-essentials": "8.6.18",
     "@storybook/react-vite": "8.6.18",
     "@types/cors": "^2.8.19",

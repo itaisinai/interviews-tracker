@@ -73,12 +73,23 @@ function deriveStatusFromInteraction(interaction: InteractionLike): JobStatus | 
     return "FINAL_STAGE";
   }
 
-  if (hasAny(text, [/phone interview/, /phone/, /screen/, /screening/, /intro call/, /recruiter call/, /call/, /שיחה/, /טלפוני/, /סינון/])) {
-    return isDone || hasAny(text, [/completed/, /done/, /finished/, /went well/, /good conversation/, /מוצלח/]) ? "PHONE_DONE" : "PHONE_SCHEDULED";
+  // Check for recruiter-specific interactions first
+  if (hasAny(text, [/recruiter screen/])) {
+    // Recruiter screen = initial contact/screening, not full phone interview
+    return isDone ? "PHONE_SCHEDULED" : "RECRUITER_REACHED_OUT";
+  }
+
+  if (hasAny(text, [/recruiter call/])) {
+    // Recruiter call passed = phone scheduled
+    return isDone ? "PHONE_SCHEDULED" : "RECRUITER_REACHED_OUT";
   }
 
   if (hasAny(text, [/recruiter/, /reached out/, /contacted/, /reach out/, /פנתה/, /פנה/, /יצרה קשר/, /פנה אל/])) {
     return "RECRUITER_REACHED_OUT";
+  }
+
+  if (hasAny(text, [/phone interview/, /phone screen/, /phone/, /screening/, /intro call/, /call/, /שיחה/, /טלפוני/, /סינון/])) {
+    return isDone || hasAny(text, [/completed/, /done/, /finished/, /went well/, /good conversation/, /מוצלח/]) ? "PHONE_DONE" : "PHONE_SCHEDULED";
   }
 
   if (isScheduled && hasAny(text, [/interview/, /ראיון/])) {

@@ -4,8 +4,26 @@
  */
 
 import * as Sentry from "@sentry/node";
-import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import { logger } from "./logger.js";
+
+/**
+ * Attempt to load profiling integration
+ * Returns null if the native module is not available for this Node version
+ */
+function loadProfilingIntegration() {
+  try {
+    // Dynamic import to catch native module loading errors
+    const { nodeProfilingIntegration } = require("@sentry/profiling-node");
+    return nodeProfilingIntegration();
+  } catch (error) {
+    logger.warn("sentry_profiling_unavailable", {
+      message: "Profiling integration not available for this Node version",
+      nodeVersion: process.version,
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+    return null;
+  }
+}
 
 /**
  * Initialize Sentry error tracking
@@ -25,21 +43,28 @@ export function initSentry() {
   const environment = process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || "development";
 
   try {
+    const integrations = [];
+
+    // Add profiling if available
+    const profiling = loadProfilingIntegration();
+    if (profiling) {
+      integrations.push(profiling);
+    }
+
     Sentry.init({
       dsn,
       environment,
-      integrations: [
-        nodeProfilingIntegration(),
-      ],
+      integrations,
       // Performance Monitoring
       tracesSampleRate: environment === "production" ? 0.1 : 1.0,
-      // Profiling
-      profilesSampleRate: environment === "production" ? 0.1 : 1.0,
+      // Profiling (only if integration is available)
+      profilesSampleRate: profiling ? (environment === "production" ? 0.1 : 1.0) : 0,
     });
 
     logger.info("sentry_initialized", {
       environment,
-      dsn: dsn.substring(0, 30) + "..." // Log partial DSN for verification
+      dsn: dsn.substring(0, 30) + "...", // Log partial DSN for verification
+      profilingEnabled: !!profiling
     });
   } catch (error) {
     logger.error("sentry_init_failed", {
