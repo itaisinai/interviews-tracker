@@ -1,4 +1,7 @@
-import "dotenv/config";
+// Import instrumentation first to enable Sentry auto-instrumentation
+import "./instrument.js";
+import { Sentry } from "./lib/sentry.js";
+
 import cors from "cors";
 import express from "express";
 import { aiRouter } from "./routes/ai.js";
@@ -113,6 +116,17 @@ app.use("/api/companies", companiesRouter);
 app.use("/api/options", optionsRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/people", peopleRouter);
+
+// Debug endpoint for Sentry (non-production only)
+if (process.env.NODE_ENV !== "production") {
+  app.get("/debug/sentry", (_request, _response) => {
+    throw new Error("Sentry test error - this is intentional");
+  });
+}
+
+// Setup Sentry error handler - must be after all routes and before other error handlers
+Sentry.setupExpressErrorHandler(app);
+
 app.use(errorHandler);
 
 // Validate dev mode configuration before starting server

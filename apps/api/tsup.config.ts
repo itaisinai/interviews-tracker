@@ -14,6 +14,8 @@ export default defineConfig({
   // Bundle everything except these
   external: [
     "@prisma/client",
+    "@sentry/node",
+    "@sentry/profiling-node",
     "dotenv",
     "express",
     "cors",
