@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "../../lib/prisma.js";
 import { createOpportunity } from "../opportunities/opportunity-service.js";
 import { createTimer } from "../../lib/logger.js";
+import type { opportunityInputSchema } from "../../lib/schemas.js";
 
 export function extractLinkedinJobIdFromUrl(sourceUrl: string) {
   try {
@@ -76,6 +77,7 @@ const normalizedLinkedinJobSchema = z.object({
 });
 
 export type NormalizedLinkedinJob = z.infer<typeof normalizedLinkedinJobSchema>;
+type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
 export interface LinkedinJobNormalizer {
   normalize(input: LinkedinJobImportInput): Promise<NormalizedLinkedinJob>;
@@ -98,7 +100,35 @@ export class OpenAiLinkedinJobNormalizer implements LinkedinJobNormalizer {
 
   async normalize(input: LinkedinJobImportInput) {
     if (!this.apiKey) throw new Error("OPENAI_API_KEY is required for LinkedIn job import.");
-    const timer = createTimer("llm", "openai linkedin job import", { model: this.model });
+
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const timer = createTimer("llm", "openai linkedin job import", { model: this.model, attempt });
+      try {
+        const output = await this.createStructuredOutput(input);
+        const parsed = normalizedLinkedinJobSchema.parse(JSON.parse(output));
+        timer.end({ source: "linkedin", attempt });
+        return {
+          ...parsed,
+          metadata: {
+            source: "linkedin" as const,
+            sourceUrl: input.sourceUrl,
+            linkedinJobId: input.linkedinJobId ?? null,
+            extractedAt: input.extractedAt
+          }
+        };
+      } catch (error) {
+        lastError = error;
+        timer.fail(error instanceof Error ? error : new Error("Invalid LinkedIn import JSON"), { attempt });
+      }
+    }
+
+    throw new Error(lastError instanceof Error && lastError.message.startsWith("OpenAI LinkedIn import failed")
+      ? lastError.message
+      : "LinkedIn import LLM returned invalid JSON or schema-incompatible data.");
+  }
+
+  private async createStructuredOutput(input: LinkedinJobImportInput) {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" },
@@ -112,34 +142,43 @@ export class OpenAiLinkedinJobNormalizer implements LinkedinJobNormalizer {
       })
     });
     if (!response.ok) {
-      timer.fail(new Error(`OpenAI LinkedIn import failed: ${response.status}`));
       throw new Error(`OpenAI LinkedIn import failed: ${response.status} ${await response.text()}`);
     }
     const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
     const output = payload.choices?.[0]?.message?.content;
     if (!output) throw new Error("OpenAI LinkedIn import returned no text output.");
-    try {
-      const parsed = normalizedLinkedinJobSchema.parse(JSON.parse(output));
-      timer.end({ source: "linkedin" });
-      return parsed;
-    } catch (error) {
-      timer.fail(error instanceof Error ? error : new Error("Invalid LinkedIn import JSON"));
-      throw new Error("LinkedIn import LLM returned invalid JSON or schema-incompatible data.");
-    }
+    return output;
   }
 }
 
+export type LinkedinJobImportDependencies = {
+  normalizer?: LinkedinJobNormalizer;
+  findDuplicate?: (input: LinkedinJobImportInput, ownerEmail: string) => Promise<{ id: string; companyName?: string | null; sourceUrl?: string | null; jobUrl?: string | null; linkedinJobId?: string | null } | null>;
+  createOpportunity?: (input: OpportunityInput, ownerEmail: string) => Promise<{ id: string; companyName?: string | null; sourceUrl?: string | null; jobUrl?: string | null; linkedinJobId?: string | null }>;
+};
+
 export class LinkedinJobImportService {
-  constructor(private readonly normalizer: LinkedinJobNormalizer = new OpenAiLinkedinJobNormalizer()) {}
+  private readonly normalizer: LinkedinJobNormalizer;
+  private readonly findDuplicateRecord: NonNullable<LinkedinJobImportDependencies["findDuplicate"]>;
+  private readonly createOpportunityRecord: NonNullable<LinkedinJobImportDependencies["createOpportunity"]>;
+
+  constructor(dependencies: LinkedinJobImportDependencies = {}) {
+    this.normalizer = dependencies.normalizer ?? new OpenAiLinkedinJobNormalizer();
+    this.findDuplicateRecord = dependencies.findDuplicate ?? this.findDuplicate;
+    this.createOpportunityRecord = dependencies.createOpportunity ?? createOpportunity;
+  }
 
   async importFromLinkedin(rawInput: unknown, ownerEmail: string) {
     const input = linkedinJobImportInputSchema.parse(rawInput);
-    const existing = await this.findDuplicate(input, ownerEmail);
+    const existing = await this.findDuplicateRecord(input, ownerEmail);
     if (existing) return this.toResult(existing, false, true, input, []);
 
     const normalized = await this.normalizer.normalize(input);
     const notes = [
       normalized.opportunity.summary,
+      normalized.opportunity.employmentType ? `Employment type: ${normalized.opportunity.employmentType}` : null,
+      normalized.opportunity.seniority ? `Seniority: ${normalized.opportunity.seniority}` : null,
+      normalized.opportunity.workplaceType ? `Workplace type: ${normalized.opportunity.workplaceType}` : null,
       normalized.opportunity.description,
       normalized.opportunity.responsibilities.length ? `Responsibilities:\n- ${normalized.opportunity.responsibilities.join("\n- ")}` : null,
       normalized.opportunity.requirements.length ? `Requirements:\n- ${normalized.opportunity.requirements.join("\n- ")}` : null,
@@ -147,7 +186,7 @@ export class LinkedinJobImportService {
       normalized.opportunity.originalJobDescription ? `Original job description:\n${normalized.opportunity.originalJobDescription}` : input.descriptionText
     ].filter(Boolean).join("\n\n");
 
-    const opportunity = await createOpportunity({
+    const opportunity = await this.createOpportunityRecord({
       companyName: normalized.company.name,
       companySearchName: normalized.company.name,
       roleTitle: normalized.opportunity.title,
@@ -163,7 +202,6 @@ export class LinkedinJobImportService {
       companyDescription: normalized.company.description ?? undefined,
       productDescription: normalized.company.industry ? `Industry: ${normalized.company.industry}` : undefined,
       techStack: normalized.opportunity.technologies.join(", ") || undefined,
-      backendFrontendSplit: normalized.opportunity.employmentType ?? undefined,
       notes: notes || undefined,
       nextStep: "Review imported LinkedIn job details",
       domainIds: []
