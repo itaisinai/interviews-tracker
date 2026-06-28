@@ -31,10 +31,11 @@ function mobileOpportunityMeta(item: Opportunity) {
 export function OpportunitiesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [pipeline, setPipeline] = useState("");
+  const [pipeline, setPipeline] = useState("ACTIVE_PROCESS"); // Default to Active Process
   const [priority, setPriority] = useState("");
   const [domainId, setDomainId] = useState("");
   const [sort, setSort] = useState("updated");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: options, isLoading: optionsLoading, isError: optionsError, error: optionsErrorValue, refetch: refetchOptions, isFetching: optionsFetching } = useQuery({ queryKey: ["options"], queryFn: api.options, staleTime: Infinity });
@@ -58,16 +59,41 @@ export function OpportunitiesPage() {
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
     }
   });
+  const handleSort = (column: string) => {
+    if (sort === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSort(column);
+      setSortDirection("desc");
+    }
+  };
+
   const columns = useMemo<ColumnDef<Opportunity>[]>(() => [
     {
-      header: "Company",
+      header: () => (
+        <ColumnHeader
+          label="Company"
+          sortKey="company"
+          currentSort={sort}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+        />
+      ),
       size: 220,
       cell: ({ row }) => {
         return <span className="block truncate font-medium text-on-background">{row.original.companyName}</span>;
       }
     },
     {
-      header: "Role",
+      header: () => (
+        <ColumnHeader
+          label="Role"
+          sortKey="role"
+          currentSort={sort}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+        />
+      ),
       size: 240,
       cell: ({ row }) => (
         <div className="min-w-0">
@@ -75,9 +101,37 @@ export function OpportunitiesPage() {
         </div>
       )
     },
-    { header: "Status", size: 190, cell: ({ row }) => <Badge value={row.original.status} /> },
-    { header: "Priority", size: 140, cell: ({ row }) => <Badge value={row.original.priority} /> },
-    { header: "Pipeline", size: 200, cell: ({ row }) => <Badge value={row.original.pipelineType} /> },
+    {
+      header: () => (
+        <ColumnHeader
+          label="Status"
+          hasFilter={!!status}
+          filterOptions={jobStatusOptions}
+          filterValue={status}
+          onFilterChange={setStatus}
+        />
+      ),
+      size: 190,
+      cell: ({ row }) => <Badge value={row.original.status} />
+    },
+    {
+      header: () => (
+        <ColumnHeader
+          label="Priority"
+          hasFilter={!!priority}
+          filterOptions={priorityOptions}
+          filterValue={priority}
+          onFilterChange={setPriority}
+        />
+      ),
+      size: 140,
+      cell: ({ row }) => <Badge value={row.original.priority} />
+    },
+    {
+      header: "Pipeline",
+      size: 200,
+      cell: ({ row }) => <Badge value={row.original.pipelineType} />
+    },
     { header: "Referrer / Connection", size: 220, cell: ({ row }) => <span className="block truncate text-body-md text-on-surface-variant">{row.original.referrerOrConnection ?? "-"}</span> },
     {
       header: "Next Interaction",
@@ -88,7 +142,19 @@ export function OpportunitiesPage() {
       }
     },
     { header: "Next Step", size: 220, cell: ({ row }) => <span className="block truncate text-body-md font-medium text-primary">{row.original.nextStep ?? "-"}</span> },
-    { header: "Updated", size: 140, cell: ({ row }) => <span className="block truncate text-body-md italic text-on-surface-variant">{formatDate(row.original.updatedAt)}</span> },
+    {
+      header: () => (
+        <ColumnHeader
+          label="Updated"
+          sortKey="updated"
+          currentSort={sort}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+        />
+      ),
+      size: 140,
+      cell: ({ row }) => <span className="block truncate text-body-md italic text-on-surface-variant">{formatDate(row.original.updatedAt)}</span>
+    },
     {
       header: "Job Link",
       size: 140,
@@ -124,7 +190,7 @@ export function OpportunitiesPage() {
         />
       )
     }
-  ], [deleteOpportunity]);
+  ], [deleteOpportunity, handleSort, sort, sortDirection, status, setStatus, priority, setPriority]);
 
   if (optionsError) {
     return <PageErrorState title="Opportunities" description={optionsErrorValue instanceof Error ? optionsErrorValue.message : "Unable to load filter options."} onRetry={() => void refetchOptions()} />;
@@ -210,21 +276,11 @@ export function OpportunitiesPage() {
           }
         />
 
-        <div className="panel mb-6 grid items-center gap-3 overflow-hidden px-4 py-3.5 xl:grid-cols-[minmax(240px,1fr)_auto_repeat(4,minmax(0,1fr))_auto]">
-          <input className="input min-w-0 border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
-          <span className="font-label-sm text-label-sm font-medium text-on-surface-variant">Filters:</span>
-          <FilterChip label="Status" value={status} onChange={setStatus} options={jobStatusOptions} />
+        <div className="panel mb-6 flex items-center gap-4 overflow-hidden px-4 py-3.5">
+          <input className="input flex-1 max-w-md border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
+          <span className="font-label-sm text-label-sm font-medium text-on-surface-variant">Pipeline:</span>
           <FilterChip label="Pipeline" value={pipeline} onChange={setPipeline} options={pipelineTypeOptions} />
-          <FilterChip label="Priority" value={priority} onChange={setPriority} options={priorityOptions} />
-          <FilterChip label="Domain" value={domainId} onChange={setDomainId} options={(options?.domains ?? []).map((item) => ({ value: item.id, label: item.label }))} />
-          <div className="flex items-center gap-2.5">
-            <span className="font-label-sm text-label-sm font-medium text-on-surface-variant whitespace-nowrap">Sort by:</span>
-            <select className="rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-3.5 py-1.5 pr-10 text-[13px] font-medium text-[#20303d] outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10" value={sort} onChange={(event) => setSort(event.target.value)}>
-              <option value="updated">Recently Updated</option>
-              <option value="nextInteraction">Next Interaction</option>
-            </select>
-            {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
-          </div>
+          {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
         </div>
 
         <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm relative">
@@ -265,6 +321,96 @@ export function OpportunitiesPage() {
         </div>
       </div>
     </>
+  );
+}
+
+function ColumnHeader({
+  label,
+  sortKey,
+  currentSort,
+  sortDirection,
+  onSort,
+  hasFilter,
+  filterOptions,
+  filterValue,
+  onFilterChange
+}: {
+  label: string;
+  sortKey?: string;
+  currentSort?: string;
+  sortDirection?: "asc" | "desc";
+  onSort?: (key: string) => void;
+  hasFilter?: boolean;
+  filterOptions?: Array<{ value: string; label: string }>;
+  filterValue?: string;
+  onFilterChange?: (value: string) => void;
+}) {
+  const [showFilter, setShowFilter] = useState(false);
+  const isSorted = sortKey && currentSort === sortKey;
+
+  return (
+    <div className="flex items-center gap-1.5 group">
+      <span className="font-label-md text-label-md font-semibold">{label}</span>
+
+      {sortKey && onSort ? (
+        <button
+          type="button"
+          className="p-0.5 rounded hover:bg-surface-container-low transition-colors"
+          onClick={() => onSort(sortKey)}
+          title={`Sort by ${label}`}
+        >
+          <MaterialIcon
+            name={isSorted ? (sortDirection === "asc" ? "arrow_upward" : "arrow_downward") : "unfold_more"}
+            className={`text-[18px] ${isSorted ? "text-primary" : "text-on-surface-variant opacity-0 group-hover:opacity-100"}`}
+          />
+        </button>
+      ) : null}
+
+      {filterOptions && onFilterChange ? (
+        <div className="relative">
+          <button
+            type="button"
+            className="p-0.5 rounded hover:bg-surface-container-low transition-colors"
+            onClick={() => setShowFilter(!showFilter)}
+            title={`Filter ${label}`}
+          >
+            <MaterialIcon
+              name="filter_list"
+              className={`text-[18px] ${hasFilter ? "text-primary" : "text-on-surface-variant opacity-0 group-hover:opacity-100"}`}
+            />
+          </button>
+          {showFilter ? (
+            <div className="absolute top-full left-0 mt-1 z-50 bg-white rounded-lg shadow-lg border border-outline-variant min-w-[160px] py-1">
+              <button
+                className="w-full px-3 py-2 text-left text-body-sm hover:bg-surface-container-low transition-colors"
+                onClick={() => {
+                  onFilterChange("");
+                  setShowFilter(false);
+                }}
+              >
+                All
+              </button>
+              {filterOptions.map((option) => (
+                <button
+                  key={option.value}
+                  className={`w-full px-3 py-2 text-left text-body-sm hover:bg-surface-container-low transition-colors ${filterValue === option.value ? "bg-primary/5 text-primary font-medium" : ""}`}
+                  onClick={() => {
+                    onFilterChange(option.value);
+                    setShowFilter(false);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {hasFilter && !showFilter ? (
+        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
+      ) : null}
+    </div>
   );
 }
 
