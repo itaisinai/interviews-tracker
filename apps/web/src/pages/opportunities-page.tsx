@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Link, useNavigate } from "react-router-dom";
@@ -351,7 +352,32 @@ function ColumnHeader({
   onFilterChange?: (value: string) => void;
 }) {
   const [showFilter, setShowFilter] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const isSorted = sortKey && currentSort === sortKey;
+
+  useEffect(() => {
+    if (showFilter && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX
+      });
+    }
+  }, [showFilter]);
+
+  useEffect(() => {
+    if (!showFilter) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+        setShowFilter(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showFilter]);
 
   return (
     <div className="flex items-center gap-1.5 group">
@@ -372,8 +398,9 @@ function ColumnHeader({
       ) : null}
 
       {filterOptions && onFilterChange ? (
-        <div className="relative">
+        <>
           <button
+            ref={buttonRef}
             type="button"
             className="p-0.5 rounded hover:bg-surface-container-low transition-colors"
             onClick={() => setShowFilter(!showFilter)}
@@ -384,8 +411,14 @@ function ColumnHeader({
               className={`text-[18px] ${hasFilter ? "text-primary" : "text-on-surface-variant opacity-0 group-hover:opacity-100"}`}
             />
           </button>
-          {showFilter ? (
-            <div className="absolute top-full left-0 mt-1 z-50 bg-white rounded-lg shadow-lg border border-outline-variant min-w-[160px] py-1">
+          {showFilter && createPortal(
+            <div
+              className="fixed z-50 bg-white rounded-lg shadow-xl border border-outline-variant min-w-[180px] py-1"
+              style={{
+                top: `${dropdownPosition.top}px`,
+                left: `${dropdownPosition.left}px`
+              }}
+            >
               <button
                 className="w-full px-3 py-2 text-left text-body-sm hover:bg-surface-container-low transition-colors"
                 onClick={() => {
@@ -407,9 +440,10 @@ function ColumnHeader({
                   {option.label}
                 </button>
               ))}
-            </div>
-          ) : null}
-        </div>
+            </div>,
+            document.body
+          )}
+        </>
       ) : null}
 
       {hasFilter && !showFilter ? (
