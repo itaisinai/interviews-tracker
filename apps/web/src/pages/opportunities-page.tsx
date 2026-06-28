@@ -468,17 +468,20 @@ export function OpportunitiesPage() {
           }
         />
 
-        <div className="panel mb-6 px-4 py-3.5 space-y-3">
-          <div className="flex items-center gap-4 overflow-hidden">
-            <input
-              className="input flex-1 max-w-md border border-[#d4dbe3] bg-surface-container-lowest/90"
-              placeholder="Search company or role"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            {isFetching || optionsFetching ? (
-              <InlineLoadingState label="Refreshing" />
-            ) : null}
+        <div className="panel mb-6 grid items-center gap-3 overflow-hidden px-4 py-3.5 xl:grid-cols-[minmax(240px,1.1fr)_auto_repeat(4,minmax(140px,1fr))_auto]">
+          <input className="input min-w-0 border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
+          <span className="font-label-sm text-label-sm font-medium text-on-surface-variant">Filters:</span>
+          <FilterChip label="Status" value={status} onChange={setStatus} options={jobStatusOptions} />
+          <FilterChip label="Pipeline" value={pipeline} onChange={setPipeline} options={pipelineTypeOptions} />
+          <FilterChip label="Priority" value={priority} onChange={setPriority} options={priorityOptions} />
+          <FilterChip label="Domain" value={domainId} onChange={setDomainId} options={(options?.domains ?? []).map((item) => ({ value: item.id, label: item.label }))} />
+          <div className="flex items-center gap-2.5">
+            <span className="font-label-sm text-label-sm font-medium text-on-surface-variant whitespace-nowrap">Sort by:</span>
+            <select className="rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-3.5 py-2 pr-10 text-[13px] font-medium text-[#20303d] outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10" value={sort} onChange={(event) => setSort(event.target.value)}>
+              <option value="updated">Recently Updated</option>
+              <option value="nextInteraction">Next Interaction</option>
+            </select>
+            {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
           </div>
           {status || pipeline || priority || domainId ? (
             <div className="flex items-center gap-2 flex-wrap">
@@ -814,12 +817,10 @@ function FilterChip({
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
 }) {
-  const displayValue = value
-    ? options.find((opt) => opt.value === value)?.label
-    : "All";
+  const displayValue = value ? options.find(opt => opt.value === value)?.label : "All";
 
   return (
-    <div className="relative w-[150px]">
+    <div className="relative min-w-[140px] flex-1 md:min-w-0">
       <span className="sr-only">{label}</span>
       <select
         aria-label={label}
@@ -835,10 +836,7 @@ function FilterChip({
           </option>
         ))}
       </select>
-      <MaterialIcon
-        name="keyboard_arrow_down"
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant"
-      />
+      <MaterialIcon name="keyboard_arrow_down" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant" />
     </div>
   );
 }
