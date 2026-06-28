@@ -497,7 +497,7 @@ export function OpportunitiesPage() {
                         ?.label || "all"
                     ).toLowerCase()}
                   </span>
-                  <MaterialIcon name="close" className="text-[16px]" />
+                  <MaterialIcon name="close" className="text-[12px]" />
                 </button>
               ) : null}
               {status ? (
@@ -511,7 +511,7 @@ export function OpportunitiesPage() {
                       .find((opt) => opt.value === status)
                       ?.label.toLowerCase()}
                   </span>
-                  <MaterialIcon name="close" className="text-[16px]" />
+                  <MaterialIcon name="close" className="text-[12px]" />
                 </button>
               ) : null}
               {priority ? (
@@ -525,7 +525,7 @@ export function OpportunitiesPage() {
                       .find((opt) => opt.value === priority)
                       ?.label.toLowerCase()}
                   </span>
-                  <MaterialIcon name="close" className="text-[16px]" />
+                  <MaterialIcon name="close" className="text-[12px]" />
                 </button>
               ) : null}
               {domainId ? (
@@ -539,7 +539,7 @@ export function OpportunitiesPage() {
                       .find((opt) => opt.id === domainId)
                       ?.label.toLowerCase()}
                   </span>
-                  <MaterialIcon name="close" className="text-[16px]" />
+                  <MaterialIcon name="close" className="text-[12px]" />
                 </button>
               ) : null}
               <button
