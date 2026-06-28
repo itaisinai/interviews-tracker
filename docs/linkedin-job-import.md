@@ -62,3 +62,16 @@ CHROME_EXTENSION_ORIGIN=chrome-extension://<installed-extension-id> # production
 - This does not use LinkedIn's official API.
 - Secrets must not be stored in the extension; bearer tokens are user-provided credentials and should be rotated if exposed.
 - Duplicate detection uses `linkedinJobId` when present, otherwise the exact `sourceUrl`.
+
+## Popup UI overview
+
+The popup opens as a 360px "LinkedIn Job Importer" panel. On supported LinkedIn job pages it immediately asks the content script for visible job data and shows a **Detected job** preview with title, company, location, and LinkedIn job ID. Missing fields are shown with warnings, but import is only blocked when no useful job content is available.
+
+Use **Preview extracted data** to toggle a compact scrollable JSON preview of the exact payload that will be sent to `POST /api/job-imports/linkedin`.
+
+Use **Settings** to configure:
+
+- **API base URL**: defaults to `http://localhost:4000` and is saved in `chrome.storage.sync`.
+- **Auth token**: user-provided Auth0 API access token saved in `chrome.storage.local`; when present, requests include `Authorization: Bearer <token>`.
+
+The authentication badge shows **Authenticated** when a token exists and **Token missing** otherwise. If the API returns `401` or `403`, the popup displays a clear authentication failure message.
