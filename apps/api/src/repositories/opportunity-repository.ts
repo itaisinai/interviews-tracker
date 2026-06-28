@@ -10,6 +10,14 @@ import {
 
 export type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
+export function preserveLinkedinMetadataForUpdate(input: OpportunityInput, existing: { linkedinJobId?: string | null; sourceUrl?: string | null }): OpportunityInput {
+  return {
+    ...input,
+    linkedinJobId: input.linkedinJobId === undefined ? existing.linkedinJobId ?? undefined : input.linkedinJobId,
+    sourceUrl: input.sourceUrl === undefined ? existing.sourceUrl ?? undefined : input.sourceUrl
+  };
+}
+
 export const opportunityInclude = {
   employeesRange: true,
   companyStage: true,
@@ -30,6 +38,8 @@ function toWrite(input: OpportunityInput, ownerEmail: string): Omit<Prisma.JobOp
     source: rest.source ?? null,
     jobUrl: rest.jobUrl ?? null,
     linkedinUrl: rest.linkedinUrl ?? null,
+    linkedinJobId: rest.linkedinJobId ?? null,
+    sourceUrl: rest.sourceUrl ?? null,
     nextStep: rest.nextStep ?? null,
     notes: rest.notes ?? null,
     location: rest.location ?? null,
@@ -166,10 +176,11 @@ export async function createOpportunityRecord(input: OpportunityInput, ownerEmai
 export async function updateOpportunityRecord(slugOrId: string, input: OpportunityInput, ownerEmail: string) {
   const id = await resolveOpportunityId(slugOrId, ownerEmail);
   if (!id) throw new Error("Opportunity not found");
-  const data = toWrite(input, ownerEmail);
   const opportunity = await prisma.$transaction(async (tx) => {
-    const existing = await tx.jobOpportunity.findFirst({ where: { id, ownerEmail }, select: { slug: true } });
-    const slug = existing?.slug || await createUniqueOpportunitySlug(input, ownerEmail, tx, id);
+    const existing = await tx.jobOpportunity.findFirst({ where: { id, ownerEmail }, select: { slug: true, linkedinJobId: true, sourceUrl: true } });
+    const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input, existing ?? {});
+    const data = toWrite(inputWithPreservedMetadata, ownerEmail);
+    const slug = existing?.slug || await createUniqueOpportunitySlug(inputWithPreservedMetadata, ownerEmail, tx, id);
     await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
     return tx.jobOpportunity.update({ where: { id }, data: { ...data, slug }, include: opportunityInclude });
   });
