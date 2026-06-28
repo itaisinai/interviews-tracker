@@ -139,10 +139,12 @@ export function TelegramTestBot() {
     saveMessages(messages);
   }, [messages]);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change or chat opens
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isLoading, isOpen]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -291,13 +293,14 @@ export function TelegramTestBot() {
               rows={1}
               disabled={isLoading}
             />
-            <Button
+            <button
+              className={styles.sendButton}
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || isLoading}
-              size="small"
+              aria-label="Send message"
             >
-              <MaterialIcon name="send" size={18} />
-            </Button>
+              <MaterialIcon name="send" size={22} />
+            </button>
           </div>
         </div>
       )}
