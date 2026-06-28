@@ -110,5 +110,6 @@ export async function requireAuth(request: Request, response: Response, next: Ne
   } catch (error) {
     logger.error("authentication_failed", error, { reason: "jwt_verification_failed" });
     response.status(401).json({ message: "Invalid bearer token" });
+    return;
   }
 }
