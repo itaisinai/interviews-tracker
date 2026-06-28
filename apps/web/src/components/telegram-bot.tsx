@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button, MaterialIcon, Spinner } from "@interviews-tracker/design-system";
 import { api } from "../lib/api";
-import styles from "./telegram-test-bot.module.css";
+import styles from "./telegram-bot.module.css";
 
 interface Message {
   role: "user" | "bot";
@@ -9,7 +9,7 @@ interface Message {
   timestamp: Date;
 }
 
-interface TelegramTestResponse {
+interface TelegramResponse {
   success: boolean;
   intent?: {
     type: string;
@@ -25,7 +25,7 @@ interface TelegramTestResponse {
   error?: string;
 }
 
-const STORAGE_KEY = "telegram-test-bot-messages";
+const STORAGE_KEY = "telegram-bot-messages";
 
 function loadMessages(): Message[] {
   try {
@@ -127,7 +127,7 @@ function formatMarkdown(text: string): JSX.Element {
   return <>{parts}</>;
 }
 
-export function TelegramTestBot() {
+export function TelegramBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => loadMessages());
   const [inputValue, setInputValue] = useState("");
@@ -162,7 +162,7 @@ export function TelegramTestBot() {
     setIsLoading(true);
 
     try {
-      const response = await api.telegramTest(userMessage);
+      const response = await api.telegramQuery(userMessage);
 
       // Add only the bot responses (user message already shown)
       const botMessages: Message[] = response.messages
@@ -207,7 +207,7 @@ export function TelegramTestBot() {
         <button
           className={styles.floatingButton}
           onClick={() => setIsOpen(true)}
-          aria-label="Open Telegram test bot"
+          aria-label="Open Telegram bot"
         >
           <MaterialIcon name="chat" className={styles.floatingIcon} />
         </button>
@@ -220,7 +220,7 @@ export function TelegramTestBot() {
           <div className={styles.header}>
             <div className={styles.headerTitle}>
               <MaterialIcon name="smart_toy" className={styles.headerIcon} />
-              <span>Telegram Bot Test</span>
+              <span>Telegram Bot</span>
             </div>
             <div className={styles.headerActions}>
               {messages.length > 0 && (

@@ -113,7 +113,7 @@ export const api = {
   addFeedbackToInteraction: (interactionSlug: string, content: string, source?: string) => request<unknown>(`/interactions/${interactionSlug}/feedback`, { method: "POST", body: JSON.stringify({ content, source }) }),
   markPersonAsWrong: (personId: string, opportunityId: string, searchContext: string, notes?: string) => request<{ success: boolean; wrongCandidateId: string }>(`/people/${personId}/mark-wrong`, { method: "POST", body: JSON.stringify({ opportunityId, searchContext, notes }) }),
   getWrongPersonCandidates: (opportunityId: string) => request<Array<{ id: string; opportunityId: string; searchContext: string; personName: string; linkedinUrl: string | null; company: string | null; title: string | null; avatarUrl: string | null; rejectedAt: string; notes: string | null }>>(`/people/wrong-candidates/${opportunityId}`),
-  telegramTest: (text: string) => request<{
+  telegramQuery: (text: string) => request<{
     success: boolean;
     intent?: {
       type: string;
@@ -127,5 +127,5 @@ export const api = {
     }>;
     data?: unknown;
     error?: string;
-  }>("/telegram/test", { method: "POST", body: JSON.stringify({ text }) })
+  }>("/telegram/query", { method: "POST", body: JSON.stringify({ text }) })
 };
