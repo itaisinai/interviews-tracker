@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PipelineType } from "@prisma/client";
 import { appendSlugCollisionSuffix, compareJobStatuses, createOpportunitySlug, deriveOpportunityStatusFromInteractions } from "@interviews-tracker/core";
 import { prisma } from "../lib/prisma.js";
 import { opportunityInputSchema } from "../lib/schemas.js";
@@ -108,7 +108,7 @@ export async function listOpportunityRecords(query: Record<string, string | unde
     where.status = "REJECTED";
   } else if (query.pipeline) {
     // Fallback for other pipeline types
-    where.pipelineType = query.pipeline as Prisma.EnumPipelineTypeFilter<"JobOpportunity">["equals"];
+    where.pipelineType = query.pipeline as PipelineType;
   }
 
   const opportunities = await prisma.jobOpportunity.findMany({
