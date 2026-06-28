@@ -87,12 +87,112 @@ yarn dev
 
 `yarn dev` first builds the internal workspace packages to `packages/*/dist`, then keeps those package builds running in watch mode while `tsx` runs the API and Vite runs the web app. Vite still aliases workspace imports to package source for fast frontend development; the API imports the compiled package outputs that match production Node resolution.
 
-The API runs on `http://localhost:4000/api` and the web app runs on `http://localhost:5173`. Health checks are available at:
+The API runs on `http://localhost:4000/api` and the web app runs on `http://localhost:5173`.
+
+## Health & Monitoring Endpoints
+
+The API provides multiple health endpoints for different monitoring needs:
+
+### `/health` - Basic Health Check
+
+Lightweight endpoint for uptime monitoring (e.g., UptimeRobot, Pingdom).
+
+- **Always fast** (< 5ms)
+- **No database queries**
+- **Always returns 200** when API is running
 
 ```sh
 curl http://localhost:4000/health
 curl http://localhost:4000/api/health
 ```
+
+Response:
+```json
+{
+  "ok": true,
+  "service": "api",
+  "version": "0.1.0",
+  "uptimeSeconds": 12345,
+  "timestamp": "2026-06-28T...",
+  "environment": "production"
+}
+```
+
+**Use for:** External uptime monitoring, deployment health checks
+
+### `/health/deep` - Deep Health Check
+
+Verifies database connectivity and system readiness.
+
+- **Performs database query** (`SELECT 1`)
+- **Returns 200** if healthy, **503** if database is down
+- **Includes latency metrics**
+
+```sh
+curl http://localhost:4000/health/deep
+curl http://localhost:4000/api/health/deep
+```
+
+Success response (200):
+```json
+{
+  "ok": true,
+  "database": "up",
+  "latencyMs": 15
+}
+```
+
+Failure response (503):
+```json
+{
+  "ok": false,
+  "database": "down",
+  "latencyMs": 5000,
+  "error": "Database unavailable"
+}
+```
+
+**Use for:** Infrastructure monitoring, alerting on database issues
+
+### `/ready` - Readiness Check
+
+Kubernetes/load balancer readiness probe.
+
+- **Returns 200** only if API is fully operational
+- **Returns 503** if not ready to serve traffic
+- **Checks database connectivity**
+
+```sh
+curl http://localhost:4000/ready
+curl http://localhost:4000/api/ready
+```
+
+Success response (200):
+```json
+{
+  "ready": true,
+  "database": "up"
+}
+```
+
+Failure response (503):
+```json
+{
+  "ready": false,
+  "database": "down"
+}
+```
+
+**Use for:** Load balancer health checks, orchestration readiness probes
+
+### Recommended Monitoring Setup
+
+| Tool | Endpoint | Purpose |
+|------|----------|---------|
+| UptimeRobot | `/health` | Basic uptime monitoring |
+| Datadog/New Relic | `/health/deep` | Infrastructure health & alerting |
+| Kubernetes/ECS | `/ready` | Readiness probes |
+| GitHub Actions | `/health` | Deployment verification |
 
 ## Local Environment Setup
 
