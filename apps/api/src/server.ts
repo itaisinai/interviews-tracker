@@ -50,6 +50,27 @@ app.use(express.json({ limit: "2mb" }));
 // Mount health routes (no auth required)
 app.use("/health", healthRouter);
 app.use("/api/health", healthRouter);
+
+// Also register /ready at root level for load balancers (documented path)
+app.get("/ready", async (_request, response) => {
+  const { checkReadiness } = await import("./services/health/health-service.js");
+  const readiness = await checkReadiness();
+  if (readiness.ready) {
+    response.status(200).json(readiness);
+  } else {
+    response.status(503).json(readiness);
+  }
+});
+app.get("/api/ready", async (_request, response) => {
+  const { checkReadiness } = await import("./services/health/health-service.js");
+  const readiness = await checkReadiness();
+  if (readiness.ready) {
+    response.status(200).json(readiness);
+  } else {
+    response.status(503).json(readiness);
+  }
+});
+
 app.get("/api/gmail/callback", async (request, response, next) => {
   try {
     const code = typeof request.query.code === "string" ? request.query.code : undefined;
