@@ -91,6 +91,33 @@ The API runs on `http://localhost:4000/api` and the web app runs on `http://loca
 
 ## Health & Monitoring Endpoints
 
+### Frontend Health Check
+
+The Vite frontend (deployed on Vercel) has a static health endpoint:
+
+**GET /health**
+
+Returns:
+```json
+{
+  "ok": true,
+  "service": "web"
+}
+```
+
+**Production URL:** https://interviews-tracker.vercel.app/health
+
+**UptimeRobot Configuration:**
+- Monitor URL: `https://interviews-tracker.vercel.app/health`
+- Monitor type: Keyword
+- Keyword to monitor: `"service":"web"`
+
+This endpoint returns a static JSON file (not the SPA index.html) to verify the Vercel deployment is serving files correctly.
+
+---
+
+### API Health Endpoints
+
 The API provides multiple health endpoints for different monitoring needs:
 
 ### `/health` - Basic Health Check
@@ -187,12 +214,13 @@ Failure response (503):
 
 ### Recommended Monitoring Setup
 
-| Tool | Endpoint | Purpose |
-|------|----------|---------|
-| UptimeRobot | `/health` | Basic uptime monitoring |
-| Datadog/New Relic | `/health/deep` | Infrastructure health & alerting |
-| Kubernetes/ECS | `/ready` | Readiness probes |
-| GitHub Actions | `/health` | Deployment verification |
+| Service | Tool | Endpoint | Purpose |
+|---------|------|----------|---------|
+| **Frontend** | UptimeRobot | `https://interviews-tracker.vercel.app/health` | Vercel deployment uptime (keyword: `"service":"web"`) |
+| **API** | UptimeRobot | `https://api.example.com/health` | API uptime monitoring |
+| **API** | Datadog/New Relic | `https://api.example.com/health/deep` | Infrastructure health & alerting |
+| **API** | Kubernetes/ECS | `https://api.example.com/ready` | Readiness probes |
+| **API** | GitHub Actions | `http://localhost:4000/health` | Deployment verification |
 
 ## Local Environment Setup
 
