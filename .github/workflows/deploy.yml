@@ -6,11 +6,70 @@ on:
       - master
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy over SSH
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set Yarn version
+        run: corepack prepare yarn@4.9.2 --activate
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build API
+        run: yarn build:api
+
+      - name: Package deployment artifact
+        run: |
+          mkdir -p deploy-package
+
+          # Copy built API
+          cp -r dist/api deploy-package/
+
+          # Copy package files
+          cp package.json yarn.lock .yarnrc.yml deploy-package/
+
+          # Copy Yarn releases (needed for Yarn 4.9.2)
+          if [ -d .yarn/releases ]; then
+            mkdir -p deploy-package/.yarn
+            cp -r .yarn/releases deploy-package/.yarn/
+          fi
+
+          # Copy Prisma schema (needed for Prisma at runtime)
+          if [ -d prisma ]; then
+            cp -r prisma deploy-package/
+          fi
+
+          # Copy node_modules (needed for runtime dependencies)
+          cp -r node_modules deploy-package/
+
+          # Create tarball
+          tar -czf deploy-package.tar.gz -C deploy-package .
+
+          echo "Artifact size:"
+          du -h deploy-package.tar.gz
+
+      - name: Upload artifact to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          source: deploy-package.tar.gz
+          target: /tmp/
+
+      - name: Deploy and restart on server
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.LIGHTSAIL_HOST }}
@@ -22,19 +81,56 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-            cd ~/interviews-tracker
+            # Create releases directory if it doesn't exist
+            mkdir -p ~/interviews-tracker-releases
 
-            git fetch origin
-            git reset --hard origin/master
+            # Generate release timestamp
+            RELEASE_DIR=~/interviews-tracker-releases/$(date +%Y%m%d-%H%M%S)
 
-            corepack enable
-            corepack prepare yarn@4.9.2 --activate
+            echo "Creating release directory: $RELEASE_DIR"
+            mkdir -p "$RELEASE_DIR"
 
-            yarn install --immutable
-            yarn build:api
+            # Extract artifact
+            echo "Extracting artifact..."
+            tar -xzf /tmp/deploy-package.tar.gz -C "$RELEASE_DIR"
 
-            pm2 restart interviews-api
+            # Copy .env from server to release
+            if [ -f ~/.env.interviews-tracker ]; then
+              echo "Copying .env to release..."
+              cp ~/.env.interviews-tracker "$RELEASE_DIR/.env"
+            elif [ -f ~/interviews-tracker-current/.env ]; then
+              echo "Copying .env from current release..."
+              cp ~/interviews-tracker-current/.env "$RELEASE_DIR/.env"
+            else
+              echo "WARNING: No .env found on server"
+            fi
 
+            # Update current symlink
+            echo "Updating current symlink..."
+            rm -f ~/interviews-tracker-current
+            ln -s "$RELEASE_DIR" ~/interviews-tracker-current
+
+            # Restart PM2 from current symlink
+            echo "Restarting PM2..."
+            cd ~/interviews-tracker-current
+            pm2 restart interviews-api || pm2 start dist/api/src/server.js --name interviews-api
+
+            # Wait for service to start
+            echo "Waiting for service to start..."
             sleep 5
 
-            curl -f http://localhost:4000/health
+            # Health check
+            echo "Running health check..."
+            if curl -f http://localhost:4000/health; then
+              echo "✅ Deployment successful!"
+            else
+              echo "❌ Health check failed!"
+              exit 1
+            fi
+
+            # Cleanup old releases (keep last 5)
+            echo "Cleaning up old releases..."
+            cd ~/interviews-tracker-releases
+            ls -t | tail -n +6 | xargs -r rm -rf
+
+            echo "Deployment complete. Release: $RELEASE_DIR"
