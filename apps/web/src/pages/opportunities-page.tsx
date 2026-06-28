@@ -282,24 +282,42 @@ export function OpportunitiesPage() {
             <input className="input flex-1 max-w-md border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
             {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
           </div>
-          {(status || pipeline !== "ACTIVE_PROCESS") ? (
+          {(status || pipeline || priority || domainId) ? (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-label-sm text-on-surface-variant">Active filters:</span>
+              {pipeline ? (
+                <button
+                  className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
+                  onClick={() => setPipeline("")}
+                >
+                  <span>pipeline: {pipelineTypeOptions.find(opt => opt.value === pipeline)?.label || "All"}</span>
+                  <MaterialIcon name="close" className="text-[16px]" />
+                </button>
+              ) : null}
               {status ? (
                 <button
                   className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
                   onClick={() => setStatus("")}
                 >
-                  <span>Status: {jobStatusOptions.find(opt => opt.value === status)?.label}</span>
+                  <span>status: {jobStatusOptions.find(opt => opt.value === status)?.label}</span>
                   <MaterialIcon name="close" className="text-[16px]" />
                 </button>
               ) : null}
-              {pipeline !== "ACTIVE_PROCESS" ? (
+              {priority ? (
                 <button
                   className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
-                  onClick={() => setPipeline("ACTIVE_PROCESS")}
+                  onClick={() => setPriority("")}
                 >
-                  <span>Pipeline: {pipelineTypeOptions.find(opt => opt.value === pipeline)?.label}</span>
+                  <span>priority: {priorityOptions.find(opt => opt.value === priority)?.label}</span>
+                  <MaterialIcon name="close" className="text-[16px]" />
+                </button>
+              ) : null}
+              {domainId ? (
+                <button
+                  className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
+                  onClick={() => setDomainId("")}
+                >
+                  <span>domain: {options?.domains.find(opt => opt.id === domainId)?.label}</span>
                   <MaterialIcon name="close" className="text-[16px]" />
                 </button>
               ) : null}
@@ -307,7 +325,9 @@ export function OpportunitiesPage() {
                 className="text-[13px] text-on-surface-variant hover:text-primary transition-colors"
                 onClick={() => {
                   setStatus("");
-                  setPipeline("ACTIVE_PROCESS");
+                  setPipeline("");
+                  setPriority("");
+                  setDomainId("");
                 }}
               >
                 Clear all
