@@ -209,7 +209,7 @@ export function TelegramTestBot() {
           onClick={() => setIsOpen(true)}
           aria-label="Open Telegram test bot"
         >
-          <MaterialIcon name="chat" size={24} />
+          <MaterialIcon name="chat" className={styles.floatingIcon} />
         </button>
       )}
 
@@ -219,7 +219,7 @@ export function TelegramTestBot() {
           {/* Header */}
           <div className={styles.header}>
             <div className={styles.headerTitle}>
-              <MaterialIcon name="smart_toy" size={20} />
+              <MaterialIcon name="smart_toy" className={styles.headerIcon} />
               <span>Telegram Bot Test</span>
             </div>
             <div className={styles.headerActions}>
@@ -230,7 +230,7 @@ export function TelegramTestBot() {
                   aria-label="Clear messages"
                   title="Clear messages"
                 >
-                  <MaterialIcon name="delete" size={18} />
+                  <MaterialIcon name="delete" />
                 </button>
               )}
               <button
@@ -238,7 +238,7 @@ export function TelegramTestBot() {
                 onClick={() => setIsOpen(false)}
                 aria-label="Close chat"
               >
-                <MaterialIcon name="close" size={20} />
+                <MaterialIcon name="close" />
               </button>
             </div>
           </div>
@@ -247,7 +247,7 @@ export function TelegramTestBot() {
           <div className={styles.messages}>
             {messages.length === 0 && (
               <div className={styles.emptyState}>
-                <MaterialIcon name="chat_bubble_outline" size={48} />
+                <MaterialIcon name="chat_bubble_outline" className={styles.emptyStateIcon} />
                 <p>Test your Telegram bot here</p>
                 <p className={styles.emptyStateHint}>
                   Try creating an opportunity or asking a query
@@ -276,7 +276,7 @@ export function TelegramTestBot() {
             {isLoading && (
               <div className={`${styles.message} ${styles.botMessage}`}>
                 <div className={styles.messageContent}>
-                  <Spinner size="small" />
+                  <Spinner />
                 </div>
               </div>
             )}
@@ -299,7 +299,7 @@ export function TelegramTestBot() {
               disabled={!inputValue.trim() || isLoading}
               aria-label="Send message"
             >
-              <MaterialIcon name="send" size={22} />
+              <MaterialIcon name="send" className={styles.sendIcon} />
             </button>
           </div>
         </div>

@@ -18,6 +18,10 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.floatingIcon {
+  font-size: 24px;
+}
+
 .floatingButton:hover {
   transform: scale(1.05);
   box-shadow: 0 12px 32px rgb(16 32 43 / 0.12);
@@ -62,6 +66,10 @@
   font-weight: 600;
   color: rgb(var(--color-text-primary));
   font-size: 14px;
+}
+
+.headerIcon {
+  font-size: 20px;
 }
 
 .headerActions {
@@ -117,6 +125,10 @@
 .emptyStateHint {
   font-size: 12px;
   opacity: 0.8;
+}
+
+.emptyStateIcon {
+  font-size: 48px;
 }
 
 /* Message bubbles */
@@ -274,6 +286,10 @@
 .sendButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.sendIcon {
+  font-size: 22px;
 }
 
 /* Responsive */
