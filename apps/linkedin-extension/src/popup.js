@@ -21,7 +21,6 @@ const elements = {
 };
 
 let extractedPayload = null;
-let activeTab = null;
 
 async function getSettings() {
   const syncSettings = await chrome.storage.sync.get({ apiBaseUrl: DEFAULT_API_BASE_URL });
@@ -48,20 +47,30 @@ function updateAuthStatus(authToken) {
     : "Production imports require an Auth0 API bearer token. Local dev may work with API dev auth.";
 }
 
+function clearDetectedCard() {
+  while (elements.detectedCard.firstChild) {
+    elements.detectedCard.firstChild.remove();
+  }
+}
+
+function appendDetectedRow({ value, missingText }) {
+  const item = document.createElement("div");
+  item.className = `field-row ${value ? "" : "missing"}`.trim();
+  const status = document.createElement("span");
+  status.className = "status";
+  status.textContent = value ? "✅" : "⚠";
+  const text = document.createElement("span");
+  text.className = "value";
+  text.textContent = value || missingText;
+  item.append(status, text);
+  elements.detectedCard.append(item);
+}
+
 function renderDetectedJob(payload) {
   if (!payload) return;
-  elements.detectedCard.innerHTML = "";
+  clearDetectedCard();
   for (const row of getDetectedJobRows(payload)) {
-    const item = document.createElement("div");
-    item.className = `field-row ${row.value ? "" : "missing"}`.trim();
-    const status = document.createElement("span");
-    status.className = "status";
-    status.textContent = row.value ? "✅" : "⚠";
-    const value = document.createElement("span");
-    value.className = "value";
-    value.textContent = row.value || row.missingText;
-    item.append(status, value);
-    elements.detectedCard.append(item);
+    appendDetectedRow(row);
   }
 
   const useful = hasUsefulJobContent(payload);
@@ -84,6 +93,16 @@ function toggleSettings(force) {
   elements.settings.classList.toggle("show", shouldShow);
 }
 
+
+async function getApiErrorMessage(response) {
+  try {
+    const payload = await response.json();
+    return payload?.message || `Import failed (${response.status})`;
+  } catch {
+    return `Import failed (${response.status})`;
+  }
+}
+
 function isLinkedInJobPage(url) {
   if (!url || !LINKEDIN_JOB_URL_PATTERN.test(url)) return false;
   if (url.includes("/jobs/view/")) return true;
@@ -100,11 +119,10 @@ async function loadSettingsIntoForm() {
 async function detectCurrentJob() {
   clearMessage();
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  activeTab = tab;
-
   if (!isLinkedInJobPage(tab?.url || "")) {
     elements.importButton.disabled = true;
-    elements.detectedCard.innerHTML = '<div class="field-row missing"><span class="status">⚠</span><span class="value">Not on a supported LinkedIn job page</span></div>';
+    clearDetectedCard();
+    appendDetectedRow({ value: null, missingText: "Not on a supported LinkedIn job page" });
     showMessage("Open a LinkedIn /jobs/view page or a jobs search page with currentJobId, then reopen the extension.", "warning");
     return;
   }
@@ -117,7 +135,8 @@ async function detectCurrentJob() {
     updatePreview();
   } catch (error) {
     elements.importButton.disabled = true;
-    elements.detectedCard.innerHTML = '<div class="field-row missing"><span class="status">⚠</span><span class="value">Could not extract job</span></div>';
+    clearDetectedCard();
+    appendDetectedRow({ value: null, missingText: "Could not extract job" });
     showMessage(error instanceof Error ? error.message : "Could not extract job data from this page.", "error");
   }
 }
@@ -171,7 +190,7 @@ elements.importButton.addEventListener("click", async () => {
     if (apiResponse.status === 401 || apiResponse.status === 403) {
       throw new Error("Authentication failed. Paste and save a valid Auth0 API bearer token in Settings, then try again.");
     }
-    if (!apiResponse.ok) throw new Error((await apiResponse.json()).message || `Import failed (${apiResponse.status})`);
+    if (!apiResponse.ok) throw new Error(await getApiErrorMessage(apiResponse));
     const result = await apiResponse.json();
     elements.importButton.textContent = result.duplicate ? "Already imported" : "Imported successfully";
     showMessage(result.duplicate ? "Duplicate opportunity found. No new opportunity was created." : "Imported successfully.", "success");
