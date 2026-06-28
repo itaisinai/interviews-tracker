@@ -102,10 +102,14 @@ export async function listOpportunityRecords(query: Record<string, string | unde
   } else if (query.pipeline === "ACTIVE_PROCESS") {
     // ACTIVE_PROCESS: Any process WITH interactions (exclude REJECTED status)
     where.interactions = { some: {} };
-    where.status = { not: "REJECTED" };
+    // Preserve any existing status filter, or default to excluding REJECTED
+    if (!where.status) {
+      where.status = { not: "REJECTED" };
+    }
   } else if (query.pipeline === "ARCHIVED") {
-    // ARCHIVED: Rejected opportunities
-    where.status = "REJECTED";
+    // ARCHIVED: Rejected or closed opportunities (pipeline=ARCHIVED or relevant statuses)
+    // Keep opportunities with pipelineType=ARCHIVED even if status isn't explicitly REJECTED
+    where.pipelineType = "ARCHIVED";
   } else if (query.pipeline) {
     // Fallback for other pipeline types
     where.pipelineType = query.pipeline as PipelineType;
