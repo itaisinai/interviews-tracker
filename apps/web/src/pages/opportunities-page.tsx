@@ -497,7 +497,16 @@ export function OpportunitiesPage() {
                         ?.label || "all"
                     ).toLowerCase()}
                   </span>
-                  <MaterialIcon name="close" className="text-[12px]" />
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: "14px",
+                      fontVariationSettings:
+                        "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 14",
+                    }}
+                  >
+                    close
+                  </span>
                 </button>
               ) : null}
               {status ? (
@@ -511,7 +520,16 @@ export function OpportunitiesPage() {
                       .find((opt) => opt.value === status)
                       ?.label.toLowerCase()}
                   </span>
-                  <MaterialIcon name="close" className="text-[12px]" />
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: "14px",
+                      fontVariationSettings:
+                        "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 14",
+                    }}
+                  >
+                    close
+                  </span>
                 </button>
               ) : null}
               {priority ? (
@@ -525,7 +543,16 @@ export function OpportunitiesPage() {
                       .find((opt) => opt.value === priority)
                       ?.label.toLowerCase()}
                   </span>
-                  <MaterialIcon name="close" className="text-[12px]" />
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: "14px",
+                      fontVariationSettings:
+                        "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 14",
+                    }}
+                  >
+                    close
+                  </span>
                 </button>
               ) : null}
               {domainId ? (
@@ -539,7 +566,16 @@ export function OpportunitiesPage() {
                       .find((opt) => opt.id === domainId)
                       ?.label.toLowerCase()}
                   </span>
-                  <MaterialIcon name="close" className="text-[12px]" />
+                  <span
+                    className="material-symbols-outlined"
+                    style={{
+                      fontSize: "14px",
+                      fontVariationSettings:
+                        "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 14",
+                    }}
+                  >
+                    close
+                  </span>
                 </button>
               ) : null}
               <button
