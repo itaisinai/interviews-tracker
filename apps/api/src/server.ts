@@ -1,8 +1,6 @@
-import "dotenv/config";
-
-// Initialize Sentry as early as possible
-import { initSentry, Sentry } from "./lib/sentry.js";
-initSentry();
+// Import instrumentation first to enable Sentry auto-instrumentation
+import "./instrument.js";
+import { Sentry } from "./lib/sentry.js";
 
 import cors from "cors";
 import express from "express";
