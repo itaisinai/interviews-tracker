@@ -284,7 +284,6 @@ export function OpportunitiesPage() {
 
         <div className="panel mb-6 flex items-center gap-4 overflow-hidden px-4 py-3.5">
           <input className="input flex-1 max-w-md border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
-          <span className="font-label-sm text-label-sm font-medium text-on-surface-variant">Pipeline:</span>
           <FilterChip label="Pipeline" value={pipeline} onChange={setPipeline} options={pipelineTypeOptions} />
           {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
         </div>
