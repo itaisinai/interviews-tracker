@@ -1,22 +1,53 @@
 import type { QueryResponse } from "./telegram-query-answerer.js";
 
 /**
+ * Format a date for Telegram display
+ */
+function formatDateForDisplay(isoDate: string): string {
+  const date = new Date(isoDate);
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const isToday = date.toDateString() === now.toDateString();
+  const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+  const timeStr = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
+
+  if (isToday) {
+    return `Today at ${timeStr}`;
+  } else if (isTomorrow) {
+    return `Tomorrow at ${timeStr}`;
+  } else {
+    const dayOfWeek = date.toLocaleDateString("en-US", { weekday: "long" });
+    const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `${dayOfWeek}, ${dateStr} at ${timeStr}`;
+  }
+}
+
+/**
  * Formats a query response into a Telegram message with markdown and links
  */
 export function formatQueryResponseForTelegram(
   response: QueryResponse,
   webAppBaseUrl: string
 ): string {
-  let message = `💡 *Query Result*\n\n${response.answer}`;
+  // Use answer as-is (AI already formatted it nicely)
+  let message = response.answer;
 
   // Add links to relevant opportunities if any
   if (response.relevantOpportunities && response.relevantOpportunities.length > 0) {
-    message += "\n\n📎 *Related Opportunities:*\n";
+    message += "\n\n📎 *View Details:*\n";
 
     response.relevantOpportunities.forEach((opp) => {
       const slug = opp.slug || opp.id;
       const url = `${webAppBaseUrl}/opportunities/${slug}`;
-      message += `• [${opp.companyName} - ${opp.roleTitle}](${url})\n`;
+      const roleText = opp.roleTitle ? ` - ${opp.roleTitle}` : "";
+      message += `• [${opp.companyName}${roleText}](${url})\n`;
     });
   }
 
