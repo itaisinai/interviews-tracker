@@ -119,21 +119,16 @@ export function OpportunitiesPage() {
       cell: ({ row }) => <Badge value={row.original.status} />
     },
     {
-      id: "priority",
+      id: "pipeline",
       header: () => (
         <ColumnHeader
-          label="Priority"
-          hasFilter={!!priority}
-          filterOptions={priorityOptions}
-          filterValue={priority}
-          onFilterChange={setPriority}
+          label="Pipeline"
+          hasFilter={!!pipeline}
+          filterOptions={pipelineTypeOptions}
+          filterValue={pipeline}
+          onFilterChange={setPipeline}
         />
       ),
-      size: 140,
-      cell: ({ row }) => <Badge value={row.original.priority} />
-    },
-    {
-      header: "Pipeline",
       size: 200,
       cell: ({ row }) => <Badge value={row.original.pipelineType} />
     },
@@ -196,7 +191,7 @@ export function OpportunitiesPage() {
         />
       )
     }
-  ], [deleteOpportunity, handleSort, sort, sortDirection, status, setStatus, priority, setPriority]);
+  ], [deleteOpportunity, handleSort, sort, sortDirection, status, setStatus, pipeline, setPipeline]);
 
   if (optionsError) {
     return <PageErrorState title="Opportunities" description={optionsErrorValue instanceof Error ? optionsErrorValue.message : "Unable to load filter options."} onRetry={() => void refetchOptions()} />;
@@ -287,7 +282,7 @@ export function OpportunitiesPage() {
             <input className="input flex-1 max-w-md border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
             {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
           </div>
-          {(status || priority) ? (
+          {(status || pipeline !== "ACTIVE_PROCESS") ? (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-label-sm text-on-surface-variant">Active filters:</span>
               {status ? (
@@ -299,12 +294,12 @@ export function OpportunitiesPage() {
                   <MaterialIcon name="close" className="text-[16px]" />
                 </button>
               ) : null}
-              {priority ? (
+              {pipeline !== "ACTIVE_PROCESS" ? (
                 <button
                   className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
-                  onClick={() => setPriority("")}
+                  onClick={() => setPipeline("ACTIVE_PROCESS")}
                 >
-                  <span>Priority: {priorityOptions.find(opt => opt.value === priority)?.label}</span>
+                  <span>Pipeline: {pipelineTypeOptions.find(opt => opt.value === pipeline)?.label}</span>
                   <MaterialIcon name="close" className="text-[16px]" />
                 </button>
               ) : null}
@@ -312,7 +307,7 @@ export function OpportunitiesPage() {
                 className="text-[13px] text-on-surface-variant hover:text-primary transition-colors"
                 onClick={() => {
                   setStatus("");
-                  setPriority("");
+                  setPipeline("ACTIVE_PROCESS");
                 }}
               >
                 Clear all
