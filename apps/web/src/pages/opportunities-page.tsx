@@ -413,31 +413,42 @@ function ColumnHeader({
           </button>
           {showFilter && createPortal(
             <div
-              className="fixed z-50 bg-white rounded-lg shadow-xl border border-outline-variant min-w-[180px] py-1"
+              className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-outline-variant/30 min-w-[160px] py-2 max-h-[320px] overflow-y-auto"
               style={{
                 top: `${dropdownPosition.top}px`,
                 left: `${dropdownPosition.left}px`
               }}
             >
+              <div className="px-3 py-1 mb-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant/60">
+                  {label}
+                </span>
+              </div>
               <button
-                className="w-full px-3 py-2 text-left text-body-sm hover:bg-surface-container-low transition-colors"
+                className="w-full px-3 py-1.5 text-left text-[13px] hover:bg-primary/5 transition-colors flex items-center justify-between group"
                 onClick={() => {
                   onFilterChange("");
                   setShowFilter(false);
                 }}
               >
-                All
+                <span className={!filterValue ? "font-medium text-primary" : ""}>All</span>
+                {!filterValue && <MaterialIcon name="check" className="text-[16px] text-primary" />}
               </button>
               {filterOptions.map((option) => (
                 <button
                   key={option.value}
-                  className={`w-full px-3 py-2 text-left text-body-sm hover:bg-surface-container-low transition-colors ${filterValue === option.value ? "bg-primary/5 text-primary font-medium" : ""}`}
+                  className="w-full px-3 py-1.5 text-left text-[13px] hover:bg-primary/5 transition-colors flex items-center justify-between group"
                   onClick={() => {
                     onFilterChange(option.value);
                     setShowFilter(false);
                   }}
                 >
-                  {option.label}
+                  <span className={filterValue === option.value ? "font-medium text-primary" : ""}>
+                    {option.label}
+                  </span>
+                  {filterValue === option.value && (
+                    <MaterialIcon name="check" className="text-[16px] text-primary" />
+                  )}
                 </button>
               ))}
             </div>,
@@ -467,7 +478,7 @@ function FilterChip({
   const displayValue = value ? options.find(opt => opt.value === value)?.label : "All";
 
   return (
-    <div className="relative flex-1 md:min-w-0">
+    <div className="relative w-[150px]">
       <span className="sr-only">{label}</span>
       <select
         aria-label={label}
