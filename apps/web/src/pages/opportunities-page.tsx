@@ -282,9 +282,43 @@ export function OpportunitiesPage() {
           }
         />
 
-        <div className="panel mb-6 flex items-center gap-4 overflow-hidden px-4 py-3.5">
-          <input className="input flex-1 max-w-md border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
-          {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
+        <div className="panel mb-6 px-4 py-3.5 space-y-3">
+          <div className="flex items-center gap-4 overflow-hidden">
+            <input className="input flex-1 max-w-md border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
+            {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
+          </div>
+          {(status || priority) ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-label-sm text-on-surface-variant">Active filters:</span>
+              {status ? (
+                <button
+                  className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
+                  onClick={() => setStatus("")}
+                >
+                  <span>Status: {jobStatusOptions.find(opt => opt.value === status)?.label}</span>
+                  <MaterialIcon name="close" className="text-[16px]" />
+                </button>
+              ) : null}
+              {priority ? (
+                <button
+                  className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
+                  onClick={() => setPriority("")}
+                >
+                  <span>Priority: {priorityOptions.find(opt => opt.value === priority)?.label}</span>
+                  <MaterialIcon name="close" className="text-[16px]" />
+                </button>
+              ) : null}
+              <button
+                className="text-[13px] text-on-surface-variant hover:text-primary transition-colors"
+                onClick={() => {
+                  setStatus("");
+                  setPriority("");
+                }}
+              >
+                Clear all
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm relative">
