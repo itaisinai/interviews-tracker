@@ -84,7 +84,6 @@ export async function listOpportunityRecords(query: Record<string, string | unde
   const where: Prisma.JobOpportunityWhereInput = {
     ownerEmail,
     status: query.status ? { equals: query.status as Prisma.EnumJobStatusFilter<"JobOpportunity">["equals"] } : undefined,
-    pipelineType: query.pipeline ? { equals: query.pipeline as Prisma.EnumPipelineTypeFilter<"JobOpportunity">["equals"] } : undefined,
     priority: query.priority ? { equals: query.priority as Prisma.EnumPriorityFilter<"JobOpportunity">["equals"] } : undefined,
     OR: query.search
       ? [
@@ -94,6 +93,23 @@ export async function listOpportunityRecords(query: Record<string, string | unde
       : undefined,
     domains: query.domainId ? { some: { domainId: query.domainId } } : undefined
   };
+
+  // Custom pipeline filtering logic
+  if (query.pipeline === "POTENTIAL") {
+    // POTENTIAL: Only leads WITHOUT any interactions
+    where.interactions = { none: {} };
+    where.pipelineType = "POTENTIAL";
+  } else if (query.pipeline === "ACTIVE_PROCESS") {
+    // ACTIVE_PROCESS: Any process WITH interactions (exclude REJECTED status)
+    where.interactions = { some: {} };
+    where.status = { not: "REJECTED" };
+  } else if (query.pipeline === "ARCHIVED") {
+    // ARCHIVED: Rejected opportunities
+    where.status = "REJECTED";
+  } else if (query.pipeline) {
+    // Fallback for other pipeline types
+    where.pipelineType = query.pipeline as Prisma.EnumPipelineTypeFilter<"JobOpportunity">["equals"];
+  }
 
   const opportunities = await prisma.jobOpportunity.findMany({
     where,
