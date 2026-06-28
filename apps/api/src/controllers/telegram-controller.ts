@@ -56,10 +56,15 @@ export async function telegramMessageHandler(request: Request, response: Respons
     let opportunityData = null;
     let queryResponseData = null;
 
+    // Get web app base URL - use WEB_APP_BASE_URL, fall back to first FRONTEND_ORIGIN, then localhost
+    const webAppBaseUrl =
+      process.env.WEB_APP_BASE_URL ||
+      process.env.FRONTEND_ORIGIN?.split(",")[0]?.trim() ||
+      "http://localhost:3000";
+
     if (intent.intent === "CREATE_OPPORTUNITY") {
       try {
         const opportunity = await createOpportunityFromText(input.text);
-        const webAppBaseUrl = process.env.WEB_APP_BASE_URL || "http://localhost:3000";
         botResponse = formatOpportunityCreatedMessage(opportunity, webAppBaseUrl);
         opportunityData = opportunity;
       } catch (error) {
@@ -77,7 +82,6 @@ export async function telegramMessageHandler(request: Request, response: Respons
           throw new Error("Cannot query opportunities: ALLOWED_EMAIL not configured");
         }
 
-        const webAppBaseUrl = process.env.WEB_APP_BASE_URL || "http://localhost:3000";
         const queryResponse = await answerOpportunityQuery({
           query: input.text,
           ownerEmail,

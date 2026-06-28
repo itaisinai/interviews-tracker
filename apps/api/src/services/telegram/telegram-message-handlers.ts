@@ -38,7 +38,7 @@ export async function handleOpportunityCreation(message: TelegramMessage) {
     });
 
     const opportunity = result.opportunity;
-    const webAppBaseUrl = process.env.WEB_APP_BASE_URL || "https://localhost:3000";
+    const webAppBaseUrl = process.env.WEB_APP_BASE_URL || process.env.FRONTEND_ORIGIN?.split(",")[0]?.trim() || "http://localhost:3000";
     const successMessage = formatOpportunityCreatedMessage(opportunity || {}, webAppBaseUrl);
 
     // Update the loading message with success
@@ -90,7 +90,7 @@ export async function handleOpportunityQuery(message: TelegramMessage) {
     }
 
     // Get web app base URL for links
-    const webAppBaseUrl = process.env.WEB_APP_BASE_URL || "https://localhost:3000";
+    const webAppBaseUrl = process.env.WEB_APP_BASE_URL || process.env.FRONTEND_ORIGIN?.split(",")[0]?.trim() || "http://localhost:3000";
 
     // Use AI to answer the query with function calling
     const queryResponse = await answerOpportunityQuery({
