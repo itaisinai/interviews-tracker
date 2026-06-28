@@ -5,14 +5,15 @@
 
 import { z } from "zod";
 import { createTimer, logInfo } from "../../lib/logger.js";
-import { telegramQueryTools, type ToolCall } from "./telegram-query-tools.js";
 import {
+  allTools as telegramQueryTools,
+  type ToolCall,
   getNextInteractions,
   getOpportunitiesByStatus,
   getInteractionDetails,
   searchOpportunities,
   getNextInteractionForCompany
-} from "./telegram-query-repository.js";
+} from "./tools/index.js";
 
 export const queryResponseSchema = z.object({
   answer: z.string(),
