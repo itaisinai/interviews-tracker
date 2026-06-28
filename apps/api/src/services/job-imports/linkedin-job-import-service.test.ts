@@ -152,3 +152,44 @@ test("OpenAiLinkedinJobNormalizer keeps extractor metadata even if model returns
   assert.equal(result.metadata.linkedinJobId, "4428934873");
   assert.equal(result.metadata.extractedAt, "2026-06-28T12:00:00.000Z");
 });
+
+test("importing LinkedIn job matching existing manual opportunity returns existing without creating duplicate", async () => {
+  let createCalled = false;
+  let findFirstCallCount = 0;
+  const service = new LinkedinJobImportService({
+    normalizer: { normalize: async () => normalized },
+    findDuplicate: async () => null, // No LinkedIn duplicate found
+    createOpportunity: async (input, owner) => {
+      createCalled = true;
+      throw new Error("Should not create when manual opportunity exists");
+    }
+  });
+
+  // Mock prisma to return existing manual opportunity
+  const { prisma } = await import("../../lib/prisma.js");
+  const originalFindFirst = prisma.jobOpportunity.findFirst;
+  (prisma.jobOpportunity.findFirst as any) = async (args: any) => {
+    findFirstCallCount++;
+    if (args?.where?.companyName === "Example Company" && args?.where?.roleTitle === "Senior Full Stack Engineer") {
+      return { id: "opp_manual", companyName: "Example Company", sourceUrl: null, jobUrl: null, linkedinJobId: null } as any;
+    }
+    return null;
+  };
+
+  try {
+    const result = await service.importFromLinkedin({
+      sourceUrl: "https://www.linkedin.com/jobs/view/4428934873/",
+      rawText: "Senior Full Stack Engineer at Example Company",
+      extractedAt: "2026-06-28T12:00:00.000Z"
+    }, "user@example.com");
+
+    assert.equal(createCalled, false, "Should not attempt to create when manual opportunity exists");
+    assert.equal(result.created, false, "Should report as not created");
+    assert.equal(result.duplicate, true, "Should report as duplicate");
+    assert.equal(result.opportunityId, "opp_manual", "Should return existing manual opportunity ID");
+    assert.ok(result.warnings.some((w: string) => w.includes("already exists")), "Should warn about existing opportunity");
+  } finally {
+    // Restore original
+    prisma.jobOpportunity.findFirst = originalFindFirst;
+  }
+});

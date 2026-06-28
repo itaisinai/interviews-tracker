@@ -170,10 +170,27 @@ export async function updateOpportunityRecord(slugOrId: string, input: Opportuni
   if (!id) throw new Error("Opportunity not found");
   const data = toWrite(input, ownerEmail);
   const opportunity = await prisma.$transaction(async (tx) => {
-    const existing = await tx.jobOpportunity.findFirst({ where: { id, ownerEmail }, select: { slug: true } });
+    const existing = await tx.jobOpportunity.findFirst({
+      where: { id, ownerEmail },
+      select: {
+        slug: true,
+        linkedinJobId: true,
+        sourceUrl: true
+      }
+    });
     const slug = existing?.slug || await createUniqueOpportunitySlug(input, ownerEmail, tx, id);
+
+    // Preserve LinkedIn metadata if not explicitly provided in the update
+    const preservedData = {
+      ...data,
+      slug,
+      // Only override LinkedIn fields if they're explicitly provided (not undefined)
+      linkedinJobId: input.linkedinJobId !== undefined ? data.linkedinJobId : existing?.linkedinJobId ?? null,
+      sourceUrl: input.sourceUrl !== undefined ? data.sourceUrl : existing?.sourceUrl ?? null
+    };
+
     await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
-    return tx.jobOpportunity.update({ where: { id }, data: { ...data, slug }, include: opportunityInclude });
+    return tx.jobOpportunity.update({ where: { id }, data: preservedData, include: opportunityInclude });
   });
 
   return promoteOpportunityInteractionsForRead(opportunity);

@@ -164,10 +164,37 @@ export class LinkedinJobImportService {
 
   async importFromLinkedin(rawInput: unknown, ownerEmail: string) {
     const input = linkedinJobImportInputSchema.parse(rawInput);
+
+    // Check for LinkedIn-specific duplicate first
     const existing = await this.findDuplicateRecord(input, ownerEmail);
     if (existing) return this.toResult(existing, false, true, input, []);
 
+    // Normalize the LinkedIn job data
     const normalized = await this.normalizer.normalize(input);
+
+    // Check for existing manual opportunity with same company + role
+    const existingManual = await prisma.jobOpportunity.findFirst({
+      where: {
+        ownerEmail,
+        companyName: normalized.company.name,
+        roleTitle: normalized.opportunity.title
+      },
+      select: {
+        id: true,
+        companyName: true,
+        sourceUrl: true,
+        jobUrl: true,
+        linkedinJobId: true
+      }
+    });
+
+    // If found, return it as duplicate (don't create a new one)
+    if (existingManual) {
+      return this.toResult(existingManual, false, true, input, [
+        "An opportunity with this company and role already exists in your tracker"
+      ]);
+    }
+
     const notes = [
       normalized.opportunity.summary,
       normalized.opportunity.employmentType ? `Employment type: ${normalized.opportunity.employmentType}` : null,
