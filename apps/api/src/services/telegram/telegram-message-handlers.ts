@@ -7,7 +7,6 @@ import { logError } from "../../lib/logger.js";
 import { sendTelegramMessage, editTelegramMessage, forwardOpportunityTextToBackend } from "./telegram-api-client.js";
 import { isAuthorizedTelegramUser } from "./telegram-auth.js";
 import { answerOpportunityQuery } from "./telegram-query-answerer.js";
-import { formatOpportunitiesForAI } from "../opportunities/opportunity-query-data-service.js";
 import {
   formatQueryResponseForTelegram,
   formatOpportunityCreatedMessage,
@@ -90,16 +89,13 @@ export async function handleOpportunityQuery(message: TelegramMessage) {
       throw new Error("Cannot query opportunities: ALLOWED_EMAIL not configured");
     }
 
-    // Fetch opportunities data filtered by user email
-    const opportunitiesData = await formatOpportunitiesForAI(ownerEmail);
-
     // Get web app base URL for links
     const webAppBaseUrl = process.env.WEB_APP_BASE_URL || "https://localhost:3000";
 
-    // Use AI to answer the query
+    // Use AI to answer the query with function calling
     const queryResponse = await answerOpportunityQuery({
       query: message.text,
-      opportunitiesData,
+      ownerEmail,
       webAppBaseUrl
     });
 
