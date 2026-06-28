@@ -78,6 +78,9 @@ jobs:
           script: |
             set -e
 
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
             # Create releases directory if it doesn't exist
             mkdir -p ~/interviews-tracker-releases
 
