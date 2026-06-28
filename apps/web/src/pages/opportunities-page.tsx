@@ -468,130 +468,88 @@ export function OpportunitiesPage() {
           }
         />
 
-        <div className="panel mb-6 grid items-center gap-3 overflow-hidden px-4 py-3.5 xl:grid-cols-[minmax(240px,1.1fr)_auto_repeat(4,minmax(140px,1fr))_auto]">
-          <input className="input min-w-0 border border-[#d4dbe3] bg-surface-container-lowest/90" placeholder="Search company or role" value={search} onChange={(event) => setSearch(event.target.value)} />
-          <span className="font-label-sm text-label-sm font-medium text-on-surface-variant">Filters:</span>
-          <FilterChip label="Status" value={status} onChange={setStatus} options={jobStatusOptions} />
-          <FilterChip label="Pipeline" value={pipeline} onChange={setPipeline} options={pipelineTypeOptions} />
-          <FilterChip label="Priority" value={priority} onChange={setPriority} options={priorityOptions} />
-          <FilterChip label="Domain" value={domainId} onChange={setDomainId} options={(options?.domains ?? []).map((item) => ({ value: item.id, label: item.label }))} />
-          <div className="flex items-center gap-2.5">
-            <span className="font-label-sm text-label-sm font-medium text-on-surface-variant whitespace-nowrap">Sort by:</span>
-            <select className="rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-3.5 py-2 pr-10 text-[13px] font-medium text-[#20303d] outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10" value={sort} onChange={(event) => setSort(event.target.value)}>
-              <option value="updated">Recently Updated</option>
-              <option value="nextInteraction">Next Interaction</option>
-            </select>
-            {isFetching || optionsFetching ? <InlineLoadingState label="Refreshing" /> : null}
+        <div className="panel mb-6 flex items-center gap-3 overflow-hidden px-5 py-4">
+          <div className="relative flex-shrink-0">
+            <MaterialIcon
+              name="search"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant"
+            />
+            <input
+              className="w-[280px] rounded-lg border border-outline-variant bg-white py-2.5 pl-10 pr-4 text-body-md text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
+              placeholder="Search company or role"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
           </div>
-          {status || pipeline || priority || domainId ? (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-label-sm text-on-surface-variant">
-                Active filters:
-              </span>
-              {pipeline ? (
-                <button
-                  className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
-                  onClick={() => setPipeline("")}
-                >
-                  <span>
-                    pipeline:{" "}
-                    {(
-                      pipelineTypeOptions.find((opt) => opt.value === pipeline)
-                        ?.label || "all"
-                    ).toLowerCase()}
-                  </span>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: "14px",
-                      fontVariationSettings:
-                        "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 14",
-                    }}
-                  >
-                    close
-                  </span>
-                </button>
-              ) : null}
-              {status ? (
-                <button
-                  className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
-                  onClick={() => setStatus("")}
-                >
-                  <span>
-                    status:{" "}
-                    {jobStatusOptions
-                      .find((opt) => opt.value === status)
-                      ?.label.toLowerCase()}
-                  </span>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: "14px",
-                      fontVariationSettings:
-                        "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 14",
-                    }}
-                  >
-                    close
-                  </span>
-                </button>
-              ) : null}
-              {priority ? (
-                <button
-                  className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
-                  onClick={() => setPriority("")}
-                >
-                  <span>
-                    priority:{" "}
-                    {priorityOptions
-                      .find((opt) => opt.value === priority)
-                      ?.label.toLowerCase()}
-                  </span>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: "14px",
-                      fontVariationSettings:
-                        "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 14",
-                    }}
-                  >
-                    close
-                  </span>
-                </button>
-              ) : null}
-              {domainId ? (
-                <button
-                  className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[13px] font-medium text-primary hover:bg-primary/20 transition-colors"
-                  onClick={() => setDomainId("")}
-                >
-                  <span>
-                    domain:{" "}
-                    {options?.domains
-                      .find((opt) => opt.id === domainId)
-                      ?.label.toLowerCase()}
-                  </span>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: "14px",
-                      fontVariationSettings:
-                        "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 14",
-                    }}
-                  >
-                    close
-                  </span>
-                </button>
-              ) : null}
+
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-x-auto hide-scrollbar">
+            {pipeline ? (
               <button
-                className="text-[13px] text-on-surface-variant hover:text-primary transition-colors"
-                onClick={() => {
-                  setStatus("");
-                  setPipeline("");
-                  setPriority("");
-                  setDomainId("");
-                }}
+                className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
+                onClick={() => setPipeline("")}
               >
-                Clear all
+                <span>
+                  pipeline: {pipelineTypeOptions.find((opt) => opt.value === pipeline)?.label.toLowerCase()}
+                </span>
+                <MaterialIcon name="close" className="text-[16px]" />
               </button>
+            ) : null}
+            {status ? (
+              <button
+                className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
+                onClick={() => setStatus("")}
+              >
+                <span>
+                  stage: {jobStatusOptions.find((opt) => opt.value === status)?.label.toLowerCase()}
+                </span>
+                <MaterialIcon name="close" className="text-[16px]" />
+              </button>
+            ) : null}
+            {priority ? (
+              <button
+                className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
+                onClick={() => setPriority("")}
+              >
+                <span>
+                  priority: {priorityOptions.find((opt) => opt.value === priority)?.label.toLowerCase()}
+                </span>
+                <MaterialIcon name="close" className="text-[16px]" />
+              </button>
+            ) : null}
+            {domainId ? (
+              <button
+                className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
+                onClick={() => setDomainId("")}
+              >
+                <span>
+                  company: {options?.domains.find((opt) => opt.id === domainId)?.label}
+                </span>
+                <MaterialIcon name="close" className="text-[16px]" />
+              </button>
+            ) : null}
+            {!pipeline && !status && !priority && !domainId ? (
+              <span className="text-[13px] text-on-surface-variant">No filters applied</span>
+            ) : null}
+          </div>
+
+          {(pipeline || status || priority || domainId) ? (
+            <button
+              className="flex flex-shrink-0 items-center gap-2 text-[14px] font-medium text-on-surface-variant hover:text-error transition-colors"
+              onClick={() => {
+                setStatus("");
+                setPipeline("");
+                setPriority("");
+                setDomainId("");
+              }}
+            >
+              Clear all
+              <MaterialIcon name="delete" className="text-[18px]" />
+            </button>
+          ) : null}
+
+          {isFetching || optionsFetching ? (
+            <div className="flex-shrink-0">
+              <InlineLoadingState label="Refreshing" />
             </div>
           ) : null}
         </div>
@@ -817,7 +775,9 @@ function FilterChip({
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
 }) {
-  const displayValue = value ? options.find(opt => opt.value === value)?.label : "All";
+  const displayValue = value
+    ? options.find((opt) => opt.value === value)?.label
+    : "All";
 
   return (
     <div className="relative min-w-[140px] flex-1 md:min-w-0">
@@ -836,7 +796,10 @@ function FilterChip({
           </option>
         ))}
       </select>
-      <MaterialIcon name="keyboard_arrow_down" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant" />
+      <MaterialIcon
+        name="keyboard_arrow_down"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant"
+      />
     </div>
   );
 }
