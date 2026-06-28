@@ -19,10 +19,16 @@ jobs:
           script: |
             set -e
 
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
             cd ~/interviews-tracker
 
             git fetch origin
             git reset --hard origin/master
+
+            corepack enable
+            corepack prepare yarn@4.9.2 --activate
 
             yarn install --immutable
             yarn build:api
