@@ -15,6 +15,7 @@ import { opportunitiesRouter } from "./routes/opportunities.js";
 import { optionsRouter } from "./routes/options.js";
 import { peopleRouter } from "./routes/people.js";
 import { webhooksRouter } from "./routes/webhooks.js";
+import { telegramTestRouter } from "./routes/telegram-test.js";
 import { requireAuth } from "./lib/auth.js";
 import { errorHandler } from "./lib/http.js";
 import { apiRequestLogger } from "./lib/request-logging.js";
@@ -122,6 +123,7 @@ app.use("/api/companies", companiesRouter);
 app.use("/api/options", optionsRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/people", peopleRouter);
+app.use("/api/telegram", telegramTestRouter);
 
 // Debug endpoint for Sentry (non-production only)
 if (process.env.NODE_ENV !== "production") {

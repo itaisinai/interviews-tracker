@@ -12,7 +12,7 @@ function createOptions<T extends string>(labels: Record<T, string>) {
 export const pipelineTypeLabels: Record<PipelineType, string> = {
   POTENTIAL: "Potential / Research",
   ACTIVE_PROCESS: "Active Process",
-  ARCHIVED: "Archived"
+  ARCHIVED: "Archived / Rejected"
 };
 
 export const priorityLabels: Record<Priority, string> = {
