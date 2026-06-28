@@ -101,7 +101,7 @@ ${input.opportunitiesData}
 
 Answer the query based on this data.`;
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -109,19 +109,19 @@ Answer the query based on this data.`;
     },
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-      input: [
+      messages: [
         {
           role: "system",
-          content: [{ type: "input_text", text: QUERY_ANSWERING_PROMPT }]
+          content: QUERY_ANSWERING_PROMPT
         },
         {
           role: "user",
-          content: [{ type: "input_text", text: userPrompt }]
+          content: userPrompt
         }
       ],
-      text: {
-        format: {
-          type: "json_schema",
+      response_format: {
+        type: "json_schema",
+        json_schema: {
           name: "answer_opportunity_query",
           strict: true,
           schema: queryResponseJsonSchema
@@ -136,15 +136,14 @@ Answer the query based on this data.`;
   }
 
   const payload = await response.json() as {
-    output_text?: string;
-    output?: Array<{
-      content?: Array<{ type?: string; text?: string }>;
+    choices?: Array<{
+      message?: {
+        content?: string;
+      };
     }>;
   };
 
-  const outputText = payload.output_text ??
-    payload.output?.flatMap(item => item.content ?? [])
-      .find(item => item.type === "output_text")?.text;
+  const outputText = payload.choices?.[0]?.message?.content;
 
   if (!outputText) {
     timer.fail(new Error("Query answering returned no text output"), {});
