@@ -126,10 +126,6 @@ export function OpportunitiesPage() {
     }
   ], [deleteOpportunity]);
 
-  if (optionsLoading || isLoading) {
-    return <PageLoadingState title="Opportunities" description="Loading your pipeline and filter options." />;
-  }
-
   if (optionsError) {
     return <PageErrorState title="Opportunities" description={optionsErrorValue instanceof Error ? optionsErrorValue.message : "Unable to load filter options."} onRetry={() => void refetchOptions()} />;
   }
@@ -161,7 +157,15 @@ export function OpportunitiesPage() {
           </div>
         </section>
 
-        <section className="space-y-4 pb-8">
+        <section className="space-y-4 pb-8 relative min-h-[200px]">
+          {(optionsLoading || isLoading) ? (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-xl">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary"></div>
+                <p className="font-body-md text-body-md text-on-surface-variant">Loading opportunities...</p>
+              </div>
+            </div>
+          ) : null}
           {data.map((item) => {
             const state = mobileOpportunityState(item);
             return (
@@ -186,7 +190,7 @@ export function OpportunitiesPage() {
               </Link>
             );
           })}
-          {data.length === 0 ? <p className="text-body-md text-on-surface-variant">No opportunities found.</p> : null}
+          {data.length === 0 && !isLoading && !optionsLoading ? <p className="text-body-md text-on-surface-variant">No opportunities found.</p> : null}
         </section>
 
         <Link to="/opportunities/new" className="fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg">
@@ -215,7 +219,7 @@ export function OpportunitiesPage() {
           <FilterChip label="Domain" value={domainId} onChange={setDomainId} options={(options?.domains ?? []).map((item) => ({ value: item.id, label: item.label }))} />
           <div className="flex items-center gap-2.5">
             <span className="font-label-sm text-label-sm font-medium text-on-surface-variant whitespace-nowrap">Sort by:</span>
-            <select className="rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-3.5 py-2 pr-10 text-body-sm text-[#20303d] outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10" value={sort} onChange={(event) => setSort(event.target.value)}>
+            <select className="rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-3.5 py-1.5 pr-10 text-[13px] font-medium text-[#20303d] outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10" value={sort} onChange={(event) => setSort(event.target.value)}>
               <option value="updated">Recently Updated</option>
               <option value="nextInteraction">Next Interaction</option>
             </select>
@@ -223,7 +227,15 @@ export function OpportunitiesPage() {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm relative">
+          {(optionsLoading || isLoading) ? (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary"></div>
+                <p className="font-body-md text-body-md text-on-surface-variant">Loading opportunities...</p>
+              </div>
+            </div>
+          ) : null}
           <div className="h-full overflow-auto custom-scrollbar">
             <DataTable
               data={data}
@@ -275,7 +287,7 @@ function FilterChip({
       <select
         aria-label={label}
         title={`${label}: ${displayValue}`}
-        className="appearance-none w-full rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-3.5 py-2 pr-9 text-body-sm font-medium text-[#20303d] shadow-sm outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10 hover:bg-[#dce8f4]"
+        className="appearance-none w-full rounded-full border border-[#d4dbe3] bg-[#e8f0f8] px-3.5 py-1.5 pr-9 text-[13px] font-medium text-[#20303d] shadow-sm outline-none transition-colors focus:border-primary/30 focus:ring-2 focus:ring-primary/10 hover:bg-[#dce8f4]"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
