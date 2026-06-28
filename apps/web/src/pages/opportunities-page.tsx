@@ -70,6 +70,7 @@ export function OpportunitiesPage() {
 
   const columns = useMemo<ColumnDef<Opportunity>[]>(() => [
     {
+      id: "company",
       header: () => (
         <ColumnHeader
           label="Company"
@@ -85,6 +86,7 @@ export function OpportunitiesPage() {
       }
     },
     {
+      id: "role",
       header: () => (
         <ColumnHeader
           label="Role"
@@ -102,6 +104,7 @@ export function OpportunitiesPage() {
       )
     },
     {
+      id: "status",
       header: () => (
         <ColumnHeader
           label="Status"
@@ -115,6 +118,7 @@ export function OpportunitiesPage() {
       cell: ({ row }) => <Badge value={row.original.status} />
     },
     {
+      id: "priority",
       header: () => (
         <ColumnHeader
           label="Priority"
@@ -143,6 +147,7 @@ export function OpportunitiesPage() {
     },
     { header: "Next Step", size: 220, cell: ({ row }) => <span className="block truncate text-body-md font-medium text-primary">{row.original.nextStep ?? "-"}</span> },
     {
+      id: "updated",
       header: () => (
         <ColumnHeader
           label="Updated"
