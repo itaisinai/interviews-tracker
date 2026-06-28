@@ -385,6 +385,7 @@ function ColumnHeader({
 }) {
   const [showFilter, setShowFilter] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const isSorted = sortKey && currentSort === sortKey;
 
@@ -402,7 +403,11 @@ function ColumnHeader({
     if (!showFilter) return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setShowFilter(false);
       }
     };
@@ -445,6 +450,7 @@ function ColumnHeader({
           </button>
           {showFilter && createPortal(
             <div
+              ref={dropdownRef}
               className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-outline-variant/30 min-w-[160px] py-2 max-h-[320px] overflow-y-auto"
               style={{
                 top: `${dropdownPosition.top}px`,
