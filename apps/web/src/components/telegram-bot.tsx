@@ -134,21 +134,37 @@ export function TelegramBot() {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleClose = () => {
+    if (isClosing) return; // Prevent multiple close calls
+
     setIsClosing(true);
-    // Wait for animation to complete before unmounting
-    setTimeout(() => {
+    closeTimeoutRef.current = setTimeout(() => {
       setIsOpen(false);
+      setIsClosing(false);
+      closeTimeoutRef.current = null;
     }, 300); // Match animation duration
   };
 
-  // Reset isClosing when chat is fully closed
-  useEffect(() => {
-    if (!isOpen && isClosing) {
-      setIsClosing(false);
+  const handleOpen = () => {
+    // Clear any pending close animation
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
     }
-  }, [isOpen, isClosing]);
+    setIsClosing(false);
+    setIsOpen(true);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
@@ -229,10 +245,10 @@ export function TelegramBot() {
   return (
     <>
       {/* Floating button */}
-      {!isOpen && (
+      {!isOpen && !isClosing && (
         <button
           className={styles.floatingButton}
-          onClick={() => setIsOpen(true)}
+          onClick={handleOpen}
           aria-label="Open Telegram bot"
         >
           <MaterialIcon name="chat" className={styles.floatingIcon} />
