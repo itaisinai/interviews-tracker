@@ -166,9 +166,9 @@ export function OpportunityDetailPage() {
       </div>
 
       {/* Desktop header */}
-      <PageIntro
-        className="hidden md:block"
-        title={
+      <div className="hidden md:block">
+        <PageIntro
+          title={
           <EditableTitleField
             ariaLabel="Company name"
             className="font-headline-lg text-headline-lg text-on-background"
@@ -236,6 +236,7 @@ export function OpportunityDetailPage() {
           </>
         }
       />
+      </div>
 
       {focusedInteraction ? (
         <div className="mt-8">
