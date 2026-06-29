@@ -450,7 +450,7 @@ export function OpportunitiesPage() {
 
         <Link
           to="/opportunities/new"
-          className="fixed bottom-24 right-20 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg md:right-4"
+          className="fixed bottom-40 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg md:bottom-24"
         >
           <MaterialIcon name="add" filled className="text-[28px]" />
         </Link>
