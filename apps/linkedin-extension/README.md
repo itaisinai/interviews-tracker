@@ -11,12 +11,11 @@ Import LinkedIn jobs directly into Interviews Tracker with one click.
    - Select this directory (`apps/linkedin-extension`)
 
 2. **Configure Auth0** (required for production):
-   - Note your extension ID from the extensions page
-   - In Auth0 Application settings, add to **Allowed Callback URLs**:
-     ```
-     chrome-extension://<YOUR_EXTENSION_ID>/
-     ```
-   - Replace `<YOUR_EXTENSION_ID>` with the actual ID shown in Chrome
+   - Open the extension popup
+   - Open Chrome DevTools console (right-click popup → Inspect)
+   - Copy the exact "Redirect URI" shown in the console
+   - In Auth0 Application settings, add that URL to **Allowed Callback URLs**
+   - **Important**: Use the EXACT URL from the console (Chrome generates this URL automatically)
 
 3. **Use the extension**:
    - Open any LinkedIn job page (`https://www.linkedin.com/jobs/view/*`)

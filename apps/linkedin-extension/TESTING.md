@@ -15,17 +15,24 @@
 2. Enable "Developer mode" (toggle in top-right corner)
 3. Click "Load unpacked"
 4. Navigate to and select: `apps/linkedin-extension`
-5. **IMPORTANT**: Note the Extension ID shown below the extension name
-   - Example: `abcdefghijklmnopqrstuvwxyz123456`
 
-### 2. Configure Auth0 Callback URL
+### 2. Get the Redirect URI
+
+1. Click the extension icon in Chrome toolbar (popup opens)
+2. Right-click the popup → "Inspect" (opens DevTools)
+3. Go to the Console tab
+4. **IMPORTANT**: Copy the exact redirect URI shown in the console
+   - You'll see: "Add this EXACT URL to Auth0 Allowed Callback URLs:"
+   - Example format: `https://abcd1234efgh5678.chromiumapp.org/`
+   - **Do NOT guess or assume the format** - use the exact URL from console
+
+### 3. Configure Auth0 Callback URL
 
 1. Go to Auth0 Dashboard → Applications → Your Application
 2. Find "Allowed Callback URLs" field
-3. Add: `chrome-extension://<YOUR_EXTENSION_ID>/`
-   - Replace `<YOUR_EXTENSION_ID>` with the actual ID from step 1.5
-   - Include the trailing slash!
-4. Click "Save Changes"
+3. Paste the redirect URI you copied from the console
+4. Optionally enable "Refresh Token Rotation" for automatic token refresh
+5. Click "Save Changes"
 
 ## Test Cases
 
@@ -93,15 +100,21 @@
 
 ### Test 6: Token Refresh (Optional - requires waiting)
 
-This test requires a short-lived token or waiting for expiration.
+This test verifies automatic token refresh. **Only works if Auth0 is configured to issue refresh tokens.**
 
 1. Sign in
-2. Wait for token to expire (default: ~1 hour, or configure Auth0 for shorter expiration)
-3. Try to import a job
-4. **Expected**:
-   - Extension automatically refreshes token using refresh token
+2. Check console for: "Refresh token received: true"
+   - If false, skip this test - refresh tokens not configured
+3. Wait for token to expire (default: ~1 hour, or configure Auth0 for shorter expiration)
+4. Try to import a job
+5. **Expected** (if refresh tokens enabled):
+   - Console shows: "Access token expired, attempting refresh..."
+   - Console shows: "Token refresh successful"
    - Import succeeds without requiring re-authentication
    - No visible interruption to user
+6. **Expected** (if refresh tokens NOT enabled):
+   - Import fails with auth error
+   - User must sign in again
 
 ### Test 7: Manual Token Fallback (Dev Mode)
 
@@ -120,12 +133,16 @@ This test requires a short-lived token or waiting for expiration.
 
 ### Test 8: Error Handling - Invalid Callback URL
 
-1. Remove extension callback URL from Auth0 settings
+1. Remove or modify the callback URL in Auth0 settings (make it incorrect)
 2. Try to sign in
 3. **Expected**:
-   - Auth0 shows error: "Callback URL mismatch" or similar
+   - Auth0 shows error: "Callback URL mismatch" or "redirect_uri_mismatch"
    - Extension shows error message
    - User remains not signed in
+4. Restore correct callback URL
+5. Retry sign in
+6. **Expected**:
+   - Sign in succeeds
 
 ### Test 9: Error Handling - Network Issues
 

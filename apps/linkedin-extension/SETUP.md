@@ -12,29 +12,39 @@ The extension now uses **Authorization Code Flow with PKCE** for authentication.
 2. Enable "Developer mode" (toggle top-right)
 3. Click "Load unpacked"
 4. Select: `apps/linkedin-extension`
-5. **Copy the Extension ID** shown below the extension name
 
-### Step 2: Configure Auth0
+### Step 2: Get Your Redirect URI
+
+Chrome generates a unique redirect URI for your extension. You MUST add this exact URL to Auth0.
+
+1. Click the extension icon in Chrome toolbar (popup opens)
+2. Right-click the popup → **"Inspect"** (opens DevTools)
+3. Go to the **Console** tab
+4. Find the log message: **"Add this EXACT URL to Auth0 Allowed Callback URLs:"**
+5. **Copy the redirect URI** shown (e.g., `https://abcd1234.chromiumapp.org/`)
+
+**Important**: Do NOT guess the format. Use the exact URL from the console.
+
+### Step 3: Configure Auth0
 
 1. Go to [Auth0 Dashboard](https://manage.auth0.com)
 2. Navigate to: **Applications** → **Your Application** (Client ID: `hlI5kn4lePStXeHJohsGqyKnyoBHJtTW`)
 3. Find **"Allowed Callback URLs"** section
-4. Add this URL (replace with your actual extension ID):
-   ```
-   chrome-extension://<YOUR_EXTENSION_ID>/
-   ```
-   **Important**: Include the trailing slash!
+4. Paste the redirect URI you copied from the console
 5. Click **"Save Changes"**
 
-### Step 3: Test
+### Step 4: Test
 
 1. Open any LinkedIn job page
 2. Click the extension icon
 3. Click "Sign in"
 4. Authenticate with Auth0
-5. Click "Import job"
+5. The console will show if a refresh token was received
+6. Click "Import job"
 
 ✅ **Done!** The extension is now fully configured.
+
+**Note**: Check the console after sign-in to see if refresh tokens are working. If you see "Refresh token received: false", tokens will NOT auto-refresh and users will need to sign in again after ~1 hour.
 
 ---
 
@@ -68,11 +78,12 @@ Users:
    - Extension generates random `code_verifier` (PKCE)
    - Creates `code_challenge` = SHA256(code_verifier)
    - Builds Auth0 authorization URL with challenge
+   - Requests scope: `openid profile email offline_access`
 
 2. **chrome.identity.launchWebAuthFlow**
    - Opens Auth0 login page in system browser
    - User authenticates
-   - Auth0 redirects to `chrome-extension://<ID>/`
+   - Auth0 redirects to Chrome's generated redirect URI
 
 3. **Token Exchange**
    - Extension captures authorization `code` from redirect
@@ -119,9 +130,11 @@ Current Auth0 settings in `src/auth.js`:
   domain: "dev-c1s005zh8spezp0e.us.auth0.com",
   clientId: "hlI5kn4lePStXeHJohsGqyKnyoBHJtTW",
   audience: "https://interviews-tracker-api.com",
-  scope: "openid profile email"
+  scope: "openid profile email offline_access"
 }
 ```
+
+**Note**: `offline_access` is required for refresh tokens. If Auth0 is not configured to issue refresh tokens, the extension will require re-authentication when access tokens expire (~1 hour).
 
 These values are **safe to commit** (no secrets in PKCE flow).
 

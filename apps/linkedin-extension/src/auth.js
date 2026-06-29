@@ -30,8 +30,17 @@ function getAuth0Config() {
     clientId: "hlI5kn4lePStXeHJohsGqyKnyoBHJtTW",
     audience: "https://interviews-tracker-api.com",
     redirectUri: chrome.identity.getRedirectURL(),
-    scope: "openid profile email"
+    scope: "openid profile email offline_access"
   };
+}
+
+/**
+ * Get the redirect URI that Chrome will use.
+ * This must be added to Auth0 Allowed Callback URLs.
+ * @returns {string} The redirect URI (e.g., https://<extension-id>.chromiumapp.org/)
+ */
+export function getRedirectUri() {
+  return chrome.identity.getRedirectURL();
 }
 
 /**
@@ -244,6 +253,17 @@ async function refreshAccessToken(refreshToken) {
  */
 export async function signIn() {
   try {
+    const config = getAuth0Config();
+
+    console.log("=== Auth0 Sign-In Debug Info ===");
+    console.log("Redirect URI:", config.redirectUri);
+    console.log("Add this EXACT URL to Auth0 Allowed Callback URLs:");
+    console.log(config.redirectUri);
+    console.log("Auth0 Domain:", config.domain);
+    console.log("Client ID:", config.clientId);
+    console.log("Scope:", config.scope);
+    console.log("================================");
+
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     const authUrl = await buildAuthUrl(codeChallenge);
@@ -253,6 +273,8 @@ export async function signIn() {
       interactive: true
     });
 
+    console.log("Auth redirect URL received:", redirectUrl);
+
     const { code, error } = parseRedirectUrl(redirectUrl);
 
     if (error) {
@@ -260,6 +282,9 @@ export async function signIn() {
     }
 
     const tokenData = await exchangeCodeForToken(code, codeVerifier);
+    console.log("Token exchange successful");
+    console.log("Refresh token received:", Boolean(tokenData.refresh_token));
+
     const { email } = await storeAuthData(tokenData);
 
     return { success: true, email };
@@ -286,31 +311,35 @@ export async function signOut() {
 
 /**
  * Get a valid access token, refreshing if necessary.
- * Returns { token, email } on success, or { token: null } if not authenticated.
+ * Returns { token, email } on success, or { token: null, needsReauth: true } if expired and no refresh available.
  */
 export async function getValidToken() {
   const authData = await getAuthData();
 
   if (!authData.accessToken) {
-    return { token: null };
+    return { token: null, needsReauth: false };
   }
 
   if (isTokenExpired(authData.tokenExpiry)) {
     if (authData.refreshToken) {
       try {
+        console.log("Access token expired, attempting refresh...");
         const tokenData = await refreshAccessToken(authData.refreshToken);
+        console.log("Token refresh successful");
         const { email } = await storeAuthData(tokenData);
-        return { token: tokenData.access_token, email };
+        return { token: tokenData.access_token, email, needsReauth: false };
       } catch (error) {
         console.error("Token refresh failed:", error);
+        console.warn("User will need to sign in again");
         await signOut();
-        return { token: null };
+        return { token: null, needsReauth: true };
       }
     } else {
+      console.warn("Access token expired and no refresh token available - user must sign in again");
       await signOut();
-      return { token: null };
+      return { token: null, needsReauth: true };
     }
   }
 
-  return { token: authData.accessToken, email: authData.userEmail };
+  return { token: authData.accessToken, email: authData.userEmail, needsReauth: false };
 }

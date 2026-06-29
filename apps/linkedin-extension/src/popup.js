@@ -1,5 +1,5 @@
 import { buildAuthHeaders, getDetectedJobRows, hasUsefulJobContent } from "./popup-utils.js";
-import { signIn, signOut, getAuthData, getValidToken } from "./auth.js";
+import { signIn, signOut, getAuthData, getValidToken, getRedirectUri } from "./auth.js";
 
 const DEFAULT_API_BASE_URL = "http://localhost:4000";
 const LINKEDIN_JOB_URL_PATTERN = /^https:\/\/www\.linkedin\.com\/jobs\/(view\/|search\/)/;
@@ -27,6 +27,21 @@ const elements = {
 };
 
 let extractedPayload = null;
+
+function logRedirectUriForSetup() {
+  const redirectUri = getRedirectUri();
+  console.log("=== Chrome Extension Redirect URI ===");
+  console.log("Add this EXACT URL to Auth0 Allowed Callback URLs:");
+  console.log(redirectUri);
+  console.log("");
+  console.log("Steps:");
+  console.log("1. Go to Auth0 Dashboard");
+  console.log("2. Applications → Your Application");
+  console.log("3. Settings → Allowed Callback URLs");
+  console.log("4. Add:", redirectUri);
+  console.log("5. Save Changes");
+  console.log("====================================");
+}
 
 async function getSettings() {
   const syncSettings = await chrome.storage.sync.get({ apiBaseUrl: DEFAULT_API_BASE_URL });
@@ -262,6 +277,8 @@ elements.importButton.addEventListener("click", async () => {
     elements.importButton.disabled = !hasUsefulJobContent(extractedPayload);
   }
 });
+
+logRedirectUriForSetup();
 
 Promise.all([loadSettingsIntoForm(), detectCurrentJob()]).catch((error) => {
   showMessage(error instanceof Error ? error.message : "Could not initialize popup.", "error");

@@ -35,13 +35,21 @@ The extension requires Auth0 configuration for production use. You must configur
 ### Required Auth0 Application Settings
 
 1. **Application Type**: Single Page Application (SPA) or Native
-2. **Allowed Callback URLs**: Add the Chrome extension callback URL:
-   ```
-   chrome-extension://<EXTENSION_ID>/
-   ```
-   Replace `<EXTENSION_ID>` with your actual extension ID (visible in `chrome://extensions` when you load the unpacked extension).
 
-3. **Allowed Web Origins**: (optional, not required for PKCE flow)
+2. **Allowed Callback URLs**: Add the Chrome extension callback URL:
+   - Load the extension in Chrome
+   - Open the extension popup
+   - Right-click → Inspect → Console tab
+   - Copy the redirect URI shown in the console
+   - Add that EXACT URL to Auth0 (typically `https://<extension-id>.chromiumapp.org/`)
+   - **Do not guess the format** - use the exact value from the console
+
+3. **Refresh Token Settings** (for automatic token refresh):
+   - Enable "Refresh Token Rotation" (recommended)
+   - Set "Refresh Token Expiration" (e.g., 30 days)
+   - Ensure the API allows `offline_access` scope
+   - Without refresh tokens, users must sign in again when access tokens expire (~1 hour)
+
 4. **Token Endpoint Authentication Method**: None (PKCE flow doesn't use client secret)
 
 ### Extension Configuration
@@ -52,6 +60,7 @@ The extension is pre-configured with Auth0 settings in `src/auth.js`:
 domain: "dev-c1s005zh8spezp0e.us.auth0.com"
 clientId: "hlI5kn4lePStXeHJohsGqyKnyoBHJtTW"
 audience: "https://interviews-tracker-api.com"
+scope: "openid profile email offline_access"
 ```
 
 These values are **public** and safe to include in the extension (no secrets). For different environments or custom Auth0 tenants, update these values in `src/auth.js`.
