@@ -15,15 +15,62 @@ This feature imports the currently visible LinkedIn job page into Interviews Tra
 No build step is required for the minimal extension.
 
 1. Start the API locally, normally on `http://localhost:4000`.
-2. For local development, either enable the API's documented dev auth mode or paste a valid Auth0 API access token into the extension popup.
+2. **Configure Auth0 (required for production, see Auth0 Setup below)**
 3. Open Chrome and go to `chrome://extensions`.
 4. Enable **Developer mode**.
 5. Click **Load unpacked**.
 6. Select `apps/linkedin-extension`.
-7. Open a LinkedIn job page matching `https://www.linkedin.com/jobs/view/*` or a search page with `currentJobId`.
-8. Click the extension icon.
-9. If using Auth0, paste the API bearer token and click **Save token locally**.
-10. Click **Import job**.
+7. **Note the extension ID** shown in the extension card (e.g., `abcdefghijklmnopqrstuvwxyz123456`)
+8. Open a LinkedIn job page matching `https://www.linkedin.com/jobs/view/*` or a search page with `currentJobId`.
+9. Click the extension icon.
+10. Click **Sign in** and authenticate with Auth0.
+11. Click **Import job**.
+
+For local development, you can enable the API's dev auth mode instead of Auth0.
+
+## Auth0 Setup
+
+The extension requires Auth0 configuration for production use. You must configure the following in your Auth0 Application settings:
+
+### Required Auth0 Application Settings
+
+1. **Application Type**: Single Page Application (SPA) or Native
+
+2. **Allowed Callback URLs**: Add the Chrome extension callback URL:
+   - Load the extension in Chrome
+   - Open the extension popup
+   - Right-click → Inspect → Console tab
+   - Copy the redirect URI shown in the console
+   - Add that EXACT URL to Auth0 (typically `https://<extension-id>.chromiumapp.org/`)
+   - **Do not guess the format** - use the exact value from the console
+
+3. **Refresh Token Settings** (for automatic token refresh):
+   - Enable "Refresh Token Rotation" (recommended)
+   - Set "Refresh Token Expiration" (e.g., 30 days)
+   - Ensure the API allows `offline_access` scope
+   - Without refresh tokens, users must sign in again when access tokens expire (~1 hour)
+
+4. **Token Endpoint Authentication Method**: None (PKCE flow doesn't use client secret)
+
+### Extension Configuration
+
+The extension is pre-configured with Auth0 settings in `src/auth.js`:
+
+```javascript
+domain: "dev-c1s005zh8spezp0e.us.auth0.com"
+clientId: "hlI5kn4lePStXeHJohsGqyKnyoBHJtTW"
+audience: "https://interviews-tracker-api.com"
+scope: "openid profile email offline_access"
+```
+
+These values are **public** and safe to include in the extension (no secrets). For different environments or custom Auth0 tenants, update these values in `src/auth.js`.
+
+### Finding Your Extension ID
+
+1. Load the extension in Chrome (`chrome://extensions` → Load unpacked → select `apps/linkedin-extension`)
+2. The extension ID appears below the extension name (e.g., `abcdefghijklmnopqrstuvwxyz123456`)
+3. Add `chrome-extension://<EXTENSION_ID>/` to Auth0 Allowed Callback URLs
+4. The extension uses `chrome.identity.getRedirectURL()` which always returns `chrome-extension://<EXTENSION_ID>/`
 
 ## Backend URL and host permissions
 
@@ -40,9 +87,20 @@ Because extension requests use a `chrome-extension://<extension-id>` origin, the
 
 ## Auth behavior
 
-The backend's normal production auth expects `Authorization: Bearer <Auth0 access token>`. The extension does not bundle or hardcode secrets. It can send a user-provided bearer token stored in `chrome.storage.local` for the current browser profile.
+The extension uses **Auth0 Authorization Code Flow with PKCE** for secure authentication. When the user clicks "Sign in", the extension:
 
-Local cookie/session-style requests only work if the backend is running in a mode that accepts them; the current production API does **not** treat `credentials: "include"` alone as authentication. If the API returns `401` or `403`, the popup shows a clear auth error and asks for a valid Auth0 API bearer token.
+1. Generates a cryptographically random code verifier and challenge
+2. Launches Auth0's authorization page using `chrome.identity.launchWebAuthFlow`
+3. User authenticates with Auth0
+4. Auth0 redirects to `chrome-extension://<EXTENSION_ID>/` with an authorization code
+5. Extension exchanges the code + verifier for an access token
+6. Token is stored in `chrome.storage.local` and automatically included in API requests
+
+The extension **does not bundle or hardcode any secrets**. PKCE allows public clients (like Chrome extensions) to authenticate securely without a client secret.
+
+Tokens are automatically refreshed when they expire (if a refresh token was issued). Users can sign out at any time to clear stored credentials.
+
+For local development, you can still manually paste a bearer token in Settings if needed.
 
 ## Required environment variables
 
@@ -69,9 +127,21 @@ The popup opens as a 360px "LinkedIn Job Importer" panel. On supported LinkedIn 
 
 Use **Preview extracted data** to toggle a compact scrollable JSON preview of the exact payload that will be sent to `POST /api/job-imports/linkedin`.
 
-Use **Settings** to configure:
+### Authentication
+
+The popup shows the current authentication state:
+
+- **Not signed in**: Click "Sign in" to authenticate with Auth0
+- **Signed in ✓**: Shows your email address. Click "Sign out" to clear credentials.
+- **Manual token ✓**: Using a manually-entered token from Settings (for dev/testing)
+
+When signed in, the extension automatically includes your access token in all API requests. Tokens are refreshed automatically when they expire.
+
+### Settings
+
+Advanced configuration (click the gear icon):
 
 - **API base URL**: defaults to `http://localhost:4000` and is saved in `chrome.storage.sync`.
-- **Auth token**: user-provided Auth0 API access token saved in `chrome.storage.local`; when present, requests include `Authorization: Bearer <token>`.
+- **Manual auth token**: Optional manual bearer token for dev/testing. OAuth tokens take precedence.
 
-The authentication badge shows **Authenticated** when a token exists and **Token missing** otherwise. If the API returns `401` or `403`, the popup displays a clear authentication failure message.
+If the API returns `401` or `403`, the popup displays a clear authentication failure message.
