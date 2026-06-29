@@ -31,21 +31,126 @@
   transform: scale(0.95);
 }
 
+/* Mobile backdrop - only shown on mobile */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: block;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.backdropClosing {
+  animation: fadeOut 0.2s ease-out;
+}
+
+/* Desktop: hide backdrop */
+@media (min-width: 768px) {
+  .backdrop {
+    display: none;
+  }
+}
+
 /* Chat window */
 .chatWindow {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 420px;
-  height: 600px;
+  /* Mobile: full-screen overlay */
+  inset: 0;
+  width: 100%;
+  height: 100%;
   background: rgb(var(--color-background-elevated));
-  border: 1px solid rgb(var(--color-border-default));
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Mobile slide up animation */
+  animation: slideUpMobile 0.3s ease-out;
+}
+
+@keyframes slideUpMobile {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDownMobile {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.chatWindowClosing {
+  animation: slideDownMobile 0.3s ease-out;
+}
+
+/* Desktop: floating popover */
+@media (min-width: 768px) {
+  .chatWindow {
+    inset: auto;
+    bottom: 24px;
+    right: 24px;
+    width: 420px;
+    height: 600px;
+    border: 1px solid rgb(var(--color-border-default));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    /* Desktop scale + fade animation */
+    animation: scaleInDesktop 0.2s ease-out;
+  }
+
+  @keyframes scaleInDesktop {
+    from {
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes scaleOutDesktop {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+    }
+  }
+
+  .chatWindowClosing {
+    animation: scaleOutDesktop 0.2s ease-out;
+  }
 }
 
 /* Header */
@@ -292,10 +397,10 @@
   font-size: 22px;
 }
 
-/* Responsive */
-@media (max-width: 480px) {
-  .chatWindow {
-    width: calc(100vw - 32px);
-    height: calc(100vh - 100px);
+/* Mobile: fixed corner position */
+@media (max-width: 767px) {
+  .floatingButton {
+    bottom: 80px; /* Fixed position above bottom nav */
+    right: 16px;
   }
 }

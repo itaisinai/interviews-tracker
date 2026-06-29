@@ -129,15 +129,57 @@ function formatMarkdown(text: string): JSX.Element {
 
 export function TelegramBot() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => loadMessages());
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleClose = () => {
+    if (isClosing) return; // Prevent multiple close calls
+
+    setIsClosing(true);
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+      closeTimeoutRef.current = null;
+    }, 300); // Match animation duration
+  };
+
+  const handleOpen = () => {
+    // Clear any pending close animation
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setIsClosing(false);
+    setIsOpen(true);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
     saveMessages(messages);
   }, [messages]);
+
+  // Lock body scroll when chat is open on mobile
+  useEffect(() => {
+    if (isOpen && window.innerWidth < 768) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isOpen]);
 
   // Auto-scroll to bottom when messages change or chat opens
   useEffect(() => {
@@ -203,19 +245,27 @@ export function TelegramBot() {
   return (
     <>
       {/* Floating button */}
-      {!isOpen && (
+      {!isOpen && !isClosing && (
         <button
           className={styles.floatingButton}
-          onClick={() => setIsOpen(true)}
+          onClick={handleOpen}
           aria-label="Open Telegram bot"
         >
           <MaterialIcon name="chat" className={styles.floatingIcon} />
         </button>
       )}
 
+      {/* Mobile backdrop */}
+      {(isOpen || isClosing) && (
+        <div
+          className={`${styles.backdrop} ${isClosing ? styles.backdropClosing : ''}`}
+          onClick={handleClose}
+        />
+      )}
+
       {/* Chat window */}
-      {isOpen && (
-        <div className={styles.chatWindow}>
+      {(isOpen || isClosing) && (
+        <div className={`${styles.chatWindow} ${isClosing ? styles.chatWindowClosing : ''}`}>
           {/* Header */}
           <div className={styles.header}>
             <div className={styles.headerTitle}>
@@ -235,7 +285,7 @@ export function TelegramBot() {
               )}
               <button
                 className={styles.iconButton}
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 aria-label="Close chat"
               >
                 <MaterialIcon name="close" />

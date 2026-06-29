@@ -140,8 +140,35 @@ export function OpportunityDetailPage() {
 
   return (
     <>
-      <PageIntro
-        title={
+      {/* Mobile header */}
+      <div className="mb-4 md:hidden">
+        <h1 className="text-2xl font-bold text-on-background">{data.companyName}</h1>
+        <p className="mt-1 text-body-md text-on-surface-variant">{data.roleTitle}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Badge value={data.status} />
+          <Badge value={data.priority} />
+          <Badge value={data.pipelineType}>
+            {labelForPipelineType(data.pipelineType)}
+          </Badge>
+        </div>
+        <div className="mt-4 flex gap-2">
+          <LoadingButton
+            className="btn btn-secondary flex-1"
+            icon="add"
+            onClick={() => setShowAddInteractionModal(true)}
+          >
+            Add Interaction
+          </LoadingButton>
+          <Link className="btn btn-primary" to="/opportunities">
+            <MaterialIcon name="arrow_back" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Desktop header */}
+      <div className="hidden md:block">
+        <PageIntro
+          title={
           <EditableTitleField
             ariaLabel="Company name"
             className="font-headline-lg text-headline-lg text-on-background"
@@ -209,6 +236,7 @@ export function OpportunityDetailPage() {
           </>
         }
       />
+      </div>
 
       {focusedInteraction ? (
         <div className="mt-8">
@@ -221,7 +249,7 @@ export function OpportunityDetailPage() {
         </div>
       ) : null}
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-2">
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div className="space-y-8">
           <Timeline
             interactions={displayedInteractions}
@@ -246,7 +274,7 @@ export function OpportunityDetailPage() {
           </div>
           <InterviewPreparation opportunity={data} />
         </div>
-        <div>
+        <div className="space-y-8">
           <CompanyDetailsModern opportunity={data} />
         </div>
       </div>
