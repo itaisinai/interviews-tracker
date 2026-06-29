@@ -37,17 +37,24 @@
         <section class="auth-section" aria-labelledby="auth-title">
           <div class="auth-header">
             <div id="auth-title" class="auth-title">Authentication</div>
-            <div id="auth-badge" class="badge missing">Token missing</div>
+            <div id="auth-badge" class="badge missing">Not signed in</div>
           </div>
-          <div id="auth-note" class="small-note">Production imports require an Auth0 API bearer token.</div>
+          <div id="auth-user-info" class="small-note hidden"></div>
+          <div id="auth-note" class="small-note">Sign in with Auth0 to import jobs.</div>
+          <div id="auth-actions" class="actions">
+            <button id="sign-in" class="primary" type="button">Sign in</button>
+          </div>
+          <div id="auth-signed-in-actions" class="actions hidden">
+            <button id="sign-out" class="secondary" type="button">Sign out</button>
+          </div>
           <div id="settings" class="settings">
             <label for="api-base-url">API base URL</label>
             <input id="api-base-url" type="url" placeholder="http://localhost:4000">
-            <label for="token">Auth token</label>
-            <input id="token" type="password" autocomplete="off" placeholder="Paste Auth0 access token">
+            <label for="token">Manual auth token (optional)</label>
+            <input id="token" type="password" autocomplete="off" placeholder="For dev/testing only">
             <div class="settings-actions">
               <button id="save-settings" class="save" type="button">Save</button>
-              <button id="clear-token" class="secondary" type="button">Clear token</button>
+              <button id="clear-token" class="secondary" type="button">Clear manual token</button>
             </div>
           </div>
         </section>

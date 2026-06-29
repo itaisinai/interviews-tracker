@@ -1,4 +1,5 @@
 import { buildAuthHeaders, getDetectedJobRows, hasUsefulJobContent } from "./popup-utils.js";
+import { signIn, signOut, getAuthData, getValidToken } from "./auth.js";
 
 const DEFAULT_API_BASE_URL = "http://localhost:4000";
 const LINKEDIN_JOB_URL_PATTERN = /^https:\/\/www\.linkedin\.com\/jobs\/(view\/|search\/)/;
@@ -11,6 +12,11 @@ const elements = {
   message: document.getElementById("message"),
   authBadge: document.getElementById("auth-badge"),
   authNote: document.getElementById("auth-note"),
+  authUserInfo: document.getElementById("auth-user-info"),
+  authActions: document.getElementById("auth-actions"),
+  authSignedInActions: document.getElementById("auth-signed-in-actions"),
+  signInButton: document.getElementById("sign-in"),
+  signOutButton: document.getElementById("sign-out"),
   settings: document.getElementById("settings"),
   settingsToggle: document.getElementById("settings-toggle"),
   footerSettings: document.getElementById("footer-settings"),
@@ -25,7 +31,11 @@ let extractedPayload = null;
 async function getSettings() {
   const syncSettings = await chrome.storage.sync.get({ apiBaseUrl: DEFAULT_API_BASE_URL });
   const localSettings = await chrome.storage.local.get({ authToken: "" });
-  return { apiBaseUrl: syncSettings.apiBaseUrl, authToken: localSettings.authToken };
+  const { token: oauthToken } = await getValidToken();
+
+  const authToken = oauthToken || localSettings.authToken;
+
+  return { apiBaseUrl: syncSettings.apiBaseUrl, authToken };
 }
 
 function showMessage(text, type = "info") {
@@ -38,13 +48,36 @@ function clearMessage() {
   elements.message.className = "message";
 }
 
-function updateAuthStatus(authToken) {
-  const hasToken = Boolean(authToken);
-  elements.authBadge.textContent = hasToken ? "Authenticated ✓" : "Token missing";
-  elements.authBadge.className = `badge ${hasToken ? "authenticated" : "missing"}`;
-  elements.authNote.textContent = hasToken
-    ? "Bearer token saved locally in this browser profile."
-    : "Production imports require an Auth0 API bearer token. Local dev may work with API dev auth.";
+async function updateAuthStatus() {
+  const authData = await getAuthData();
+  const localSettings = await chrome.storage.local.get({ authToken: "" });
+  const hasManualToken = Boolean(localSettings.authToken);
+  const hasOAuthToken = Boolean(authData.accessToken);
+  const hasToken = hasOAuthToken || hasManualToken;
+
+  if (hasOAuthToken) {
+    elements.authBadge.textContent = "Signed in ✓";
+    elements.authBadge.className = "badge authenticated";
+    elements.authUserInfo.textContent = authData.userEmail ? `Signed in as ${authData.userEmail}` : "Signed in";
+    elements.authUserInfo.classList.remove("hidden");
+    elements.authNote.textContent = "You can now import jobs.";
+    elements.authActions.classList.add("hidden");
+    elements.authSignedInActions.classList.remove("hidden");
+  } else if (hasManualToken) {
+    elements.authBadge.textContent = "Manual token ✓";
+    elements.authBadge.className = "badge authenticated";
+    elements.authUserInfo.classList.add("hidden");
+    elements.authNote.textContent = "Using manual token from settings.";
+    elements.authActions.classList.remove("hidden");
+    elements.authSignedInActions.classList.add("hidden");
+  } else {
+    elements.authBadge.textContent = "Not signed in";
+    elements.authBadge.className = "badge missing";
+    elements.authUserInfo.classList.add("hidden");
+    elements.authNote.textContent = "Sign in with Auth0 to import jobs.";
+    elements.authActions.classList.remove("hidden");
+    elements.authSignedInActions.classList.add("hidden");
+  }
 }
 
 function clearDetectedCard() {
@@ -110,10 +143,11 @@ function isLinkedInJobPage(url) {
 }
 
 async function loadSettingsIntoForm() {
-  const settings = await getSettings();
-  elements.apiBaseUrlInput.value = settings.apiBaseUrl;
-  elements.tokenInput.value = settings.authToken;
-  updateAuthStatus(settings.authToken);
+  const syncSettings = await chrome.storage.sync.get({ apiBaseUrl: DEFAULT_API_BASE_URL });
+  const localSettings = await chrome.storage.local.get({ authToken: "" });
+  elements.apiBaseUrlInput.value = syncSettings.apiBaseUrl;
+  elements.tokenInput.value = localSettings.authToken;
+  await updateAuthStatus();
 }
 
 async function detectCurrentJob() {
@@ -144,20 +178,47 @@ async function detectCurrentJob() {
 elements.settingsToggle.addEventListener("click", () => toggleSettings());
 elements.footerSettings.addEventListener("click", () => toggleSettings(true));
 
+elements.signInButton.addEventListener("click", async () => {
+  elements.signInButton.textContent = "Signing in…";
+  elements.signInButton.disabled = true;
+  clearMessage();
+
+  try {
+    const result = await signIn();
+    if (result.success) {
+      showMessage(`Signed in successfully as ${result.email}`, "success");
+      await updateAuthStatus();
+    } else {
+      showMessage(`Sign-in failed: ${result.error}`, "error");
+    }
+  } catch (error) {
+    showMessage(error instanceof Error ? error.message : "Sign-in failed.", "error");
+  } finally {
+    elements.signInButton.textContent = "Sign in";
+    elements.signInButton.disabled = false;
+  }
+});
+
+elements.signOutButton.addEventListener("click", async () => {
+  await signOut();
+  await updateAuthStatus();
+  showMessage("Signed out successfully.", "info");
+});
+
 elements.saveSettings.addEventListener("click", async () => {
   const apiBaseUrl = elements.apiBaseUrlInput.value.trim() || DEFAULT_API_BASE_URL;
   const authToken = elements.tokenInput.value.trim();
   await chrome.storage.sync.set({ apiBaseUrl });
   await chrome.storage.local.set({ authToken });
-  updateAuthStatus(authToken);
+  await updateAuthStatus();
   showMessage("Settings saved.", "success");
 });
 
 elements.clearToken.addEventListener("click", async () => {
   elements.tokenInput.value = "";
   await chrome.storage.local.set({ authToken: "" });
-  updateAuthStatus("");
-  showMessage("Token cleared. Production imports will require a new Auth0 API bearer token.", "warning");
+  await updateAuthStatus();
+  showMessage("Manual token cleared.", "warning");
 });
 
 elements.previewToggle.addEventListener("click", () => {
