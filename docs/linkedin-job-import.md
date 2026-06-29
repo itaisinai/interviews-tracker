@@ -74,12 +74,12 @@ These values are **public** and safe to include in the extension (no secrets). F
 
 ## Backend URL and host permissions
 
-The popup uses `http://localhost:4000` by default. You can override it from Chrome extension storage under the `apiBaseUrl` key, for example with `chrome.storage.sync.set({ apiBaseUrl: "https://interviews-tracker-api.onrender.com" })` from the extension devtools context.
+The popup uses `http://localhost:4000` by default. You can override it from Chrome extension storage under the `apiBaseUrl` key, for example with `chrome.storage.sync.set({ apiBaseUrl: "https://interviews-api.trackylab.com/api" })` from the extension devtools context, or by clicking the settings gear icon in the popup.
 
 Changing `apiBaseUrl` is not enough by itself for production. Chrome also requires the API origin in `host_permissions`. The manifest currently includes:
 
-- `http://localhost:4000/*`
-- `https://interviews-tracker-api.onrender.com/*`
+- `http://localhost:4000/*` (local development)
+- `https://interviews-api.trackylab.com/*` (production)
 
 If deploying the API to a different host, add that origin to `apps/linkedin-extension/manifest.json` before packaging or loading the extension.
 
@@ -109,8 +109,10 @@ The backend uses the existing API authentication configuration. LinkedIn import 
 ```env
 OPENAI_API_KEY=...
 OPENAI_MODEL=gpt-4o-mini # optional; defaults to the existing backend default
-CHROME_EXTENSION_ORIGIN=chrome-extension://<installed-extension-id> # production extension CORS allow-list
+CHROME_EXTENSION_ORIGIN=chrome-extension://mnljpfkhaddfhpckjoihkoccpjffokhf # production extension CORS allow-list
 ```
+
+**Note**: The extension ID `mnljpfkhaddfhpckjoihkoccpjffokhf` is the current unpacked extension ID. If published to Chrome Web Store, this ID will change and must be updated.
 
 ## Known limitations
 

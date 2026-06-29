@@ -13,7 +13,7 @@
     "https://www.linkedin.com/jobs/view/*",
     "https://www.linkedin.com/jobs/search/*",
     "http://localhost:4000/*",
-    "https://interviews-tracker-api.onrender.com/*"
+    "https://interviews-api.trackylab.com/*"
   ],
   "action": {
     "default_popup": "src/popup.html"
