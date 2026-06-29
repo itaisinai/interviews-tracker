@@ -34,18 +34,32 @@
 /* Chat window */
 .chatWindow {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 420px;
-  height: 600px;
+  /* Mobile: full-screen overlay */
+  inset: 0;
+  width: 100%;
+  height: 100%;
   background: rgb(var(--color-background-elevated));
-  border: 1px solid rgb(var(--color-border-default));
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   z-index: 1000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Desktop: floating popover */
+@media (min-width: 768px) {
+  .chatWindow {
+    inset: auto;
+    bottom: 24px;
+    right: 24px;
+    width: 420px;
+    height: 600px;
+    border: 1px solid rgb(var(--color-border-default));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
 }
 
 /* Header */
@@ -292,10 +306,9 @@
   font-size: 22px;
 }
 
-/* Responsive */
-@media (max-width: 480px) {
-  .chatWindow {
-    width: calc(100vw - 32px);
-    height: calc(100vh - 100px);
+/* Mobile: adjust floating button to avoid bottom nav */
+@media (max-width: 767px) {
+  .floatingButton {
+    bottom: 80px; /* Account for bottom navigation */
   }
 }

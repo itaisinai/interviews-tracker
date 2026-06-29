@@ -64,7 +64,47 @@ export function CompaniesPage() {
         <input className="w-full border-none bg-transparent text-body-md focus:ring-0" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search company..." />
         {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
       </div>
-      <div className="overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
+
+      {/* Mobile: Card view */}
+      <div className="md:hidden space-y-3">
+        {rows.length === 0 && (
+          <div className="panel p-8 text-center text-on-surface-variant">
+            No companies found.
+          </div>
+        )}
+        {rows.map((company) => (
+          <Link
+            key={company.companyName}
+            to={`/companies/${encodeURIComponent(company.companyName)}`}
+            className="panel block p-4 transition-shadow hover:shadow-md"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-on-primary-container font-geist font-bold text-white">
+                {initials(company.companyName)}
+              </span>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-on-background truncate">{company.companyName}</h3>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-on-surface-variant">
+                  <span>{company.rolesCount} {company.rolesCount === 1 ? 'role' : 'roles'}</span>
+                  <span>•</span>
+                  <span>{company.interactionsCount} {company.interactionsCount === 1 ? 'interaction' : 'interactions'}</span>
+                </div>
+                {company.nextInteraction && (
+                  <div className="mt-2 text-sm text-on-surface-variant">
+                    Next: {formatDate(company.nextInteraction.date)} {company.nextInteraction.type}
+                  </div>
+                )}
+                <div className="mt-2">
+                  <Badge value={company.priority} />
+                </div>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Desktop: Table view */}
+      <div className="hidden md:block overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
         <div className="overflow-x-auto custom-scrollbar">
           <DataTable data={rows} columns={columns} className="min-w-[1200px]" emptyState={<span>No companies found.</span>} />
         </div>
