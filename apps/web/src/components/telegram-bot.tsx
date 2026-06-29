@@ -129,10 +129,19 @@ function formatMarkdown(text: string): JSX.Element {
 
 export function TelegramBot() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => loadMessages());
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+    }, 300); // Match animation duration
+  };
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
@@ -225,12 +234,15 @@ export function TelegramBot() {
 
       {/* Mobile backdrop */}
       {isOpen && (
-        <div className={styles.backdrop} onClick={() => setIsOpen(false)} />
+        <div
+          className={`${styles.backdrop} ${isClosing ? styles.backdropClosing : ''}`}
+          onClick={handleClose}
+        />
       )}
 
       {/* Chat window */}
       {isOpen && (
-        <div className={styles.chatWindow}>
+        <div className={`${styles.chatWindow} ${isClosing ? styles.chatWindowClosing : ''}`}>
           {/* Header */}
           <div className={styles.header}>
             <div className={styles.headerTitle}>
@@ -250,7 +262,7 @@ export function TelegramBot() {
               )}
               <button
                 className={styles.iconButton}
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 aria-label="Close chat"
               >
                 <MaterialIcon name="close" />
