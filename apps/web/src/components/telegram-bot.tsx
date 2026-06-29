@@ -139,10 +139,16 @@ export function TelegramBot() {
     setIsClosing(true);
     // Wait for animation to complete before unmounting
     setTimeout(() => {
-      setIsClosing(false);
       setIsOpen(false);
     }, 300); // Match animation duration
   };
+
+  // Reset isClosing when chat is fully closed
+  useEffect(() => {
+    if (!isOpen && isClosing) {
+      setIsClosing(false);
+    }
+  }, [isOpen, isClosing]);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
