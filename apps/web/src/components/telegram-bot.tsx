@@ -139,6 +139,16 @@ export function TelegramBot() {
     saveMessages(messages);
   }, [messages]);
 
+  // Lock body scroll when chat is open on mobile
+  useEffect(() => {
+    if (isOpen && window.innerWidth < 768) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isOpen]);
+
   // Auto-scroll to bottom when messages change or chat opens
   useEffect(() => {
     if (isOpen) {
@@ -211,6 +221,11 @@ export function TelegramBot() {
         >
           <MaterialIcon name="chat" className={styles.floatingIcon} />
         </button>
+      )}
+
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div className={styles.backdrop} onClick={() => setIsOpen(false)} />
       )}
 
       {/* Chat window */}

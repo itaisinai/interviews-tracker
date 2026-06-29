@@ -31,6 +31,22 @@
   transform: scale(0.95);
 }
 
+/* Mobile backdrop - only shown on mobile */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: block;
+}
+
+/* Desktop: hide backdrop */
+@media (min-width: 768px) {
+  .backdrop {
+    display: none;
+  }
+}
+
 /* Chat window */
 .chatWindow {
   position: fixed;
