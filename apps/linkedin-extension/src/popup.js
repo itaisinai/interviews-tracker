@@ -2,7 +2,7 @@ import { buildAuthHeaders, getDetectedJobRows, hasUsefulJobContent } from "./pop
 import { signIn, signOut, getAuthData, getValidToken, getRedirectUri } from "./auth.js";
 
 const DEFAULT_API_BASE_URL = "http://localhost:4000";
-const LINKEDIN_JOB_URL_PATTERN = /^https:\/\/www\.linkedin\.com\/jobs\/(view\/|search\/)/;
+const LINKEDIN_JOB_URL_PATTERN = /^https:\/\/www\.linkedin\.com\/jobs\/(view\/|search\/|search-results\/)/;
 
 const elements = {
   detectedCard: document.getElementById("detected-card"),

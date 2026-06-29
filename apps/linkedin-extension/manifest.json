@@ -17,6 +17,7 @@
   "host_permissions": [
     "https://www.linkedin.com/jobs/view/*",
     "https://www.linkedin.com/jobs/search/*",
+    "https://www.linkedin.com/jobs/search-results/*",
     "http://localhost:4000/*",
     "https://interviews-api.trackylab.com/*",
     "https://dev-c1s005zh8spezp0e.us.auth0.com/*"
@@ -28,7 +29,8 @@
     {
       "matches": [
         "https://www.linkedin.com/jobs/view/*",
-        "https://www.linkedin.com/jobs/search/*"
+        "https://www.linkedin.com/jobs/search/*",
+        "https://www.linkedin.com/jobs/search-results/*"
       ],
       "js": [
         "src/content.js"
