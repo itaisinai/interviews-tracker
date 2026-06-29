@@ -137,9 +137,10 @@ export function TelegramBot() {
 
   const handleClose = () => {
     setIsClosing(true);
+    // Wait for animation to complete before unmounting
     setTimeout(() => {
-      setIsOpen(false);
       setIsClosing(false);
+      setIsOpen(false);
     }, 300); // Match animation duration
   };
 
@@ -233,7 +234,7 @@ export function TelegramBot() {
       )}
 
       {/* Mobile backdrop */}
-      {isOpen && (
+      {(isOpen || isClosing) && (
         <div
           className={`${styles.backdrop} ${isClosing ? styles.backdropClosing : ''}`}
           onClick={handleClose}
@@ -241,7 +242,7 @@ export function TelegramBot() {
       )}
 
       {/* Chat window */}
-      {isOpen && (
+      {(isOpen || isClosing) && (
         <div className={`${styles.chatWindow} ${isClosing ? styles.chatWindowClosing : ''}`}>
           {/* Header */}
           <div className={styles.header}>
