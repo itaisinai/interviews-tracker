@@ -14,10 +14,10 @@
  */
 
 const STORAGE_KEYS = {
-  ACCESS_TOKEN: "authToken",
-  TOKEN_EXPIRY: "tokenExpiry",
-  USER_EMAIL: "userEmail",
-  REFRESH_TOKEN: "refreshToken"
+  ACCESS_TOKEN: "oauthAccessToken",
+  TOKEN_EXPIRY: "oauthTokenExpiry",
+  USER_EMAIL: "oauthUserEmail",
+  REFRESH_TOKEN: "oauthRefreshToken"
 };
 
 /**
