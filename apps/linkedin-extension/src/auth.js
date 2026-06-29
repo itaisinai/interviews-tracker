@@ -268,10 +268,15 @@ export async function signIn() {
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     const authUrl = await buildAuthUrl(codeChallenge);
 
+    console.log("Launching Auth0 authorization URL...");
+    console.log("Auth URL:", authUrl);
+
     const redirectUrl = await chrome.identity.launchWebAuthFlow({
       url: authUrl,
       interactive: true
     });
+
+    console.log("Auth flow completed successfully");
 
     console.log("Auth redirect URL received:", redirectUrl);
 
@@ -289,10 +294,26 @@ export async function signIn() {
 
     return { success: true, email };
   } catch (error) {
-    console.error("Sign-in error:", error);
+    console.error("=== Sign-in Error ===");
+    console.error("Error type:", error?.constructor?.name);
+    console.error("Error message:", error instanceof Error ? error.message : String(error));
+    console.error("Full error:", error);
+    console.error("===================");
+
+    let errorMessage = "Authentication failed";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      // Provide more helpful messages for common errors
+      if (error.message.includes("could not be loaded")) {
+        errorMessage = "Could not open Auth0 login page. Check console for details.";
+      } else if (error.message.includes("User cancelled")) {
+        errorMessage = "Sign-in cancelled.";
+      }
+    }
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Authentication failed"
+      error: errorMessage
     };
   }
 }
