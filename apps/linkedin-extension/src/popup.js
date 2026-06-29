@@ -6,6 +6,7 @@ const LINKEDIN_JOB_URL_PATTERN = /^https:\/\/www\.linkedin\.com\/jobs\/(view\/|s
 
 const elements = {
   detectedCard: document.getElementById("detected-card"),
+  refetchButton: document.getElementById("refetch"),
   importButton: document.getElementById("import"),
   previewToggle: document.getElementById("preview-toggle"),
   preview: document.getElementById("preview"),
@@ -101,16 +102,19 @@ function clearDetectedCard() {
   }
 }
 
-function appendDetectedRow({ value, missingText }) {
+function appendDetectedRow({ label, value, missingText }) {
   const item = document.createElement("div");
   item.className = `field-row ${value ? "" : "missing"}`.trim();
   const status = document.createElement("span");
   status.className = "status";
   status.textContent = value ? "✅" : "⚠";
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "label";
+  labelSpan.textContent = `${label}:`;
   const text = document.createElement("span");
   text.className = "value";
   text.textContent = value || missingText;
-  item.append(status, text);
+  item.append(status, labelSpan, text);
   elements.detectedCard.append(item);
 }
 
@@ -192,6 +196,16 @@ async function detectCurrentJob() {
 
 elements.settingsToggle.addEventListener("click", () => toggleSettings());
 elements.footerSettings.addEventListener("click", () => toggleSettings(true));
+
+elements.refetchButton.addEventListener("click", async () => {
+  elements.refetchButton.textContent = "⏳";
+  elements.refetchButton.disabled = true;
+  clearMessage();
+  await detectCurrentJob();
+  elements.refetchButton.textContent = "🔄";
+  elements.refetchButton.disabled = false;
+  showMessage("Job data refreshed", "info");
+});
 
 elements.signInButton.addEventListener("click", async () => {
   elements.signInButton.textContent = "Signing in…";

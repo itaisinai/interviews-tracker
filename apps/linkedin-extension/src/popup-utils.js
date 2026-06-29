@@ -4,10 +4,9 @@ export function hasUsefulJobContent(payload) {
 
 export function getDetectedJobRows(payload) {
   return [
-    { label: "title", value: payload?.title, missingText: "Missing title" },
-    { label: "company", value: payload?.companyName, missingText: "Missing company" },
-    { label: "location", value: payload?.location, missingText: "Missing location" },
-    { label: "id", value: payload?.linkedinJobId ? `ID: ${payload.linkedinJobId}` : null, missingText: "Missing LinkedIn job ID" }
+    { label: "Job", value: payload?.title, missingText: "Missing title" },
+    { label: "Company", value: payload?.companyName, missingText: "Missing company" },
+    { label: "Location", value: payload?.location, missingText: "Missing location" }
   ];
 }
 
