@@ -397,10 +397,10 @@
   font-size: 22px;
 }
 
-/* Mobile: adjust floating button to avoid bottom nav and other FABs */
+/* Mobile: position above bottom nav */
 @media (max-width: 767px) {
   .floatingButton {
-    bottom: 160px; /* Account for bottom navigation + other floating buttons */
+    bottom: 80px; /* Just above bottom navigation */
     right: 16px;
   }
 }
