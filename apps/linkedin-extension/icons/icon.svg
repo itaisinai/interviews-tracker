@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Background -->
+  <rect width="128" height="128" fill="#0A66C2" rx="24"/>
+
+  <!-- Briefcase icon -->
+  <g fill="#FFFFFF">
+    <!-- Handle -->
+    <rect x="48" y="36" width="32" height="8" rx="4"/>
+
+    <!-- Main briefcase body -->
+    <path d="M32 48 L32 92 C32 96.4 35.6 100 40 100 L88 100 C92.4 100 96 96.4 96 92 L96 48 C96 43.6 92.4 40 88 40 L40 40 C35.6 40 32 43.6 32 48 Z"/>
+
+    <!-- Lock detail -->
+    <circle cx="64" cy="68" r="6"/>
+    <rect x="62" y="68" width="4" height="12" rx="2"/>
+  </g>
+</svg>
