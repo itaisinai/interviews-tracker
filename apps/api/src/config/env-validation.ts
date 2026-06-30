@@ -241,16 +241,13 @@ export function getEnvironmentDiagnostics() {
   return {
     database: {
       configured: !!process.env.DATABASE_URL,
-      host: databaseHost,
       provider: databaseProvider
     },
     auth: {
-      domainConfigured: !!process.env.AUTH0_DOMAIN,
-      audienceConfigured: !!process.env.AUTH0_AUDIENCE,
-      domain: process.env.AUTH0_DOMAIN || null
+      configured: !!(process.env.AUTH0_DOMAIN && process.env.AUTH0_AUDIENCE)
     },
     chromeExtension: {
-      originConfigured: !!process.env.CHROME_EXTENSION_ORIGIN
+      configured: !!process.env.CHROME_EXTENSION_ORIGIN
     },
     gmail: {
       configured: !!(process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET)
