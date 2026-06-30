@@ -38,7 +38,7 @@ jobs:
           cp -r dist/api deploy-package/
 
           # Copy package files
-          cp package.json yarn.lock .yarnrc.yml deploy-package/
+          cp package.json yarn.lock .yarnrc.yml ecosystem.config.cjs deploy-package/
 
           # Copy Yarn releases (needed for Yarn 4.9.2)
           if [ -d .yarn/releases ]; then
@@ -50,6 +50,10 @@ jobs:
           if [ -d prisma ]; then
             cp -r prisma deploy-package/
           fi
+
+          # Copy apps/web/project.json (needed for nx wrapper)
+          mkdir -p deploy-package/apps/web
+          cp apps/web/project.json deploy-package/apps/web/
 
           # Copy node_modules (needed for runtime dependencies)
           cp -r node_modules deploy-package/
@@ -113,7 +117,7 @@ jobs:
             # Restart PM2 from current symlink
             echo "Restarting PM2..."
             cd ~/interviews-tracker-current
-            pm2 restart interviews-api || pm2 start dist/api/src/server.js --name interviews-api
+            NODE_ENV=production pm2 restart interviews-api || NODE_ENV=production pm2 start ecosystem.config.cjs
 
             # Wait for service to start
             echo "Waiting for service to start..."
