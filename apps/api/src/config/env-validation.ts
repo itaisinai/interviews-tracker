@@ -157,6 +157,13 @@ function validateChromeExtensionOrigin(origin: string): ValidationError | null {
  * Validate all environment variables
  */
 export function validateEnvironment(): void {
+  // Skip validation in CI/test environments (for smoke tests)
+  const isCI = process.env.CI === 'true' || process.env.NODE_ENV === 'test';
+  if (isCI) {
+    console.log('⏭️  Skipping environment validation (CI/test mode)');
+    return;
+  }
+
   const errors: ValidationError[] = [];
 
   // Check required variables exist
