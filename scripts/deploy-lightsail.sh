@@ -69,7 +69,7 @@ rsync -avz --delete \
 
 echo ""
 echo "Step 4: Installing dependencies on remote..."
-ssh ${REMOTE_USER}@${REMOTE_HOST} << 'ENDSSH'
+ssh ${REMOTE_USER}@${REMOTE_HOST} << ENDSSH
 cd ${RELEASE_DIR}
 corepack enable
 corepack prepare yarn@4.9.2 --activate
@@ -111,7 +111,7 @@ echo ""
 echo "Step 8: Restarting PM2..."
 ssh ${REMOTE_USER}@${REMOTE_HOST} << 'ENDSSH'
 cd /home/ubuntu/interviews-tracker/current
-pm2 restart interviews-api || pm2 start ecosystem.config.js
+pm2 restart interviews-api || pm2 start ecosystem.config.cjs
 pm2 save
 ENDSSH
 
