@@ -123,12 +123,19 @@ jobs:
             echo "Waiting for service to start..."
             sleep 5
 
+            # Check PM2 status
+            echo "PM2 Status:"
+            pm2 list
+
             # Health check
             echo "Running health check..."
             if curl -f http://localhost:4000/health; then
               echo "✅ Deployment successful!"
             else
               echo "❌ Health check failed!"
+              echo ""
+              echo "PM2 Logs (last 50 lines):"
+              pm2 logs interviews-api --lines 50 --nostream
               exit 1
             fi
 
