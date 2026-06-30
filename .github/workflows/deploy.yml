@@ -114,10 +114,12 @@ jobs:
             rm -f ~/interviews-tracker-current
             ln -s "$RELEASE_DIR" ~/interviews-tracker-current
 
-            # Restart PM2 from current symlink
+            # Stop old PM2 process and start new one
             echo "Restarting PM2..."
             cd ~/interviews-tracker-current
-            NODE_ENV=production pm2 restart interviews-api || NODE_ENV=production pm2 start ecosystem.config.cjs
+            pm2 stop interviews-api || true
+            pm2 delete interviews-api || true
+            NODE_ENV=production pm2 start ecosystem.config.cjs
 
             # Wait for service to start
             echo "Waiting for service to start..."
