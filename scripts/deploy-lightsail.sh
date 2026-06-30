@@ -62,7 +62,12 @@ rsync -avz --delete \
   --exclude='.git' \
   --exclude='.env*' \
   --exclude='dist' \
-  --exclude='apps/web' \
+  --exclude='apps/web/src' \
+  --exclude='apps/web/public' \
+  --exclude='apps/web/.storybook' \
+  --exclude='apps/web/index.html' \
+  --exclude='apps/web/vite.config.ts' \
+  --exclude='apps/web/tsconfig.json' \
   --exclude='apps/linkedin-extension' \
   --exclude='.turbo' \
   ./ ${REMOTE_USER}@${REMOTE_HOST}:${RELEASE_DIR}/
