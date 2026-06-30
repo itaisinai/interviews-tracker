@@ -5,9 +5,21 @@ type CompanyDetailFieldProps = {
   value: string;
   icon?: string;
   className?: string;
+  href?: string | null;
 };
 
-export function CompanyDetailField({ label, value, icon, className }: CompanyDetailFieldProps) {
+function isValidUrl(value: string): boolean {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function CompanyDetailField({ label, value, icon, className, href }: CompanyDetailFieldProps) {
+  const effectiveHref = href || (isValidUrl(value) ? value : null);
+
   return (
     <div className={`flex min-w-0 items-start gap-2 ${className ?? ""}`.trim()}>
       {icon ? (
@@ -19,9 +31,22 @@ export function CompanyDetailField({ label, value, icon, className }: CompanyDet
         <p className="truncate font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
           {label}
         </p>
-        <p className="mt-0.5 truncate text-body-md text-on-background" title={value}>
-          {value}
-        </p>
+        {effectiveHref ? (
+          <a
+            href={effectiveHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-0.5 inline-flex items-center gap-1 truncate text-body-md text-primary hover:underline"
+            title={value}
+          >
+            {value}
+            <MaterialIcon name="open_in_new" className="text-[16px]" />
+          </a>
+        ) : (
+          <p className="mt-0.5 truncate text-body-md text-on-background" title={value}>
+            {value}
+          </p>
+        )}
       </div>
     </div>
   );

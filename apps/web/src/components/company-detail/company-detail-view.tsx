@@ -9,7 +9,7 @@ import { Badge } from "../badge";
 import { CompanyFactsStrip } from "./company-facts-strip";
 import { CompanySummaryCard } from "./company-summary-card";
 import { buildSelectedOpportunityForInteraction } from "../../pages/interactions-page-selection";
-import { promoteOverdueInteractionsForRead } from "../../lib/interaction-status";
+import { promoteOverdueInteractionsForRead, getOpportunityProcessBadgeMeta } from "../../lib/interaction-status";
 import type { CompanyDetail } from "../../lib/types";
 import type { CompanyResearchResult } from "../../lib/types";
 import {
@@ -135,6 +135,10 @@ export function CompanyDetailView({
 
   const researchContext = `Roles: ${company.opportunities.length} · Interactions: ${company.interactions.length} · Domains: ${domains.join(", ") || "None"}`;
 
+  const companyBadge = useMemo(() => {
+    return getOpportunityProcessBadgeMeta(primary, displayInteractions);
+  }, [primary, displayInteractions]);
+
   return (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -143,13 +147,9 @@ export function CompanyDetailView({
             <h1 className="truncate font-title-lg text-title-lg font-bold text-on-background">
               {company.companyName}
             </h1>
-            <Badge tone="green">
-              {primary?.pipelineType === "ACTIVE_PROCESS"
-                ? "In process"
-                : primary?.status === "RESEARCH_LEAD"
-                  ? "In research"
-                  : primary?.status ?? "In research"}
-            </Badge>
+            {companyBadge ? (
+              <Badge tone={companyBadge.tone}>{companyBadge.label}</Badge>
+            ) : null}
           </div>
           <p className="mt-1 text-body-md text-on-surface-variant">
             {company.opportunities.length} role
@@ -186,11 +186,13 @@ export function CompanyDetailView({
 
       <div className="mt-6">
         <CompanyFactsStrip
-          facts={summaryFacts.map((fact) => ({
-            label: fact.label,
-            value: fact.value,
-            icon: fact.icon,
-          }))}
+          facts={summaryFacts
+            .filter((fact) => fact.value !== "-")
+            .map((fact) => ({
+              label: fact.label,
+              value: fact.value,
+              icon: fact.icon,
+            }))}
           onResearchClick={() => setShowResearch((value) => !value)}
         />
       </div>
@@ -205,6 +207,7 @@ export function CompanyDetailView({
               void queryClient.invalidateQueries({ queryKey: ["company", company.companyName] });
               void queryClient.invalidateQueries({ queryKey: ["companies"] });
               void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+              setShowResearch(false);
               onResearchSaved?.(research);
             }}
           />
@@ -256,6 +259,7 @@ export function CompanyDetailView({
             rows={[
               { label: "English Search Name", value: primary?.companySearchName ?? "-" },
               { label: "Work Model", value: primary?.workModel?.label ?? "-" },
+              { label: "LinkedIn", value: primary?.linkedinUrl ?? "-", href: primary?.linkedinUrl },
               { label: "Company", value: primary?.companyDescription ?? "-" },
             ]}
             moreRows={[

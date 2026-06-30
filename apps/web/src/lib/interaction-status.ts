@@ -128,27 +128,27 @@ export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | 
   const promoted = promoteOverdueInteractionStatusForRead(interaction);
 
   if (promoted.status === "SCHEDULED") {
-    return { label: "Scheduled", tone: "blue" as const };
+    return { label: "scheduled", tone: "blue" as const };
   }
 
   if (promoted.status === "REJECTED") {
-    return { label: "Rejected", tone: "red" as const };
+    return { label: "rejected", tone: "red" as const };
   }
 
   if (promoted.status === "DONE") {
     const text = interactionContextText(promoted);
     if (hasAny(text, rejectionPatterns)) {
-      return { label: "Rejected", tone: "red" as const };
+      return { label: "rejected", tone: "red" as const };
     }
 
-    return { label: "Passed", tone: "green" as const };
+    return { label: "passed", tone: "green" as const };
   }
 
   if (promoted.status === "CANCELLED") {
-    return { label: "Cancelled", tone: "muted" as const };
+    return { label: "cancelled", tone: "muted" as const };
   }
 
-  return { label: "Waiting for response", tone: "warning" as const };
+  return { label: "waiting for response", tone: "warning" as const };
 }
 
 export function getInteractionTimelineBadgeMeta(
@@ -186,7 +186,7 @@ export function getOpportunityProcessBadgeMeta(
     interactions.some((interaction) => interaction.status === "REJECTED" || normalizeInteractionType(interaction.type) === "Rejection");
 
   if (hasRejectedInteraction || /reject|declin|not.*moving forward|moving on|not a fit|no longer|withdrawn?|לא מתקדמים|דחייה|נדחה/.test(interactionText)) {
-    return { label: "Rejected", tone: "red" as const };
+    return { label: "rejected", tone: "red" as const };
   }
 
   const hasOfferSignal =
@@ -194,19 +194,19 @@ export function getOpportunityProcessBadgeMeta(
     interactions.some((interaction) => normalizeInteractionType(interaction.type) === "Offer" || /offer|contract|agreement|חתימה|הצעה/.test(`${interaction.type} ${interaction.outcome ?? ""} ${interaction.followUp ?? ""}`.toLowerCase()));
 
   if (hasOfferSignal) {
-    return { label: "Contract", tone: "violet" as const };
+    return { label: "contract", tone: "violet" as const };
   }
 
   if (opportunity?.pipelineType === "ACTIVE_PROCESS" || interactions.length > 0) {
-    return { label: "In process", tone: "green" as const };
+    return { label: "in process", tone: "green" as const };
   }
 
   if (opportunity?.pipelineType === "POTENTIAL") {
-    return { label: "Potential", tone: "blue" as const };
+    return { label: "potential", tone: "blue" as const };
   }
 
   if (opportunity?.pipelineType === "ARCHIVED") {
-    return { label: "Archived", tone: "muted" as const };
+    return { label: "archived", tone: "muted" as const };
   }
 
   return null;
