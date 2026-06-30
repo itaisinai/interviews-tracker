@@ -124,6 +124,7 @@ jobs:
             pm2 stop interviews-api || true
             pm2 delete interviews-api || true
             NODE_ENV=production pm2 start ecosystem.config.cjs
+            pm2 save
 
             # Wait for service to start
             echo "Waiting for service to start..."
