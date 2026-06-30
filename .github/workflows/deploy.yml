@@ -124,6 +124,15 @@ jobs:
             # Stop old PM2 process and start new one
             echo "Restarting PM2..."
             cd ~/interviews-tracker-current
+
+            # Debug: verify files are actually there
+            echo "Current directory:"
+            pwd
+            echo "Checking if dist/api/server.mjs exists:"
+            ls -lh dist/api/server.mjs || echo "FILE NOT FOUND!"
+            echo "Contents of current directory:"
+            ls -la
+
             pm2 stop interviews-api || true
             pm2 delete interviews-api || true
             NODE_ENV=production pm2 start ecosystem.config.cjs
