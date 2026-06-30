@@ -13,7 +13,7 @@ Add these 2 missing variables:
 OPPORTUNITY_WEBHOOK_SECRET=<run: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
 
 # Replace with your actual Render URL
-TELEGRAM_BACKEND_WEBHOOK_URL=https://your-api-name.onrender.com/webhooks/opportunities/telegram
+TELEGRAM_BACKEND_WEBHOOK_URL=https://interviews-api.trackylab.com/webhooks/opportunities/telegram
 ```
 
 You should already have:
@@ -40,7 +40,7 @@ Or manually:
 curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://your-api-name.onrender.com/webhooks/telegram",
+    "url": "https://interviews-api.trackylab.com/webhooks/telegram",
     "secret_token": "<YOUR_TELEGRAM_WEBHOOK_SECRET_TOKEN>"
   }'
 ```
@@ -56,7 +56,7 @@ Should show:
 {
   "ok": true,
   "result": {
-    "url": "https://your-api-name.onrender.com/webhooks/telegram",
+    "url": "https://interviews-api.trackylab.com/webhooks/telegram",
     "pending_update_count": 0
   }
 }
@@ -75,7 +75,7 @@ Make sure you have all these in Render:
 ### Telegram Bot
 - [ ] `TELEGRAM_BOT_TOKEN` - From BotFather
 - [ ] `TELEGRAM_WEBHOOK_SECRET_TOKEN` - Random 32-byte hex
-- [ ] `TELEGRAM_BACKEND_WEBHOOK_URL` - `https://your-api.onrender.com/webhooks/opportunities/telegram`
+- [ ] `TELEGRAM_BACKEND_WEBHOOK_URL` - `https://interviews-api.trackylab.com/webhooks/opportunities/telegram`
 - [ ] `OPPORTUNITY_WEBHOOK_SECRET` - Random 32-byte hex
 
 ### User
@@ -125,7 +125,7 @@ Look for:
 
 **Test API health:**
 ```bash
-curl https://your-api-name.onrender.com/health
+curl https://interviews-api.trackylab.com/health
 ```
 
 Should return: `{"ok":true,"service":"api"}`
@@ -161,7 +161,7 @@ After adding env vars in Render, you MUST redeploy:
 
 ### Production
 - Uses Render URL
-- Webhook: `https://your-api.onrender.com/webhooks/telegram`
+- Webhook: `https://interviews-api.trackylab.com/webhooks/telegram`
 - Register with: `./register-webhook-production.sh`
 
 **Note:** Telegram can only have ONE webhook URL at a time.

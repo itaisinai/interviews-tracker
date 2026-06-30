@@ -414,10 +414,10 @@ Run Neon migrations from your machine or from Render before using the API:
 yarn db:migrate:deploy
 ```
 
-The API serves routes under `/api`, so the production API base URL for the frontend should look like:
+The API serves routes under `/api`, so the production API base URL for the frontend is:
 
 ```text
-https://interviews-tracker-api.onrender.com/api
+https://interviews-api.trackylab.com/api
 ```
 
 ### Vercel Frontend
@@ -443,14 +443,14 @@ If Vercel ever resolves Yarn 1 again, check the deployment log for the install c
 Set this Vercel environment variable:
 
 ```env
-VITE_API_BASE_URL=https://interviews-tracker-api.onrender.com/api
+VITE_API_BASE_URL=https://interviews-api.trackylab.com/api
 VITE_AUTH0_DOMAIN=your-tenant.us.auth0.com
 VITE_AUTH0_CLIENT_ID=your-spa-client-id
 VITE_AUTH0_AUDIENCE=https://interviews-tracker-api
 VITE_ALLOWED_EMAIL=you@example.com
 ```
 
-After the Vercel URL is known, update Render's `FRONTEND_ORIGIN` to that exact origin, without a trailing path.
+After the Vercel URL is known, update the API's `FRONTEND_ORIGIN` environment variable to that exact origin, without a trailing path.
 
 ### Auth0
 
