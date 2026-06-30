@@ -1,10 +1,19 @@
-// Import instrumentation first to enable Sentry auto-instrumentation
+// Load environment variables first (with Parameter Store fallback in production)
+import { loadEnvironment } from "./config/env-loader.js";
+await loadEnvironment();
+
+// Import instrumentation to enable Sentry auto-instrumentation
 import "./instrument.js";
 import { Sentry } from "./lib/sentry.js";
+
+// Validate environment after loading
+import { validateEnvironment } from "./config/env-validation.js";
+validateEnvironment();
 
 import cors from "cors";
 import express from "express";
 import { aiRouter } from "./routes/ai.js";
+import { adminRouter } from "./routes/admin.js";
 import { companiesRouter } from "./routes/companies.js";
 import { dashboardRouter } from "./routes/dashboard.js";
 import { gmailRouter } from "./routes/gmail.js";
@@ -22,6 +31,9 @@ import { apiRequestLogger } from "./lib/request-logging.js";
 import { logger } from "./lib/logger.js";
 import { completeGmailOAuth } from "./services/gmail/gmail-service.js";
 import { validateDevModeOnStartup } from "./lib/dev-mode.js";
+
+// Store start time for diagnostics
+process.env.START_TIME = new Date().toISOString();
 
 const app = express();
 const localOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5176", "http://127.0.0.1:5176"];
@@ -113,6 +125,7 @@ app.get("/api/gmail/callback", async (request, response, next) => {
 });
 app.use("/webhooks", webhooksRouter);
 app.use("/api", requireAuth);
+app.use("/api/admin", adminRouter);
 app.use("/api/gmail", gmailRouter);
 app.use("/api/integrations/gmail", gmailRouter);
 app.use("/api/dashboard", dashboardRouter);

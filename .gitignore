@@ -7,5 +7,11 @@ playwright-report/
 packages/**/src/**/*.js
 packages/**/src/**/*.js.map
 .env
+.env.local
+.env.*.local
+# .env.dev and .env.prod are templates (placeholders only, safe to commit)
+# Use .env.prod.secrets for real values (NEVER commit this)
+.env.prod.secrets
+.env.*.secrets
 .pnp.*
 .yarn/install-state.gz
