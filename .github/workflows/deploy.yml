@@ -39,7 +39,7 @@ jobs:
           ls -la dist/ || echo "dist/ does not exist!"
 
           echo "Contents of dist/api directory:"
-          ls -la dist/api/ | head -20
+          ls -la dist/api/
 
           # Copy built API
           cp -r dist/api deploy-package/
