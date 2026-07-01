@@ -41,8 +41,9 @@ jobs:
           echo "Contents of dist/api directory:"
           ls -la dist/api/
 
-          # Copy built API
-          cp -r dist/api deploy-package/
+          # Copy built API (preserve dist directory structure)
+          mkdir -p deploy-package/dist
+          cp -r dist/api deploy-package/dist/
 
           # Copy package files
           cp package.json yarn.lock .yarnrc.yml ecosystem.config.cjs deploy-package/
