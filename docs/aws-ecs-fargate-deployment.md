@@ -820,12 +820,6 @@ aws lightsail stop-instance --instance-name interviews-tracker
 # Delete instance
 aws lightsail delete-instance --instance-name interviews-tracker
 
-# Remove old Lightsail GitHub secrets (if they exist from old workflow)
-# These were used by .github/workflows/deploy.yml before migrating to ECS:
-# - LIGHTSAIL_HOST
-# - LIGHTSAIL_USER
-# - LIGHTSAIL_SSH_KEY
-
 # Archive old deployment workflow
 git mv .github/workflows/deploy.yml .github/workflows/deploy-lightsail.yml.backup
 ```
