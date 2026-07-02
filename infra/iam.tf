@@ -23,13 +23,11 @@ resource "aws_iam_role" "ecs_execution" {
   }
 }
 
-# Attach AWS managed policy for ECS task execution
 resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
   role       = aws_iam_role.ecs_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Custom policy for SSM Parameter Store access
 resource "aws_iam_role_policy" "ecs_execution_ssm" {
   name = "${local.app_name}-ecs-execution-ssm-policy"
   role = aws_iam_role.ecs_execution.id
@@ -40,11 +38,14 @@ resource "aws_iam_role_policy" "ecs_execution_ssm" {
       {
         Effect = "Allow"
         Action = [
-          "ssm:GetParameters",
           "ssm:GetParameter",
+          "ssm:GetParameters",
           "ssm:GetParametersByPath"
         ]
-        Resource = "arn:aws:ssm:${var.aws_region}:${local.account_id}:parameter/interviews-tracker/prod/*"
+        Resource = [
+          "arn:aws:ssm:${var.aws_region}:${local.account_id}:parameter/interviews-tracker/prod",
+          "arn:aws:ssm:${var.aws_region}:${local.account_id}:parameter/interviews-tracker/prod/*"
+        ]
       }
     ]
   })
@@ -75,7 +76,6 @@ resource "aws_iam_role" "ecs_task" {
   }
 }
 
-# Task role policy - add application-specific permissions here
 resource "aws_iam_role_policy" "ecs_task_app_permissions" {
   name = "${local.app_name}-ecs-task-app-policy"
   role = aws_iam_role.ecs_task.id
@@ -83,8 +83,6 @@ resource "aws_iam_role_policy" "ecs_task_app_permissions" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # Example: Allow reading SSM parameters at runtime if needed
-      # Remove if not required by the application
       {
         Effect = "Allow"
         Action = [
@@ -92,10 +90,11 @@ resource "aws_iam_role_policy" "ecs_task_app_permissions" {
           "ssm:GetParameters",
           "ssm:GetParametersByPath"
         ]
-        Resource = "arn:aws:ssm:${var.aws_region}:${local.account_id}:parameter/interviews-tracker/prod/*"
-      },
-      # Add other application-specific permissions here
-      # Example: S3, SES, SNS, etc.
+        Resource = [
+          "arn:aws:ssm:${var.aws_region}:${local.account_id}:parameter/interviews-tracker/prod",
+          "arn:aws:ssm:${var.aws_region}:${local.account_id}:parameter/interviews-tracker/prod/*"
+        ]
+      }
     ]
   })
 }
