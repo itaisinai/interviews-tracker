@@ -74,15 +74,9 @@ RUN apk add --no-cache \
     libc6-compat \
     dumb-init
 
-# Enable Corepack
-RUN corepack enable
-
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 --ingroup nodejs nodejs
-
-# Copy package files
-COPY --from=builder --chown=nodejs:nodejs /app/package.json /app/yarn.lock /app/.yarnrc.yml ./
 
 # Copy node_modules (production dependencies)
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
@@ -109,5 +103,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the application
-CMD ["yarn", "start:api"]
+# Start the application directly with Node (no Yarn/Corepack needed at runtime)
+CMD ["node", "scripts/start-api.mjs"]
