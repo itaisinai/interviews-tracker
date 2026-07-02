@@ -1,0 +1,161 @@
+name: Deploy API to ECS Fargate
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment even if no changes detected'
+        required: false
+        default: 'false'
+
+env:
+  AWS_REGION: eu-central-1
+  ECR_REPOSITORY: interviews-tracker
+  ECS_CLUSTER: interviews-tracker
+  ECS_SERVICE: interviews-tracker
+  CONTAINER_NAME: api
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to ECS
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # Required for OIDC
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          # Fallback to access keys if OIDC is not configured
+          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Building Docker image..."
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Pushing Docker image to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Download current task definition
+        id: download-task-def
+        run: |
+          echo "Downloading current task definition..."
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_CLUSTER }} \
+            --query 'taskDefinition' \
+            --output json > task-definition.json
+
+          # Remove read-only fields that can't be registered
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+            task-definition.json > task-definition-clean.json
+
+      - name: Update task definition with new image
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition-clean.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy to Amazon ECS
+        id: deploy-ecs
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+          wait-for-minutes: 10
+
+      - name: Get service status
+        if: always()
+        run: |
+          echo "Getting ECS service status..."
+          aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].{Status:status,DesiredCount:desiredCount,RunningCount:runningCount,Deployments:deployments}' \
+            --output table
+
+      - name: Get ALB URL
+        if: success()
+        run: |
+          echo "Getting ALB URL..."
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names interviews-tracker-alb \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text)
+          echo "🚀 Deployment successful!"
+          echo "📍 Application URL: http://$ALB_DNS"
+          echo "💡 Update your DNS to point to: $ALB_DNS"
+
+      - name: Health check
+        if: success()
+        run: |
+          echo "Waiting for service to be healthy..."
+          sleep 30
+
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names interviews-tracker-alb \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text)
+
+          echo "Running health check..."
+          if curl -f -s "http://$ALB_DNS/health"; then
+            echo "✅ Health check passed!"
+          else
+            echo "⚠️ Health check failed. Check logs for details."
+            exit 1
+          fi
+
+      - name: Get recent logs on failure
+        if: failure()
+        run: |
+          echo "Fetching recent CloudWatch logs..."
+          aws logs tail /aws/ecs/interviews-tracker \
+            --since 5m \
+            --format short \
+            --follow false || echo "Could not fetch logs"
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "### Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cluster**: ${{ env.ECS_CLUSTER }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: ${{ env.ECS_SERVICE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: ${{ steps.build-image.outputs.image }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment succeeded!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Deployment failed. Check logs above." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,0 +1,25 @@
+# AWS Configuration
+aws_region  = "eu-central-1"
+environment = "prod"
+
+# ECS Configuration
+app_image     = "669424048162.dkr.ecr.eu-central-1.amazonaws.com/interviews-tracker:latest"
+cpu           = 512
+memory        = 1024
+desired_count = 1
+
+# Health Check
+health_check_grace_period = 60
+
+# Logging
+log_retention_days = 14
+
+# HTTPS (optional)
+enable_https    = false
+certificate_arn = ""
+
+# To enable HTTPS:
+# 1. Create an ACM certificate in AWS Console or CLI
+# 2. Validate the certificate
+# 3. Set enable_https = true
+# 4. Set certificate_arn to your certificate ARN
