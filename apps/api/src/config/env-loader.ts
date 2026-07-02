@@ -7,10 +7,11 @@
  * 3. In production: Fall back to AWS Parameter Store for missing variables
  */
 
-import { config as loadDotenv } from 'dotenv';
+import { dirname, resolve } from 'path';
+
 import { existsSync } from 'fs';
-import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { config as loadDotenv } from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -22,34 +23,38 @@ const ROOT_DIR = resolve(__dirname, '../../../..');
  * Load environment variables from Parameter Store (production only)
  */
 async function loadFromParameterStore(): Promise<Record<string, string>> {
-  // Only in production and only if AWS SDK is available
   if (!IS_PRODUCTION) {
     return {};
   }
 
   try {
-    // Dynamically import AWS SDK (only available on production server)
     const { SSMClient, GetParametersByPathCommand } = await import('@aws-sdk/client-ssm');
 
     const client = new SSMClient({ region: process.env.AWS_REGION || 'eu-central-1' });
-    const command = new GetParametersByPathCommand({
-      Path: '/interviews-tracker/prod',
-      WithDecryption: true,
-      Recursive: true
-    });
-
-    const response = await client.send(command);
     const params: Record<string, string> = {};
 
-    if (response.Parameters) {
-      for (const param of response.Parameters) {
+    let nextToken: string | undefined;
+
+    do {
+      const response = await client.send(
+        new GetParametersByPathCommand({
+          Path: '/interviews-tracker/prod',
+          WithDecryption: true,
+          Recursive: true,
+          MaxResults: 10,
+          NextToken: nextToken,
+        })
+      );
+
+      for (const param of response.Parameters ?? []) {
         if (param.Name && param.Value) {
-          // Extract variable name from path: /interviews-tracker/prod/DATABASE_URL -> DATABASE_URL
           const varName = param.Name.split('/').pop()!;
           params[varName] = param.Value;
         }
       }
-    }
+
+      nextToken = response.NextToken;
+    } while (nextToken);
 
     return params;
   } catch (error) {
