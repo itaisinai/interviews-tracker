@@ -83,17 +83,31 @@ export async function loadEnvironment(): Promise<void> {
     console.log('Production mode: checking AWS Parameter Store for missing variables...');
     const ssmParams = await loadFromParameterStore();
 
+    console.log(`DEBUG: Retrieved ${Object.keys(ssmParams).length} parameters from SSM`);
+    console.log('DEBUG: Parameter names from SSM:', Object.keys(ssmParams).join(', '));
+
     let loadedCount = 0;
+    let skippedCount = 0;
     for (const [key, value] of Object.entries(ssmParams)) {
+      const alreadyExists = !!process.env[key];
+      console.log(`DEBUG: Processing ${key}: already in process.env=${alreadyExists}`);
+
       // Only set if not already defined
       if (!process.env[key]) {
         process.env[key] = value;
         loadedCount++;
+        console.log(`DEBUG: Set process.env.${key} (length=${value.length})`);
+      } else {
+        skippedCount++;
+        console.log(`DEBUG: Skipped ${key} (already exists)`);
       }
     }
 
+    console.log(`DEBUG: Final summary - loaded: ${loadedCount}, skipped: ${skippedCount}`);
     if (loadedCount > 0) {
       console.log(`✓ Loaded ${loadedCount} variables from Parameter Store`);
+    } else {
+      console.log(`ℹ️  All ${skippedCount} SSM parameters were already defined in process.env`);
     }
   }
 
