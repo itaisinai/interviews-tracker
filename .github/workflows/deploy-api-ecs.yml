@@ -37,6 +37,36 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Verify ECS infrastructure exists
+        run: |
+          echo "Checking if ECS infrastructure is deployed..."
+
+          # Check if cluster exists
+          if ! aws ecs describe-clusters --clusters ${{ env.ECS_CLUSTER }} --query 'clusters[0].status' --output text | grep -q ACTIVE; then
+            echo "❌ ERROR: ECS cluster '${{ env.ECS_CLUSTER }}' not found or not ACTIVE"
+            echo ""
+            echo "📋 Required setup before first deployment:"
+            echo "1. Deploy infrastructure: cd infra && terraform init && terraform apply"
+            echo "2. Wait for Terraform to complete (creates ECS cluster, service, ALB, etc.)"
+            echo "3. Re-run this workflow"
+            echo ""
+            echo "See QUICK_START_ECS.md for detailed instructions."
+            exit 1
+          fi
+
+          # Check if service exists
+          if ! aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].status' --output text | grep -q ACTIVE; then
+            echo "❌ ERROR: ECS service '${{ env.ECS_SERVICE }}' not found or not ACTIVE"
+            echo ""
+            echo "Run: cd infra && terraform apply"
+            exit 1
+          fi
+
+          # Check if task definition family exists (will be empty on first deploy, that's ok)
+          echo "✅ ECS infrastructure verified"
+          echo "   Cluster: ${{ env.ECS_CLUSTER }} (ACTIVE)"
+          echo "   Service: ${{ env.ECS_SERVICE }} (ACTIVE)"
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
