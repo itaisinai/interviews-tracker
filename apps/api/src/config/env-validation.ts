@@ -31,6 +31,8 @@ const OPTIONAL_VARIABLES = [
   'TELEGRAM_BOT_TOKEN',
   'TELEGRAM_WEBHOOK_SECRET_TOKEN',
   'TELEGRAM_BACKEND_WEBHOOK_URL',
+  'TELEGRAM_ALLOWED_USER_IDS',
+  'TELEGRAM_ALLOWED_CHAT_IDS',
   'OPPORTUNITY_WEBHOOK_SECRET',
   'SENTRY_DSN',
   'SENTRY_ENVIRONMENT',
@@ -221,6 +223,25 @@ export function validateEnvironment(): void {
     }
     console.error('\nPlease fix your environment configuration.\n');
     process.exit(1);
+  }
+
+  // Warn if Telegram bot is enabled but authorization is not configured
+  if (process.env.TELEGRAM_BOT_TOKEN) {
+    const hasUserAuth = !!process.env.TELEGRAM_ALLOWED_USER_IDS;
+    const hasChatAuth = !!process.env.TELEGRAM_ALLOWED_CHAT_IDS;
+
+    if (!hasUserAuth && !hasChatAuth) {
+      console.warn('\n⚠️  WARNING: Telegram bot is enabled but authorization is not configured!');
+      console.warn('  • TELEGRAM_BOT_TOKEN is set, but neither TELEGRAM_ALLOWED_USER_IDS nor TELEGRAM_ALLOWED_CHAT_IDS is configured');
+      console.warn('  • All query requests will be denied for security');
+      console.warn('  • To fix: Set TELEGRAM_ALLOWED_USER_IDS with comma-separated Telegram user IDs');
+      console.warn('  • Example: TELEGRAM_ALLOWED_USER_IDS=696472003,123456789');
+      console.warn('  • To find your Telegram user ID, message @userinfobot on Telegram\n');
+    } else {
+      const userIds = process.env.TELEGRAM_ALLOWED_USER_IDS?.split(',').filter(Boolean).length || 0;
+      const chatIds = process.env.TELEGRAM_ALLOWED_CHAT_IDS?.split(',').filter(Boolean).length || 0;
+      console.log(`✅ Telegram authorization configured: ${userIds} allowed user(s), ${chatIds} allowed chat(s)`);
+    }
   }
 
   // Success
