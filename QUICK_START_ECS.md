@@ -2,6 +2,40 @@
 
 This is a condensed guide to get your API running on ECS Fargate in under 30 minutes.
 
+---
+
+## ✅ First Deploy Checklist
+
+Follow these steps in order:
+
+1. **Deploy infrastructure with Terraform**
+   ```bash
+   cd infra && terraform init && terraform apply
+   ```
+   Save the ALB DNS from outputs.
+
+2. **Setup GitHub Actions authentication**
+   - Choose OIDC (recommended) or Access Keys
+   - Create IAM role/user with deployment permissions
+   - Add `AWS_ROLE_ARN` (OIDC) or `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` (keys) to GitHub secrets
+
+3. **Push to master branch**
+   ```bash
+   git push origin master
+   ```
+   This triggers the deployment workflow.
+
+4. **Verify health endpoint**
+   ```bash
+   ALB_DNS="<from terraform output>"
+   curl http://$ALB_DNS/health
+   ```
+   Should return `{"ok":true,...}`
+
+If all 4 steps succeed, your API is deployed! 🎉
+
+---
+
 ## Prerequisites Check
 
 ```bash
@@ -44,6 +78,8 @@ terraform output alb_dns_name
 - CloudWatch Log Group
 
 ## Step 2: Setup GitHub Actions Authentication
+
+**IMPORTANT:** You must choose ONE authentication method. The workflow is currently configured for OIDC (Option A). If you choose Access Keys (Option B), you must edit `.github/workflows/deploy-api-ecs.yml` as shown below.
 
 ### Option A: OIDC (Recommended)
 
@@ -184,16 +220,26 @@ Add two secrets:
 
 **3. Update workflow file:**
 
-Edit `.github/workflows/deploy-api-ecs.yml`:
+Edit `.github/workflows/deploy-api-ecs.yml` and replace the "Configure AWS credentials" step:
 
 ```yaml
 - name: Configure AWS credentials
   uses: aws-actions/configure-aws-credentials@v4
   with:
+    # Comment out OIDC role
+    # role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+    
+    # Uncomment access keys
     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     aws-region: ${{ env.AWS_REGION }}
-    # Comment out the role-to-assume line
+```
+
+**Commit the workflow change:**
+```bash
+git add .github/workflows/deploy-api-ecs.yml
+git commit -m "Switch to access key authentication"
+git push origin master
 ```
 
 ## Step 3: First Deployment (5-10 minutes)

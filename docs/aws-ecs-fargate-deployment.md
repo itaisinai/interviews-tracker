@@ -154,6 +154,8 @@ Expected parameters:
 - `FRONTEND_ORIGIN`
 - And other application secrets
 
+**IMPORTANT:** The list of SSM parameters is read by Terraform at deploy time and baked into the ECS task definition. Adding or removing parameters requires running `terraform apply` to update the task definition. Changing parameter *values* only requires restarting ECS tasks (see Monitoring section).
+
 ---
 
 ## Terraform Deployment

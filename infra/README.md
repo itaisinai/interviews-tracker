@@ -189,24 +189,57 @@ All secrets and environment variables are loaded from AWS SSM Parameter Store at
 
 The task automatically loads ALL parameters under this path.
 
-To add new variables:
+### Adding or Removing Environment Variables
 
+**IMPORTANT:** The list of SSM parameters is read by Terraform at deploy time and baked into the ECS task definition. This means:
+
+1. **Adding a new parameter:**
 ```bash
+# Step 1: Add to SSM Parameter Store
 aws ssm put-parameter \
   --name /interviews-tracker/prod/NEW_VARIABLE \
   --value "value" \
   --type SecureString \
   --region eu-central-1
+
+# Step 2: Update task definition with Terraform (this reads the new parameter list)
+cd infra
+terraform apply
+
+# Step 3: The apply will create a new task definition revision
+# ECS will automatically deploy it (rolling update)
 ```
 
-Then force a new deployment:
-
+2. **Updating an existing parameter value:**
 ```bash
+# Step 1: Update in SSM
+aws ssm put-parameter \
+  --name /interviews-tracker/prod/EXISTING_VAR \
+  --value "new-value" \
+  --type SecureString \
+  --region eu-central-1 \
+  --overwrite
+
+# Step 2: Force ECS to restart tasks (no Terraform needed for value changes)
 aws ecs update-service \
   --cluster interviews-tracker \
   --service interviews-tracker \
   --force-new-deployment
 ```
+
+3. **Removing a parameter:**
+```bash
+# Step 1: Delete from SSM
+aws ssm delete-parameter \
+  --name /interviews-tracker/prod/OLD_VARIABLE \
+  --region eu-central-1
+
+# Step 2: Update task definition with Terraform
+cd infra
+terraform apply
+```
+
+**Why Terraform?** Terraform runs `aws ssm get-parameters-by-path` during `terraform apply` and generates the task definition with the current list of parameters. Adding/removing parameters requires `terraform apply` to update this list. Changing parameter *values* only requires restarting tasks.
 
 ## Scaling
 
