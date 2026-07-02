@@ -164,6 +164,14 @@ export function validateEnvironment(): void {
     return;
   }
 
+  console.log('DEBUG: Starting environment validation');
+  console.log('DEBUG: Required variables check:');
+  for (const variable of REQUIRED_VARIABLES) {
+    const exists = !!process.env[variable];
+    const length = process.env[variable]?.length || 0;
+    console.log(`DEBUG:   ${variable}: exists=${exists}, length=${length}`);
+  }
+
   const errors: ValidationError[] = [];
 
   // Check required variables exist
