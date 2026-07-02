@@ -29,10 +29,6 @@
     "db:studio": "prisma studio",
     "start:api": "node scripts/start-api.mjs",
     "start:web": "vite preview --config apps/web/vite.config.ts --host 0.0.0.0",
-    "deploy": "./scripts/deploy-lightsail.sh",
-    "deploy:setup": "ssh ubuntu@18.159.88.141 'bash -s' < ./scripts/setup-production-server.sh",
-    "secrets:upload": "./scripts/secrets-upload.sh",
-    "secrets:download": "ssh ubuntu@18.159.88.141 'bash -s' < ./scripts/secrets-download.sh",
     "secrets:verify": "aws ssm get-parameters-by-path --path /interviews-tracker/prod --region eu-central-1 --output table"
   },
   "dependencies": {

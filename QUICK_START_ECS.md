@@ -386,39 +386,14 @@ certificate_arn = "arn:aws:acm:..."
 terraform apply
 ```
 
-### 4. Monitor for 1 Week
+### 4. Monitor
 
-Keep Lightsail running as backup for 1 week:
+Monitor your deployment:
 
-- Monitor error rates in CloudWatch
-- Check application functionality
-- Verify all features work
-- Compare performance
-
-### 5. Migrate DNS
-
-After 1 week of stability:
-
-```bash
-# Lower TTL to 300 seconds
-# Wait for old TTL to expire
-# Update DNS to ALB
-# Monitor traffic
-```
-
-### 6. Cleanup Lightsail
-
-After 1-2 weeks with no issues:
-
-```bash
-# Stop Lightsail
-aws lightsail stop-instance --instance-name interviews-tracker
-
-# Wait 1 week
-
-# Delete Lightsail
-aws lightsail delete-instance --instance-name interviews-tracker
-```
+- Check error rates in CloudWatch
+- Verify application functionality
+- Test all features
+- Monitor performance metrics
 
 ---
 

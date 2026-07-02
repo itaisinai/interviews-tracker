@@ -218,7 +218,6 @@ Test the following manually or via API client:
 ## Phase 8: Parallel Operation (1 Week)
 
 ### Week 1: Monitor Both Systems
-- [ ] Lightsail still running
 - [ ] ECS running in parallel
 - [ ] Both receiving traffic (if split traffic)
 - [ ] Compare error rates
@@ -264,7 +263,6 @@ Day 7:
 - [ ] Lower DNS TTL to 300 seconds
 - [ ] Wait for old TTL to expire (wait the original TTL duration)
 - [ ] ECS verified healthy
-- [ ] Lightsail verified healthy (backup)
 
 ### Migration
 - [ ] Update DNS record to ALB DNS
@@ -288,28 +286,7 @@ Hour 24:
 
 ---
 
-## Phase 10: Lightsail Decommission
-
-### After 1 Week of Stability
-- [ ] No ECS issues for 1 week
-- [ ] All features working on ECS
-- [ ] Team comfortable with ECS
-
-### Stop Lightsail (Week 2)
-- [ ] Stop Lightsail instance: `aws lightsail stop-instance --instance-name interviews-tracker`
-- [ ] Monitor for 1 week
-- [ ] Verify no issues
-
-### Delete Lightsail (Week 3+)
-- [ ] No issues for 2+ weeks on ECS
-- [ ] Delete Lightsail instance: `aws lightsail delete-instance --instance-name interviews-tracker`
-- [ ] Remove Lightsail-related GitHub secrets
-- [ ] Archive old deployment workflow: `git mv .github/workflows/deploy.yml .github/workflows/deploy-lightsail.yml.backup`
-- [ ] Commit changes: `git commit -m "Archive Lightsail deployment workflow"`
-
----
-
-## Phase 11: Optimization (Optional)
+## Phase 10: Optimization (Optional)
 
 ### Cost Optimization
 - [ ] Review CloudWatch costs after 1 month
@@ -337,12 +314,10 @@ Hour 24:
 If issues occur at any phase:
 
 ### Before DNS Migration
-- [ ] Simply continue using Lightsail
 - [ ] Investigate ECS issues
 - [ ] Fix and redeploy
 
 ### After DNS Migration
-- [ ] Update DNS back to Lightsail IP
 - [ ] Wait for DNS propagation (5 minutes with lowered TTL)
 - [ ] Investigate ECS issues
 - [ ] Fix and re-migrate when ready
@@ -373,7 +348,6 @@ aws ecs update-service \
 - ✅ All checklist items above are completed
 - ✅ Application running on ECS for 2+ weeks with no issues
 - ✅ DNS pointing to ECS
-- ✅ Lightsail decommissioned
 - ✅ Team comfortable with new infrastructure
 - ✅ Documentation updated
 

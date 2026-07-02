@@ -54,8 +54,6 @@ coverage
 docs
 
 # Scripts not needed in container
-scripts/deploy-lightsail.sh
-scripts/setup-production-server.sh
 scripts/secrets-*.sh
 
 # Deployment artifacts

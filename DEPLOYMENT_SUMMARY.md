@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully migrated backend deployment from AWS Lightsail to AWS ECS Fargate with full CI/CD automation.
+Complete AWS ECS Fargate deployment infrastructure with full CI/CD automation.
 
 ## What Was Created
 
@@ -95,7 +95,6 @@ Successfully migrated backend deployment from AWS Lightsail to AWS ECS Fargate w
 - Rollback procedures
 - DNS and domain configuration
 - HTTPS setup guide
-- Lightsail migration strategy
 - Troubleshooting guide (6+ common issues)
 - Cost optimization tips
 - Security best practices
@@ -216,21 +215,7 @@ aws logs tail /aws/ecs/interviews-tracker --follow
 2. Wait for old TTL to expire
 3. Update DNS to point to ALB
 4. Monitor for issues
-5. Keep Lightsail running for 1 week as backup
 
-### 7. Cleanup Lightsail (After 1-2 Weeks)
-
-```bash
-# Stop instance
-aws lightsail stop-instance --instance-name interviews-tracker
-
-# Wait 1 week, verify no issues
-
-# Delete instance
-aws lightsail delete-instance --instance-name interviews-tracker
-
-# Archive old workflow
-git mv .github/workflows/deploy.yml .github/workflows/deploy-lightsail.yml.backup
 ```
 
 ---
@@ -260,7 +245,6 @@ git mv .github/workflows/deploy.yml .github/workflows/deploy-lightsail.yml.backu
 - [ ] Wait for TTL propagation
 - [ ] Update DNS to ALB URL
 - [ ] Monitor error rates
-- [ ] Keep Lightsail as backup for 1 week
 - [ ] Document ALB URL for team
 - [ ] Update internal documentation
 
@@ -340,7 +324,7 @@ All resources follow the pattern: `interviews-tracker-<resource-type>`
 
 ### Cost Comparison
 
-- **Current Lightsail**: ~$10-20/month
+- **Previous deployment**: ~$10-20/month
 - **New ECS Fargate**: ~$35-45/month
 - **Additional cost**: ~$20-25/month
 
@@ -355,7 +339,7 @@ All resources follow the pattern: `interviews-tracker-<resource-type>`
 
 ## Security Improvements
 
-Compared to Lightsail:
+Improvements over previous deployment:
 
 1. **No SSH access needed** - Everything via AWS APIs
 2. **Secrets in SSM** - Not in .env files on servers
@@ -368,7 +352,7 @@ Compared to Lightsail:
 
 ## Monitoring Improvements
 
-Compared to Lightsail:
+Improvements over previous deployment:
 
 1. **CloudWatch Logs** - Centralized, searchable, filterable
 2. **Container Insights** - CPU, memory, network metrics
@@ -382,15 +366,11 @@ Compared to Lightsail:
 
 This migration is fully reversible:
 
-1. **Lightsail still running** - Can switch DNS back anytime
-2. **Old workflow preserved** - `.github/workflows/deploy.yml` still works
-3. **No data migration** - Database unchanged (Neon PostgreSQL)
-4. **Environment variables** - Same SSM parameters work for both
+2. **No data migration** - Database unchanged (Neon PostgreSQL)
+3. **Environment variables** - Same SSM parameters work for both
 
 **Rollback procedure:**
-1. Update DNS back to Lightsail IP
 2. Wait for DNS propagation (5 minutes with lowered TTL)
-3. Verify Lightsail is healthy
 4. Pause GitHub Actions workflow
 
 ---
