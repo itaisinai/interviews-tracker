@@ -20,14 +20,11 @@ RUN corepack enable
 COPY .yarnrc.yml package.json yarn.lock ./
 
 # Copy workspace structure (needed for yarn workspaces)
-COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
-COPY packages/core/package.json ./packages/core/
-COPY packages/ai/package.json ./packages/ai/
-COPY packages/integrations/package.json ./packages/integrations/
-COPY packages/logger/package.json ./packages/logger/
-COPY packages/design-system/package.json ./packages/design-system/
-COPY packages/api-client/package.json ./packages/api-client/
+COPY nx.json tsconfig.json ./
+COPY prisma ./prisma
+COPY apps ./apps
+COPY packages ./packages
+COPY scripts ./scripts
 
 # Install dependencies
 RUN yarn install --immutable
