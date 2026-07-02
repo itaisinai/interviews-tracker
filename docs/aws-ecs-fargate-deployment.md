@@ -146,13 +146,24 @@ aws ssm get-parameters-by-path \
   --output table
 ```
 
-Expected parameters:
+Expected parameters (see `.env.prod` for complete list):
 - `DATABASE_URL`
 - `AUTH0_DOMAIN`
 - `AUTH0_AUDIENCE`
-- `OPENAI_API_KEY`
+- `ALLOWED_EMAIL`
 - `FRONTEND_ORIGIN`
-- And other application secrets
+- `PORT`
+- `OPENAI_API_KEY`
+- `GMAIL_CLIENT_ID`
+- `GMAIL_CLIENT_SECRET`
+- `GMAIL_REDIRECT_URI`
+- `GMAIL_TOKEN_ENCRYPTION_KEY`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_WEBHOOK_SECRET_TOKEN`
+- `TELEGRAM_BACKEND_WEBHOOK_URL`
+- `OPPORTUNITY_WEBHOOK_SECRET`
+- `SENTRY_DSN` (optional)
+- And other secrets from `.env.prod`
 
 **IMPORTANT:** The list of SSM parameters is read by Terraform at deploy time and baked into the ECS task definition. Adding or removing parameters requires running `terraform apply` to update the task definition. Changing parameter *values* only requires restarting ECS tasks (see Monitoring section).
 
@@ -809,7 +820,8 @@ aws lightsail stop-instance --instance-name interviews-tracker
 # Delete instance
 aws lightsail delete-instance --instance-name interviews-tracker
 
-# Remove GitHub secrets
+# Remove old Lightsail GitHub secrets (if they exist from old workflow)
+# These were used by .github/workflows/deploy.yml before migrating to ECS:
 # - LIGHTSAIL_HOST
 # - LIGHTSAIL_USER
 # - LIGHTSAIL_SSH_KEY
