@@ -33,18 +33,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # Option 1: OIDC (Recommended) - Set AWS_ROLE_ARN secret
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
-          # Option 2: Access Keys - Uncomment and set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets
-          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # aws-region: ${{ env.AWS_REGION }}
-
-          # IMPORTANT: You must choose ONE option above:
-          # - For OIDC: Set AWS_ROLE_ARN secret (requires OIDC provider setup in AWS)
-          # - For Access Keys: Comment out role-to-assume, uncomment access keys, set both secrets
 
       - name: Login to Amazon ECR
         id: login-ecr
