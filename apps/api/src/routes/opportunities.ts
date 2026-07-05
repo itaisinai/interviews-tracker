@@ -4,6 +4,7 @@ import {
   deleteOpportunityHandler,
   getOpportunityHandler,
   hideOpportunityGmailMessageHandler,
+  ignoreOpportunityGmailMessageHandler,
   listOpportunitiesHandler,
   listOpportunityInteractionsHandler,
   listTrackedOpportunityGmailMessagesHandler,
@@ -12,6 +13,7 @@ import {
   parseOpportunityInteractionTextHandler,
   restoreOpportunityGmailMessageHandler,
   searchOpportunityGmailHandler,
+  unignoreOpportunityGmailMessageHandler,
   unpickOpportunityGmailMessageHandler,
   updateOpportunityHandler
 } from "../controllers/opportunities-controller.js";
@@ -131,6 +133,26 @@ opportunitiesRouter.post("/:slugOrId/interactions/parse-text", asyncHandler(asyn
 
 opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/used", asyncHandler(async (request, response) => {
   const result = await unpickOpportunityGmailMessageHandler(request as AuthenticatedRequest);
+  if (!result) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  response.status(204).end();
+}));
+
+opportunitiesRouter.post("/:slugOrId/gmail/messages/:messageId/ignore", asyncHandler(async (request, response) => {
+  const result = await ignoreOpportunityGmailMessageHandler(request as AuthenticatedRequest);
+  if (!result) {
+    response.status(404).json({ message: "Opportunity not found" });
+    return;
+  }
+
+  response.status(204).end();
+}));
+
+opportunitiesRouter.delete("/:slugOrId/gmail/messages/:messageId/ignore", asyncHandler(async (request, response) => {
+  const result = await unignoreOpportunityGmailMessageHandler(request as AuthenticatedRequest);
   if (!result) {
     response.status(404).json({ message: "Opportunity not found" });
     return;

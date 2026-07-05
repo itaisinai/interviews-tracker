@@ -11,6 +11,7 @@ type EmailActionsHandlers = {
   setMessage: (value: string) => void;
   setFlowState: (value: any) => void;
   setClearingEmailId: (value: string | null) => void;
+  setIgnoringEmailId: (value: string | null) => void;
   setPendingPickedEmailIds: (value: React.SetStateAction<Set<string>>) => void;
 };
 
@@ -26,6 +27,7 @@ export function useGmailEmailActions(handlers: EmailActionsHandlers) {
     setMessage,
     setFlowState,
     setClearingEmailId,
+    setIgnoringEmailId,
     setPendingPickedEmailIds
   } = handlers;
 
@@ -40,7 +42,8 @@ export function useGmailEmailActions(handlers: EmailActionsHandlers) {
         (current) => ({
           removedEmails:
             current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? [],
-          pickedEmails: current?.pickedEmails ?? []
+          pickedEmails: current?.pickedEmails ?? [],
+          ignoredEmails: current?.ignoredEmails ?? []
         })
       );
       setMessage("Email restored.");
@@ -70,7 +73,8 @@ export function useGmailEmailActions(handlers: EmailActionsHandlers) {
         (current) => ({
           removedEmails: current?.removedEmails ?? [],
           pickedEmails:
-            current?.pickedEmails.filter((pickedEmail) => pickedEmail.id !== email.id) ?? []
+            current?.pickedEmails.filter((pickedEmail) => pickedEmail.id !== email.id) ?? [],
+          ignoredEmails: current?.ignoredEmails ?? []
         })
       );
       setMessage("Picked email removed from Gmail tracking.");
@@ -83,8 +87,62 @@ export function useGmailEmailActions(handlers: EmailActionsHandlers) {
     }
   }
 
+  async function ignoreEmail(email: GmailSearchCandidate | TrackedGmailEmail) {
+    setIgnoringEmailId(email.id);
+    setError(null);
+
+    try {
+      await api.gmailIgnoreEmail(opportunityId, email.id);
+      queryClient.setQueryData<GmailMessageStates>(
+        ["gmail-message-states", opportunityId],
+        (current) => ({
+          removedEmails: current?.removedEmails ?? [],
+          pickedEmails: current?.pickedEmails ?? [],
+          ignoredEmails: [
+            { id: email.id, subject: email.subject, date: email.date },
+            ...(current?.ignoredEmails ?? [])
+          ]
+        })
+      );
+      setMessage("Email ignored globally.");
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError));
+      setFlowState("failed");
+      setMessage("Could not ignore email.");
+    } finally {
+      setIgnoringEmailId(null);
+    }
+  }
+
+  async function unignoreEmail(email: TrackedGmailEmail) {
+    setIgnoringEmailId(email.id);
+    setError(null);
+
+    try {
+      await api.gmailUnignoreEmail(opportunityId, email.id);
+      queryClient.setQueryData<GmailMessageStates>(
+        ["gmail-message-states", opportunityId],
+        (current) => ({
+          removedEmails: current?.removedEmails ?? [],
+          pickedEmails: current?.pickedEmails ?? [],
+          ignoredEmails:
+            current?.ignoredEmails.filter((ignoredEmail) => ignoredEmail.id !== email.id) ?? []
+        })
+      );
+      setMessage("Email unignored.");
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError));
+      setFlowState("failed");
+      setMessage("Could not unignore email.");
+    } finally {
+      setIgnoringEmailId(null);
+    }
+  }
+
   return {
     restoreEmail,
-    unpickEmail
+    unpickEmail,
+    ignoreEmail,
+    unignoreEmail
   };
 }

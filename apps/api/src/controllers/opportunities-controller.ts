@@ -1,6 +1,6 @@
 import { createOpportunity, deleteOpportunity, getOpportunity, listOpportunities, updateOpportunity } from "../services/opportunities/opportunity-service.js";
 import { getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord } from "../repositories/opportunity-repository.js";
-import { hideGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages, syncAttachedGmailInteractionData, unmarkUsedGmailMessageState } from "../services/gmail/gmail-service.js";
+import { hideGmailMessage, ignoreGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages, syncAttachedGmailInteractionData, unignoreGmailMessage, unmarkUsedGmailMessageState } from "../services/gmail/gmail-service.js";
 import { interactionInputSchema, opportunityInputSchema } from "../lib/schemas.js";
 
 import type { Request } from "express";
@@ -243,6 +243,39 @@ export async function unpickOpportunityGmailMessageHandler(request: Authenticate
     auth0Email: request.auth.email,
     messageId,
     jobOpportunityId: opportunity.id
+  });
+
+  return { ok: true };
+}
+
+export async function ignoreOpportunityGmailMessageHandler(request: AuthenticatedRequest) {
+  const opportunity = await getOpportunitySummaryRecord(request.params.slugOrId, request.auth.email);
+
+  if (!opportunity) {
+    return null;
+  }
+
+  const { messageId } = z.object({ messageId: z.string().min(1) }).parse(request.params);
+  await ignoreGmailMessage({
+    auth0Email: request.auth.email,
+    messageId,
+    jobOpportunityId: opportunity.id
+  });
+
+  return { ok: true };
+}
+
+export async function unignoreOpportunityGmailMessageHandler(request: AuthenticatedRequest) {
+  const opportunity = await getOpportunitySummaryRecord(request.params.slugOrId, request.auth.email);
+
+  if (!opportunity) {
+    return null;
+  }
+
+  const { messageId } = z.object({ messageId: z.string().min(1) }).parse(request.params);
+  await unignoreGmailMessage({
+    auth0Email: request.auth.email,
+    messageId
   });
 
   return { ok: true };

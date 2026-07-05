@@ -46,8 +46,11 @@ export {
 export {
   buildOpportunityScopedGmailMessageStateWhere,
   hideGmailMessage,
+  ignoreGmailMessage,
+  listAllIgnoredGmailMessages,
   listTrackedGmailMessages,
   restoreHiddenGmailMessage,
+  unignoreGmailMessage,
   unmarkUsedGmailMessageState
 } from "./gmail-message-state.js";
 

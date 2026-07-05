@@ -131,6 +131,7 @@ export function useGmailInteractionPanel({
     setMessage: state.setMessage,
     setFlowState: state.setFlowState,
     setClearingEmailId: state.setClearingEmailId,
+    setIgnoringEmailId: state.setIgnoringEmailId,
     setPendingPickedEmailIds: state.setPendingPickedEmailIds
   });
 
@@ -207,6 +208,7 @@ export function useGmailInteractionPanel({
   const shouldReconnect = state.needsReconnect || statusNeedsReconnect;
   const removedEmails = gmailMessageStatesQuery.data?.removedEmails ?? [];
   const pickedEmails = gmailMessageStatesQuery.data?.pickedEmails ?? [];
+  const ignoredEmails = gmailMessageStatesQuery.data?.ignoredEmails ?? [];
 
   return {
     statusLoading: statusQuery.isLoading,
@@ -235,9 +237,12 @@ export function useGmailInteractionPanel({
       state.flowState === "parsing_email" ||
       Boolean(state.draft),
     clearingEmailId: state.clearingEmailId,
+    ignoringEmailId: state.ignoringEmailId,
     removedEmails,
     pickedEmails,
+    ignoredEmails,
     removedEmailsExpanded: state.removedEmailsExpanded,
+    ignoredEmailsExpanded: state.ignoredEmailsExpanded,
     pendingPickedEmailIds: state.pendingPickedEmailIds,
     gmailMessageStatesFetching: gmailMessageStatesQuery.isFetching,
     draft: state.draft,
@@ -262,8 +267,11 @@ export function useGmailInteractionPanel({
     clearEmail: searchHandlers.clearEmail,
     restoreEmail: emailActions.restoreEmail,
     unpickEmail: emailActions.unpickEmail,
+    ignoreEmail: emailActions.ignoreEmail,
+    unignoreEmail: emailActions.unignoreEmail,
     attachToExistingInteraction: saveHandlers.attachToExistingInteraction,
     onRemovedEmailsExpandedChange: state.setRemovedEmailsExpanded,
+    onIgnoredEmailsExpandedChange: state.setIgnoredEmailsExpanded,
     onSelectAnotherEmail: () => {
       state.setDraft(null);
       state.setSelectedEmail(null);

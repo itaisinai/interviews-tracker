@@ -17,6 +17,8 @@ const lists = [
 export function SettingsPage() {
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["options"], queryFn: api.options });
   const gmailStatusQuery = useQuery({ queryKey: ["gmail-status"], queryFn: api.gmailStatus });
+  const gmailConnected = gmailStatusQuery.data?.connected ?? false;
+
   if (isLoading) {
     return <PageLoadingState title="Settings" description="Loading domains, sizes, stages, and work models." />;
   }
@@ -28,6 +30,7 @@ export function SettingsPage() {
     <>
       <PageIntro title="Settings" description="Manage data options used by forms, filters, and parsed AI output." actions={isFetching ? <InlineLoadingState label="Refreshing" /> : undefined} />
       <GmailIntegrationCard status={gmailStatusQuery.data} isLoading={gmailStatusQuery.isLoading} isFetching={gmailStatusQuery.isFetching} />
+      {gmailConnected && <IgnoredEmailsCard />}
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {lists.map(([title, kind, key, icon]) => <OptionList key={kind} title={title} kind={kind} icon={icon} items={(data?.[key] ?? []) as Option[]} />)}
       </div>
@@ -122,6 +125,85 @@ function GmailIntegrationCard({ status, isLoading, isFetching }: { status?: Gmai
           ) : null}
         </div>
       </div>
+    </section>
+  );
+}
+
+function IgnoredEmailsCard() {
+  const queryClient = useQueryClient();
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["gmail-ignored-messages"],
+    queryFn: api.gmailListIgnoredMessages
+  });
+
+  const unignoreMutation = useMutation({
+    mutationFn: (messageId: string) => api.gmailUnignoreGlobal(messageId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["gmail-ignored-messages"] })
+  });
+
+  const ignoredEmails = data?.ignoredMessages ?? [];
+
+  return (
+    <section className="panel mt-6 p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-surface-container-high p-2 text-on-surface-variant">
+            <MaterialIcon name="block" />
+          </div>
+          <div>
+            <h3 className="font-title-md text-title-md font-bold">Ignored Emails</h3>
+            <p className="mt-1 text-body-md text-on-surface-variant">
+              Permanently ignored emails won't appear in any Gmail import flow
+            </p>
+          </div>
+        </div>
+        {isFetching && <InlineLoadingState label="Refreshing" />}
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <InlineLoadingState label="Loading ignored emails" />
+        </div>
+      ) : ignoredEmails.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-outline-variant bg-surface-container-low p-8 text-center">
+          <MaterialIcon name="check_circle" className="mb-2 text-[48px] text-on-surface-variant" />
+          <p className="text-body-md text-on-surface-variant">
+            No ignored emails. You can ignore emails from any opportunity's Gmail import flow.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {ignoredEmails.map((email) => (
+            <div
+              key={email.id}
+              className="flex items-center justify-between gap-4 rounded-lg border border-outline-variant bg-surface-container-low p-4"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-body-md text-body-md font-semibold text-on-surface-variant line-through">
+                  {email.subject}
+                </p>
+                <p className="mt-1 text-body-sm text-on-surface-variant">
+                  {new Date(email.date).toLocaleString()}
+                  {email.opportunityId && " · Added from opportunity"}
+                </p>
+              </div>
+              <LoadingButton
+                className="btn btn-secondary"
+                loading={unignoreMutation.isPending && unignoreMutation.variables === email.id}
+                loadingLabel="Unignoring..."
+                icon="undo"
+                onClick={() => {
+                  if (window.confirm(`Unignore "${email.subject}"? It will appear in future Gmail searches.`)) {
+                    unignoreMutation.mutate(email.id);
+                  }
+                }}
+              >
+                Unignore
+              </LoadingButton>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
