@@ -78,8 +78,9 @@ Guidelines:
 2. Use current date/time to determine what "next" or "upcoming" means
 3. If data is missing, set needsClarification=true and ask a specific question
 4. Keep answers concise and helpful (2-5 sentences)
-5. Include relevant opportunity IDs and slugs in relevantOpportunities array
+5. Include relevant opportunities in relevantOpportunities array (id, companyName, roleTitle, slug)
 6. Format dates in a friendly way (e.g., "tomorrow at 2pm", "Monday June 30")
+7. DO NOT include opportunity IDs or slugs in the text answer - users don't need to see technical IDs
 
 Examples:
 Query: "What's my next interview?"
