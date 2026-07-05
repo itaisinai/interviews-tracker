@@ -8,17 +8,24 @@ type CompanyDetailFieldProps = {
   href?: string | null;
 };
 
-function isValidUrl(value: string): boolean {
+/**
+ * Validates if a URL is safe to render as a link
+ * Only allows http: and https: schemes to prevent XSS attacks
+ */
+function isSafeUrl(value: string): boolean {
   try {
-    new URL(value);
-    return true;
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
   } catch {
     return false;
   }
 }
 
 export function CompanyDetailField({ label, value, icon, className, href }: CompanyDetailFieldProps) {
-  const effectiveHref = href || (isValidUrl(value) ? value : null);
+  // Validate both explicit href prop and inferred URL from value
+  const effectiveHref =
+    (href && isSafeUrl(href) ? href : null) ||
+    (isSafeUrl(value) ? value : null);
 
   return (
     <div className={`flex min-w-0 items-start gap-2 ${className ?? ""}`.trim()}>
