@@ -83,6 +83,20 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "❌ ERROR: DATABASE_URL secret is not set"
+            echo ""
+            echo "📋 To fix this:"
+            echo "1. Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
+            echo "2. Click 'New repository secret'"
+            echo "3. Name: DATABASE_URL"
+            echo "4. Value: Your PostgreSQL connection string"
+            echo "   Format: postgresql://user:password@host:port/database"
+            echo ""
+            echo "Then re-run this workflow."
+            exit 1
+          fi
+
           echo "📊 Checking migration status..."
           npx prisma migrate status --schema=./prisma/schema.prisma || echo "Migration check completed"
 
