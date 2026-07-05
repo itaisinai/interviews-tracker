@@ -4,7 +4,8 @@
  * Loading strategy:
  * 1. Load .env.dev (dev defaults)
  * 2. Load .env (local overrides, gitignored)
- * 3. In production: Fall back to AWS Parameter Store for missing variables
+ * 3. Fall back to AWS Parameter Store (SSM) for missing variables
+ *    - Always loads from /interviews-tracker/prod (shared across environments)
  */
 
 import { dirname, resolve } from 'path';
@@ -20,17 +21,19 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const ROOT_DIR = resolve(__dirname, '../../../..');
 
 /**
- * Load environment variables from Parameter Store (production only)
+ * Load environment variables from Parameter Store
+ * Always loads from prod path for both development and production environments
  */
 async function loadFromParameterStore(): Promise<Record<string, string>> {
-  if (!IS_PRODUCTION) {
-    return {};
-  }
-
   try {
     const { SSMClient, GetParametersByPathCommand } = await import('@aws-sdk/client-ssm');
 
-    const client = new SSMClient({ region: process.env.AWS_REGION || 'eu-central-1' });
+    const region = process.env.AWS_REGION || 'eu-central-1';
+    const ssmPath = '/interviews-tracker/prod';
+
+    console.log(`Attempting to load from AWS SSM (path: ${ssmPath}, region: ${region})...`);
+
+    const client = new SSMClient({ region });
     const params: Record<string, string> = {};
 
     let nextToken: string | undefined;
@@ -38,7 +41,7 @@ async function loadFromParameterStore(): Promise<Record<string, string>> {
     do {
       const response = await client.send(
         new GetParametersByPathCommand({
-          Path: '/interviews-tracker/prod',
+          Path: ssmPath,
           WithDecryption: true,
           Recursive: true,
           MaxResults: 10,
@@ -56,9 +59,11 @@ async function loadFromParameterStore(): Promise<Record<string, string>> {
       nextToken = response.NextToken;
     } while (nextToken);
 
+    console.log(`✓ Retrieved ${Object.keys(params).length} parameters from SSM`);
     return params;
   } catch (error) {
-    console.warn('Could not load from Parameter Store:', error instanceof Error ? error.message : error);
+    console.warn('⚠️  Could not load from Parameter Store:', error instanceof Error ? error.message : error);
+    console.warn('   Continuing with local environment variables only...');
     return {};
   }
 }
@@ -68,6 +73,7 @@ async function loadFromParameterStore(): Promise<Record<string, string>> {
  */
 export async function loadEnvironment(): Promise<void> {
   console.log('Loading environment variables...');
+  console.log(`Environment: ${IS_PRODUCTION ? 'production' : 'development'}`);
 
   // 1. Load .env.dev (development defaults)
   const envDevPath = resolve(ROOT_DIR, '.env.dev');
@@ -83,36 +89,30 @@ export async function loadEnvironment(): Promise<void> {
     console.log('✓ Loaded .env (local overrides)');
   }
 
-  // 3. In production: Load from Parameter Store for missing variables
-  if (IS_PRODUCTION) {
-    console.log('Production mode: checking AWS Parameter Store for missing variables...');
-    const ssmParams = await loadFromParameterStore();
+  // 3. Load from Parameter Store for missing variables (both dev and prod)
+  console.log('Checking AWS Parameter Store for missing variables...');
+  const ssmParams = await loadFromParameterStore();
 
-    console.log(`DEBUG: Retrieved ${Object.keys(ssmParams).length} parameters from SSM`);
-    console.log('DEBUG: Parameter names from SSM:', Object.keys(ssmParams).join(', '));
-
+  if (Object.keys(ssmParams).length > 0) {
     let loadedCount = 0;
     let skippedCount = 0;
-    for (const [key, value] of Object.entries(ssmParams)) {
-      const alreadyExists = !!process.env[key];
-      console.log(`DEBUG: Processing ${key}: already in process.env=${alreadyExists}`);
 
+    for (const [key, value] of Object.entries(ssmParams)) {
       // Only set if not already defined
       if (!process.env[key]) {
         process.env[key] = value;
         loadedCount++;
-        console.log(`DEBUG: Set process.env.${key} (length=${value.length})`);
+        console.log(`  ✓ Loaded ${key} from SSM`);
       } else {
         skippedCount++;
-        console.log(`DEBUG: Skipped ${key} (already exists)`);
       }
     }
 
-    console.log(`DEBUG: Final summary - loaded: ${loadedCount}, skipped: ${skippedCount}`);
     if (loadedCount > 0) {
-      console.log(`✓ Loaded ${loadedCount} variables from Parameter Store`);
-    } else {
-      console.log(`ℹ️  All ${skippedCount} SSM parameters were already defined in process.env`);
+      console.log(`✓ Loaded ${loadedCount} variable(s) from Parameter Store`);
+    }
+    if (skippedCount > 0) {
+      console.log(`  ℹ️  Skipped ${skippedCount} variable(s) already defined locally`);
     }
   }
 
@@ -127,8 +127,8 @@ export function requireEnv(name: string): string {
   if (!value) {
     throw new Error(
       `Missing required environment variable: ${name}\n` +
-      `\nIn development: Add to .env.dev or .env` +
-      `\nIn production: Add to AWS Parameter Store at /interviews-tracker/prod/${name}`
+      `\nLocal files: Add to .env.dev or .env` +
+      `\nAWS SSM: Add to Parameter Store at /interviews-tracker/prod/${name}`
     );
   }
   return value;

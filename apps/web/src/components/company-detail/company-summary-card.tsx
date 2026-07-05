@@ -6,6 +6,7 @@ import { CompanyDetailField } from "./company-detail-field";
 type SummaryRow = {
   label: string;
   value: string;
+  href?: string | null;
 };
 
 type CompanySummaryCardProps = {
@@ -29,7 +30,7 @@ export function CompanySummaryCard({
       <h3 className="font-title-md text-title-md font-bold">{title}</h3>
       <div className="mt-5 space-y-4">
         {visibleRows.map((row) => (
-          <CompanyDetailField key={row.label} label={row.label} value={row.value} />
+          <CompanyDetailField key={row.label} label={row.label} value={row.value} href={row.href} />
         ))}
       </div>
 
