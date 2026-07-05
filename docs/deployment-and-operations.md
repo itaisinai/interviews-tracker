@@ -45,7 +45,7 @@ Local image test:
 
 ```sh
 docker build -t interviews-tracker:test .
-docker run --rm -p 3000:3000 --env-file .env interviews-tracker:test
+docker run --rm -p 3000:3000 --env-file .env -e PORT=3000 interviews-tracker:test
 curl http://localhost:3000/health
 ```
 
@@ -96,6 +96,7 @@ DATABASE_URL
 ALLOWED_EMAIL
 AUTH0_DOMAIN
 AUTH0_AUDIENCE
+CHROME_EXTENSION_ORIGIN
 OPENAI_API_KEY
 ```
 
