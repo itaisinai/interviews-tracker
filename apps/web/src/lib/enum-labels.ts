@@ -10,51 +10,51 @@ function createOptions<T extends string>(labels: Record<T, string>) {
 }
 
 export const pipelineTypeLabels: Record<PipelineType, string> = {
-  POTENTIAL: "Potential / Research",
-  ACTIVE_PROCESS: "Active Process",
-  ARCHIVED: "Archived / Rejected"
+  POTENTIAL: "potential / research",
+  ACTIVE_PROCESS: "active process",
+  ARCHIVED: "archived / rejected"
 };
 
 export const priorityLabels: Record<Priority, string> = {
-  HIGH: "High",
-  MEDIUM: "Medium",
-  LOW: "Low",
-  MAYBE: "Maybe"
+  HIGH: "high",
+  MEDIUM: "medium",
+  LOW: "low",
+  MAYBE: "maybe"
 };
 
 export const jobStatusLabels: Record<JobStatus, string> = {
-  RESEARCH_LEAD: "Research Lead",
-  TO_APPLY: "To Apply",
-  APPLIED: "Applied",
-  RECRUITER_REACHED_OUT: "Recruiter Reached Out",
-  PHONE_SCHEDULED: "Phone Scheduled",
-  PHONE_DONE: "Phone Done",
-  TECHNICAL_SCHEDULED: "Technical Scheduled",
-  TECHNICAL_DONE: "Technical Done",
-  HOME_ASSIGNMENT: "Home Assignment",
-  ASSIGNMENT_SUBMITTED: "Assignment Submitted",
-  FINAL_STAGE: "Final Stage",
-  OFFER: "Offer",
-  REJECTED: "Rejected",
-  PAUSED: "Paused",
-  NOT_RELEVANT: "Not Relevant"
+  RESEARCH_LEAD: "research lead",
+  TO_APPLY: "to apply",
+  APPLIED: "applied",
+  RECRUITER_REACHED_OUT: "recruiter reached out",
+  PHONE_SCHEDULED: "phone scheduled",
+  PHONE_DONE: "phone done",
+  TECHNICAL_SCHEDULED: "technical scheduled",
+  TECHNICAL_DONE: "technical done",
+  HOME_ASSIGNMENT: "home assignment",
+  ASSIGNMENT_SUBMITTED: "assignment submitted",
+  FINAL_STAGE: "final stage",
+  OFFER: "offer",
+  REJECTED: "rejected",
+  PAUSED: "paused",
+  NOT_RELEVANT: "not relevant"
 };
 
 export const offerStatusLabels: Record<OfferStatus, string> = {
-  NOT_DISCUSSED: "Not Discussed",
-  DISCUSSED: "Discussed",
-  VERBAL_OFFER: "Verbal Offer",
-  WRITTEN_OFFER: "Written Offer",
-  ACCEPTED: "Accepted",
-  DECLINED: "Declined"
+  NOT_DISCUSSED: "not discussed",
+  DISCUSSED: "discussed",
+  VERBAL_OFFER: "verbal offer",
+  WRITTEN_OFFER: "written offer",
+  ACCEPTED: "accepted",
+  DECLINED: "declined"
 };
 
 export const interactionStatusLabels: Record<InteractionStatus, string> = {
-  SCHEDULED: "Scheduled",
-  DONE: "Passed",
-  REJECTED: "Rejected",
-  CANCELLED: "Cancelled",
-  NEEDS_FOLLOW_UP: "Waiting for response"
+  SCHEDULED: "scheduled",
+  DONE: "passed",
+  REJECTED: "rejected",
+  CANCELLED: "cancelled",
+  NEEDS_FOLLOW_UP: "waiting for response"
 };
 
 export const interactionTypeLabels: Record<InteractionType, string> = {
@@ -85,10 +85,10 @@ const interactionTypeAliases: Record<string, InteractionType> = {
 };
 
 export const taskStatusLabels: Record<TaskStatus, string> = {
-  PENDING: "Pending",
-  IN_PROGRESS: "In Progress",
-  DONE: "Done",
-  CANCELLED: "Cancelled"
+  PENDING: "pending",
+  IN_PROGRESS: "in progress",
+  DONE: "done",
+  CANCELLED: "cancelled"
 };
 
 export const pipelineTypeOptions = createOptions(pipelineTypeLabels);
