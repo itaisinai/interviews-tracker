@@ -23,7 +23,7 @@ async function telegramApiRequest(method: string, body: unknown) {
   return response.json();
 }
 
-export function sendTelegramMessage(chatId: string | number, text: string, parseMode?: "Markdown" | "HTML") {
+export function sendTelegramMessage(chatId: string | number, text: string, parseMode?: "Markdown" | "MarkdownV2" | "HTML") {
   const payload: Record<string, unknown> = { chat_id: chatId, text };
   if (parseMode) {
     payload.parse_mode = parseMode;
@@ -31,7 +31,7 @@ export function sendTelegramMessage(chatId: string | number, text: string, parse
   return telegramApiRequest("sendMessage", payload);
 }
 
-export async function editTelegramMessage(chatId: string | number, messageId: number, text: string, parseMode?: "Markdown" | "HTML") {
+export async function editTelegramMessage(chatId: string | number, messageId: number, text: string, parseMode?: "Markdown" | "MarkdownV2" | "HTML") {
   const payload: Record<string, unknown> = {
     chat_id: chatId,
     message_id: messageId,

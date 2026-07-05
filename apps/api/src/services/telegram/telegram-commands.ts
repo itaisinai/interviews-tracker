@@ -25,7 +25,7 @@ _Query: "What are my active processes?"_
 
 Ready? Just send me a message! 🚀`;
 
-  await sendTelegramMessage(chatId, welcomeMessage, "Markdown");
+  await sendTelegramMessage(chatId, welcomeMessage, "MarkdownV2");
 }
 
 export async function handleHelpCommand(chatId: string | number) {
@@ -51,7 +51,7 @@ Ask me questions about your opportunities:
 
 I'll automatically detect if you're creating an opportunity or asking a question! 🤖`;
 
-  await sendTelegramMessage(chatId, helpMessage, "Markdown");
+  await sendTelegramMessage(chatId, helpMessage, "MarkdownV2");
 }
 
 export async function handleUnknownCommand(chatId: string | number) {

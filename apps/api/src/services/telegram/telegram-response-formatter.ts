@@ -1,6 +1,15 @@
 import type { QueryResponse } from "./telegram-query-answerer.js";
 
 /**
+ * Escape MarkdownV2 special characters in user-provided text
+ * MarkdownV2 requires escaping: _ * [ ] ( ) ~ ` > # + - = | { } . !
+ * Reference: https://core.telegram.org/bots/api#markdownv2-style
+ */
+function escapeMarkdownV2(text: string): string {
+  return text.replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+}
+
+/**
  * Format a date for Telegram display
  */
 function formatDateForDisplay(isoDate: string): string {
@@ -46,8 +55,9 @@ export function formatQueryResponseForTelegram(
     response.relevantOpportunities.forEach((opp) => {
       const slug = opp.slug || opp.id;
       const url = `${webAppBaseUrl}/opportunities/${slug}`;
-      const roleText = opp.roleTitle ? ` - ${opp.roleTitle}` : "";
-      message += `• [${opp.companyName}${roleText}](${url})\n`;
+      const companyName = escapeMarkdownV2(opp.companyName || "Unknown");
+      const roleText = opp.roleTitle ? ` - ${escapeMarkdownV2(opp.roleTitle)}` : "";
+      message += `• [${companyName}${roleText}](${url})\n`;
     });
   }
 
@@ -68,8 +78,8 @@ export function formatOpportunityCreatedMessage(opportunity: {
   companyName?: string;
   roleTitle?: string;
 }, webAppBaseUrl: string): string {
-  const companyName = opportunity.companyName || "Unknown Company";
-  const roleTitle = opportunity.roleTitle || "Position";
+  const companyName = escapeMarkdownV2(opportunity.companyName || "Unknown Company");
+  const roleTitle = escapeMarkdownV2(opportunity.roleTitle || "Position");
   const slug = opportunity.slug || opportunity.id;
 
   let message = `✅ *Opportunity Created!*\n\n`;
