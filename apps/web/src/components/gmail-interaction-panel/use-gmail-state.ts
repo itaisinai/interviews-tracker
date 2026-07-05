@@ -24,7 +24,9 @@ export function useGmailState() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isAttaching, setIsAttaching] = useState(false);
   const [clearingEmailId, setClearingEmailId] = useState<string | null>(null);
+  const [ignoringEmailId, setIgnoringEmailId] = useState<string | null>(null);
   const [removedEmailsExpanded, setRemovedEmailsExpanded] = useState(false);
+  const [ignoredEmailsExpanded, setIgnoredEmailsExpanded] = useState(false);
   const [attachTargetId, setAttachTargetId] = useState<string>("");
   const [pendingPickedEmailIds, setPendingPickedEmailIds] = useState<Set<string>>(() => new Set());
   const [lastAction, setLastAction] = useState<"connect" | "search" | "parse" | null>(null);
@@ -54,7 +56,9 @@ export function useGmailState() {
     saveError,
     isAttaching,
     clearingEmailId,
+    ignoringEmailId,
     removedEmailsExpanded,
+    ignoredEmailsExpanded,
     attachTargetId,
     pendingPickedEmailIds,
     lastAction,
@@ -77,7 +81,9 @@ export function useGmailState() {
     setSaveError,
     setIsAttaching,
     setClearingEmailId,
+    setIgnoringEmailId,
     setRemovedEmailsExpanded,
+    setIgnoredEmailsExpanded,
     setAttachTargetId,
     setPendingPickedEmailIds,
     setLastAction,

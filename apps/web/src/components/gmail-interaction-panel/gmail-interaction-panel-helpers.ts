@@ -9,6 +9,7 @@ export type TrackedGmailEmail = {
 export type GmailMessageStates = {
   removedEmails: TrackedGmailEmail[];
   pickedEmails: TrackedGmailEmail[];
+  ignoredEmails: TrackedGmailEmail[];
 };
 
 export type InteractionDiffField =
@@ -69,7 +70,8 @@ export function addPickedEmail(current: GmailMessageStates | undefined, email: T
     pickedEmails: [
       email,
       ...(current?.pickedEmails.filter((pickedEmail) => pickedEmail.id !== email.id) ?? [])
-    ]
+    ],
+    ignoredEmails: current?.ignoredEmails ?? []
   };
 }
 

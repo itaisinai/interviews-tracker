@@ -184,7 +184,8 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
       });
       queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunityId], (current) => ({
         removedEmails: [{ id: email.id, subject: email.subject, date: email.date }, ...(current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? [])],
-        pickedEmails: current?.pickedEmails ?? []
+        pickedEmails: current?.pickedEmails ?? [],
+        ignoredEmails: current?.ignoredEmails ?? []
       }));
       setMessage("Email cleared from future Gmail searches.");
     } catch (caughtError) {

@@ -2,6 +2,7 @@ import { ProcessStateCard } from "@interviews-tracker/design-system";
 import type { Interaction } from "../../lib/types";
 import { GmailAiSearch } from "./gmail-ai-search";
 import { GmailChangesReview } from "./gmail-changes-review";
+import { GmailCreateReview } from "./gmail-create-review";
 import { GmailSuccessState } from "./gmail-success-state";
 import { GmailReviewPanel } from "./gmail-review-panel";
 import { GmailConnectionPrompt } from "./gmail-connection-prompt";
@@ -88,7 +89,12 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
 
   // Review changes (modern UI)
   if (panel.isReviewingDraft && panel.draft && panel.selectedEmail && !showManualEdit) {
-    const handleAccept = async () => {
+    const handleAccept = async (updatedDraft?: typeof panel.draft) => {
+      // If draft was updated in the create review, use the updated draft
+      if (updatedDraft) {
+        panel.onDraftChange(updatedDraft);
+      }
+
       if (panel.isAttachMode) {
         await panel.attachToExistingInteraction();
       } else {
@@ -99,6 +105,25 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
       setShowSuccess(true);
     };
 
+    // For new interactions (not attach mode), show clean editable review
+    if (!panel.isAttachMode) {
+      return (
+        <section className="rounded-xl border border-neutral-200 bg-white p-8">
+          <GmailCreateReview
+            draft={panel.draft}
+            selectedEmail={panel.selectedEmail}
+            analysis={panel.analysis}
+            isAttaching={panel.isAttaching}
+            saveInteractionPending={false}
+            onAcceptChanges={handleAccept}
+            onEditManually={() => setShowManualEdit(true)}
+            onCancel={panel.onSelectAnotherEmail}
+          />
+        </section>
+      );
+    }
+
+    // For attach mode, show diff view
     return (
       <section className="rounded-xl border border-neutral-200 bg-white p-8">
         <GmailChangesReview
@@ -111,7 +136,7 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
           hasParsedInteractionChanges={panel.hasParsedInteractionChanges}
           isAttaching={panel.isAttaching}
           saveInteractionPending={false}
-          onAcceptChanges={handleAccept}
+          onAcceptChanges={() => handleAccept()}
           onEditManually={() => setShowManualEdit(true)}
           onCancel={panel.onSelectAnotherEmail}
         />

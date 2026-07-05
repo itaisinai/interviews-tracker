@@ -25,17 +25,23 @@ type GmailWorkspaceProps = {
   clearingEmailId: string | null;
   removedEmails: TrackedGmailEmail[];
   pickedEmails: TrackedGmailEmail[];
+  ignoredEmails: TrackedGmailEmail[];
   removedEmailsExpanded: boolean;
+  ignoredEmailsExpanded: boolean;
   pendingPickedEmailIds: Set<string>;
   gmailMessageStatesFetching: boolean;
+  ignoringEmailId: string | null;
   onConnect: () => void;
   onSearch: () => void;
   onRetry: () => void;
   onParseEmail: (email: GmailSearchCandidate) => void;
   onClearEmail: (email: GmailSearchCandidate) => void;
+  onIgnoreEmail: (email: GmailSearchCandidate) => void;
   onRestoreEmail: (email: TrackedGmailEmail) => void;
+  onUnignoreEmail: (email: TrackedGmailEmail) => void;
   onUnpickEmail: (email: TrackedGmailEmail) => void;
   onRemovedEmailsExpandedChange: (value: boolean) => void;
+  onIgnoredEmailsExpandedChange: (value: boolean) => void;
 };
 
 export function GmailWorkspace({
@@ -59,17 +65,23 @@ export function GmailWorkspace({
   clearingEmailId,
   removedEmails,
   pickedEmails,
+  ignoredEmails,
   removedEmailsExpanded,
+  ignoredEmailsExpanded,
   pendingPickedEmailIds,
   gmailMessageStatesFetching,
+  ignoringEmailId,
   onConnect,
   onSearch,
   onRetry,
   onParseEmail,
   onClearEmail,
+  onIgnoreEmail,
   onRestoreEmail,
+  onUnignoreEmail,
   onUnpickEmail,
-  onRemovedEmailsExpandedChange
+  onRemovedEmailsExpandedChange,
+  onIgnoredEmailsExpandedChange
 }: GmailWorkspaceProps) {
   return (
     <>
@@ -161,6 +173,17 @@ export function GmailWorkspace({
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <p className="text-body-md text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                        <LoadingButton
+                          className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-50"
+                          disabled={actionDisabled}
+                          loading={ignoringEmailId === email.id}
+                          loadingLabel=""
+                          icon="block"
+                          onClick={() => onIgnoreEmail(email)}
+                          title="Ignore this email permanently"
+                        >
+                          <span className="sr-only">Ignore email</span>
+                        </LoadingButton>
                         <LoadingButton
                           className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-50"
                           disabled={actionDisabled}
@@ -262,6 +285,39 @@ export function GmailWorkspace({
               </div>
             ) : (
               <p className="mt-3 text-body-md text-on-surface-variant">No picked emails.</p>
+            )}
+          </div>
+          <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Ignored emails</p>
+              <div className="flex items-center gap-2">
+                {gmailMessageStatesFetching ? <InlineLoadingState label="Refreshing" /> : null}
+                <button className="btn btn-secondary" type="button" onClick={() => onIgnoredEmailsExpandedChange(!ignoredEmailsExpanded)}>
+                  <MaterialIcon name={ignoredEmailsExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} />
+                  {ignoredEmailsExpanded ? "Hide" : `Show (${ignoredEmails.length})`}
+                </button>
+              </div>
+            </div>
+            {ignoredEmailsExpanded ? (
+              ignoredEmails.length > 0 ? (
+                <div className="mt-3 divide-y divide-outline-variant">
+                  {ignoredEmails.map((email) => (
+                    <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-body-md text-body-md font-semibold text-on-surface-variant line-through">{email.subject}</p>
+                        <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                      </div>
+                      <LoadingButton className="btn btn-secondary" loading={ignoringEmailId === email.id} loadingLabel="Unignoring..." icon="undo" onClick={() => onUnignoreEmail(email)}>
+                        Unignore
+                      </LoadingButton>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-body-md text-on-surface-variant">No ignored emails.</p>
+              )
+            ) : (
+              <p className="mt-3 text-body-md text-on-surface-variant">Ignored emails are hidden by default.</p>
             )}
           </div>
         </div>

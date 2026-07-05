@@ -65,6 +65,7 @@ enum OfferStatus {
 enum GmailMessageStateStatus {
   USED
   HIDDEN
+  IGNORED
 }
 
 model JobOpportunity {
