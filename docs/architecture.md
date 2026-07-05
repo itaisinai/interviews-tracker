@@ -1,94 +1,184 @@
-# Architecture
+# Architecture Overview
 
-## Goal
+Interviews Tracker is a personal, owner-scoped job-search CRM. The architecture optimizes for fast feature work while keeping business rules, persistence, integrations, and UI composition separate enough for AI agents and human developers to change safely.
 
-Interviews Tracker is being shaped as a production-grade personal CRM. The codebase should keep business logic, HTTP wiring, persistence, and external integrations separated so the product can grow without route files turning into monoliths.
+## System context
 
-## Target layers
+```mermaid
+flowchart TB
+  user[User]
 
-### apps/api
+  subgraph Clients
+    web[Web app\nReact + Vite]
+    ext[LinkedIn Chrome extension\nManifest V3 + Auth0 PKCE]
+    telegram[Telegram bot chat]
+  end
 
-- `routes/`: HTTP wiring only. Register endpoints and pass work to handlers.
-- `controllers/`: Parse requests, validate inputs, call services, map results to responses.
-- `services/`: Business orchestration. Owns use-case flow and cross-repository coordination.
-- `repositories/`: Prisma reads/writes only. No HTTP or integration logic.
-- `integrations/`: Auth0, Gmail, OpenAI, Exa, and other external clients.
-- `mappers/`: Translate DB/domain objects into API DTOs and vice versa when needed.
-- `lib/`: Shared technical utilities such as auth, logging, error handling, and schema exports.
+  subgraph Api[Express API]
+    routes[Routes + controllers]
+    services[Use-case services]
+    repos[Repositories]
+    integrations[Provider services]
+  end
 
-### packages/
+  subgraph Packages[Shared packages]
+    core["@interviews-tracker/core"]
+    ai["@interviews-tracker/ai"]
+    apiClient["@interviews-tracker/api-client"]
+    ds["@interviews-tracker/design-system"]
+    logger["@interviews-tracker/logger"]
+  end
 
-- `@interviews-tracker/core`: CRM domain primitives, enums, and shared DTO schemas.
-- `@interviews-tracker/ai`: AI contracts, prompt builders, parser schemas.
-- `@interviews-tracker/integrations`: Gmail and enrichment DTOs plus pure helpers.
-- `@interviews-tracker/api-client`: Browser-safe typed API client.
+  db[(PostgreSQL via Prisma)]
+  auth0[Auth0]
+  gmail[Google OAuth + Gmail API]
+  llm[OpenAI-compatible LLM]
+  research[Exa / research providers]
+  aws[AWS ECS Fargate + ALB + SSM + CloudWatch]
 
-### apps/web
+  user --> web
+  user --> ext
+  user --> telegram
+  web --> apiClient --> routes
+  ext --> routes
+  telegram --> routes
+  routes --> services --> repos --> db
+  services --> integrations
+  integrations --> auth0
+  integrations --> gmail
+  integrations --> llm
+  integrations --> research
+  services --> ai
+  web --> ds
+  services --> core
+  repos --> core
+  routes --> logger
+  routes -. deployed on .-> aws
+```
 
-- Route pages, composed components, and UI primitives.
-- React Query for data access.
-- No direct Prisma, server, or integration code.
+## Runtime applications
 
-## Boundaries
+### `apps/web`
 
-- Routes must not contain Prisma queries or business orchestration.
-- Services should not know about Express objects.
-- Repositories should not know about request/response semantics.
-- Integrations should not know about Prisma.
-- UI should not duplicate domain enums when a shared label map exists.
+React + Vite frontend for CRM workflows. It owns pages, feature components, local interaction state, React Query data fetching, and UI composition. It must not import Prisma, server-only modules, provider SDKs, or duplicate domain enums that already exist in shared packages.
 
-## Data direction
+### `apps/api`
 
-- HTTP request -> controller -> service -> repository -> Prisma
-- External events -> integration -> service -> repository
-- DB model -> mapper -> API DTO -> client -> UI
+Express API for authenticated CRM operations and provider webhooks. It owns HTTP routing, request validation, use-case orchestration, persistence, authentication, external integration calls, and operational endpoints.
 
-## Current progress
+### `apps/linkedin-extension`
 
-The first implemented slice is:
+Manifest V3 Chrome extension that extracts job data from LinkedIn pages and submits it to the API. It uses Auth0 Authorization Code Flow with PKCE through `chrome.identity.launchWebAuthFlow` and keeps a manual token fallback for development/testing.
 
-- Opportunities
-- Interactions
-- Options caching
-- React Query defaults
+## Backend layering
 
-These are examples of the target shape, not the final destination.
+Use this flow for new API work:
 
-## Nx task graph and build discipline
+```mermaid
+flowchart LR
+  route[Route\nURL + middleware] --> controller[Controller\nparse + validate + map HTTP]
+  controller --> service[Service\nbusiness use case]
+  service --> repository[Repository\nowner-scoped Prisma access]
+  repository --> prisma[(Prisma + PostgreSQL)]
+  service --> provider[Provider service\nGmail / Telegram / Auth0 / AI / Exa]
+```
 
-The repository uses Yarn 4 workspaces for dependency installation and Nx for monorepo task orchestration, dependency ordering, and build caching. Each app and package has a `project.json` target definition, and `nx.json` tells Nx that each `build` depends on upstream `build` targets. This means commands such as `yarn build:api` run `nx build api`, and Nx builds `core`, `ai`, `integrations`, and `logger` before compiling the API.
+- **Routes** register URLs and middleware only.
+- **Controllers** parse request data, call services, and map service results/errors to HTTP responses.
+- **Services** own use-case orchestration and business rules.
+- **Repositories** own Prisma reads/writes and owner scoping.
+- **Provider services** own external APIs such as Gmail, Telegram, Auth0, Exa, and AI parsing.
+- **Mappers/normalizers** translate database objects to API DTOs and normalize backward-compatible fields.
 
-### Build vs start vs dev
+Current examples include opportunity and interaction controllers/services/repositories, Gmail services, Telegram services, company/person research services, and job import services.
 
-- `build` produces the JavaScript and declaration artifacts required to run or deploy the app.
-- `start` only runs already-built JavaScript artifacts. Runtime start scripts must never compile TypeScript or build workspace packages.
-- `dev` runs source/watch tooling for local development.
-- CI runs typecheck, build, smoke, Storybook, and visual validation through the same Nx-backed scripts used locally.
+## Shared packages
 
-If `yarn start:api` cannot find compiled API output, it fails with a clear message asking you to run `yarn build:api` first. This prevents production from hiding missing build artifacts by compiling packages at runtime.
+```text
+packages/core          Domain types, enums, DTO schemas, shared labels
+packages/ai            AI parser/research contracts and prompt helpers
+packages/integrations  Pure provider DTOs/helpers that are safe to share
+packages/api-client    Browser-safe typed API client
+packages/design-system Business-agnostic UI primitives and tokens
+packages/logger        Structured logging interface and adapters
+```
 
-### Runtime package exports
+Dependency direction:
 
-Any workspace package imported by the API at runtime must compile to `dist` and export built files from `package.json`:
+```text
+apps -> packages
+api-client -> core, ai, integrations
+ai -> core
+integrations -> core
+core -> none
+```
 
-- `types`: `./dist/index.d.ts`
-- `default`: `./dist/index.js`
+Do not create cycles. If a shared package needs app-specific behavior, keep that behavior in the app and pass data/functions into the package boundary instead.
 
-Runtime packages must not export `./src/*.ts`. The `yarn check:runtime-exports` script validates the API runtime package manifests and is included in typecheck/build/CI flows.
+## Data model and ownership
 
-### Adding a new package
+The database is opportunity-first:
 
-1. Add the package under `packages/<name>` with a `package.json`, `tsconfig.json`, and `src/index.ts`.
-2. Add `packages/<name>/project.json` with at least `build`, `typecheck`, and `dev` targets.
-3. Declare Nx dependencies with `implicitDependencies` when the package or app depends on another internal project.
-4. If the API imports the package at runtime, ensure the package emits `dist/index.js` and `dist/index.d.ts`, points exports to those files, and add it to `scripts/check-runtime-package-exports.mjs`.
-5. Add the package to the appropriate root script project lists when it should be part of package-only commands.
+- `JobOpportunity` is the aggregate root for a company/role process.
+- `Interaction` represents calls, interviews, recruiter conversations, and milestones.
+- `InteractionEmail` attaches one or more Gmail messages to an interaction for traceability.
+- `InteractionFeedback` stores raw feedback text and AI-extracted metadata.
+- `Person`, `Note`, `Task`, `Compensation`, and option tables enrich opportunities.
+- `ownerEmail` scopes user-owned records and must be included in queries for user data.
 
-### Common commands
+`ownerEmail` is the current isolation mechanism. Repository code should enforce it consistently; UI code should never rely on client-side filtering for security.
 
-- `yarn build` builds all Nx projects.
-- `yarn build:api` builds the API and its required package dependencies.
-- `yarn build:web` builds the web app for Vercel output in `dist/web`.
-- `yarn build:packages` builds shared package projects.
-- `yarn typecheck` typechecks all Nx projects and validates runtime exports.
-- `yarn dev` starts local API and web dev processes.
+## Important workflows at architecture level
+
+### Opportunity creation
+
+```text
+Manual form / pasted text / LinkedIn extension / Telegram message
+  → API validation
+  → parser or import service when needed
+  → opportunity service
+  → opportunity repository
+  → Prisma/PostgreSQL
+  → API DTO
+  → React Query cache update/invalidation
+```
+
+### Gmail interaction import
+
+```text
+User connects Gmail
+  → Google OAuth tokens encrypted/stored
+  → Gmail search by company/context
+  → message fetch
+  → AI extraction to draft interaction
+  → user review
+  → interaction save + source email attachment
+```
+
+### Telegram bot
+
+```text
+Telegram update
+  → webhook secret validation
+  → allowed user/chat authorization
+  → command handling OR AI intent classification
+  → create opportunity or answer opportunity query
+  → Telegram response formatter/client
+```
+
+## Build and runtime discipline
+
+Yarn workspaces install dependencies; Nx orchestrates project builds and task dependencies. Production start scripts run already-built JavaScript and should not compile TypeScript at runtime.
+
+- `yarn build` builds every Nx project.
+- `yarn build:api` builds API and required packages.
+- `yarn build:web` builds Vite output for the web app.
+- Shared runtime packages imported by the API must export built `dist` files, not `src/*.ts`.
+
+## Security boundaries
+
+- Browser code must use public `VITE_*` variables only.
+- API secrets live in environment variables or AWS SSM Parameter Store.
+- Telegram webhook requests require Telegram and internal shared secrets.
+- Gmail tokens are separate from Auth0 tokens and must remain encrypted at rest.
+- Logs must not include bearer tokens, refresh tokens, API keys, raw request bodies, or private email content unless explicitly sanitized.

@@ -1,41 +1,32 @@
+# Telegram Bot Setup
 
-## How User Association Works
+The Telegram bot is implemented inside the API and is intended for the current single-owner deployment model.
 
-**Important**: The Telegram bot creates opportunities for the user specified in `ALLOWED_EMAIL`.
+## User association
 
-### Authentication Flow
+Telegram webhooks do not carry Auth0 user tokens. Bot-created opportunities are assigned to the owner configured by `ALLOWED_EMAIL`.
 
-1. **Telegram webhook is unauthenticated** - Telegram doesn't use Auth0 tokens
-2. **Security is via shared secrets**:
-   - `TELEGRAM_WEBHOOK_SECRET_TOKEN` - Validates requests come from Telegram
-   - `OPPORTUNITY_WEBHOOK_SECRET` - Validates internal webhook calls
-3. **User assignment**: Opportunities are created for `ALLOWED_EMAIL` user
-
-```bash
-# This is the user who will own all bot-created opportunities
-ALLOWED_EMAIL=itai.sinai@gmail.com
+```text
+ALLOWED_EMAIL=<owner email>
 ```
 
-### Why This Design?
+## Security model
 
-- **Single-user app**: The app is designed for one user (`ALLOWED_EMAIL`)
-- **Simple security**: Shared secrets instead of per-user auth
-- **Private bot**: Your Telegram bot is for your personal use only
+Requests are protected by shared secrets and allow-lists:
 
-### Multi-User Support (Future)
+- `TELEGRAM_WEBHOOK_SECRET_TOKEN` validates requests sent by Telegram.
+- `OPPORTUNITY_WEBHOOK_SECRET` protects internal opportunity-creation webhook paths.
+- `TELEGRAM_ALLOWED_USER_IDS` and/or `TELEGRAM_ALLOWED_CHAT_IDS` restrict who can use the bot.
 
-If you want multiple users to use the bot:
+Authorization fails closed when no allowed user/chat configuration exists.
 
-1. **Option A**: Create separate bots per user
-   - Each bot has its own `TELEGRAM_BOT_TOKEN`
-   - Each bot configured with different `ALLOWED_EMAIL`
+## Production checklist
 
-2. **Option B**: Add Telegram user ID mapping (requires code changes)
-   - Map Telegram user IDs to email addresses
-   - Lookup owner based on `message.from.id`
-   - See `extractTelegramTextMessage` in `telegram-service.ts`
+1. Store Telegram and internal webhook secrets in AWS SSM Parameter Store.
+2. Configure at least one allowed Telegram user ID or chat ID.
+3. Configure the webhook URL to point at the API Telegram webhook route.
+4. Restart or redeploy the API so it reloads SSM-backed environment variables.
+5. Send `/start` from an allowed account.
+6. Check API logs for authorization and handler decisions.
 
-### Security Note
-
-🔒 **Keep your bot token private!** Anyone with your bot token can send messages to your bot. The `TELEGRAM_WEBHOOK_SECRET_TOKEN` validates that webhook calls come from Telegram's servers, not random attackers.
-
+For the full operational runbook, see [Deployment and operations](../../docs/deployment-and-operations.md). For workflow behavior, see [Application workflows](../../docs/application-workflows.md).
