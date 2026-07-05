@@ -90,15 +90,15 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
   // Review changes (modern UI)
   if (panel.isReviewingDraft && panel.draft && panel.selectedEmail && !showManualEdit) {
     const handleAccept = async (updatedDraft?: typeof panel.draft) => {
-      // If draft was updated in the create review, use the updated draft
-      if (updatedDraft) {
-        panel.onDraftChange(updatedDraft);
-      }
-
       if (panel.isAttachMode) {
+        // For attach mode, update state first
+        if (updatedDraft) {
+          panel.onDraftChange(updatedDraft);
+        }
         await panel.attachToExistingInteraction();
       } else {
-        await panel.onSaveInteraction();
+        // For new interactions, pass updated draft directly to save
+        await panel.onSaveInteraction(updatedDraft ?? panel.draft);
       }
 
       // Show success state

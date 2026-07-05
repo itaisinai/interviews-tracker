@@ -47,12 +47,13 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
   } = handlers;
 
   const saveInteraction = useMutation({
-    mutationFn: async () => {
-      if (!draft) {
+    mutationFn: async (draftOverride?: GmailInteractionDraft) => {
+      const draftToSave = draftOverride ?? draft;
+      if (!draftToSave) {
         throw new Error("No parsed interaction is ready to save.");
       }
 
-      return api.createInteraction(opportunityId, draft);
+      return api.createInteraction(opportunityId, draftToSave);
     },
     onSuccess: (savedInteraction) => {
       void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
