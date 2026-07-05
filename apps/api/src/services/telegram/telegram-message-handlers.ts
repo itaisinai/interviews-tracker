@@ -43,9 +43,9 @@ export async function handleOpportunityCreation(message: TelegramMessage) {
 
     // Update the loading message with success
     if (loadingMessageId) {
-      await editTelegramMessage(message.chatId, loadingMessageId, successMessage, "Markdown");
+      await editTelegramMessage(message.chatId, loadingMessageId, successMessage, "MarkdownV2");
     } else {
-      await sendTelegramMessage(message.chatId, successMessage, "Markdown");
+      await sendTelegramMessage(message.chatId, successMessage, "MarkdownV2");
     }
 
     return { ignored: false, ok: true, opportunity };
@@ -59,7 +59,7 @@ export async function handleOpportunityCreation(message: TelegramMessage) {
 
     // Update the loading message with error
     if (loadingMessageId) {
-      await editTelegramMessage(message.chatId, loadingMessageId, errorMessage, "Markdown");
+      await editTelegramMessage(message.chatId, loadingMessageId, errorMessage, "MarkdownV2");
     } else {
       await sendTelegramMessage(message.chatId, errorMessage, "Markdown");
     }
@@ -104,7 +104,7 @@ export async function handleOpportunityQuery(message: TelegramMessage) {
 
     // Update the loading message with the response
     if (loadingMessageId) {
-      await editTelegramMessage(message.chatId, loadingMessageId, responseMessage, "Markdown");
+      await editTelegramMessage(message.chatId, loadingMessageId, responseMessage, "MarkdownV2");
     } else {
       await sendTelegramMessage(message.chatId, responseMessage, "Markdown");
     }
@@ -120,7 +120,7 @@ export async function handleOpportunityQuery(message: TelegramMessage) {
 
     // Update the loading message with error
     if (loadingMessageId) {
-      await editTelegramMessage(message.chatId, loadingMessageId, errorMessage, "Markdown");
+      await editTelegramMessage(message.chatId, loadingMessageId, errorMessage, "MarkdownV2");
     } else {
       await sendTelegramMessage(message.chatId, errorMessage, "Markdown");
     }
