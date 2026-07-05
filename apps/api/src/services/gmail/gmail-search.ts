@@ -25,7 +25,7 @@ export async function searchGmailMessages(input: { auth0Email: string; jobOpport
       const states = await prisma.gmailMessageState.findMany({
         where: {
           auth0Email: input.auth0Email,
-          status: { in: ["USED", "HIDDEN"] },
+          status: { in: ["USED", "HIDDEN", "IGNORED"] },
           ...buildOpportunityScopedGmailMessageStateWhere(input.jobOpportunityId)
         },
         select: { messageId: true }

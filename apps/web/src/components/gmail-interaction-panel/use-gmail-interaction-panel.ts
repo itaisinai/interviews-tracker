@@ -279,7 +279,7 @@ export function useGmailInteractionPanel({
       state.setAnalysis(null);
       state.setMessage("Ready to search Gmail again.");
     },
-    onSaveInteraction: () => saveHandlers.saveInteraction.mutateAsync(),
+    onSaveInteraction: (draftOverride?: typeof state.draft) => saveHandlers.saveInteraction.mutateAsync(draftOverride ?? undefined),
     onDraftChange: state.setDraft,
     onAttachTargetIdChange: state.setAttachTargetId
   };
