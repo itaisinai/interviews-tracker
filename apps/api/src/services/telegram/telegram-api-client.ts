@@ -31,12 +31,16 @@ export function sendTelegramMessage(chatId: string | number, text: string, parse
   return telegramApiRequest("sendMessage", payload);
 }
 
-export async function editTelegramMessage(chatId: string | number, messageId: number, text: string) {
-  return telegramApiRequest("editMessageText", {
+export async function editTelegramMessage(chatId: string | number, messageId: number, text: string, parseMode?: "Markdown" | "HTML") {
+  const payload: Record<string, unknown> = {
     chat_id: chatId,
     message_id: messageId,
     text
-  });
+  };
+  if (parseMode) {
+    payload.parse_mode = parseMode;
+  }
+  return telegramApiRequest("editMessageText", payload);
 }
 
 export async function forwardOpportunityTextToBackend(input: {

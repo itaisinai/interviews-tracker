@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: interviews-tracker-api
-    env: node
-    buildCommand: corepack enable && corepack prepare yarn@4.9.2 --activate && corepack yarn install --immutable && corepack yarn build:api
-    startCommand: yarn start:api

@@ -110,10 +110,62 @@ TELEGRAM_ALLOWED_CHAT_IDS=                     # Comma-separated chat IDs (optio
 ```
 
 **Important:** For security, you MUST configure at least one of:
-- `TELEGRAM_ALLOWED_USER_IDS` - Telegram user IDs who can query data
-- `TELEGRAM_ALLOWED_CHAT_IDS` - Chat IDs that can access the bot
+- `TELEGRAM_ALLOWED_USER_IDS` - Telegram user IDs who can query data (recommended)
+- `TELEGRAM_ALLOWED_CHAT_IDS` - Chat IDs that can access the bot (alternative)
 
-If neither is configured, all query requests will be denied. To find your Telegram user ID, message [@userinfobot](https://t.me/userinfobot) on Telegram.
+If neither is configured, all query requests will be denied with error: `"Unauthorized: This bot can only be used by authorized users"`
+
+### Finding Your Telegram User ID
+
+**Method 1: Use @userinfobot**
+1. Open Telegram and search for [@userinfobot](https://t.me/userinfobot)
+2. Start a chat and click "Start"
+3. The bot will reply with your user ID (e.g., `696472003`)
+
+**Method 2: Check application logs**
+When you send a message to your bot, check the CloudWatch logs for:
+```
+Received message
+...
+fromUserId: 696472003
+username: YourUsername
+```
+
+The `fromUserId` is what you need for `TELEGRAM_ALLOWED_USER_IDS`.
+
+### Production Setup (AWS SSM)
+
+For ECS deployments, add the parameter to SSM:
+
+```bash
+aws ssm put-parameter \
+  --name /interviews-tracker/prod/TELEGRAM_ALLOWED_USER_IDS \
+  --value "696472003" \
+  --type String \
+  --overwrite \
+  --region eu-central-1
+```
+
+For multiple users:
+```bash
+aws ssm put-parameter \
+  --name /interviews-tracker/prod/TELEGRAM_ALLOWED_USER_IDS \
+  --value "696472003,123456789,987654321" \
+  --type String \
+  --overwrite \
+  --region eu-central-1
+```
+
+After adding/updating the parameter, restart your ECS service:
+```bash
+aws ecs update-service \
+  --cluster interviews-tracker \
+  --service interviews-tracker \
+  --force-new-deployment \
+  --region eu-central-1
+```
+
+**Note:** The app loads SSM parameters at startup, so a restart is required after changes.
 
 ---
 

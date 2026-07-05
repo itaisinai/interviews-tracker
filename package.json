@@ -26,11 +26,14 @@
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
     "start:api": "node scripts/start-api.mjs",
-    "start:web": "vite preview --config apps/web/vite.config.ts --host 0.0.0.0"
+    "start:web": "vite preview --config apps/web/vite.config.ts --host 0.0.0.0",
+    "secrets:verify": "aws ssm get-parameters-by-path --path /interviews-tracker/prod --region eu-central-1 --output table"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.17.0",
+    "@aws-sdk/client-ssm": "^3.1076.0",
     "@hookform/resolvers": "^3.10.0",
     "@interviews-tracker/design-system": "workspace:*",
     "@prisma/client": "5.22.0",
