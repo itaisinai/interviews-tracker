@@ -10,6 +10,38 @@ This repo is designed to be understandable by AI coding agents. Follow this guid
 4. `docs/engineering-decisions.md` for accepted trade-offs.
 5. Feature-local README files when they exist, such as the Gmail interaction panel or extension docs.
 
+
+## End-to-end agent workflow
+
+Every box in this Mermaid chart is an intentional LLM interaction point: either the user is talking to the agent, the agent is using the LLM to reason over repository context, or the agent is asking the LLM to synthesize implementation, validation, and communication.
+
+```mermaid
+flowchart TD
+  A[User request to LLM agent] --> B{Does the agent need clarification?}
+  B -- yes --> C[Ask concise clarifying question to user]
+  C --> D[User answer to LLM agent]
+  B -- no --> E[LLM reads repo entry docs\nREADME + architecture + workflows + agent guide]
+  D --> E
+  E --> F[LLM inspects relevant code/docs\nrg, git status, focused file reads]
+  F --> G[LLM forms task plan\nscope, risks, affected layers, test strategy]
+  G --> H{Need external/current facts?}
+  H -- yes --> I[LLM verifies with approved sources or local docs]
+  H -- no --> J[LLM edits files in correct layer]
+  I --> J
+  J --> K[LLM self-reviews diff\narchitecture, UX, data ownership, docs]
+  K --> L[LLM runs targeted checks/tests]
+  L --> M{Checks pass?}
+  M -- no --> N[LLM diagnoses failure and patches fix]
+  N --> K
+  M -- yes --> O[LLM updates docs if behavior or operations changed]
+  O --> P[LLM checks git status and prepares commit]
+  P --> Q[LLM commits on current branch]
+  Q --> R[LLM creates PR summary with tests]
+  R --> S[Final response to user\nsummary, citations, checks, commit/PR note]
+```
+
+Use the chart as the default operating loop. Skip only the steps that are truly not applicable, and make that obvious in the final response when it affects confidence or validation.
+
 ## Safe change workflow
 
 1. Identify the feature slice: web UI, API route/controller/service/repository, shared package, integration, or infrastructure.

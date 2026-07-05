@@ -4,25 +4,56 @@ Interviews Tracker is a personal, owner-scoped job-search CRM. The architecture 
 
 ## System context
 
-```text
-User
-  │
-  ├─ Web app (React/Vite)
-  │    └─ typed API client → Express API
-  │
-  ├─ LinkedIn Chrome extension
-  │    └─ Auth0 token → Express API job import endpoint
-  │
-  └─ Telegram bot
-       └─ Telegram webhook secret → Express API webhook handler
+```mermaid
+flowchart TB
+  user[User]
 
-Express API
-  ├─ Prisma → PostgreSQL
-  ├─ Google OAuth/Gmail API
-  ├─ OpenAI-compatible AI parsing/research
-  ├─ Exa/company/person research providers
-  ├─ Auth0 JWT verification
-  └─ Structured logger/Sentry/CloudWatch in production
+  subgraph Clients
+    web[Web app\nReact + Vite]
+    ext[LinkedIn Chrome extension\nManifest V3 + Auth0 PKCE]
+    telegram[Telegram bot chat]
+  end
+
+  subgraph Api[Express API]
+    routes[Routes + controllers]
+    services[Use-case services]
+    repos[Repositories]
+    integrations[Provider services]
+  end
+
+  subgraph Packages[Shared packages]
+    core["@interviews-tracker/core"]
+    ai["@interviews-tracker/ai"]
+    apiClient["@interviews-tracker/api-client"]
+    ds["@interviews-tracker/design-system"]
+    logger["@interviews-tracker/logger"]
+  end
+
+  db[(PostgreSQL via Prisma)]
+  auth0[Auth0]
+  gmail[Google OAuth + Gmail API]
+  llm[OpenAI-compatible LLM]
+  research[Exa / research providers]
+  aws[AWS ECS Fargate + ALB + SSM + CloudWatch]
+
+  user --> web
+  user --> ext
+  user --> telegram
+  web --> apiClient --> routes
+  ext --> routes
+  telegram --> routes
+  routes --> services --> repos --> db
+  services --> integrations
+  integrations --> auth0
+  integrations --> gmail
+  integrations --> llm
+  integrations --> research
+  services --> ai
+  web --> ds
+  services --> core
+  repos --> core
+  routes --> logger
+  routes -. deployed on .-> aws
 ```
 
 ## Runtime applications
@@ -43,9 +74,13 @@ Manifest V3 Chrome extension that extracts job data from LinkedIn pages and subm
 
 Use this flow for new API work:
 
-```text
-route → controller → service → repository → Prisma
-                    └→ provider/integration service when needed
+```mermaid
+flowchart LR
+  route[Route\nURL + middleware] --> controller[Controller\nparse + validate + map HTTP]
+  controller --> service[Service\nbusiness use case]
+  service --> repository[Repository\nowner-scoped Prisma access]
+  repository --> prisma[(Prisma + PostgreSQL)]
+  service --> provider[Provider service\nGmail / Telegram / Auth0 / AI / Exa]
 ```
 
 - **Routes** register URLs and middleware only.
