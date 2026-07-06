@@ -41,7 +41,8 @@ export function OpportunityDetailPage() {
   const [isInteractionOperationPending, setIsInteractionOperationPending] = useState(false);
 
   const opportunityRouteId = data?.slug ?? data?.id ?? slugOrId;
-  const opportunityDbId = data?.slug ?? data?.id ?? slugOrId;
+  const opportunityApiId = data?.slug ?? data?.id ?? slugOrId; // For API calls that support slug
+  const opportunityDbId = data?.id ?? slugOrId; // For database foreign keys (e.g., contact creation)
   const canonicalSlug = data?.slug ?? null;
   const [selectedInteractionId, setSelectedInteractionId] = useState<
     string | null
@@ -242,7 +243,7 @@ export function OpportunityDetailPage() {
         <div className="mt-8">
           <FocusedInteractionCard
             interaction={focusedInteraction}
-            opportunityId={opportunityDbId}
+            opportunityId={opportunityApiId}
             opportunityCompanyName={data.companyName}
             onOpen={() => setSelectedInteractionId(focusedInteraction.id)}
           />
@@ -292,7 +293,7 @@ export function OpportunityDetailPage() {
       <AddInteractionModal
         isOpen={showAddInteractionModal}
         onClose={() => setShowAddInteractionModal(false)}
-        opportunityId={opportunityDbId}
+        opportunityId={opportunityApiId}
         companyName={data.companyName}
         roleTitle={data.roleTitle}
         onSaved={() => {
