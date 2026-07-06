@@ -96,8 +96,8 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
 
       // If AI suggestion is provided and not already attached, apply it to the interaction
       if (result.aiSuggestion && !result.alreadyAttached) {
-        // Update the interaction with AI suggestion
-        await api.updateInteraction(attachTargetSlug, result.aiSuggestion);
+        // Use the reviewed draft (contains user edits) instead of the fresh AI suggestion
+        await api.updateInteraction(attachTargetSlug, draft);
       }
 
       void queryClient.invalidateQueries({ queryKey: ["interaction-emails", attachTargetId] });

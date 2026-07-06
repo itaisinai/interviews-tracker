@@ -243,7 +243,7 @@ export function OpportunityDetailPage() {
         <div className="mt-8">
           <FocusedInteractionCard
             interaction={focusedInteraction}
-            opportunityId={opportunityApiId}
+            opportunityId={opportunityDbId}
             opportunityCompanyName={data.companyName}
             onOpen={() => setSelectedInteractionId(focusedInteraction.id)}
           />
