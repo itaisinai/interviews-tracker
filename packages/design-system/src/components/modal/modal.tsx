@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { MaterialIcon } from "../material-icon/material-icon";
 
 export type ModalProps = {
@@ -70,8 +71,8 @@ export function Modal({ isOpen, onClose, title, children, footer, size = "md" }:
     lg: "max-w-4xl"
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
       <button
         type="button"
         className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}
@@ -108,4 +109,6 @@ export function Modal({ isOpen, onClose, title, children, footer, size = "md" }:
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

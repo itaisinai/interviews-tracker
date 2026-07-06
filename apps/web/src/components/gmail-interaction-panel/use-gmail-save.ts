@@ -91,8 +91,14 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
     setIsAttaching(true);
 
     try {
-      // Attach the email - backend will parse, aggregate, and update the interaction
-      await api.attachEmailToInteraction(attachTargetSlug, selectedEmail.id);
+      // Attach the email - backend returns AI suggestion without saving
+      const result = await api.attachEmailToInteraction(attachTargetSlug, selectedEmail.id);
+
+      // If AI suggestion is provided and not already attached, apply it to the interaction
+      if (result.aiSuggestion && !result.alreadyAttached) {
+        // Use the reviewed draft (contains user edits) instead of the fresh AI suggestion
+        await api.updateInteraction(attachTargetSlug, draft);
+      }
 
       void queryClient.invalidateQueries({ queryKey: ["interaction-emails", attachTargetId] });
       void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });

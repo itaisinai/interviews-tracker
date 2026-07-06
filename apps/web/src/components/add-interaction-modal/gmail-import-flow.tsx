@@ -4,7 +4,7 @@ import { api } from "../../lib/api";
 import type { InteractionDraft } from "../../lib/types";
 import { MaterialIcon, LoadingButton, DiffReviewRow } from "@interviews-tracker/design-system";
 import { formatDateTime } from "../../lib/format";
-import { GmailEmailStatesDebug } from "./gmail-email-states-debug";
+import { GmailEmailSelector } from "../shared/gmail-email-selector";
 
 export type GmailImportFlowProps = {
   opportunityId: string;
@@ -25,13 +25,11 @@ export function GmailImportFlow({
 }: GmailImportFlowProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("searching");
-  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
-  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
   const [allGmailMessageIds, setAllGmailMessageIds] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState(false);
 
-  const { data: searchResults, isLoading: isSearching, isError: searchFailed, error: searchError, refetch: refetchSearch } = useQuery({
+  const { data: searchResults, isLoading: isSearching, isError: searchFailed, error: searchError, refetch: refetchSearch, isRefetching } = useQuery({
     queryKey: ["gmail-search", opportunityId],
     queryFn: () => api.gmailSearch(opportunityId),
     enabled: step === "searching",
@@ -53,26 +51,25 @@ export function GmailImportFlow({
   });
 
   const unpickEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailUnpickEmail(opportunityId, messageId),
+    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunityId, messageId),
     onSuccess: () => {
-      // Refresh the message states and search results
-      void queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      void queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
-      void refetchSearch();
+      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
     },
   });
 
   const restoreEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailRestoreEmail(opportunityId, messageId),
+    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunityId, messageId),
     onSuccess: () => {
-      // Refresh the message states and search results
-      void queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      void queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
-      void refetchSearch();
+      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
     },
   });
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+    refetchSearch();
+  };
 
   const createInteraction = useMutation({
     mutationFn: async () => {
@@ -114,7 +111,6 @@ export function GmailImportFlow({
       const highConfidenceEmail = searchResults.candidates[0];
 
       if (searchResults.candidates.length === 1) {
-        setSelectedMessageId(highConfidenceEmail.id);
         // Store the message ID so it gets attached after creation
         setAllGmailMessageIds([highConfidenceEmail.id]);
         parseEmail.mutate(highConfidenceEmail.id);
@@ -172,34 +168,21 @@ export function GmailImportFlow({
     );
   }
 
-  const handleToggleEmail = (messageId: string) => {
-    setSelectedMessageIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(messageId)) {
-        next.delete(messageId);
-      } else {
-        next.add(messageId);
-      }
-      return next;
-    });
-  };
-
-  const handleSubmitSelected = async () => {
-    if (selectedMessageIds.size === 0) return;
+  const handleSubmitSelected = async (messageIds: string[]) => {
+    if (messageIds.length === 0) return;
 
     setIsParsing(true);
 
     try {
       // Send all message IDs at once - backend will merge them into a single interaction
-      const messageIdsArray = Array.from(selectedMessageIds);
       const result = await api.gmailParseEmail(opportunityId, {
-        messageIds: messageIdsArray
+        messageIds
       });
 
       // Set the single merged draft
       setDraft(result.interaction);
       // Store all message IDs to attach them after creation
-      setAllGmailMessageIds((result as any).allGmailMessageIds || messageIdsArray);
+      setAllGmailMessageIds((result as any).allGmailMessageIds || messageIds);
       setStep("review-changes");
     } catch (error) {
       console.error("Failed to parse emails:", error);
@@ -210,127 +193,46 @@ export function GmailImportFlow({
   };
 
   if (step === "select-candidate" && searchResults?.candidates) {
+    // Transform messageStates to the format expected by GmailEmailSelector
+    const transformedMessageStates = messageStates ? {
+      pickedEmails: messageStates.pickedEmails.map(e => ({
+        id: e.id,
+        subject: e.subject,
+        date: e.date
+      })),
+      removedEmails: messageStates.removedEmails.map(e => ({
+        id: e.id,
+        subject: e.subject,
+        date: e.date
+      }))
+    } : undefined;
+
     return (
-      <div className="space-y-4 relative">
-        {/* Loading overlay */}
-        {isParsing && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg">
-            <div className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-emerald-600"></div>
-              </div>
-              <h3 className="text-lg font-semibold text-neutral-900">
-                Parsing emails...
-              </h3>
-              <p className="mt-2 text-sm text-neutral-600">
-                Processing {selectedMessageIds.size} email{selectedMessageIds.size !== 1 ? "s" : ""}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-neutral-700">
-              Found {searchResults.candidates.length} potential email{searchResults.candidates.length !== 1 ? "s" : ""}.
-              {selectedMessageIds.size > 0 && ` ${selectedMessageIds.size} selected.`}
-            </p>
-            <button
-              onClick={() => {
-                setStep("searching");
-                void refetchSearch();
-              }}
-              className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
-              disabled={isParsing}
-            >
-              <MaterialIcon name="refresh" className="text-[16px]" />
-              Refresh
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          {searchResults.candidates.map((candidate) => {
-            const isSelected = selectedMessageIds.has(candidate.id);
-            return (
-              <button
-                key={candidate.id}
-                onClick={() => handleToggleEmail(candidate.id)}
-                disabled={isParsing}
-                className={`flex w-full items-start gap-3 rounded-lg border-2 p-4 text-left transition-all ${
-                  isSelected
-                    ? "border-emerald-500 bg-emerald-50"
-                    : "border-neutral-200 bg-white hover:border-emerald-300 hover:shadow-sm"
-                } ${isParsing ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                {/* Checkbox */}
-                <div className="flex-shrink-0 mt-0.5">
-                  <div
-                    className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
-                      isSelected
-                        ? "bg-emerald-600 border-emerald-600"
-                        : "border-neutral-300 bg-white"
-                    }`}
-                  >
-                    {isSelected && (
-                      <MaterialIcon name="check" className="text-[16px] text-white" />
-                    )}
-                  </div>
-                </div>
-
-                <MaterialIcon name="mail" className="mt-0.5 text-[20px] text-neutral-400 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-neutral-900">{candidate.subject}</div>
-                  <div className="mt-1 text-sm text-neutral-600">{candidate.from}</div>
-                  <div className="mt-1 text-xs text-neutral-500">
-                    {new Date(candidate.date).toLocaleDateString()}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={onBack}
-            className="btn btn-secondary flex-1"
-            disabled={isParsing}
-          >
-            <MaterialIcon name="arrow_back" />
-            Back
-          </button>
-          <LoadingButton
-            onClick={handleSubmitSelected}
-            disabled={selectedMessageIds.size === 0}
-            loading={isParsing}
-            loadingLabel={`Parsing ${selectedMessageIds.size} email${selectedMessageIds.size !== 1 ? "s" : ""}...`}
-            className="btn btn-primary flex-1"
-          >
-            <MaterialIcon name="download" />
-            Import {selectedMessageIds.size > 0 ? `${selectedMessageIds.size} ` : ""}Selected
-          </LoadingButton>
-        </div>
-
-        <button onClick={onBack} className="hidden">
-          <MaterialIcon name="arrow_back" />
-          Back
-        </button>
-
-        <GmailEmailStatesDebug
-          messageStates={messageStates}
-          onUnpick={(messageId) => unpickEmail.mutate(messageId)}
-          onRestore={(messageId) => restoreEmail.mutate(messageId)}
-          isUnpickPending={unpickEmail.isPending}
-          isRestorePending={restoreEmail.isPending}
-          compact
-        />
-      </div>
+      <GmailEmailSelector
+        candidates={searchResults.candidates}
+        isLoading={false}
+        emptyMessage="No emails found"
+        emptySubMessage="Try searching for emails in Gmail"
+        onSubmit={handleSubmitSelected}
+        onCancel={onBack}
+        submitLabel="Import Selected"
+        submitIcon="download"
+        isSubmitting={isParsing}
+        allowMultiSelect={true}
+        messageStates={transformedMessageStates}
+        onUnpick={(messageId) => unpickEmail.mutate(messageId)}
+        onRestore={(messageId) => restoreEmail.mutate(messageId)}
+        isUnpickPending={unpickEmail.isPending}
+        isRestorePending={restoreEmail.isPending}
+        showDebugSection={true}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefetching}
+      />
     );
   }
 
   if (step === "review-changes" && draft) {
-    const emailCount = selectedMessageIds.size;
+    const emailCount = allGmailMessageIds.length;
     const wasMultipleEmails = emailCount > 1;
 
     return (
@@ -469,14 +371,6 @@ export function GmailImportFlow({
             </button>
           </div>
         </div>
-
-        <GmailEmailStatesDebug
-          messageStates={messageStates}
-          onUnpick={(messageId) => unpickEmail.mutate(messageId)}
-          onRestore={(messageId) => restoreEmail.mutate(messageId)}
-          isUnpickPending={unpickEmail.isPending}
-          isRestorePending={restoreEmail.isPending}
-        />
       </div>
     );
   }

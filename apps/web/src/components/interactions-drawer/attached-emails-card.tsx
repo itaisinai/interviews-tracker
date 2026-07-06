@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 import { AttachEmailModal } from "./attach-email-modal";
 import { MaterialIcon, Button } from "@interviews-tracker/design-system";
 import { api } from "../../lib/api";
 import { useState } from "react";
+import type { GmailSearchCandidate } from "../../lib/types";
 
 type AttachedEmailsCardProps = {
   interactionId: string;
@@ -25,6 +26,33 @@ export function AttachedEmailsCard({
     queryKey: ["interaction-emails", interactionId],
     queryFn: () => api.listInteractionEmails(interactionSlug),
     enabled: !!interactionId,
+  });
+
+  // Fetch Gmail search results to get full email details and relevance
+  const { data: searchResults } = useQuery({
+    queryKey: ["gmail-search", opportunityId],
+    queryFn: () => api.gmailSearch(opportunityId),
+    enabled: !!opportunityId,
+  });
+
+  // Map attached emails to their full Gmail data
+  const enrichedEmails = emails.map(email => {
+    const gmailData = searchResults?.candidates.find(
+      (c: GmailSearchCandidate) => c.id === email.gmailMessageId
+    );
+    return {
+      ...email,
+      gmailData,
+    };
+  });
+
+  const detachMutation = useMutation({
+    mutationFn: (emailId: string) => api.removeEmailFromInteraction(interactionSlug, emailId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interaction-emails", interactionId] });
+      queryClient.invalidateQueries({ queryKey: ["interactions"] });
+      queryClient.invalidateQueries({ queryKey: ["opportunities", opportunityId] });
+    },
   });
 
   const handleReparse = async () => {
@@ -116,37 +144,59 @@ export function AttachedEmailsCard({
           </div>
         ) : (
           <div className="space-y-2">
-            {emails.map((email) => (
-              <div
-                key={email.id}
-                className="flex items-start gap-2 py-2 px-2 rounded hover:bg-neutral-50 transition-colors"
-              >
-                <MaterialIcon
-                  name="mail"
-                  className="text-[16px] text-neutral-400 mt-0.5 flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-neutral-900 font-medium truncate">
-                    {email.subject || "No subject"}
-                  </div>
-                  <div className="text-xs text-neutral-500">
-                    {email.from || "Unknown sender"}
-                    {email.receivedDate && (
-                      <>
-                        {" • "}
-                        {new Date(email.receivedDate).toLocaleDateString(
-                          undefined,
-                          {
-                            month: "short",
-                            day: "numeric",
-                          },
-                        )}
-                      </>
+            {enrichedEmails.map((email) => {
+              const gmailData = email.gmailData;
+              const isRelevant = gmailData?.relevance?.isRelevant;
+
+              return (
+                <div
+                  key={email.id}
+                  className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors"
+                >
+                  {/* Email info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="font-medium text-sm text-neutral-900 truncate">
+                        {email.subject || "No subject"}
+                      </div>
+                      {isRelevant && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex-shrink-0">
+                          <MaterialIcon name="check_circle" className="text-[12px]" />
+                          Relevant
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-neutral-500 mb-1">
+                      From: {email.from || "Unknown sender"}
+                    </div>
+                    <div className="text-xs text-neutral-400">
+                      {email.receivedDate ? new Date(email.receivedDate).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      }) : "No date"}
+                    </div>
+                    {gmailData?.snippet && (
+                      <div className="text-xs text-neutral-500 mt-2 line-clamp-2">
+                        {gmailData.snippet}
+                      </div>
                     )}
                   </div>
+
+                  {/* Remove button */}
+                  <button
+                    onClick={() => detachMutation.mutate(email.id)}
+                    disabled={detachMutation.isPending}
+                    className="flex-shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-neutral-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                    title="Remove email"
+                  >
+                    <MaterialIcon name="close" className="text-[16px]" />
+                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

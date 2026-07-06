@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
-import { PersonDetailModal } from "../contacts/person-detail-modal";
+import { PersonInfoModal } from "../contacts/person-info-modal";
 import type { Person } from "../../lib/types";
 
 type InteractionParticipantsProps = {
@@ -108,20 +108,25 @@ export function InteractionParticipants({
         onSaved={() => setResearchModalOpen(false)}
       />
 
-      {/* Person Detail Modal */}
+      {/* Person Info Modal */}
       {selectedPerson && (
-        <PersonDetailModal
+        <PersonInfoModal
           person={selectedPerson}
           isOpen={personDetailModalOpen}
           onClose={() => {
             setPersonDetailModalOpen(false);
             setSelectedPerson(null);
           }}
-          onResearch={(name) => {
+          onRefreshResearch={() => {
             setPersonDetailModalOpen(false);
             setSelectedPerson(null);
-            setSelectedPersonName(name);
+            setSelectedPersonName(selectedPerson.name);
             setResearchModalOpen(true);
+          }}
+          showActions={{
+            refreshResearch: true,
+            markAsWrong: false,
+            delete: false,
           }}
         />
       )}
