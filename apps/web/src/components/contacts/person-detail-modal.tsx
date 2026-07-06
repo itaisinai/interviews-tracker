@@ -1,9 +1,13 @@
-import { MaterialIcon, Modal, JobHistoryTimeline } from "@interviews-tracker/design-system";
-import type { CompanyExperience } from "@interviews-tracker/design-system";
+import {
+  JobHistoryTimeline,
+  MaterialIcon,
+  Modal,
+} from "@interviews-tracker/design-system";
 
+import type { CompanyExperience } from "@interviews-tracker/design-system";
 import type { Person } from "../../lib/types";
-import { useState } from "react";
 import { detectCompanyMismatch } from "../../lib/person-utils";
+import { useState } from "react";
 
 type PersonDetailModalProps = {
   person: Person;
@@ -32,39 +36,43 @@ export function PersonDetailModal({
   const [showAllEducation, setShowAllEducation] = useState(false);
 
   // Transform experience data to match JobHistoryTimeline component format
-  const rawExperience = person.research?.experience as Array<{
-    company: string;
-    companyUrl?: string;
-    totalDuration?: string;
-    positions: Array<{
-      title: string;
-      dates?: string;
-      duration?: string;
-      description?: string;
-    }>;
-  }> | undefined;
+  const rawExperience = person.research?.experience as
+    | Array<{
+        company: string;
+        companyUrl?: string;
+        totalDuration?: string;
+        positions: Array<{
+          title: string;
+          dates?: string;
+          duration?: string;
+          description?: string;
+        }>;
+      }>
+    | undefined;
 
-  const experienceData: CompanyExperience[] = (rawExperience || []).map((exp) => {
-    const positions = (exp.positions || []).map((pos) => {
-      // Split dates into start and end
-      const [startDate = "", endDate = ""] = (pos.dates || "").split(" - ");
+  const experienceData: CompanyExperience[] = (rawExperience || []).map(
+    (exp) => {
+      const positions = (exp.positions || []).map((pos) => {
+        // Split dates into start and end
+        const [startDate = "", endDate = ""] = (pos.dates || "").split(" - ");
+
+        return {
+          title: pos.title,
+          startDate: startDate.trim(),
+          endDate: endDate.trim() || "Present",
+          duration: pos.duration || "",
+          description: pos.description,
+        };
+      });
 
       return {
-        title: pos.title,
-        startDate: startDate.trim(),
-        endDate: endDate.trim() || "Present",
-        duration: pos.duration || "",
-        description: pos.description,
+        companyName: exp.company,
+        companyUrl: exp.companyUrl,
+        totalDuration: exp.totalDuration || "",
+        positions,
       };
-    });
-
-    return {
-      companyName: exp.company,
-      companyUrl: exp.companyUrl,
-      totalDuration: exp.totalDuration || "",
-      positions,
-    };
-  });
+    },
+  );
 
   const education =
     (person.research?.education as Array<{
@@ -76,7 +84,9 @@ export function PersonDetailModal({
   const skills = (person.research?.skills as string[]) || [];
 
   const hasResearch = !!person.research;
-  const hasMismatch = opportunityCompanyName && detectCompanyMismatch(person, opportunityCompanyName);
+  const hasMismatch =
+    opportunityCompanyName &&
+    detectCompanyMismatch(person, opportunityCompanyName);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" title={person.name}>
@@ -87,13 +97,17 @@ export function PersonDetailModal({
           {hasMismatch && onFixCompanyMismatch && (
             <div className="mb-4 rounded-lg border border-warning bg-warning/10 p-4">
               <div className="flex items-start gap-3">
-                <MaterialIcon name="warning" className="text-[24px] text-warning" />
+                <MaterialIcon
+                  name="warning"
+                  className="text-[24px] text-warning"
+                />
                 <div className="flex-1">
                   <p className="text-body-md font-medium text-on-surface">
                     Company mismatch detected
                   </p>
                   <p className="mt-1 text-body-sm text-on-surface-variant">
-                    This contact's LinkedIn shows they work at {person.company}, but this opportunity is for {opportunityCompanyName}.
+                    This contact's LinkedIn shows they work at {person.company},
+                    but this opportunity is for {opportunityCompanyName}.
                   </p>
                   <button
                     onClick={() => {
@@ -125,7 +139,11 @@ export function PersonDetailModal({
               </p>
               <button
                 onClick={() =>
-                  onResearch(person.name, person.title || undefined, person.linkedinUrl || undefined)
+                  onResearch(
+                    person.name,
+                    person.title || undefined,
+                    person.linkedinUrl || undefined,
+                  )
                 }
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-on-primary transition-colors hover:bg-primary/90"
               >
@@ -173,7 +191,10 @@ export function PersonDetailModal({
                   </div>
 
                   <JobHistoryTimeline
-                    companies={experienceData.slice(0, showAllExperience ? undefined : 2)}
+                    companies={experienceData.slice(
+                      0,
+                      showAllExperience ? undefined : 2,
+                    )}
                   />
 
                   {!showAllExperience && experienceData.length > 2 && (
@@ -278,7 +299,11 @@ export function PersonDetailModal({
             {onDelete && (
               <button
                 onClick={() => {
-                  if (window.confirm(`Are you sure you want to delete ${person.name}? This will remove all their research data.`)) {
+                  if (
+                    window.confirm(
+                      `Are you sure you want to delete ${person.name}? This will remove all their research data.`,
+                    )
+                  ) {
                     onDelete(person.id);
                     onClose();
                   }
@@ -292,7 +317,11 @@ export function PersonDetailModal({
             {hasResearch && onMarkAsWrong && opportunityId && (
               <button
                 onClick={() => {
-                  if (window.confirm(`Mark ${person.name} as the wrong person? This will help future searches exclude this candidate.`)) {
+                  if (
+                    window.confirm(
+                      `Mark ${person.name} as the wrong person? This will help future searches exclude this candidate.`,
+                    )
+                  ) {
                     onMarkAsWrong();
                     onClose();
                   }
@@ -300,14 +329,20 @@ export function PersonDetailModal({
                 className="inline-flex items-center gap-2 rounded-lg border border-warning px-4 py-2 font-medium text-warning transition-colors hover:bg-warning/10"
               >
                 <MaterialIcon name="person_off" className="text-[20px]" />
-                Mark as Wrong Person
+                Wrong Person
               </button>
             )}
           </div>
           <div className="flex items-center gap-3">
             {hasResearch && (
               <button
-                onClick={() => onResearch(person.name, person.title || undefined, person.linkedinUrl || undefined)}
+                onClick={() =>
+                  onResearch(
+                    person.name,
+                    person.title || undefined,
+                    person.linkedinUrl || undefined,
+                  )
+                }
                 className="inline-flex items-center gap-2 rounded-lg border border-outline px-4 py-2 font-medium text-primary transition-colors hover:bg-surface-container"
               >
                 <MaterialIcon name="refresh" className="text-[20px]" />
