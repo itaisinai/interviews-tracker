@@ -108,73 +108,78 @@ export function PersonInfoModal({
       `}</style>
       <Modal isOpen={isOpen} onClose={onClose} size="lg" title="">
         <div id="person-modal-content" className="flex flex-col">
-          {/* Header */}
-          <div className="flex items-start justify-between border-b border-outline-variant px-6 py-5">
-            <div className="flex items-start gap-4">
-              {/* Avatar */}
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-tertiary-container text-on-tertiary-container">
-                <span className="font-title-lg text-title-lg font-bold">
-                  {initials}
-                </span>
+          {/* Header - Clean & Compact */}
+          <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 px-6 py-4 border-b border-neutral-200">
+            <div className="flex items-center gap-4">
+              {/* Left: Avatar + Info */}
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                {/* Compact Avatar with gradient */}
+                <div className="flex-shrink-0">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-md flex items-center justify-center">
+                    <span className="text-lg font-bold text-white">
+                      {initials}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Name and context */}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-bold text-gray-900">
+                    {person.name}
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    {subtitle}
+                  </p>
+                </div>
               </div>
 
-              {/* Name and context */}
-              <div>
-                <h2 className="font-title-lg text-title-lg font-bold text-on-surface">
-                  {person.name}
-                </h2>
-                <p className="mt-0.5 text-body-md text-on-surface-variant">
-                  {subtitle}
-                </p>
+              {/* Right: Action Buttons - Outlined with colored text */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {person.linkedinUrl && (
+                  <a
+                    href={person.linkedinUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-[#0A66C2] bg-white text-[#0A66C2] font-medium text-sm hover:bg-blue-50 transition-all"
+                  >
+                    <MaterialIcon name="link" className="text-[18px]" />
+                    LinkedIn
+                  </a>
+                )}
+                {hasResearch && showActions.refreshResearch && (
+                  <button
+                    onClick={onRefreshResearch}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-emerald-600 bg-white text-emerald-600 font-medium text-sm hover:bg-emerald-50 transition-all"
+                  >
+                    <MaterialIcon name="refresh" className="text-[18px]" />
+                    Research Again
+                  </button>
+                )}
+                {hasResearch && showActions.markAsWrong && (
+                  <button
+                    onClick={onMarkAsWrong}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-red-600 bg-white text-red-600 font-medium text-sm hover:bg-red-50 transition-all"
+                  >
+                    <MaterialIcon name="person_off" className="text-[18px]" />
+                    Wrong Person
+                  </button>
+                )}
+                {showActions.delete && (
+                  <button
+                    onClick={onDelete}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-orange-600 bg-white text-orange-600 font-medium text-sm hover:bg-orange-50 transition-all"
+                  >
+                    <MaterialIcon name="delete" className="text-[18px]" />
+                    Delete
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="ml-1 rounded-lg p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                >
+                  <MaterialIcon name="close" className="text-[20px]" />
+                </button>
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              {person.linkedinUrl && (
-                <a
-                  href={person.linkedinUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-outline px-4 py-2 text-body-md font-medium text-on-surface transition-colors hover:bg-surface-container"
-                >
-                  <MaterialIcon name="link" className="text-[18px]" />
-                  LinkedIn
-                </a>
-              )}
-              {hasResearch && showActions.refreshResearch && (
-                <button
-                  onClick={onRefreshResearch}
-                  className="inline-flex items-center gap-2 rounded-lg border border-outline px-4 py-2 text-body-md font-medium text-on-surface transition-colors hover:bg-surface-container"
-                >
-                  <MaterialIcon name="refresh" className="text-[18px]" />
-                  Research Again
-                </button>
-              )}
-              {hasResearch && showActions.markAsWrong && (
-                <button
-                  onClick={onMarkAsWrong}
-                  className="inline-flex items-center gap-2 rounded-lg border border-outline px-4 py-2 text-body-md font-medium text-on-surface transition-colors hover:bg-surface-container"
-                >
-                  <MaterialIcon name="person_off" className="text-[18px]" />
-                  Wrong Person
-                </button>
-              )}
-              {showActions.delete && (
-                <button
-                  onClick={onDelete}
-                  className="inline-flex items-center gap-2 rounded-lg border border-error px-4 py-2 text-body-md font-medium text-error transition-colors hover:bg-error-container"
-                >
-                  <MaterialIcon name="delete" className="text-[18px]" />
-                  Delete
-                </button>
-              )}
-              <button
-                onClick={onClose}
-                className="ml-2 rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container"
-              >
-                <MaterialIcon name="close" className="text-[24px]" />
-              </button>
             </div>
           </div>
 
