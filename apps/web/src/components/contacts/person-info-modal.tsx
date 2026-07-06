@@ -71,19 +71,21 @@ export function PersonInfoModal({
   });
 
   // Get current position from raw dates to avoid treating unparseable/missing dates as "Present"
-  const currentPosition = (person.research?.experience || [])
-    .flatMap((exp: any) =>
-      (exp.positions || []).map((pos: any) => {
-        const rawDates = pos.dates || "";
-        const isPresentOrCurrent =
-          rawDates.toLowerCase().includes("present") ||
-          rawDates.toLowerCase().includes("current");
-        return isPresentOrCurrent
-          ? { title: pos.title, company: exp.company }
-          : null;
-      })
-    )
-    .find(Boolean);
+  const currentPosition = Array.isArray(person.research?.experience)
+    ? (person.research.experience as any[])
+        .flatMap((exp: any) =>
+          (exp.positions || []).map((pos: any) => {
+            const rawDates = pos.dates || "";
+            const isPresentOrCurrent =
+              rawDates.toLowerCase().includes("present") ||
+              rawDates.toLowerCase().includes("current");
+            return isPresentOrCurrent
+              ? { title: pos.title, company: exp.company }
+              : null;
+          }),
+        )
+        .find(Boolean)
+    : undefined;
 
   const subtitle = currentPosition
     ? `${currentPosition.title} at ${currentPosition.company}`
