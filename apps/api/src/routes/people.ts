@@ -4,6 +4,8 @@ import { prisma } from "../lib/prisma.js";
 import { personResearchInputSchema } from "../lib/schemas.js";
 import { getPersonResearchService } from "../services/people/person-research-service.js";
 import { parseCurrentJobDescription, applyParsedJobToTimeline } from "../services/people/parse-current-job-service.js";
+import { createPersonWithSlug } from "../repositories/person-repository.js";
+import type { AuthenticatedRequest } from "../lib/http.js";
 
 export const peopleRouter = Router();
 
@@ -199,13 +201,27 @@ peopleRouter.delete("/:personId", asyncHandler(async (request, response) => {
 }));
 
 // Get person with research
-peopleRouter.get("/:personId", asyncHandler(async (request, response) => {
+peopleRouter.get("/:personId", asyncHandler(async (request: AuthenticatedRequest, response) => {
   const { personId } = request.params;
 
-  const person = await prisma.person.findUnique({
+  // Try finding by ID first (for backward compatibility), then by slug
+  let person = await prisma.person.findUnique({
     where: { id: personId },
     include: { research: true }
   });
+
+  // If not found by ID, try slug
+  if (!person) {
+    person = await prisma.person.findUnique({
+      where: {
+        ownerEmail_slug: {
+          ownerEmail: request.auth.email,
+          slug: personId
+        }
+      },
+      include: { research: true }
+    });
+  }
 
   if (!person) {
     response.status(404).json({ error: "Person not found" });
@@ -235,18 +251,16 @@ peopleRouter.post("/", asyncHandler(async (request, response) => {
   }
 
   if (!person) {
-    // Create new person
-    person = await prisma.person.create({
-      data: {
-        name,
-        email: email || null,
-        linkedinUrl: linkedinUrl || null,
-        title: title || null,
-        company: company || null,
-        avatarUrl: avatarUrl || null,
-        jobOpportunityId: jobOpportunityId || null
-      },
-      include: { research: true }
+    // Create new person with slug
+    person = await createPersonWithSlug({
+      name,
+      ownerEmail: (request as AuthenticatedRequest).auth.email,
+      email: email || null,
+      linkedinUrl: linkedinUrl || null,
+      title: title || null,
+      company: company || null,
+      avatarUrl: avatarUrl || null,
+      jobOpportunityId: jobOpportunityId || null
     });
   } else if (jobOpportunityId && !person.jobOpportunityId) {
     // Update existing person with jobOpportunityId if not set

@@ -69,45 +69,45 @@ enum GmailMessageStateStatus {
 }
 
 model JobOpportunity {
-  id                     String                  @id @default(cuid())
-  ownerEmail             String
-  slug                   String
-  companyName            String
-  companySearchName      String?
-  roleTitle              String
-  pipelineType           PipelineType
-  status                 JobStatus
-  priority               Priority
-  referrerOrConnection   String?
-  source                 String?
-  jobUrl                 String?
-  linkedinUrl            String?
-  linkedinJobId          String?
-  sourceUrl              String?
-  nextStep               String?
-  notes                  String?
-  employeesRangeId       String?
-  companyStageId         String?
-  workModelId            String?
-  location               String?
-  funding                String?
-  companyDescription     String?
-  productDescription     String?
-  customersTraction      String?
-  techStack              String?
-  backendFrontendSplit   String?
-  compensationNotes      String?
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  employeesRange         CompanySizeOption?      @relation(fields: [employeesRangeId], references: [id])
-  companyStage           CompanyStageOption?     @relation(fields: [companyStageId], references: [id])
-  workModel              WorkModelOption?        @relation(fields: [workModelId], references: [id])
-  domains                JobOpportunityDomain[]
-  interactions           Interaction[]
-  notesList              Note[]
-  tasks                  Task[]
-  compensation           Compensation?
-  contacts               Person[]
+  id                   String                 @id @default(cuid())
+  ownerEmail           String
+  slug                 String
+  companyName          String
+  companySearchName    String?
+  roleTitle            String
+  pipelineType         PipelineType
+  status               JobStatus
+  priority             Priority
+  referrerOrConnection String?
+  source               String?
+  jobUrl               String?
+  linkedinUrl          String?
+  linkedinJobId        String?
+  sourceUrl            String?
+  nextStep             String?
+  notes                String?
+  employeesRangeId     String?
+  companyStageId       String?
+  workModelId          String?
+  location             String?
+  funding              String?
+  companyDescription   String?
+  productDescription   String?
+  customersTraction    String?
+  techStack            String?
+  backendFrontendSplit String?
+  compensationNotes    String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  employeesRange       CompanySizeOption?     @relation(fields: [employeesRangeId], references: [id])
+  companyStage         CompanyStageOption?    @relation(fields: [companyStageId], references: [id])
+  workModel            WorkModelOption?       @relation(fields: [workModelId], references: [id])
+  domains              JobOpportunityDomain[]
+  interactions         Interaction[]
+  notesList            Note[]
+  tasks                Task[]
+  compensation         Compensation?
+  contacts             Person[]
 
   @@unique([ownerEmail, slug])
   @@unique([ownerEmail, companyName, roleTitle])
@@ -122,7 +122,7 @@ model JobOpportunity {
 }
 
 model Interaction {
-  id               String              @id @default(cuid())
+  id               String                @id @default(cuid())
   ownerEmail       String
   slug             String
   jobOpportunityId String
@@ -135,16 +135,16 @@ model Interaction {
   personRole       String?
   agenda           String?
   meetingLink      String?
-  gmailMessageId   String?             // Deprecated: kept for backward compatibility, use attachedEmails instead
+  gmailMessageId   String? // Deprecated: kept for backward compatibility, use attachedEmails instead
   notes            String?
   outcome          String?
   followUp         String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  jobOpportunity   JobOpportunity      @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  jobOpportunity   JobOpportunity        @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
   notesList        Note[]
   tasks            Task[]
-  attachedEmails   InteractionEmail[]    // Multiple emails can be attached to one interaction
+  attachedEmails   InteractionEmail[] // Multiple emails can be attached to one interaction
   feedback         InteractionFeedback[] // Multiple feedback notes can be attached to one interaction
 
   @@unique([ownerEmail, slug])
@@ -162,7 +162,7 @@ model InteractionEmail {
   subject        String?
   from           String?
   receivedDate   DateTime?
-  extractedData  Json?       // Stores what was extracted from this email (for audit/rollback)
+  extractedData  Json? // Stores what was extracted from this email (for audit/rollback)
   attachedAt     DateTime    @default(now())
   interaction    Interaction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
 
@@ -174,9 +174,9 @@ model InteractionEmail {
 model InteractionFeedback {
   id            String      @id @default(cuid())
   interactionId String
-  content       String      // Raw feedback text (WhatsApp, text, etc)
-  source        String?     // e.g., "WhatsApp", "Manual"
-  extractedData Json?       // Stores AI extraction metadata
+  content       String // Raw feedback text (WhatsApp, text, etc)
+  source        String? // e.g., "WhatsApp", "Manual"
+  extractedData Json? // Stores AI extraction metadata
   attachedAt    DateTime    @default(now())
   interaction   Interaction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
 
@@ -221,21 +221,21 @@ model Task {
 }
 
 model Compensation {
-  id                 String         @id @default(cuid())
-  ownerEmail         String
-  jobOpportunityId   String         @unique
-  baseSalary         String?
-  equity             String?
-  bonus              String?
-  signingBonus       String?
-  benefits           String?
-  vacationDays       String?
-  workModelNotes     String?
-  negotiationNotes   String?
-  offerStatus        OfferStatus    @default(NOT_DISCUSSED)
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  jobOpportunity     JobOpportunity @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
+  id               String         @id @default(cuid())
+  ownerEmail       String
+  jobOpportunityId String         @unique
+  baseSalary       String?
+  equity           String?
+  bonus            String?
+  signingBonus     String?
+  benefits         String?
+  vacationDays     String?
+  workModelNotes   String?
+  negotiationNotes String?
+  offerStatus      OfferStatus    @default(NOT_DISCUSSED)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  jobOpportunity   JobOpportunity @relation(fields: [jobOpportunityId], references: [id], onDelete: Cascade)
 
   @@index([ownerEmail])
 }
@@ -318,7 +318,9 @@ model GmailMessageState {
 }
 
 model Person {
-  id               String           @id @default(cuid())
+  id               String          @id @default(cuid())
+  ownerEmail       String // Added for slug uniqueness
+  slug             String // Added for slug-first architecture
   name             String
   email            String?
   linkedinUrl      String?
@@ -326,11 +328,12 @@ model Person {
   company          String?
   avatarUrl        String?
   jobOpportunityId String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   research         PersonResearch?
-  jobOpportunity   JobOpportunity?  @relation(fields: [jobOpportunityId], references: [id], onDelete: SetNull)
+  jobOpportunity   JobOpportunity? @relation(fields: [jobOpportunityId], references: [id], onDelete: SetNull)
 
+  @@unique([ownerEmail, slug]) // Slug unique per owner
   @@unique([email])
   @@unique([linkedinUrl])
   @@index([name, company])
@@ -339,22 +342,22 @@ model Person {
 }
 
 model PersonResearch {
-  id          String                    @id @default(cuid())
-  personId    String                    @unique
-  about       String?
-  experience  Json?
-  education   Json?
-  skills      Json?
-  sources     Json?
-  createdAt   DateTime                  @default(now())
-  updatedAt   DateTime                  @updatedAt
-  person      Person                    @relation(fields: [personId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  personId   String   @unique
+  about      String?
+  experience Json?
+  education  Json?
+  skills     Json?
+  sources    Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  person     Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
 }
 
 model WrongPersonCandidate {
   id            String   @id @default(cuid())
   opportunityId String
-  searchContext String   // What name/company/title was being searched
+  searchContext String // What name/company/title was being searched
   personName    String
   linkedinUrl   String?
   company       String?

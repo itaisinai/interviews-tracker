@@ -34,3 +34,17 @@ export function createInteractionTitle(type: string, stage?: string | null) {
 export function appendSlugCollisionSuffix(baseSlug: string, index: number) {
   return index <= 1 ? baseSlug : `${baseSlug}-${index}`;
 }
+
+export const EMPTY_PERSON_SLUG = "person";
+
+export function createPersonSlug(name: string) {
+  const normalized = name
+    .normalize("NFKC")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || EMPTY_PERSON_SLUG;
+}
