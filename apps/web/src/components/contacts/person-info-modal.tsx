@@ -70,10 +70,20 @@ export function PersonInfoModal({
     };
   });
 
-  // Get current position (first position of first company with "Present" as end date)
-  const currentPosition = experienceData
-    .flatMap(exp => exp.positions.map(pos => ({ ...pos, company: exp.companyName })))
-    .find(pos => pos.endDate.toLowerCase().includes('present') || pos.endDate.toLowerCase() === 'current');
+  // Get current position from raw dates to avoid treating unparseable/missing dates as "Present"
+  const currentPosition = (person.research?.experience || [])
+    .flatMap((exp: any) =>
+      (exp.positions || []).map((pos: any) => {
+        const rawDates = pos.dates || "";
+        const isPresentOrCurrent =
+          rawDates.toLowerCase().includes("present") ||
+          rawDates.toLowerCase().includes("current");
+        return isPresentOrCurrent
+          ? { title: pos.title, company: exp.company }
+          : null;
+      })
+    )
+    .find(Boolean);
 
   const subtitle = currentPosition
     ? `${currentPosition.title} at ${currentPosition.company}`
