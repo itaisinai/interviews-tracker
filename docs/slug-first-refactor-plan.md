@@ -110,11 +110,32 @@ await prisma.person.create({
 
 ---
 
+## Current Status
+
+**Branch:** `feature/slug-first-architecture`  
+**Date:** 2026-07-06  
+**Completed:** 9/11 tasks ✅
+
+**Implementation Phase:**
+- ✅ **Phase 1**: Backend accepts slugs for FK operations  
+- ✅ **Phase 2**: Frontend exclusively uses slugs  
+- ⏳ **Phase 3**: Remove IDs from responses (infrastructure ready, not deployed)  
+- ⏳ **Phase 4**: Remove deprecated ID support (future)
+
+**Commits:**
+1. `7ac77cd` - Add slug generation for Person entity
+2. `c221cb1` - Add slug-first API contract and FK slug resolution
+3. `940f1be` - Update API client to use slugs instead of IDs
+4. `8850691` - Clean up frontend ID tracking
+5. `506e9d8` - Add slug-based database lookups for Person entity
+
+---
+
 ## Implementation Tasks
 
-### Phase 1: Foundation (Weeks 1-2)
+### Phase 1: Foundation (Weeks 1-2) ✅ COMPLETE
 
-#### ✅ Task 1: Audit Current Usage
+#### ✅ Task 1: Audit Current Usage (DONE)
 - Document all places using IDs vs slugs
 - Map FK operations requiring IDs
 - List API endpoints by identifier type
