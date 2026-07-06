@@ -75,10 +75,16 @@ API responses should exclude internal database IDs:
 ### Backward Compatibility Strategy
 
 During migration, support both patterns:
-1. Accept both `jobOpportunityId` and `opportunitySlug` (prefer slug)
-2. Return both `id` and `slug` in responses
-3. Log deprecation warnings when `id` is used
-4. Remove `id` support after frontend migration
+1. ✅ **Completed:** Accept both `jobOpportunityId` and `opportunitySlug` (prefer slug)
+2. **Current:** Keep returning `id` in responses until frontend migration complete
+3. **Next:** Add deprecation headers when `id` is used in requests
+4. **Final:** Remove `id` from responses after frontend exclusively uses slugs
+
+**Migration Phases:**
+- **Phase 1 (Current):** Backend accepts slugs, returns both id + slug
+- **Phase 2:** Frontend updated to use slugs exclusively  
+- **Phase 3:** Remove id from API responses
+- **Phase 4:** Remove deprecated ID-based request support
 
 ## Implementation Approach
 
