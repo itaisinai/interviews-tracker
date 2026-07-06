@@ -65,7 +65,8 @@ interactionsRouter.post("/:id/emails", asyncHandler(async (request, response) =>
       interactionId,
       gmailMessageId
     });
-    response.status(result.alreadyAttached ? 200 : 201).json(result.email);
+    // Return full result including AI suggestion (consistent with batch attach)
+    response.status(result.alreadyAttached ? 200 : 201).json(result);
   } else {
     response.status(400).json({ error: "gmailMessageId or gmailMessageIds required" });
   }
