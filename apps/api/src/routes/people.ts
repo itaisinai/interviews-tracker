@@ -6,6 +6,7 @@ import { getPersonResearchService } from "../services/people/person-research-ser
 import { parseCurrentJobDescription, applyParsedJobToTimeline } from "../services/people/parse-current-job-service.js";
 import { createPersonWithSlug } from "../repositories/person-repository.js";
 import type { AuthenticatedRequest } from "../lib/http.js";
+import { resolveOpportunitySlug } from "../lib/slug-resolver.js";
 
 export const peopleRouter = Router();
 
@@ -232,8 +233,13 @@ peopleRouter.get("/:personId", asyncHandler(async (request: AuthenticatedRequest
 }));
 
 // Create or find person
-peopleRouter.post("/", asyncHandler(async (request, response) => {
-  const { name, email, linkedinUrl, title, company, avatarUrl, jobOpportunityId } = request.body;
+peopleRouter.post("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const { name, email, linkedinUrl, title, company, avatarUrl, opportunitySlug, jobOpportunityId: providedId } = request.body;
+
+  // Resolve slug to ID if provided (prefer slug over ID)
+  const jobOpportunityId = opportunitySlug
+    ? await resolveOpportunitySlug(opportunitySlug, request.auth.email)
+    : providedId;
 
   // Removed: No longer checking for duplicate names per opportunity
   // Multiple people can have the same name in one opportunity

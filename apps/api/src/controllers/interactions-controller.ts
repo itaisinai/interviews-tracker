@@ -3,6 +3,7 @@ import { z } from "zod";
 import { interactionInputSchema } from "../lib/schemas.js";
 import { createInteraction, deleteInteraction, listInteractions, updateInteraction } from "../services/interactions/interaction-service.js";
 import { addFeedbackToInteraction, listInteractionFeedback } from "../services/interactions/interaction-feedback-service.js";
+import { resolveOpportunitySlug } from "../lib/slug-resolver.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
@@ -10,9 +11,24 @@ export function listInteractionsHandler(request: AuthenticatedRequest) {
   return listInteractions(request.auth.email);
 }
 
-export function createInteractionHandler(request: AuthenticatedRequest) {
-  const input = interactionInputSchema.and(z.object({ jobOpportunityId: z.string().min(1) })).parse(request.body);
-  return createInteraction(input, request.auth.email);
+export async function createInteractionHandler(request: AuthenticatedRequest) {
+  // Accept either opportunitySlug (preferred) or jobOpportunityId (deprecated)
+  const inputSchema = interactionInputSchema.and(z.object({
+    opportunitySlug: z.string().min(1).optional(),
+    jobOpportunityId: z.string().min(1).optional()
+  })).refine(
+    (data) => data.opportunitySlug || data.jobOpportunityId,
+    { message: "Either opportunitySlug or jobOpportunityId is required" }
+  );
+
+  const { opportunitySlug, jobOpportunityId: providedId, ...input } = inputSchema.parse(request.body);
+
+  // Resolve slug to ID if slug provided, otherwise use provided ID
+  const jobOpportunityId = opportunitySlug
+    ? await resolveOpportunitySlug(opportunitySlug, request.auth.email)
+    : providedId!;
+
+  return createInteraction({ ...input, jobOpportunityId }, request.auth.email);
 }
 
 export function updateInteractionHandler(request: AuthenticatedRequest) {
