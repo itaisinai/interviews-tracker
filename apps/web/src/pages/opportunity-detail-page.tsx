@@ -40,9 +40,8 @@ export function OpportunityDetailPage() {
   const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
   const [isInteractionOperationPending, setIsInteractionOperationPending] = useState(false);
 
-  const opportunityRouteId = data?.slug ?? data?.id ?? slugOrId;
-  const opportunityApiId = data?.slug ?? data?.id ?? slugOrId; // For API calls that support slug
-  const opportunityDbId = data?.id ?? slugOrId; // For database foreign keys (e.g., contact creation)
+  // Slug-first architecture: use slug for all operations
+  const opportunitySlug = data?.slug ?? slugOrId;
   const canonicalSlug = data?.slug ?? null;
   const [selectedInteractionId, setSelectedInteractionId] = useState<
     string | null
@@ -50,7 +49,7 @@ export function OpportunityDetailPage() {
   const refresh = () =>
     void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
   const deleteOpportunity = useMutation({
-    mutationFn: () => api.deleteOpportunity(opportunityRouteId),
+    mutationFn: () => api.deleteOpportunity(opportunitySlug),
     onSuccess: () => navigate("/opportunities"),
   });
   const deleteInteraction = useMutation({
@@ -65,7 +64,7 @@ export function OpportunityDetailPage() {
         throw new Error("Opportunity is not loaded");
       }
       return api.updateOpportunity(
-        opportunityRouteId,
+        opportunitySlug,
         buildOpportunityInput(data, updates),
       );
     },
@@ -243,7 +242,7 @@ export function OpportunityDetailPage() {
         <div className="mt-8">
           <FocusedInteractionCard
             interaction={focusedInteraction}
-            opportunityId={opportunityDbId}
+            opportunityId={opportunitySlug}
             opportunityCompanyName={data.companyName}
             onOpen={() => setSelectedInteractionId(focusedInteraction.id)}
           />
@@ -269,7 +268,7 @@ export function OpportunityDetailPage() {
           />
           <div id="contacts-section">
             <ContactsList
-              opportunityId={opportunityDbId}
+              opportunityId={opportunitySlug}
               companyName={data.companyName}
             />
           </div>
@@ -293,7 +292,7 @@ export function OpportunityDetailPage() {
       <AddInteractionModal
         isOpen={showAddInteractionModal}
         onClose={() => setShowAddInteractionModal(false)}
-        opportunityId={opportunityApiId}
+        opportunityId={opportunitySlug}
         companyName={data.companyName}
         roleTitle={data.roleTitle}
         onSaved={() => {

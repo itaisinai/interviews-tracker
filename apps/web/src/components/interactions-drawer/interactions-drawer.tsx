@@ -46,7 +46,8 @@ export function InteractionsDrawer({
   const closeTimerRef = useRef<number | null>(null);
   const openFrameRef = useRef<number | null>(null);
 
-  const opportunityId = mountedInteraction?.jobOpportunityId ?? "";
+  // Use opportunity slug (prefer nested object's slug, fallback to FK for backward compatibility)
+  const opportunityId = mountedInteraction?.jobOpportunity?.slug ?? mountedInteraction?.jobOpportunityId ?? "";
 
   useEffect(() => {
     if (closeTimerRef.current) {
