@@ -118,7 +118,7 @@ function ImportBody({
   return (
     <div className="mt-6">
       <GmailInteractionPanel
-        opportunityId={selectedOpportunity.id}
+        opportunityId={selectedOpportunity.slug ?? selectedOpportunity.id}
         companyName={selectedOpportunity.companyName}
         roleTitle={selectedOpportunity.roleTitle}
         onSaved={onSaved}
