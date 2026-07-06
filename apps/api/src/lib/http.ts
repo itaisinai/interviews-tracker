@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { logger } from "./logger.js";
 import { GmailReconnectRequiredError } from "../services/gmail/gmail-service.js";
 import { PersonResearchProviderError } from "../services/people/exa-provider.js";
+import { NotFoundError } from "./slug-resolver.js";
 
 export function asyncHandler(handler: (request: Request, response: Response, next: NextFunction) => Promise<unknown>) {
   return (request: Request, response: Response, next: NextFunction) => {
@@ -13,6 +14,10 @@ export function asyncHandler(handler: (request: Request, response: Response, nex
 export function errorHandler(error: unknown, request: Request, response: Response, _next: NextFunction) {
   if (error instanceof ZodError) {
     return response.status(400).json({ message: "Validation failed", issues: error.issues });
+  }
+
+  if (error instanceof NotFoundError) {
+    return response.status(404).json({ message: error.message });
   }
 
   if (error instanceof GmailReconnectRequiredError) {
