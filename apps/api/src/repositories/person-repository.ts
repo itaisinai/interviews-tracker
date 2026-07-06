@@ -87,3 +87,38 @@ export async function findPersonBySlug(
     include: { research: true }
   });
 }
+
+/**
+ * Resolve Person slug or ID to internal database ID
+ * Tries slug first, then falls back to ID for backward compatibility
+ */
+export async function resolvePersonId(
+  slugOrId: string,
+  ownerEmail: string
+): Promise<string | null> {
+  // Try finding by slug first
+  const bySlug = await prisma.person.findUnique({
+    where: {
+      ownerEmail_slug: {
+        ownerEmail,
+        slug: slugOrId
+      }
+    },
+    select: { id: true }
+  });
+
+  if (bySlug) {
+    return bySlug.id;
+  }
+
+  // Fall back to ID lookup (for backward compatibility)
+  const byId = await prisma.person.findFirst({
+    where: {
+      id: slugOrId,
+      ownerEmail
+    },
+    select: { id: true }
+  });
+
+  return byId?.id ?? null;
+}

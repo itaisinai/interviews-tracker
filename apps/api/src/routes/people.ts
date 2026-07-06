@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { personResearchInputSchema } from "../lib/schemas.js";
 import { getPersonResearchService } from "../services/people/person-research-service.js";
 import { parseCurrentJobDescription, applyParsedJobToTimeline } from "../services/people/parse-current-job-service.js";
-import { createPersonWithSlug } from "../repositories/person-repository.js";
+import { createPersonWithSlug, resolvePersonId } from "../repositories/person-repository.js";
 import type { AuthenticatedRequest } from "../lib/http.js";
 import { resolveOpportunitySlug } from "../lib/slug-resolver.js";
 
@@ -39,12 +39,19 @@ peopleRouter.post("/research", asyncHandler(async (request, response) => {
 }));
 
 // Parse current job description
-peopleRouter.post("/:personId/parse-current-job", asyncHandler(async (request, response) => {
-  const { personId } = request.params;
+peopleRouter.post("/:personId/parse-current-job", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const { personId: slugOrId } = request.params;
   const { jobDescriptionText } = request.body;
 
   if (!jobDescriptionText || typeof jobDescriptionText !== "string") {
     response.status(400).json({ error: "jobDescriptionText is required" });
+    return;
+  }
+
+  // Resolve slug or ID to internal ID
+  const personId = await resolvePersonId(slugOrId, request.auth.email);
+  if (!personId) {
+    response.status(404).json({ error: "Person not found" });
     return;
   }
 
@@ -92,12 +99,19 @@ peopleRouter.post("/:personId/parse-current-job", asyncHandler(async (request, r
 }));
 
 // Apply parsed job update to person's research
-peopleRouter.post("/:personId/apply-job-update", asyncHandler(async (request, response) => {
-  const { personId } = request.params;
+peopleRouter.post("/:personId/apply-job-update", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const { personId: slugOrId } = request.params;
   const { updatedTimeline } = request.body;
 
   if (!updatedTimeline || !Array.isArray(updatedTimeline)) {
     response.status(400).json({ error: "updatedTimeline is required" });
+    return;
+  }
+
+  // Resolve slug or ID to internal ID
+  const personId = await resolvePersonId(slugOrId, request.auth.email);
+  if (!personId) {
+    response.status(404).json({ error: "Person not found" });
     return;
   }
 
@@ -128,9 +142,16 @@ peopleRouter.post("/:personId/apply-job-update", asyncHandler(async (request, re
 }));
 
 // Save person research
-peopleRouter.post("/:personId/research", asyncHandler(async (request, response) => {
-  const { personId } = request.params;
+peopleRouter.post("/:personId/research", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const { personId: slugOrId } = request.params;
   const { research } = request.body;
+
+  // Resolve slug or ID to internal ID
+  const personId = await resolvePersonId(slugOrId, request.auth.email);
+  if (!personId) {
+    response.status(404).json({ error: "Person not found" });
+    return;
+  }
 
   // Update or create person research
   const saved = await prisma.personResearch.upsert({
@@ -159,11 +180,18 @@ peopleRouter.post("/:personId/research", asyncHandler(async (request, response) 
 }));
 
 // Update person
-peopleRouter.put("/:personId", asyncHandler(async (request, response) => {
-  const { personId } = request.params;
+peopleRouter.put("/:personId", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const { personId: slugOrId } = request.params;
   const { name, email, linkedinUrl, title, company, avatarUrl } = request.body;
 
-  console.log('[UPDATE PERSON] Updating person:', personId);
+  console.log('[UPDATE PERSON] Updating person:', slugOrId);
+
+  // Resolve slug or ID to internal ID
+  const personId = await resolvePersonId(slugOrId, request.auth.email);
+  if (!personId) {
+    response.status(404).json({ error: "Person not found" });
+    return;
+  }
 
   const person = await prisma.person.update({
     where: { id: personId },
@@ -183,9 +211,16 @@ peopleRouter.put("/:personId", asyncHandler(async (request, response) => {
 }));
 
 // Delete person (must come before GET /:personId)
-peopleRouter.delete("/:personId", asyncHandler(async (request, response) => {
-  const { personId } = request.params;
-  console.log('[DELETE PERSON] Deleting person:', personId);
+peopleRouter.delete("/:personId", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const { personId: slugOrId } = request.params;
+  console.log('[DELETE PERSON] Deleting person:', slugOrId);
+
+  // Resolve slug or ID to internal ID
+  const personId = await resolvePersonId(slugOrId, request.auth.email);
+  if (!personId) {
+    response.status(404).json({ error: "Person not found" });
+    return;
+  }
 
   // Delete research first (if exists)
   await prisma.personResearch.deleteMany({
@@ -281,14 +316,27 @@ peopleRouter.post("/", asyncHandler(async (request: AuthenticatedRequest, respon
 }));
 
 // Mark person as wrong candidate
-peopleRouter.post("/:personId/mark-wrong", asyncHandler(async (request, response) => {
-  const { personId } = request.params;
-  const { opportunityId, searchContext, notes } = request.body;
+peopleRouter.post("/:personId/mark-wrong", asyncHandler(async (request: AuthenticatedRequest, response) => {
+  const { personId: personSlugOrId } = request.params;
+  const { opportunitySlug, opportunityId: legacyOpportunityId, searchContext, notes } = request.body;
 
-  if (!opportunityId) {
-    response.status(400).json({ error: "opportunityId is required" });
+  // Accept either opportunitySlug or opportunityId (deprecated)
+  const opportunityIdentifier = opportunitySlug ?? legacyOpportunityId;
+
+  if (!opportunityIdentifier) {
+    response.status(400).json({ error: "opportunitySlug or opportunityId is required" });
     return;
   }
+
+  // Resolve person slug/ID to internal ID
+  const personId = await resolvePersonId(personSlugOrId, request.auth.email);
+  if (!personId) {
+    response.status(404).json({ error: "Person not found" });
+    return;
+  }
+
+  // Resolve opportunity slug/ID to internal ID
+  const opportunityId = await resolveOpportunitySlug(opportunityIdentifier, request.auth.email);
 
   // Get person details
   const person = await prisma.person.findUnique({
