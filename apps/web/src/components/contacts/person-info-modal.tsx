@@ -4,7 +4,7 @@ import {
   Modal,
 } from "@interviews-tracker/design-system";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Linkedin } from "lucide-react";
 import type { CompanyExperience } from "@interviews-tracker/design-system";
 import type { Person } from "../../lib/types";
 import { useState } from "react";
@@ -140,10 +140,10 @@ export function PersonInfoModal({
                     href={person.linkedinUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-[#0A66C2] bg-white text-[#0A66C2] font-medium text-sm hover:bg-blue-50 transition-all"
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#0A66C2] text-white hover:bg-[#004182] transition-all shadow-sm hover:shadow-md"
+                    title="View LinkedIn Profile"
                   >
-                    <MaterialIcon name="link" className="text-[18px]" />
-                    LinkedIn
+                    <Linkedin size={20} fill="currentColor" strokeWidth={0} />
                   </a>
                 )}
                 {hasResearch && showActions.refreshResearch && (
