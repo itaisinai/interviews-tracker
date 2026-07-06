@@ -9,7 +9,7 @@ type AttachEmailModalProps = {
   onClose: () => void;
   interactionId: string;
   opportunityId: string;
-  onAttached?: () => void;
+  onAttached?: (aiSuggestion?: any) => void;
 };
 
 export function AttachEmailModal({
@@ -63,7 +63,7 @@ export function AttachEmailModal({
     setIsAttaching(true);
     try {
       // Attach all selected emails in a single batch request to avoid race conditions
-      await api.attachMultipleEmailsToInteraction(interactionId, Array.from(selectedEmailIds));
+      const result = await api.attachMultipleEmailsToInteraction(interactionId, Array.from(selectedEmailIds));
 
       // Invalidate and refetch queries - wait for them to complete
       await Promise.all([
@@ -79,8 +79,8 @@ export function AttachEmailModal({
 
       // Small delay to ensure React has re-rendered with new data
       setTimeout(() => {
-        // Trigger callback to open edit form
-        onAttached?.();
+        // Trigger callback with AI suggestion to open edit form
+        onAttached?.(result.aiSuggestion);
       }, 100);
     } catch (error) {
       console.error("Failed to attach emails:", error);

@@ -127,7 +127,7 @@ export function CompanyDataSection({
             </button>
           </div>
           <GmailInteractionPanel
-            opportunityId={opportunity.id}
+            opportunityId={opportunity.slug ?? opportunity.id}
             companyName={opportunity.companyName}
             roleTitle={opportunity.roleTitle}
             onSaved={onSaved}

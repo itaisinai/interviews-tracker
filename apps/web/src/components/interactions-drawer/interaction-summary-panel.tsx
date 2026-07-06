@@ -180,7 +180,7 @@ export function InteractionSummaryPanel({
         />
         <AttachedEmailsCard
           interactionId={interaction.slug || interaction.id}
-          opportunityId={interaction.jobOpportunityId}
+          opportunityId={interaction.jobOpportunity?.slug ?? interaction.jobOpportunityId}
           onEmailsAttached={onToggleEditing}
         />
       </div>
