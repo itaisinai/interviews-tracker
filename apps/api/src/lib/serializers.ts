@@ -33,9 +33,21 @@ export function serializeOpportunity<T extends Record<string, any>>(opportunity:
 export function serializeInteraction<T extends Record<string, any>>(interaction: T): any {
   const { id, jobOpportunityId, ...rest } = interaction;
 
-  // Clean nested jobOpportunity if included
+  // Include minimal jobOpportunity metadata (avoid sending full opportunity with all interactions/compensation/etc)
   if ('jobOpportunity' in interaction && (interaction as any).jobOpportunity) {
-    (rest as any).jobOpportunity = serializeOpportunity((interaction as any).jobOpportunity);
+    const opp = (interaction as any).jobOpportunity;
+    (rest as any).jobOpportunity = {
+      slug: opp.slug,
+      roleTitle: opp.roleTitle,
+      pipelineType: opp.pipelineType,
+      status: opp.status,
+      priority: opp.priority,
+      updatedAt: opp.updatedAt,
+      company: opp.company ? {
+        slug: opp.company.slug,
+        name: opp.company.name,
+      } : null,
+    };
   }
 
   return rest;
