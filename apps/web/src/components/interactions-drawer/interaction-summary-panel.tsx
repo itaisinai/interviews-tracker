@@ -60,27 +60,11 @@ export function InteractionSummaryPanel({
   // Get opportunity slug - prefer prop, then nested object's slug, then FK ID for backward compatibility
   const opportunitySlug = opportunitySlugProp ?? interaction.jobOpportunity?.slug ?? interaction.jobOpportunityId;
 
-  console.log('[DRAWER SLUG DERIVATION]', {
-    'opportunitySlugProp (from parent)': opportunitySlugProp,
-    'interaction.jobOpportunity': interaction.jobOpportunity,
-    'interaction.jobOpportunityId': interaction.jobOpportunityId,
-    'derived opportunitySlug': opportunitySlug,
-    'interaction.personName': interaction.personName,
-  });
-
   // Fetch contacts for this opportunity
   const { data: contacts = [] } = useQuery({
     queryKey: ["opportunity-contacts", opportunitySlug],
     queryFn: () => api.getOpportunityContacts(opportunitySlug!),
     enabled: !!opportunitySlug && !!interaction.personName,
-  });
-
-  console.log('[DRAWER CONTACTS]', {
-    opportunitySlug,
-    enabled: !!opportunitySlug && !!interaction.personName,
-    contactsCount: contacts.length,
-    contacts: contacts.map((c: any) => ({ name: c.name, hasResearch: !!c.research })),
-    personNames,
   });
 
   const personRecords = personNames.map((name) => {
