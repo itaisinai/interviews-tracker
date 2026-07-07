@@ -62,23 +62,23 @@ export function buildGlobalSearchResults({
         icon: "business",
       })),
     opportunities: opportunities
-      .filter((opportunity) => includesQuery([opportunity.roleTitle, opportunity.name, opportunity.companySearchName, opportunity.status, opportunity.location, opportunity.notes], normalized))
+      .filter((opportunity) => includesQuery([opportunity.roleTitle, opportunity.company.name, opportunity.status, opportunity.notes], normalized))
       .map((opportunity) => ({
-        id: opportunity.id,
+        id: opportunity.slug,
         type: "opportunities",
         title: opportunity.roleTitle,
-        subtitle: `${opportunity.name} · ${opportunity.status.replaceAll("_", " ").toLowerCase()}`,
-        href: `/opportunities/${opportunity.slug || opportunity.id}`,
+        subtitle: `${opportunity.company.name} · ${opportunity.status.replaceAll("_", " ").toLowerCase()}`,
+        href: `/opportunities/${opportunity.slug}`,
         icon: "work",
       })),
     interactions: interactions
-      .filter((interaction) => includesQuery([interaction.type, interaction.stage, interaction.status, interaction.personName, interaction.personRole, interaction.agenda, interaction.notes, interaction.outcome, interaction.followUp, interaction.jobOpportunity?.name, interaction.jobOpportunity?.roleTitle], normalized))
+      .filter((interaction) => includesQuery([interaction.type, interaction.stage, interaction.status, interaction.personName, interaction.personRole, interaction.agenda, interaction.notes, interaction.outcome, interaction.followUp, interaction.jobOpportunity?.company.name, interaction.jobOpportunity?.roleTitle], normalized))
       .map((interaction) => ({
-        id: interaction.id,
+        id: interaction.slug,
         type: "interactions",
         title: interaction.type.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()),
-        subtitle: `${interaction.jobOpportunity?.name ?? "Interaction"} · ${formatDate(interaction.date)}`,
-        href: interaction.jobOpportunity ? `/opportunities/${interaction.jobOpportunity.slug || interaction.jobOpportunity.id}` : "/interactions",
+        subtitle: `${interaction.jobOpportunity?.company.name ?? "Interaction"} · ${formatDate(interaction.date)}`,
+        href: interaction.jobOpportunity ? `/opportunities/${interaction.jobOpportunity.slug}` : "/interactions",
         icon: interaction.type.toLowerCase().includes("phone") ? "call" : "event_note",
       })),
   };
