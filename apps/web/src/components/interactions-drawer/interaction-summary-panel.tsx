@@ -61,7 +61,7 @@ export function InteractionSummaryPanel({
   // Fetch contacts for this opportunity
   const { data: contacts = [] } = useQuery({
     queryKey: ["opportunity-contacts", opportunitySlug],
-    queryFn: () => api.getOpportunityContacts(opportunitySlug),
+    queryFn: () => api.getOpportunityContacts(opportunitySlug!),
     enabled: !!opportunitySlug && !!interaction.personName,
   });
 
@@ -110,7 +110,7 @@ export function InteractionSummaryPanel({
 
     // Call API to add feedback and get AI suggestion
     const result = await api.addFeedbackToInteraction(
-      interaction.slug || interaction.id,
+      interaction.slug,
       content,
       source,
     );
@@ -182,8 +182,8 @@ export function InteractionSummaryPanel({
           columns={1}
         />
         <AttachedEmailsCard
-          interactionId={interaction.slug || interaction.id}
-          opportunityId={opportunitySlug}
+          interactionId={interaction.slug}
+          opportunityId={opportunitySlug!}
           onEmailsAttached={onToggleEditing}
         />
       </div>
@@ -226,7 +226,7 @@ export function InteractionSummaryPanel({
       />
 
       {/* Gmail Email States */}
-      <GmailEmailStatesSection opportunityId={opportunitySlug} />
+      {opportunitySlug && <GmailEmailStatesSection opportunityId={opportunitySlug} />}
     </div>
   );
 }

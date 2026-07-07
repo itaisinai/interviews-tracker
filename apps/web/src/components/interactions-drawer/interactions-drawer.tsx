@@ -141,7 +141,7 @@ export function InteractionsDrawer({
         throw new Error("No interaction is ready to update.");
       }
 
-      return api.updateInteraction(selectedTimelineInteraction.slug || selectedTimelineInteraction.id, draft);
+      return api.updateInteraction(selectedTimelineInteraction.slug, draft);
     },
     onMutate: () => onOperationStart?.(),
     onSuccess: (savedInteraction) => {
@@ -242,11 +242,11 @@ export function InteractionsDrawer({
               onSave={() => void updateInteraction.mutate()}
               isSaving={updateInteraction.isPending}
               onDelete={() => {
-                deleteInteraction.mutate(displayInteraction.slug || displayInteraction.id);
+                deleteInteraction.mutate(displayInteraction.slug);
               }}
               isDeleting={
                 deleteInteraction.isPending &&
-                deleteInteraction.variables === displayInteraction.id
+                deleteInteraction.variables === displayInteraction.slug
               }
               opportunityCompanyName={opportunity?.company.name}
             />
@@ -254,7 +254,7 @@ export function InteractionsDrawer({
             <InteractionTimelinePanel
               companyName={opportunity?.company.name ?? "Timeline"}
               interactions={timeline}
-              selectedInteractionId={displayInteraction.id}
+              selectedInteractionId={displayInteraction.slug}
               onSelectInteraction={onSelectInteraction}
             />
           </div>

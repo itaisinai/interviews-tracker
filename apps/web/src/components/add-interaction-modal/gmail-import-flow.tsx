@@ -82,7 +82,7 @@ export function GmailImportFlow({
       if (allGmailMessageIds.length > 0) {
         await Promise.all(
           allGmailMessageIds.map(messageId =>
-            api.attachEmailToInteraction(interaction.id, messageId)
+            api.attachEmailToInteraction(interaction.slug, messageId)
           )
         );
       }

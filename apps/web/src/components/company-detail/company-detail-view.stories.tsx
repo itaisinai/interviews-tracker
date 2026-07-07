@@ -45,7 +45,7 @@ const reevolCompany = {
   ],
   interactions: promoteOverdueInteractionsForRead([
     {
-      id: "reevol-phone-2026-06-15",
+      slug: "reevol-phone-2026-06-15",
       jobOpportunityId: "reevol-opportunity",
       date: "2026-06-15T12:30:00",
       type: "Phone Call",
@@ -55,7 +55,7 @@ const reevolCompany = {
       followUp:
         "For more details or if you need to change the time of your interview, please reply to this email.",
       jobOpportunity: {
-        id: "reevol-opportunity",
+        slug: "reevol-opportunity",
         companyName: "Reevol",
         roleTitle: "Senior Full Stack Developer",
         status: "ACTIVE_PROCESS",

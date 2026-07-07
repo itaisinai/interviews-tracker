@@ -6,9 +6,13 @@ import { buildSelectedOpportunityForInteraction } from "./interactions-page-sele
 import type { Interaction, Opportunity } from "../lib/types.js";
 
 const baseOpportunity = {
-  id: "opp-1",
   slug: "acme-engineer",
-  companyName: "Acme",
+  companyId: "company-1",
+  company: {
+    id: "company-1",
+    slug: "acme",
+    name: "Acme",
+  },
   roleTitle: "Engineer",
   pipelineType: "ACTIVE_PROCESS",
   status: "TECHNICAL_SCHEDULED",
@@ -22,7 +26,7 @@ const baseOpportunity = {
 } as Opportunity;
 
 const interactionA = {
-  id: "interaction-a",
+  slug: "interaction-a",
   ownerEmail: "test@example.com",
   jobOpportunityId: "opp-1",
   date: "2026-06-11T10:00:00.000Z",
@@ -32,7 +36,7 @@ const interactionA = {
 } as Interaction;
 
 const interactionB = {
-  id: "interaction-b",
+  slug: "interaction-b",
   ownerEmail: "test@example.com",
   jobOpportunityId: "opp-1",
   date: "2026-06-12T10:00:00.000Z",
@@ -42,7 +46,7 @@ const interactionB = {
 } as Interaction;
 
 const otherInteraction = {
-  id: "interaction-c",
+  slug: "interaction-c",
   ownerEmail: "test@example.com",
   jobOpportunityId: "opp-2",
   date: "2026-06-13T10:00:00.000Z",
@@ -57,9 +61,9 @@ test("opening an interaction drawer builds selected opportunity from already-loa
     [],
   );
 
-  assert.equal(selectedOpportunity?.id, "opp-1");
+  assert.equal(selectedOpportunity?.slug, "acme-engineer");
   assert.deepEqual(
-    selectedOpportunity?.interactions.map((interaction) => interaction.id),
+    selectedOpportunity?.interactions.map((interaction) => interaction.slug),
     ["interaction-a", "interaction-b"],
   );
 });

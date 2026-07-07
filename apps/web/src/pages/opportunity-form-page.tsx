@@ -89,7 +89,7 @@ export function OpportunityFormPage() {
         throw new Error("Nothing parsed");
       }
 
-      const companyName = parseResult.company.name?.trim();
+      const companyName = parseResult.companyName?.trim();
       const roleTitle = parseResult.roleTitle?.trim();
 
       if (!companyName || !roleTitle) {
@@ -144,7 +144,7 @@ export function OpportunityFormPage() {
     }
 
     return [
-      parseResult.company.name ?? "Unknown company",
+      parseResult.companyName ?? "Unknown company",
       parseResult.roleTitle ?? "Unknown role",
       parseResult.status ?? "RESEARCH_LEAD",
       parseResult.prioritySuggestion ?? "MEDIUM"
@@ -285,7 +285,7 @@ export function OpportunityFormPage() {
                 </div>
               ) : null}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <ValueRow label="Company" value={parseResult.company.name ?? "-"} />
+                <ValueRow label="Company" value={parseResult.companyName ?? "-"} />
                 <ValueRow label="Role" value={parseResult.roleTitle ?? "-"} />
                 <ValueRow label="Status" value={labelForJobStatus(normalizeJobStatus(parseResult.status))} />
                 <ValueRow label="Priority" value={labelForPriority(priority)} />

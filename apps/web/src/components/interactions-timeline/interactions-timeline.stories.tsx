@@ -13,12 +13,16 @@ import { InteractionTimelinePanel } from "../interactions-drawer/interaction-tim
 import { InteractionComposerPanel } from "../interactions-drawer/interaction-composer-panel";
 
 const reevolOpportunity = {
-  id: "opportunity-reevol",
-  companyName: "Reevol",
+  slug: "reevol",
+  companyId: "company-reevol",
+  company: {
+    id: "company-reevol",
+    slug: "reevol",
+    name: "Reevol",
+  },
   roleTitle: "Senior Full Stack Developer",
   status: "ACTIVE_PROCESS",
   pipelineType: "ACTIVE_PROCESS",
-  slug: "reevol",
 } as unknown as Opportunity;
 
 const reevolInteractions = promoteOverdueInteractionsForRead([
@@ -79,10 +83,10 @@ type Story = StoryObj<typeof OpportunityInteractionTimeline>;
 
 export const ExpandedPage: Story = {
   args: {
-    companyName: reevolOpportunity.companyName,
+    companyName: reevolOpportunity.company.name,
     roleTitle: reevolOpportunity.roleTitle,
     interactions: reevolInteractions,
-    selectedInteractionId: reevolSelectedInteraction.id,
+    selectedInteractionId: reevolSelectedInteraction.slug,
     defaultCollapsed: false,
     referenceDate: storyReferenceDate,
   },
@@ -122,7 +126,7 @@ export const DrawerOpen: Story = {
             isDeleting={false}
           />
           <InteractionTimelinePanel
-            companyName={reevolOpportunity.companyName}
+            companyName={reevolOpportunity.company.name}
             interactions={reevolInteractions}
             selectedInteractionId={reevolSelectedInteraction.id}
             referenceDate={storyReferenceDate}
@@ -130,7 +134,7 @@ export const DrawerOpen: Story = {
           />
           <InteractionComposerPanel
             opportunityId={reevolOpportunity.id}
-            companyName={reevolOpportunity.companyName}
+            companyName={reevolOpportunity.company.name}
             roleTitle={reevolOpportunity.roleTitle}
             attachToInteractionId={reevolSelectedInteraction.id}
             composer={null}
@@ -149,7 +153,7 @@ export const CombinedState: Story = {
       <div className="grid grid-cols-[minmax(0,1fr)_48rem] gap-4">
         <div className="space-y-4">
           <OpportunityInteractionTimeline
-            companyName={reevolOpportunity.companyName}
+            companyName={reevolOpportunity.company.name}
             roleTitle={reevolOpportunity.roleTitle}
             interactions={reevolInteractions}
             selectedInteractionId={reevolSelectedInteraction.id}
@@ -204,7 +208,7 @@ export const CombinedState: Story = {
                 isDeleting={false}
               />
               <InteractionTimelinePanel
-                companyName={reevolOpportunity.companyName}
+                companyName={reevolOpportunity.company.name}
                 interactions={reevolInteractions}
                 selectedInteractionId={reevolSelectedInteraction.id}
                 referenceDate={storyReferenceDate}

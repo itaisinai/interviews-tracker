@@ -53,7 +53,7 @@ export function ParseJobPage() {
         domainIds.push(domain.id);
       }
       return api.createOpportunity({
-        companyName: parseResult.company.name ?? "Unknown company",
+        companyName: parseResult.companyName ?? "Unknown company",
         roleTitle: parseResult.roleTitle ?? "Software Engineer",
         pipelineType: parseResult.pipelineType ?? "POTENTIAL",
         status: parseResult.status ?? "RESEARCH_LEAD",
