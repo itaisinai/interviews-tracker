@@ -99,13 +99,13 @@ function TableBody<TData>({
       {rows.map((row) => (
         <tr
           key={row.id}
-          className="bg-surface-container-lowest transition-colors hover:bg-surface-container-low/80"
+          className="h-16 bg-surface-container-lowest transition-colors hover:bg-surface-container-low/80"
           {...(getRowProps?.(row.original) ?? {})}
         >
           {row.getVisibleCells().map((cell) => (
             <td
               key={cell.id}
-              className="overflow-hidden border-r border-outline-variant/25 px-6 py-5 align-middle last:border-r-0"
+              className="max-w-0 overflow-hidden border-r border-outline-variant/25 px-6 py-5 align-middle last:border-r-0"
               style={{ width: cell.column.getSize() }}
             >
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
