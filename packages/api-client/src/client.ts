@@ -1,6 +1,7 @@
 import type { CompanyDetail, CompanySummary, Interaction, Opportunity, OptionsResponse } from "@interviews-tracker/core";
 import type { CompanyEnrichment, CompanyResearchApplyResponse, CompanyResearchInput, CompanyResearchResult, InteractionDraft, ParsedJobDescription, PersonResearchInput, PersonResearchResult } from "@interviews-tracker/ai";
 import type { GmailConnectResponse, GmailSearchResponse, GmailStatus, GmailStructuredEmail } from "@interviews-tracker/integrations";
+
 import { getApiError } from "./error.js";
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
@@ -80,7 +81,7 @@ export const api = {
   company: (companyName: string) => request<CompanyDetail>(`/companies/${encodeURIComponent(companyName)}`),
   enrichCompany: (companyName: string, text: string) => request<{ enrichment: CompanyEnrichment; updatedOpportunities: number }>(`/companies/${encodeURIComponent(companyName)}/enrich`, { method: "POST", body: JSON.stringify({ text }) }),
   researchCompany: (companyName: string, body: CompanyResearchInput) => request<{ research: CompanyResearchResult }>(`/companies/${encodeURIComponent(companyName)}/research`, { method: "POST", body: JSON.stringify(body) }),
-  applyCompanyResearch: (companyName: string, body: { targetOpportunityId?: string | null; research: CompanyResearchResult }) => request<CompanyResearchApplyResponse>(`/companies/${encodeURIComponent(companyName)}/research/apply`, { method: "POST", body: JSON.stringify(body) }),
+  applyCompanyResearch: (companyName: string, body: { targetOpportunitySlug?: string | null; research: CompanyResearchResult }) => request<CompanyResearchApplyResponse>(`/companies/${encodeURIComponent(companyName)}/research/apply`, { method: "POST", body: JSON.stringify(body) }),
   deleteCompany: (companyName: string) => request<void>(`/companies/${encodeURIComponent(companyName)}`, { method: "DELETE" }),
   gmailStatus: () => request<GmailStatus>("/gmail/status"),
   gmailConnect: (body: { returnTo?: string }) => request<GmailConnectResponse>("/gmail/connect", { method: "POST", body: JSON.stringify(body) }),

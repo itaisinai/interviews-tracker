@@ -1,11 +1,11 @@
-import { GmailInteractionPanel } from "../gmail-interaction-panel";
-import type { Opportunity } from "../../lib/types";
 import { Field } from "./field";
+import { GmailInteractionPanel } from "../gmail-interaction-panel";
 import { MaterialIcon } from "@interviews-tracker/design-system";
+import type { Opportunity } from "../../lib/types";
 
 type GmailImportPanelProps = {
   opportunities: Opportunity[];
-  selectedOpportunityId: string;
+  selectedOpportunitySlug: string;
   selectedOpportunity: Opportunity | null;
   onSelectOpportunity: (opportunitySlug: string) => void;
   onClose?: () => void;
@@ -15,7 +15,7 @@ type GmailImportPanelProps = {
 
 export function GmailImportPanel({
   opportunities,
-  selectedOpportunityId,
+  selectedOpportunitySlug,
   selectedOpportunity,
   onSelectOpportunity,
   onClose,
@@ -28,10 +28,13 @@ export function GmailImportPanel({
         <Header description="Pick an opportunity, search Gmail, then review before saving." />
         <OpportunitySelect
           opportunities={opportunities}
-          selectedOpportunityId={selectedOpportunityId}
+          selectedOpportunitySlug={selectedOpportunitySlug}
           onSelectOpportunity={onSelectOpportunity}
         />
-        <ImportBody selectedOpportunity={selectedOpportunity} onSaved={onSaved} />
+        <ImportBody
+          selectedOpportunity={selectedOpportunity}
+          onSaved={onSaved}
+        />
       </section>
     );
   }
@@ -47,7 +50,7 @@ export function GmailImportPanel({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
         <OpportunitySelect
           opportunities={opportunities}
-          selectedOpportunityId={selectedOpportunityId}
+          selectedOpportunitySlug={selectedOpportunitySlug}
           onSelectOpportunity={onSelectOpportunity}
         />
         {onClose ? (
@@ -75,23 +78,23 @@ function Header({ description }: { description: string }) {
 
 function OpportunitySelect({
   opportunities,
-  selectedOpportunityId,
+  selectedOpportunitySlug,
   onSelectOpportunity,
 }: {
   opportunities: Opportunity[];
-  selectedOpportunityId: string;
+  selectedOpportunitySlug: string;
   onSelectOpportunity: (opportunitySlug: string) => void;
 }) {
   return (
     <Field label="Opportunity">
       <select
         className="input"
-        value={selectedOpportunityId}
+        value={selectedOpportunitySlug}
         onChange={(event) => onSelectOpportunity(event.target.value)}
       >
         <option value="">Select company / role</option>
         {opportunities.map((item) => (
-          <option key={item.id} value={item.id}>
+          <option key={item.slug} value={item.slug}>
             {item.company.name} · {item.roleTitle}
           </option>
         ))}
@@ -118,7 +121,7 @@ function ImportBody({
   return (
     <div className="mt-6">
       <GmailInteractionPanel
-        opportunitySlug={selectedOpportunity.slug ?? selectedOpportunity.id}
+        opportunitySlug={selectedOpportunity.slug}
         companyName={selectedOpportunity.company.name}
         roleTitle={selectedOpportunity.roleTitle}
         onSaved={onSaved}

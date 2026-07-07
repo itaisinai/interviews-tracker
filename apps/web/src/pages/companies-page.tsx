@@ -20,12 +20,18 @@ export function CompaniesPage() {
       header: "Company",
       cell: ({ row }) => (
         <Link className="flex items-center gap-3 font-semibold text-on-background" to={`/companies/${row.original.slug}`}>
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-on-primary-container font-geist font-bold text-white">{initials(row.original.name)}</span>
-          {row.original.name}
+          <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-on-primary-container font-geist font-bold text-white">{initials(row.original.name)}</span>
+          <span className="truncate" title={row.original.name}>{row.original.name}</span>
         </Link>
       )
     },
-    { header: "Domains", cell: ({ row }) => <span className="text-on-surface-variant">{row.original.domains.join(", ") || "-"}</span> },
+    {
+      header: "Domains",
+      cell: ({ row }) => {
+        const domainsText = row.original.domains.join(", ") || "-";
+        return <span className="block truncate text-on-surface-variant" title={domainsText}>{domainsText}</span>;
+      }
+    },
     { header: "Stage", cell: ({ row }) => <span className="text-on-surface-variant">{row.original.stage ?? "-"}</span> },
     { header: "Size", cell: ({ row }) => <span className="text-on-surface-variant">{row.original.employees ?? "-"}</span> },
     { header: "Roles", cell: ({ row }) => <span className="font-geist">{row.original.rolesCount}</span> },

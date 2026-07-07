@@ -1,11 +1,11 @@
-import { ProcessStateCard } from "@interviews-tracker/design-system";
-import type { Interaction } from "../../lib/types";
 import { GmailAiSearch } from "./gmail-ai-search";
 import { GmailChangesReview } from "./gmail-changes-review";
-import { GmailCreateReview } from "./gmail-create-review";
-import { GmailSuccessState } from "./gmail-success-state";
-import { GmailReviewPanel } from "./gmail-review-panel";
 import { GmailConnectionPrompt } from "./gmail-connection-prompt";
+import { GmailCreateReview } from "./gmail-create-review";
+import { GmailReviewPanel } from "./gmail-review-panel";
+import { GmailSuccessState } from "./gmail-success-state";
+import type { Interaction } from "../../lib/types";
+import { ProcessStateCard } from "@interviews-tracker/design-system";
 import { useGmailInteractionPanel } from "./use-gmail-interaction-panel";
 import { useState } from "react";
 
@@ -14,13 +14,15 @@ type GmailInteractionPanelProps = {
   companyName: string;
   roleTitle: string;
   onSaved?: (interaction?: Interaction) => void;
-  attachToInteractionId?: string | null;
+  attachToInteractionSlug?: string | null;
 };
 
 export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
   const panel = useGmailInteractionPanel(props);
   const [showManualEdit, setShowManualEdit] = useState(false);
-  const [savedInteraction, setSavedInteraction] = useState<Interaction | undefined>(undefined);
+  const [savedInteraction, setSavedInteraction] = useState<
+    Interaction | undefined
+  >(undefined);
   const [showSuccess, setShowSuccess] = useState(false);
 
   // Loading state
@@ -58,7 +60,11 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
       <section className="rounded-xl border border-neutral-200 bg-white p-8">
         <GmailSuccessState
           interaction={savedInteraction}
-          onViewInteraction={savedInteraction ? () => props.onSaved?.(savedInteraction) : undefined}
+          onViewInteraction={
+            savedInteraction
+              ? () => props.onSaved?.(savedInteraction)
+              : undefined
+          }
           onImportAnother={() => {
             setShowSuccess(false);
             setSavedInteraction(undefined);
@@ -70,11 +76,17 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
   }
 
   // AI Search in progress
-  if (panel.flowState === "searching_emails" || panel.flowState === "fetching_email" || panel.flowState === "parsing_email") {
+  if (
+    panel.flowState === "searching_emails" ||
+    panel.flowState === "fetching_email" ||
+    panel.flowState === "parsing_email"
+  ) {
     const stage =
-      panel.flowState === "searching_emails" ? "searching" :
-      panel.flowState === "fetching_email" ? "matching" :
-      "parsing";
+      panel.flowState === "searching_emails"
+        ? "searching"
+        : panel.flowState === "fetching_email"
+          ? "matching"
+          : "parsing";
 
     return (
       <section className="rounded-xl border border-neutral-200 bg-white p-8">
@@ -88,7 +100,12 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
   }
 
   // Review changes (modern UI)
-  if (panel.isReviewingDraft && panel.draft && panel.selectedEmail && !showManualEdit) {
+  if (
+    panel.isReviewingDraft &&
+    panel.draft &&
+    panel.selectedEmail &&
+    !showManualEdit
+  ) {
     const handleAccept = async (updatedDraft?: typeof panel.draft) => {
       if (panel.isAttachMode) {
         // For attach mode, update state first

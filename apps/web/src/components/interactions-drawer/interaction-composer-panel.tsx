@@ -1,12 +1,9 @@
+import { ArrowLeft, Plus, X } from "lucide-react";
+
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
-import { InteractionTextParserPanel } from "./interaction-text-parser-panel";
-import { InteractionInputChooser } from "../interaction-input-chooser";
 import type { Interaction } from "../../lib/types";
-import {
-  ArrowLeft,
-  Plus,
-  X,
-} from "lucide-react";
+import { InteractionInputChooser } from "../interaction-input-chooser";
+import { InteractionTextParserPanel } from "./interaction-text-parser-panel";
 
 type ComposerMode = "chooser" | "gmail" | "gmail-attach" | "text" | null;
 
@@ -14,7 +11,7 @@ type InteractionComposerPanelProps = {
   opportunitySlug: string;
   companyName: string;
   roleTitle: string;
-  attachToInteractionId: string | null;
+  attachToInteractionSlug: string | null;
   composer: ComposerMode;
   onComposerChange: (mode: ComposerMode) => void;
   onSaved: (savedInteraction?: Interaction | null) => void;
@@ -24,7 +21,7 @@ export function InteractionComposerPanel({
   opportunitySlug,
   companyName,
   roleTitle,
-  attachToInteractionId,
+  attachToInteractionSlug,
   composer,
   onComposerChange,
   onSaved,
@@ -45,12 +42,18 @@ export function InteractionComposerPanel({
           </h4>
         </div>
         {composer === null ? (
-          <button className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => onComposerChange("chooser")}
+          >
             <Plus className="h-4 w-4" />
             Add interaction
           </button>
         ) : (
-          <button className="btn btn-secondary" onClick={() => onComposerChange(null)}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => onComposerChange(null)}
+          >
             <X className="h-4 w-4" />
             Hide add flow
           </button>
@@ -89,7 +92,7 @@ export function InteractionComposerPanel({
             opportunitySlug={opportunitySlug}
             companyName={companyName}
             roleTitle={roleTitle}
-            attachToInteractionId={attachToInteractionId}
+            attachToInteractionSlug={attachToInteractionSlug}
             onSaved={(savedInteraction) => {
               onSaved(savedInteraction ?? null);
               onComposerChange(null);

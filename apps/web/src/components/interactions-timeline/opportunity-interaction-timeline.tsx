@@ -1,20 +1,24 @@
-import { useMemo, useState } from "react";
 import { ArrowUpRight, ChevronDown, ChevronUp } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
 
 import { Badge } from "../badge";
+import type { Interaction } from "../../lib/types";
+import { Link } from "react-router-dom";
 import { Timeline } from "../timeline";
 import { getOpportunityProcessBadgeMeta } from "../../lib/interaction-status";
-import type { Interaction } from "../../lib/types";
 
 type OpportunityInteractionTimelineProps = {
   companyName: string;
   roleTitle: string;
   interactions: Interaction[];
-  selectedInteractionId: string | null;
-  onSelectInteraction: (interactionId: string) => void;
-  onDeleteInteraction?: (interactionId: string) => void;
-  isDeletingInteraction?: (interactionId: string) => boolean;
+  opportunity?: Pick<
+    any,
+    "slug" | "roleTitle" | "status" | "priority" | "pipelineType"
+  > | null;
+  selectedInteractionSlug: string | null;
+  onSelectInteraction: (interactionSlug: string) => void;
+  onDeleteInteraction?: (interactionSlug: string) => void;
+  isDeletingInteraction?: (interactionSlug: string) => boolean;
   opportunityHref?: string;
   defaultCollapsed?: boolean;
   referenceDate?: Date;
@@ -24,7 +28,8 @@ export function OpportunityInteractionTimeline({
   companyName,
   roleTitle,
   interactions,
-  selectedInteractionId,
+  opportunity,
+  selectedInteractionSlug,
   onSelectInteraction,
   onDeleteInteraction,
   isDeletingInteraction,
@@ -48,10 +53,10 @@ export function OpportunityInteractionTimeline({
   const opportunityBadge = useMemo(
     () =>
       getOpportunityProcessBadgeMeta(
-        orderedInteractions[0]?.jobOpportunity ?? null,
+        opportunity ?? orderedInteractions[0]?.jobOpportunity ?? null,
         orderedInteractions,
       ),
-    [orderedInteractions],
+    [opportunity, orderedInteractions],
   );
   const latestInteraction = orderedInteractions.at(-1) ?? null;
   const nextStepText =
@@ -102,7 +107,10 @@ export function OpportunityInteractionTimeline({
                 {roleTitle}
               </p>
               {opportunityBadge ? (
-                <Badge value={opportunityBadge.label} tone={opportunityBadge.tone}>
+                <Badge
+                  value={opportunityBadge.label}
+                  tone={opportunityBadge.tone}
+                >
                   {opportunityBadge.label}
                 </Badge>
               ) : null}
@@ -112,7 +120,9 @@ export function OpportunityInteractionTimeline({
                 collapsed ? "" : "invisible"
               }`}
             >
-              {nextStepText ? `Next step: ${nextStepText}` : "Next step: Review"}
+              {nextStepText
+                ? `Next step: ${nextStepText}`
+                : "Next step: Review"}
             </p>
           </div>
           <div className="mt-1 self-start rounded-full bg-surface-container-low px-3 py-1 font-label-md text-label-md text-on-surface-variant">
@@ -154,7 +164,7 @@ export function OpportunityInteractionTimeline({
           className="px-4 py-2.5 md:px-5 md:py-3.5"
           interactions={orderedInteractions}
           showHeader={false}
-          selectedInteractionId={selectedInteractionId}
+          selectedInteractionSlug={selectedInteractionSlug}
           onSelectInteraction={onSelectInteraction}
           onDeleteInteraction={onDeleteInteraction}
           isDeletingInteraction={isDeletingInteraction}

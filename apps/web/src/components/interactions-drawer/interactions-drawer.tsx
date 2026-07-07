@@ -1,32 +1,31 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import type {
   Interaction,
   InteractionDraft,
   Opportunity,
 } from "../../lib/types";
-import { api } from "../../lib/api";
-import { normalizeInteractionType } from "../../lib/enum-labels";
 import {
   getInteractionTimelineBadgeMeta,
   promoteOverdueInteractionsForRead,
 } from "../../lib/interaction-status";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { InteractionDrawerHeader } from "./interaction-drawer-header";
 import { InteractionSummaryPanel } from "./interaction-summary-panel";
 import { InteractionTimelinePanel } from "./interaction-timeline-panel";
+import { api } from "../../lib/api";
 import { interactionToDraft } from "./interaction-draft";
+import { normalizeInteractionType } from "../../lib/enum-labels";
 import { useNavigate } from "react-router-dom";
 
 type InteractionsDrawerProps = {
   selectedInteraction: Interaction | null;
   selectedOpportunity: Opportunity | null;
   onClose: () => void;
-  onSelectInteraction?: (interactionId: string) => void;
+  onSelectInteraction?: (interactionSlug: string) => void;
   onOperationStart?: () => void;
   onOperationEnd?: () => void;
 };
-
 
 export function InteractionsDrawer({
   selectedInteraction,
@@ -48,12 +47,11 @@ export function InteractionsDrawer({
 
   // Derive opportunity from selectedOpportunity or mountedInteraction
   const opportunity =
-    selectedOpportunity ??
-    mountedInteraction?.jobOpportunity ??
-    null;
+    selectedOpportunity ?? mountedInteraction?.jobOpportunity ?? null;
 
   // Use opportunity slug (prefer nested object's slug, fallback to FK for backward compatibility)
-  const opportunitySlug = opportunity?.slug ?? mountedInteraction?.jobOpportunityId ?? "";
+  const opportunitySlug =
+    opportunity?.slug ?? mountedInteraction?.jobOpportunityId ?? "";
 
   useEffect(() => {
     if (closeTimerRef.current) {
@@ -97,12 +95,13 @@ export function InteractionsDrawer({
 
   useEffect(() => {
     setIsEditing(false);
-    setDraft(mountedInteraction ? interactionToDraft(mountedInteraction) : null);
+    setDraft(
+      mountedInteraction ? interactionToDraft(mountedInteraction) : null,
+    );
   }, [mountedInteraction?.slug]);
 
   const timeline = useMemo(
-    () =>
-      promoteOverdueInteractionsForRead(opportunity?.interactions ?? []),
+    () => promoteOverdueInteractionsForRead(opportunity?.interactions ?? []),
     [opportunity?.interactions],
   );
 
@@ -125,7 +124,9 @@ export function InteractionsDrawer({
     void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     void queryClient.invalidateQueries({ queryKey: ["companies"] });
     if (opportunitySlug) {
-      void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunitySlug] });
+      void queryClient.invalidateQueries({
+        queryKey: ["opportunity-contacts", opportunitySlug],
+      });
     }
   };
 
@@ -150,18 +151,15 @@ export function InteractionsDrawer({
     onMutate: () => onOperationStart?.(),
     onSuccess: (savedInteraction) => {
       // Update the opportunity cache with saved interaction
-      queryClient.setQueryData(
-        ["opportunity", opportunitySlug],
-        (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            interactions: old.interactions.map((int: any) =>
-              int.id === savedInteraction.id ? savedInteraction : int
-            )
-          };
-        }
-      );
+      queryClient.setQueryData(["opportunity", opportunitySlug], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          interactions: old.interactions.map((int: any) =>
+            int.slug === savedInteraction.slug ? savedInteraction : int,
+          ),
+        };
+      });
 
       // Update local drawer state so it shows fresh data immediately
       setMountedInteraction(savedInteraction);
@@ -183,7 +181,9 @@ export function InteractionsDrawer({
 
   const handleOpenFullscreen = () => {
     if (opportunity) {
-      navigate(`/opportunities/${opportunity.slug ?? opportunity.id}?interaction=${displayInteraction.id}`);
+      navigate(
+        `/opportunities/${opportunity.slug}?interaction=${displayInteraction.slug}`,
+      );
       onClose();
     }
   };
@@ -217,11 +217,16 @@ export function InteractionsDrawer({
               onToggleEditing={(aiSuggestion?: any) => {
                 // If AI suggestion provided, use it to create draft
                 if (aiSuggestion) {
-                  console.log('[DRAWER] Creating draft from AI suggestion:', aiSuggestion.notes?.slice(0, 100));
+                  console.log(
+                    "[DRAWER] Creating draft from AI suggestion:",
+                    aiSuggestion.notes?.slice(0, 100),
+                  );
                   setDraft({
                     date: aiSuggestion.date || displayInteraction.date,
                     endDate: aiSuggestion.endDate ?? null,
-                    type: normalizeInteractionType(aiSuggestion.type || displayInteraction.type),
+                    type: normalizeInteractionType(
+                      aiSuggestion.type || displayInteraction.type,
+                    ),
                     stage: aiSuggestion.stage ?? null,
                     status: aiSuggestion.status || displayInteraction.status,
                     personName: aiSuggestion.personName ?? null,
@@ -259,7 +264,7 @@ export function InteractionsDrawer({
             <InteractionTimelinePanel
               companyName={opportunity?.company.name ?? "Timeline"}
               interactions={timeline}
-              selectedInteractionId={displayInteraction.slug}
+              selectedInteractionSlug={displayInteraction.slug}
               onSelectInteraction={onSelectInteraction}
             />
           </div>

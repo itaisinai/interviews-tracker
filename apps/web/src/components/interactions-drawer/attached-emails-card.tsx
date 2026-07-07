@@ -1,10 +1,10 @@
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { AttachEmailModal } from "./attach-email-modal";
-import { MaterialIcon, Button } from "@interviews-tracker/design-system";
+import type { GmailSearchCandidate } from "../../lib/types";
 import { api } from "../../lib/api";
 import { useState } from "react";
-import type { GmailSearchCandidate } from "../../lib/types";
 
 type AttachedEmailsCardProps = {
   interactionId: string;
@@ -36,9 +36,9 @@ export function AttachedEmailsCard({
   });
 
   // Map attached emails to their full Gmail data
-  const enrichedEmails = emails.map(email => {
+  const enrichedEmails = emails.map((email) => {
     const gmailData = searchResults?.candidates.find(
-      (c: GmailSearchCandidate) => c.id === email.gmailMessageId
+      (c: GmailSearchCandidate) => c.id === email.gmailMessageId,
     );
     return {
       ...email,
@@ -47,11 +47,16 @@ export function AttachedEmailsCard({
   });
 
   const detachMutation = useMutation({
-    mutationFn: (emailId: string) => api.removeEmailFromInteraction(interactionSlug, emailId),
+    mutationFn: (emailId: string) =>
+      api.removeEmailFromInteraction(interactionSlug, emailId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["interaction-emails", interactionId] });
+      queryClient.invalidateQueries({
+        queryKey: ["interaction-emails", interactionId],
+      });
       queryClient.invalidateQueries({ queryKey: ["interactions"] });
-      queryClient.invalidateQueries({ queryKey: ["opportunities", opportunitySlug] });
+      queryClient.invalidateQueries({
+        queryKey: ["opportunities", opportunitySlug],
+      });
     },
   });
 
@@ -103,9 +108,7 @@ export function AttachedEmailsCard({
               name="mail"
               className="text-[18px] text-neutral-600"
             />
-            <h3 className="text-sm font-semibold text-neutral-900">
-              Attached Emails
-            </h3>
+            <h3 className="text-sm font-semibold text-neutral-900">Attached</h3>
           </div>
           <div className="flex items-center gap-2">
             {emails.length > 0 && (
@@ -161,7 +164,10 @@ export function AttachedEmailsCard({
                       </div>
                       {isRelevant && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex-shrink-0">
-                          <MaterialIcon name="check_circle" className="text-[12px]" />
+                          <MaterialIcon
+                            name="check_circle"
+                            className="text-[12px]"
+                          />
                           Relevant
                         </span>
                       )}
@@ -170,13 +176,18 @@ export function AttachedEmailsCard({
                       From: {email.from || "Unknown sender"}
                     </div>
                     <div className="text-xs text-neutral-400">
-                      {email.receivedDate ? new Date(email.receivedDate).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit"
-                      }) : "No date"}
+                      {email.receivedDate
+                        ? new Date(email.receivedDate).toLocaleDateString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )
+                        : "No date"}
                     </div>
                     {gmailData?.snippet && (
                       <div className="text-xs text-neutral-500 mt-2 line-clamp-2">

@@ -97,7 +97,6 @@ export const compensationInputSchema = z.object({
 });
 
 export type Company = {
-  id: string;
   ownerEmail: string;
   slug: string;
   name: string;
@@ -125,7 +124,6 @@ export type Company = {
 };
 
 export type Opportunity = {
-  id?: string;  // Deprecated: Use slug instead. No longer returned in API responses.
   ownerEmail: string;
   slug: string;
   companyId: string;
@@ -152,7 +150,6 @@ export type Opportunity = {
 };
 
 export type Interaction = {
-  id?: string;  // Deprecated: Use slug instead. No longer returned in API responses.
   slug: string;
   ownerEmail: string;
   jobOpportunityId?: string;  // Deprecated: Use jobOpportunity.slug instead. No longer returned in API responses.

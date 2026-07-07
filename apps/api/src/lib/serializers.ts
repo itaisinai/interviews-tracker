@@ -11,9 +11,12 @@ import type { JobOpportunity, Interaction, Person, PersonResearch, Compensation 
 export function serializeOpportunity<T extends Record<string, any>>(opportunity: T): any {
   const { id, companyId, workModelId, ...rest } = opportunity;
 
-  // Recursively clean nested relations
+  // Clean nested interactions (strip jobOpportunity since it's redundant - we already know they belong to this opportunity)
   if ('interactions' in opportunity && Array.isArray((opportunity as any).interactions)) {
-    (rest as any).interactions = (opportunity as any).interactions.map((i: any) => serializeInteraction(i));
+    (rest as any).interactions = (opportunity as any).interactions.map((i: any) => {
+      const { id: intId, jobOpportunityId, jobOpportunity, ...intRest } = i;
+      return intRest;
+    });
   }
 
   if ('compensation' in opportunity && (opportunity as any).compensation) {
@@ -33,9 +36,21 @@ export function serializeOpportunity<T extends Record<string, any>>(opportunity:
 export function serializeInteraction<T extends Record<string, any>>(interaction: T): any {
   const { id, jobOpportunityId, ...rest } = interaction;
 
-  // Clean nested jobOpportunity if included
+  // Include minimal jobOpportunity metadata (avoid sending full opportunity with all interactions/compensation/etc)
   if ('jobOpportunity' in interaction && (interaction as any).jobOpportunity) {
-    (rest as any).jobOpportunity = serializeOpportunity((interaction as any).jobOpportunity);
+    const opp = (interaction as any).jobOpportunity;
+    (rest as any).jobOpportunity = {
+      slug: opp.slug,
+      roleTitle: opp.roleTitle,
+      pipelineType: opp.pipelineType,
+      status: opp.status,
+      priority: opp.priority,
+      updatedAt: opp.updatedAt,
+      company: opp.company ? {
+        slug: opp.company.slug,
+        name: opp.company.name,
+      } : null,
+    };
   }
 
   return rest;

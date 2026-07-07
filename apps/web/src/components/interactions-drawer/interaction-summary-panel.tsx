@@ -58,7 +58,10 @@ export function InteractionSummaryPanel({
     : [];
 
   // Get opportunity slug - prefer prop, then nested object's slug, then FK ID for backward compatibility
-  const opportunitySlug = opportunitySlugProp ?? interaction.jobOpportunity?.slug ?? interaction.jobOpportunityId;
+  const opportunitySlug =
+    opportunitySlugProp ??
+    interaction.jobOpportunity?.slug ??
+    interaction.jobOpportunityId;
 
   // Fetch contacts for this opportunity
   const { data: contacts = [] } = useQuery({
@@ -81,14 +84,14 @@ export function InteractionSummaryPanel({
 
     // 2. Case-insensitive match
     const caseInsensitiveMatch = (contacts as Person[]).find(
-      (c) => c.name.toLowerCase() === name.toLowerCase()
+      (c) => c.name.toLowerCase() === name.toLowerCase(),
     );
     if (caseInsensitiveMatch) return caseInsensitiveMatch;
 
     // 3. First name match (e.g., "Rotem Zikorel" matches "Rotem")
     const firstNameMatch = (contacts as Person[]).find((c) => {
-      const contactFirstName = c.name.split(' ')[0].toLowerCase();
-      const nameFirstName = name.split(' ')[0].toLowerCase();
+      const contactFirstName = c.name.split(" ")[0].toLowerCase();
+      const nameFirstName = name.split(" ")[0].toLowerCase();
       return contactFirstName === nameFirstName;
     });
     if (firstNameMatch) return firstNameMatch;
@@ -97,7 +100,10 @@ export function InteractionSummaryPanel({
     const containsMatch = (contacts as Person[]).find((c) => {
       const nameLower = name.toLowerCase();
       const contactNameLower = c.name.toLowerCase();
-      return nameLower.includes(contactNameLower) || contactNameLower.includes(nameLower);
+      return (
+        nameLower.includes(contactNameLower) ||
+        contactNameLower.includes(nameLower)
+      );
     });
 
     return containsMatch;
@@ -105,7 +111,7 @@ export function InteractionSummaryPanel({
 
   const handleAddFeedback = async (content: string, source?: string) => {
     console.log("[FEEDBACK] Submitting feedback", {
-      interactionId: interaction.id,
+      interactionId: interaction.slug,
       contentLength: content.length,
       source,
     });
@@ -228,7 +234,9 @@ export function InteractionSummaryPanel({
       />
 
       {/* Gmail Email States */}
-      {opportunitySlug && <GmailEmailStatesSection opportunitySlug={opportunitySlug} />}
+      {opportunitySlug && (
+        <GmailEmailStatesSection opportunitySlug={opportunitySlug} />
+      )}
     </div>
   );
 }

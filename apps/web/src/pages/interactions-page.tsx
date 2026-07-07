@@ -22,8 +22,8 @@ import {
 export function InteractionsPage() {
   const [filter, setFilter] = useState<InteractionFilter>("upcoming");
   const [showGmailImport, setShowGmailImport] = useState(false);
-  const [gmailOpportunityId, setGmailOpportunityId] = useState("");
-  const [selectedInteractionId, setSelectedInteractionId] = useState<
+  const [gmailOpportunitySlug, setGmailOpportunitySlug] = useState("");
+  const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<
     string | null
   >(null);
   const queryClient = useQueryClient();
@@ -69,14 +69,15 @@ export function InteractionsPage() {
   );
   const gmailOpportunity = useMemo(
     () =>
-      opportunities.find((item) => item.slug === gmailOpportunityId) ?? null,
-    [gmailOpportunityId, opportunities],
+      opportunities.find((item) => item.slug === gmailOpportunitySlug) ?? null,
+    [gmailOpportunitySlug, opportunities],
   );
   const selectedInteraction = useMemo(
     () =>
-      displayInteractions.find((item) => item.slug === selectedInteractionId) ??
-      null,
-    [displayInteractions, selectedInteractionId],
+      displayInteractions.find(
+        (item) => item.slug === selectedInteractionSlug,
+      ) ?? null,
+    [displayInteractions, selectedInteractionSlug],
   );
   const selectedOpportunity = useMemo(
     () =>
@@ -106,19 +107,21 @@ export function InteractionsPage() {
 
   useEffect(() => {
     if (
-      selectedInteractionId &&
-      !displayInteractions.some((item) => item.slug === selectedInteractionId)
+      selectedInteractionSlug &&
+      !displayInteractions.some((item) => item.slug === selectedInteractionSlug)
     ) {
-      setSelectedInteractionId(null);
+      setSelectedInteractionSlug(null);
     }
-  }, [displayInteractions, selectedInteractionId]);
+  }, [displayInteractions, selectedInteractionSlug]);
 
   function closeInteractionDrawer() {
-    setSelectedInteractionId(null);
+    setSelectedInteractionSlug(null);
   }
 
   function openGmailImport() {
-    setGmailOpportunityId(gmailOpportunityId || opportunities[0]?.slug || "");
+    setGmailOpportunitySlug(
+      gmailOpportunitySlug || opportunities[0]?.slug || "",
+    );
     setShowGmailImport(true);
   }
 
@@ -156,14 +159,14 @@ export function InteractionsPage() {
     interactions: displayInteractions,
     visibleGroups: visibleOpportunityGroups,
     opportunities,
-    gmailOpportunityId,
+    gmailOpportunitySlug,
     gmailOpportunity,
-    selectedInteractionId,
+    selectedInteractionSlug,
     followUpPercent,
     onFilterChange: setFilter,
-    onSelectGmailOpportunity: setGmailOpportunityId,
+    onSelectGmailOpportunity: setGmailOpportunitySlug,
     onGmailSaved: closeGmailImport,
-    onSelectInteraction: setSelectedInteractionId,
+    onSelectInteraction: setSelectedInteractionSlug,
     onDeleteInteraction: (interactionId: string) =>
       deleteInteraction.mutate(interactionId),
     isDeletingInteraction: (interactionId: string) =>
@@ -190,7 +193,7 @@ export function InteractionsPage() {
         selectedInteraction={selectedInteraction}
         selectedOpportunity={selectedOpportunity}
         onClose={closeInteractionDrawer}
-        onSelectInteraction={setSelectedInteractionId}
+        onSelectInteraction={setSelectedInteractionSlug}
       />
     </>
   );

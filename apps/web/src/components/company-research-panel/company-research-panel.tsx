@@ -1,8 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
-import type { CompanyResearchExistingData, CompanyResearchResult } from "../../lib/types";
-import { companyResearchRunMeta, companyResearchStepMessages, type CompanyResearchRunState } from "../../lib/company-research";
+import type {
+  CompanyResearchExistingData,
+  CompanyResearchResult,
+} from "../../lib/types";
+import {
+  companyResearchRunMeta,
+  companyResearchStepMessages,
+  type CompanyResearchRunState,
+} from "../../lib/company-research";
 import { CompanyResearchProgress } from "./company-research-progress";
 import { CompanyResearchReview } from "./company-research-review";
 import { Field, splitListInput } from "./company-research-fields";
@@ -13,7 +20,7 @@ type CompanyResearchPanelProps = {
   roleTitle?: string | null;
   knownContext?: string | null;
   existingCompanyData?: CompanyResearchExistingData | null;
-  targetOpportunityId?: string | null;
+  targetOpportunitySlug?: string | null;
   onSaved?: (research: CompanyResearchResult) => void;
 };
 
@@ -38,7 +45,14 @@ export type EditableResearchListField = keyof Pick<
   "investors" | "domains" | "sourceUrls" | "rawImportantNotes"
 >;
 
-export function CompanyResearchPanel({ companyName, roleTitle, knownContext, existingCompanyData, targetOpportunityId, onSaved }: CompanyResearchPanelProps) {
+export function CompanyResearchPanel({
+  companyName,
+  roleTitle,
+  knownContext,
+  existingCompanyData,
+  targetOpportunitySlug,
+  onSaved,
+}: CompanyResearchPanelProps) {
   const queryClient = useQueryClient();
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [runState, setRunState] = useState<CompanyResearchRunState>("idle");
@@ -52,8 +66,17 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
   const [editingField, setEditingField] = useState<string | null>(null);
   const activeRunIdRef = useRef(0);
 
-  const isRunning = runState === "searching_web" || runState === "reading_sources" || runState === "extracting_facts";
-  const currentStep = useMemo(() => companyResearchStepMessages[Math.min(stageIndex, companyResearchStepMessages.length - 1)] ?? companyResearchStepMessages[0], [stageIndex]);
+  const isRunning =
+    runState === "searching_web" ||
+    runState === "reading_sources" ||
+    runState === "extracting_facts";
+  const currentStep = useMemo(
+    () =>
+      companyResearchStepMessages[
+        Math.min(stageIndex, companyResearchStepMessages.length - 1)
+      ] ?? companyResearchStepMessages[0],
+    [stageIndex],
+  );
   const actionLabel = research ? "Research again" : "Research company";
 
   useEffect(() => {
@@ -114,7 +137,7 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
       }, 700),
       window.setTimeout(() => {
         if (activeRunIdRef.current === runId) setStageIndex(3);
-      }, 1300)
+      }, 1300),
     ];
 
     try {
@@ -124,7 +147,7 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
         knownContext: knownContext ?? null,
         linkedinUrl: linkedinUrl.trim() || null,
         existingCompanyData: existingCompanyData ?? null,
-        forceResearch: true
+        forceResearch: true,
       });
 
       stageTimers.forEach((timer) => window.clearTimeout(timer));
@@ -139,7 +162,11 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
       if (activeRunIdRef.current !== runId) {
         return;
       }
-      setError(caughtError instanceof Error ? caughtError.message : "Company research failed");
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Company research failed",
+      );
       setRunState("failed");
     }
   }
@@ -155,20 +182,30 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
 
     try {
       const response = await api.applyCompanyResearch(companyName, {
-        targetOpportunityId: targetOpportunityId ?? null,
-        research
+        targetOpportunitySlug: targetOpportunitySlug ?? null,
+        research,
       });
 
-      setSaveMessage(`Saved to ${response.updatedOpportunities} opportunity${response.updatedOpportunities === 1 ? "" : " records"}.`);
-      void queryClient.invalidateQueries({ queryKey: ["company", companyName] });
+      setSaveMessage(
+        `Saved to ${response.updatedOpportunities} opportunity${response.updatedOpportunities === 1 ? "" : " records"}.`,
+      );
+      void queryClient.invalidateQueries({
+        queryKey: ["company", companyName],
+      });
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      if (targetOpportunityId) {
-        void queryClient.invalidateQueries({ queryKey: ["opportunity", targetOpportunityId] });
+      if (targetOpportunitySlug) {
+        void queryClient.invalidateQueries({
+          queryKey: ["opportunity", targetOpportunitySlug],
+        });
       }
       onSaved?.(research);
     } catch (caughtError) {
-      setSaveError(caughtError instanceof Error ? caughtError.message : "Unable to save research");
+      setSaveError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to save research",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -185,13 +222,22 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
     setProgress(0);
   }
 
-
-  function updateResearchField(field: EditableResearchField, value: string | null) {
-    setResearch((current) => current ? { ...current, [field]: value } : current);
+  function updateResearchField(
+    field: EditableResearchField,
+    value: string | null,
+  ) {
+    setResearch((current) =>
+      current ? { ...current, [field]: value } : current,
+    );
   }
 
-  function updateResearchListField(field: EditableResearchListField, value: string) {
-    setResearch((current) => current ? { ...current, [field]: splitListInput(value) } : current);
+  function updateResearchListField(
+    field: EditableResearchListField,
+    value: string,
+  ) {
+    setResearch((current) =>
+      current ? { ...current, [field]: splitListInput(value) } : current,
+    );
   }
 
   function updateResearchRoundsCount(value: string | null) {
@@ -203,7 +249,7 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
       const parsed = value ? Number.parseInt(value, 10) : Number.NaN;
       return {
         ...current,
-        roundsCount: Number.isNaN(parsed) ? null : parsed
+        roundsCount: Number.isNaN(parsed) ? null : parsed,
       };
     });
   }
@@ -217,12 +263,18 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
               <MaterialIcon name="travel_explore" />
             </div>
             <div>
-              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Company research</p>
-              <h3 className="font-title-md text-title-md font-bold">{companyName}</h3>
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+                Company research
+              </p>
+              <h3 className="font-title-md text-title-md font-bold">
+                {companyName}
+              </h3>
             </div>
           </div>
           <p className="mt-3 max-w-3xl text-body-md text-on-surface-variant">
-            {research ? "Review the extracted company research before saving it to the CRM." : "Searches public sources to fill in missing company facts such as funding, investors, size, location, and traction."}
+            {research
+              ? "Review the extracted company research before saving it to the CRM."
+              : "Searches public sources to fill in missing company facts such as funding, investors, size, location, and traction."}
           </p>
           <div className="mt-4 max-w-2xl">
             <Field label="LinkedIn URL">
@@ -236,12 +288,20 @@ export function CompanyResearchPanel({ companyName, roleTitle, knownContext, exi
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button className="btn btn-primary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
+          <button
+            className="btn btn-primary"
+            onClick={() => void runResearch()}
+            disabled={isRunning || isSaving}
+          >
             <MaterialIcon name="travel_explore" />
             {isRunning ? "Researching..." : actionLabel}
           </button>
           {research ? (
-            <button className="btn btn-secondary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => void runResearch()}
+              disabled={isRunning || isSaving}
+            >
               <MaterialIcon name="refresh" />
               Research again
             </button>

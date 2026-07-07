@@ -27,10 +27,8 @@ const reevolOpportunity = {
 
 const reevolInteractions = promoteOverdueInteractionsForRead([
   {
-    id: "reevol-phone-2026-06-15",
     slug: "reevol-phone-call-interview",
     ownerEmail: "test@example.com",
-    jobOpportunityId: reevolOpportunity.id,
     date: "2026-06-15T12:30:00",
     type: "Phone Call",
     status: "DONE",
@@ -41,10 +39,8 @@ const reevolInteractions = promoteOverdueInteractionsForRead([
     jobOpportunity: reevolOpportunity,
   },
   {
-    id: "reevol-interview-2026-06-17",
     slug: "reevol-interview",
     ownerEmail: "test@example.com",
-    jobOpportunityId: reevolOpportunity.id,
     date: "2026-06-17T14:00:00",
     type: "Interview",
     status: "SCHEDULED",
@@ -86,7 +82,7 @@ export const ExpandedPage: Story = {
     companyName: reevolOpportunity.company.name,
     roleTitle: reevolOpportunity.roleTitle,
     interactions: reevolInteractions,
-    selectedInteractionId: reevolSelectedInteraction.slug,
+    selectedInteractionSlug: reevolSelectedInteraction.slug,
     defaultCollapsed: false,
     referenceDate: storyReferenceDate,
   },
@@ -128,7 +124,7 @@ export const DrawerOpen: Story = {
           <InteractionTimelinePanel
             companyName={reevolOpportunity.company.name}
             interactions={reevolInteractions}
-            selectedInteractionId={reevolSelectedInteraction.id}
+            selectedInteractionSlug={reevolSelectedInteraction.slug}
             referenceDate={storyReferenceDate}
             onSelectInteraction={() => void 0}
           />
@@ -136,7 +132,7 @@ export const DrawerOpen: Story = {
             opportunitySlug={reevolOpportunity.slug}
             companyName={reevolOpportunity.company.name}
             roleTitle={reevolOpportunity.roleTitle}
-            attachToInteractionId={reevolSelectedInteraction.id}
+            attachToInteractionSlug={reevolSelectedInteraction.slug}
             composer={null}
             onComposerChange={() => void 0}
             onSaved={() => void 0}
@@ -156,7 +152,7 @@ export const CombinedState: Story = {
             companyName={reevolOpportunity.company.name}
             roleTitle={reevolOpportunity.roleTitle}
             interactions={reevolInteractions}
-            selectedInteractionId={reevolSelectedInteraction.id}
+            selectedInteractionSlug={reevolSelectedInteraction.slug}
             defaultCollapsed={false}
             referenceDate={storyReferenceDate}
             onSelectInteraction={() => void 0}
@@ -166,8 +162,7 @@ export const CombinedState: Story = {
             roleTitle="Senior Software Engineer"
             interactions={[
               {
-                id: "alta-1",
-                jobOpportunityId: "alta-opportunity",
+                slug: "alta-1",
                 date: "2026-06-14T09:00:00",
                 type: "Interview",
                 status: "DONE",
@@ -175,13 +170,12 @@ export const CombinedState: Story = {
                 personRole: "Interview",
                 jobOpportunity: {
                   ...reevolOpportunity,
-                  id: "alta-opportunity",
                   companyName: "Alta",
                   roleTitle: "Senior Software Engineer",
                 } as unknown as Opportunity,
               } as Interaction,
             ]}
-            selectedInteractionId={null}
+            selectedInteractionSlug={null}
             defaultCollapsed
             onSelectInteraction={() => void 0}
           />
@@ -210,7 +204,7 @@ export const CombinedState: Story = {
               <InteractionTimelinePanel
                 companyName={reevolOpportunity.company.name}
                 interactions={reevolInteractions}
-                selectedInteractionId={reevolSelectedInteraction.id}
+                selectedInteractionSlug={reevolSelectedInteraction.slug}
                 referenceDate={storyReferenceDate}
                 onSelectInteraction={() => void 0}
               />

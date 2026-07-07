@@ -229,8 +229,8 @@ export function DashboardPage() {
 
               return (
                 <Link
-                  key={item.id}
-                  to={`/opportunities/${item.slug || item.id}`}
+                  key={item.slug}
+                  to={`/opportunities/${item.slug}`}
                   className={`block rounded-xl border bg-white p-4 shadow-sm ${item.pipelineType === "ACTIVE_PROCESS" ? "border-primary" : "border-outline-variant"}`}
                 >
                   <div className="mb-2 flex items-start justify-between gap-3">
@@ -286,7 +286,7 @@ export function DashboardPage() {
               const parts = splitMonthDay(item.date);
               return (
                 <button
-                  key={item.id}
+                  key={item.slug}
                   type="button"
                   className={`flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary ${index > 0 ? "border-t border-outline-variant/40" : ""}`}
                   aria-label={`Open interaction for ${item.jobOpportunity?.company.name ?? item.type}`}
@@ -373,7 +373,7 @@ export function DashboardPage() {
             <div className="space-y-4">
               {data.upcomingInteractions.map((item) => (
                 <button
-                  key={item.id}
+                  key={item.slug}
                   type="button"
                   className="w-full rounded-xl border border-outline-variant bg-white p-5 text-left shadow-sm transition-all hover:border-primary/40 hover:bg-surface-container-low hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   aria-label={`Open interaction for ${item.jobOpportunity?.company.name ?? item.type}`}
@@ -422,8 +422,8 @@ export function DashboardPage() {
               <div className="space-y-3">
                 {data.activeProcesses.map((item) => (
                   <Link
-                    key={item.id}
-                    to={`/opportunities/${item.slug || item.id}`}
+                    key={item.slug}
+                    to={`/opportunities/${item.slug}`}
                     className="flex items-center justify-between rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container"
                   >
                     <div>
@@ -445,8 +445,8 @@ export function DashboardPage() {
               <div className="space-y-3">
                 {data.highPriorityPotential.map((item) => (
                   <Link
-                    key={item.id}
-                    to={`/opportunities/${item.slug || item.id}`}
+                    key={item.slug}
+                    to={`/opportunities/${item.slug}`}
                     className="flex items-center justify-between rounded-lg border border-outline-variant bg-white p-4 hover:bg-surface-container-low"
                   >
                     <span className="font-medium">{item.company.name}</span>

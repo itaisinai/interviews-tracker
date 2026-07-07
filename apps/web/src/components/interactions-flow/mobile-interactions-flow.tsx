@@ -7,7 +7,10 @@ import {
   type InteractionFilter,
   type InteractionOpportunityGroup,
 } from "./interaction-flow-helpers";
-import { InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
+import {
+  InlineLoadingState,
+  MaterialIcon,
+} from "@interviews-tracker/design-system";
 
 type MobileInteractionsFlowProps = {
   filter: InteractionFilter;
@@ -16,17 +19,17 @@ type MobileInteractionsFlowProps = {
   interactions: readonly Interaction[];
   visibleGroups: InteractionOpportunityGroup[];
   opportunities: Opportunity[];
-  gmailOpportunityId: string;
+  gmailOpportunitySlug: string;
   gmailOpportunity: Opportunity | null;
-  selectedInteractionId: string | null;
+  selectedInteractionSlug: string | null;
   followUpPercent: number;
   onFilterChange: (filter: InteractionFilter) => void;
   onToggleGmailImport: () => void;
   onSelectGmailOpportunity: (opportunitySlug: string) => void;
   onGmailSaved: () => void;
-  onSelectInteraction: (interactionId: string) => void;
-  onDeleteInteraction: (interactionId: string) => void;
-  isDeletingInteraction: (interactionId: string) => boolean;
+  onSelectInteraction: (interactionSlug: string) => void;
+  onDeleteInteraction: (interactionSlug: string) => void;
+  isDeletingInteraction: (interactionSlug: string) => boolean;
 };
 
 export function MobileInteractionsFlow({
@@ -36,9 +39,9 @@ export function MobileInteractionsFlow({
   interactions,
   visibleGroups,
   opportunities,
-  gmailOpportunityId,
+  gmailOpportunitySlug,
   gmailOpportunity,
-  selectedInteractionId,
+  selectedInteractionSlug,
   followUpPercent,
   onFilterChange,
   onToggleGmailImport,
@@ -73,17 +76,24 @@ export function MobileInteractionsFlow({
       </section>
 
       <section className="mb-5">
-        <FilterTabs filter={filter} onChange={onFilterChange} variant="mobile" />
+        <FilterTabs
+          filter={filter}
+          onChange={onFilterChange}
+          variant="mobile"
+        />
         <div className="grid grid-cols-2 gap-3">
           <MobileStat label="Upcoming" value={countUpcoming(interactions)} />
-          <MobileStat label="Waiting for response" value={`${followUpPercent}%`} />
+          <MobileStat
+            label="Waiting for response"
+            value={`${followUpPercent}%`}
+          />
         </div>
       </section>
 
       {showGmailImport ? (
         <GmailImportPanel
           opportunities={opportunities}
-          selectedOpportunityId={gmailOpportunityId}
+          selectedOpportunitySlug={gmailOpportunitySlug}
           selectedOpportunity={gmailOpportunity}
           onSelectOpportunity={onSelectGmailOpportunity}
           onSaved={onGmailSaved}
@@ -102,7 +112,7 @@ export function MobileInteractionsFlow({
         </div>
         <TimelineList
           groups={visibleGroups}
-          selectedInteractionId={selectedInteractionId}
+          selectedInteractionSlug={selectedInteractionSlug}
           onSelectInteraction={onSelectInteraction}
           onDeleteInteraction={onDeleteInteraction}
           isDeletingInteraction={isDeletingInteraction}
@@ -112,7 +122,13 @@ export function MobileInteractionsFlow({
   );
 }
 
-function MobileStat({ label, value }: { label: string; value: number | string }) {
+function MobileStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
   return (
     <div className="rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
       <div className="font-label-md text-label-md uppercase text-on-surface-variant">
@@ -127,16 +143,16 @@ function MobileStat({ label, value }: { label: string; value: number | string })
 
 function TimelineList({
   groups,
-  selectedInteractionId,
+  selectedInteractionSlug,
   onSelectInteraction,
   onDeleteInteraction,
   isDeletingInteraction,
 }: {
   groups: InteractionOpportunityGroup[];
-  selectedInteractionId: string | null;
-  onSelectInteraction: (interactionId: string) => void;
-  onDeleteInteraction: (interactionId: string) => void;
-  isDeletingInteraction: (interactionId: string) => boolean;
+  selectedInteractionSlug: string | null;
+  onSelectInteraction: (interactionSlug: string) => void;
+  onDeleteInteraction: (interactionSlug: string) => void;
+  isDeletingInteraction: (interactionSlug: string) => boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -146,7 +162,7 @@ function TimelineList({
           companyName={group.companyName}
           roleTitle={group.roleTitle}
           interactions={group.interactions}
-          selectedInteractionId={selectedInteractionId}
+          selectedInteractionSlug={selectedInteractionSlug}
           onSelectInteraction={onSelectInteraction}
           onDeleteInteraction={onDeleteInteraction}
           isDeletingInteraction={isDeletingInteraction}

@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { MaterialIcon } from "@interviews-tracker/design-system";
-import { PersonResearchFlow } from "../person-research/person-research-flow";
-import { PersonInfoModal } from "../contacts/person-info-modal";
-import type { Person } from "../../lib/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { MaterialIcon } from "@interviews-tracker/design-system";
+import type { Person } from "../../lib/types";
+import { PersonInfoModal } from "../contacts/person-info-modal";
+import { PersonResearchFlow } from "../person-research/person-research-flow";
 import { api } from "../../lib/api";
+import { useState } from "react";
 
 type ParticipantsCardProps = {
   personNames: string[];
@@ -19,24 +20,33 @@ export function ParticipantsCard({
   personRecords,
   opportunitySlug,
   opportunityCompanyName,
-  columns = 2
+  columns = 2,
 }: ParticipantsCardProps) {
   const queryClient = useQueryClient();
   const [researchModalOpen, setResearchModalOpen] = useState(false);
   const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [selectedPersonName, setSelectedPersonName] = useState<string>("");
-  const [selectedLinkedinUrl, setSelectedLinkedinUrl] = useState<string | null>(null);
+  const [selectedLinkedinUrl, setSelectedLinkedinUrl] = useState<string | null>(
+    null,
+  );
 
   const markAsWrong = useMutation({
     mutationFn: async (personId: string) => {
       if (!opportunitySlug) throw new Error("No opportunity ID");
-      return api.markPersonAsWrong(personId, opportunitySlug, selectedPersonName, undefined);
+      return api.markPersonAsWrong(
+        personId,
+        opportunitySlug,
+        selectedPersonName,
+        undefined,
+      );
     },
     onSuccess: () => {
       // Refresh contacts list
       if (opportunitySlug) {
-        void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunitySlug] });
+        void queryClient.invalidateQueries({
+          queryKey: ["opportunity-contacts", opportunitySlug],
+        });
       }
       setPersonDetailModalOpen(false);
       setSelectedPerson(null);
@@ -44,7 +54,7 @@ export function ParticipantsCard({
     onError: (error) => {
       console.error("Failed to mark person as wrong:", error);
       alert("Failed to mark person as wrong. Please try again.");
-    }
+    },
   });
 
   if (personNames.length === 0) {
@@ -56,8 +66,13 @@ export function ParticipantsCard({
       <div className="bg-white rounded-lg border border-neutral-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <MaterialIcon name="group" className="text-[18px] text-neutral-600" />
-            <h3 className="text-sm font-semibold text-neutral-900">Participants</h3>
+            <MaterialIcon
+              name="group"
+              className="text-[18px] text-neutral-600"
+            />
+            <h3 className="text-sm font-semibold text-neutral-900">
+              Participants
+            </h3>
           </div>
         </div>
 
@@ -73,11 +88,18 @@ export function ParticipantsCard({
                 title={person?.title || undefined}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <MaterialIcon name="person" className="text-[18px] text-neutral-400 flex-shrink-0" />
+                  <MaterialIcon
+                    name="person"
+                    className="text-[18px] text-neutral-400 flex-shrink-0"
+                  />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-neutral-900 truncate">{name}</div>
+                    <div className="text-sm font-medium text-neutral-900 truncate">
+                      {name}
+                    </div>
                     {person?.title && (
-                      <div className="text-xs text-neutral-600 truncate mt-0.5">{person.title}</div>
+                      <div className="text-xs text-neutral-600 truncate mt-0.5">
+                        {person.title}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -112,7 +134,7 @@ export function ParticipantsCard({
         person={{
           name: selectedPersonName,
           title: null,
-          linkedinUrl: selectedLinkedinUrl
+          linkedinUrl: selectedLinkedinUrl,
         }}
         opportunitySlug={opportunitySlug}
         opportunityCompanyName={opportunityCompanyName}
@@ -137,14 +159,24 @@ export function ParticipantsCard({
             setResearchModalOpen(true);
           }}
           onMarkAsWrong={() => {
-            if (selectedPerson && window.confirm(`Mark ${selectedPerson.name} as the wrong person? This will help future searches exclude this candidate.`)) {
+            if (
+              selectedPerson &&
+              window.confirm(
+                `Mark ${selectedPerson.name} as the wrong person? This will help future searches exclude this candidate.`,
+              )
+            ) {
               markAsWrong.mutate(selectedPerson.id);
               setPersonDetailModalOpen(false);
               setSelectedPerson(null);
             }
           }}
           onDelete={() => {
-            if (selectedPerson && window.confirm(`Delete ${selectedPerson.name}? This will remove all their research data.`)) {
+            if (
+              selectedPerson &&
+              window.confirm(
+                `Delete ${selectedPerson.name}? This will remove all their research data.`,
+              )
+            ) {
               // You would implement delete here if needed
               setPersonDetailModalOpen(false);
               setSelectedPerson(null);

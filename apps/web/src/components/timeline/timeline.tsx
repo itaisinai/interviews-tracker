@@ -25,11 +25,11 @@ type TimelineProps = {
   interactions: readonly Interaction[];
   className?: string;
   showHeader?: boolean;
-  selectedInteractionId?: string | null;
-  onSelectInteraction?: (interactionId: string) => void;
-  onDeleteInteraction?: (interactionId: string) => void;
+  selectedInteractionSlug?: string | null;
+  onSelectInteraction?: (interactionSlug: string) => void;
+  onDeleteInteraction?: (interactionSlug: string) => void;
   onAddInteraction?: () => void;
-  isDeletingInteraction?: (interactionId: string) => boolean;
+  isDeletingInteraction?: (interactionSlug: string) => boolean;
   referenceDate?: Date;
 };
 
@@ -38,7 +38,7 @@ export function Timeline({
   interactions,
   className = "",
   showHeader = true,
-  selectedInteractionId = null,
+  selectedInteractionSlug = null,
   onSelectInteraction,
   onDeleteInteraction,
   onAddInteraction,
@@ -100,7 +100,7 @@ export function Timeline({
               item,
               orderedInteractions,
             );
-            const isSelected = selectedInteractionId === item.slug;
+            const isSelected = selectedInteractionSlug === item.slug;
             const isUpcoming =
               new Date(item.date).getTime() > referenceDate.getTime();
             const isClickable = Boolean(onSelectInteraction);
