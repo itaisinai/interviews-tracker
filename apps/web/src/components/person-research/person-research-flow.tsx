@@ -39,8 +39,8 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
   const [linkedinUrlOverride, setLinkedinUrlOverride] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Log personId when component mounts or personId changes
-  console.log('[PersonResearchFlow] Rendered with personId:', personId, 'person:', person);
+  // Log personId when component mounts or personId changes (debug only)
+  // console.log('[PersonResearchFlow] Rendered with personId:', personId, 'person:', person);
 
   const resetFlow = () => {
     setStep("confirm");
