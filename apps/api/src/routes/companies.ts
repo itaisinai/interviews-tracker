@@ -8,7 +8,7 @@ import { companyInputSchema, companyResearchApplyInputSchema, companyResearchInp
 import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";
 import { normalizeOverdueScheduledInteractionsForRead } from "../repositories/interaction-read-normalizer.js";
 import { syncOpportunityStatusRecord } from "../repositories/opportunity-repository.js";
-import { serializeCompanySummary, serializeCompanyDetail, serializeCompany } from "../lib/serializers.js";
+import { serializeCompanySummary, serializeCompanyDetail, serializeCompany, serializeInteraction } from "../lib/serializers.js";
 import { getCompanyService } from "../services/companies/company-service.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
@@ -43,7 +43,7 @@ companiesRouter.get("/", asyncHandler(async (request, response) => {
       activeProcesses: company.opportunities.filter((opp) => opp.pipelineType === "ACTIVE_PROCESS").length,
       potentialOpportunities: company.opportunities.filter((opp) => opp.pipelineType === "POTENTIAL").length,
       interactionsCount: interactions.length,
-      nextInteraction,
+      nextInteraction: nextInteraction ? serializeInteraction(nextInteraction) : null,
       priority: company.opportunities.some((opp) => opp.priority === "HIGH") ? "HIGH" : primaryOpportunity?.priority ?? "MEDIUM",
       status: primaryOpportunity?.status ?? "RESEARCH_LEAD",
       employees: company.employeesRange?.label ?? null,

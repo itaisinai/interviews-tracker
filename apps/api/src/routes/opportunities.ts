@@ -21,7 +21,7 @@ import {
 import { Router, type Request } from "express";
 import { asyncHandler } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
-import { serializeOpportunity, serializeOpportunities, serializeInteraction, serializeInteractions } from "../lib/serializers.js";
+import { serializeOpportunity, serializeOpportunities, serializeInteraction, serializeInteractions, serializePerson } from "../lib/serializers.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
@@ -192,5 +192,5 @@ opportunitiesRouter.get("/:slugOrId/contacts", asyncHandler(async (request, resp
     orderBy: { updatedAt: "desc" }
   });
 
-  response.json(contacts);
+  response.json(contacts.map(serializePerson));
 }));

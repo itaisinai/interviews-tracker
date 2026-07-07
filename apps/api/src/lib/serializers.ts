@@ -85,6 +85,11 @@ export function serializeCompany<T extends Record<string, any>>(company: T): any
     (rest as any).contacts = (company as any).contacts.map((p: any) => serializePerson(p));
   }
 
+  // Clean top-level interactions array (used in company detail endpoint)
+  if ('interactions' in company && Array.isArray((company as any).interactions)) {
+    (rest as any).interactions = (company as any).interactions.map((i: any) => serializeInteraction(i));
+  }
+
   return rest;
 }
 
