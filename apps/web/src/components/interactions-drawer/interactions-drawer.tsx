@@ -213,6 +213,7 @@ export function InteractionsDrawer({
               headerBadge={headerBadge}
               isEditing={isEditing}
               draft={draft}
+              opportunitySlug={opportunitySlug}
               onToggleEditing={(aiSuggestion?: any) => {
                 // If AI suggestion provided, use it to create draft
                 if (aiSuggestion) {
