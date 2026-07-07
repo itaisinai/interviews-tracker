@@ -7,6 +7,7 @@ import { parseCurrentJobDescription, applyParsedJobToTimeline } from "../service
 import { createPersonWithSlug, resolvePersonId } from "../repositories/person-repository.js";
 import type { AuthenticatedRequest } from "../lib/http.js";
 import { resolveOpportunitySlug } from "../lib/slug-resolver.js";
+import { serializePerson, serializePeople } from "../lib/serializers.js";
 
 export const peopleRouter = Router();
 
@@ -207,7 +208,7 @@ peopleRouter.put("/:personId", asyncHandler(async (request: AuthenticatedRequest
   });
 
   console.log('[UPDATE PERSON] Successfully updated');
-  response.json(person);
+  response.json(serializePerson(person));
 }));
 
 // Delete person (must come before GET /:personId)
@@ -264,7 +265,7 @@ peopleRouter.get("/:personId", asyncHandler(async (request: AuthenticatedRequest
     return;
   }
 
-  response.json(person);
+  response.json(serializePerson(person));
 }));
 
 // Create or find person
@@ -312,7 +313,7 @@ peopleRouter.post("/", asyncHandler(async (request: AuthenticatedRequest, respon
     });
   }
 
-  response.json(person);
+  response.json(serializePerson(person));
 }));
 
 // Mark person as wrong candidate

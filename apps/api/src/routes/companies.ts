@@ -8,6 +8,7 @@ import { companyResearchApplyInputSchema, companyResearchInputSchema } from "../
 import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";
 import { normalizeOverdueScheduledInteractionsForRead } from "../repositories/interaction-read-normalizer.js";
 import { syncOpportunityStatusRecord } from "../repositories/opportunity-repository.js";
+import { serializeCompanySummary, serializeCompanyDetail, serializeOpportunities } from "../lib/serializers.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
@@ -39,12 +40,12 @@ companiesRouter.get("/", asyncHandler(async (request, response) => {
     companies.set(opportunity.companyName, [...(companies.get(opportunity.companyName) ?? []), opportunity]);
   }
 
-  response.json([...companies.entries()].map(([companyName, items]) => {
+  const companySummaries = [...companies.entries()].map(([companyName, items]) => {
     const primary = items[0];
     const interactions = items.flatMap((item) => item.interactions);
     const domains = [...new Set(items.flatMap((item) => item.domains.map((domain: { domain: { label: string } }) => domain.domain.label)))];
 
-    return {
+    return serializeCompanySummary({
       companyName,
       rolesCount: items.length,
       activeProcesses: items.filter((item) => item.pipelineType === "ACTIVE_PROCESS").length,
@@ -60,8 +61,9 @@ companiesRouter.get("/", asyncHandler(async (request, response) => {
       location: primary?.location ?? null,
       funding: primary?.funding ?? null,
       updatedAt: primary?.updatedAt ?? null
-    };
-  }));
+    });
+  });
+  response.json(companySummaries);
 }));
 
 companiesRouter.get("/:companyName", asyncHandler(async (request, response) => {
@@ -75,14 +77,14 @@ companiesRouter.get("/:companyName", asyncHandler(async (request, response) => {
     orderBy: { updatedAt: "desc" }
   });
 
-  response.json({
+  response.json(serializeCompanyDetail({
     companyName,
-    opportunities,
+    opportunities: serializeOpportunities(opportunities),
     interactions: opportunities.flatMap((item) => item.interactions.map((interaction) => ({ ...interaction, jobOpportunity: item }))),
     notes: opportunities.flatMap((item) => item.notesList),
     tasks: opportunities.flatMap((item) => item.tasks),
     compensation: opportunities.map((item) => item.compensation).filter(Boolean)
-  });
+  }));
 }));
 
 companiesRouter.delete("/:companyName", asyncHandler(async (request, response) => {
