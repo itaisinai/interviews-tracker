@@ -81,7 +81,6 @@ export const compensationInputSchema = z.object({
 });
 
 export type Opportunity = {
-  id: string;
   ownerEmail: string;
   slug: string;
   companyName: string;
@@ -119,10 +118,8 @@ export type Opportunity = {
 };
 
 export type Interaction = {
-  id: string;
   slug: string;
   ownerEmail: string;
-  jobOpportunityId: string;
   date: string;
   endDate?: string | null;
   type: InteractionType;
