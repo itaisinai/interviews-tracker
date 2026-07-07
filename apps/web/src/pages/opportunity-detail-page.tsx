@@ -38,12 +38,13 @@ export function OpportunityDetailPage() {
     enabled: Boolean(slugOrId),
   });
   const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
-  const [isInteractionOperationPending, setIsInteractionOperationPending] = useState(false);
+  const [isInteractionOperationPending, setIsInteractionOperationPending] =
+    useState(false);
 
   // Slug-first architecture: use slug for all operations
   const opportunitySlug = data?.slug ?? slugOrId;
   const canonicalSlug = data?.slug ?? null;
-  const [selectedInteractionId, setSelectedInteractionId] = useState<
+  const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<
     string | null
   >(null);
   const refresh = () =>
@@ -84,9 +85,10 @@ export function OpportunityDetailPage() {
   );
   const selectedInteraction = useMemo(
     () =>
-      displayedInteractions.find((item) => item.slug === selectedInteractionId) ??
-      null,
-    [displayedInteractions, selectedInteractionId],
+      displayedInteractions.find(
+        (item) => item.slug === selectedInteractionSlug,
+      ) ?? null,
+    [displayedInteractions, selectedInteractionSlug],
   );
   const focusedInteraction = useMemo(() => {
     const now = Date.now();
@@ -104,12 +106,14 @@ export function OpportunityDetailPage() {
 
   useEffect(() => {
     if (
-      selectedInteractionId &&
-      !displayedInteractions.some((item) => item.slug === selectedInteractionId)
+      selectedInteractionSlug &&
+      !displayedInteractions.some(
+        (item) => item.slug === selectedInteractionSlug,
+      )
     ) {
-      setSelectedInteractionId(null);
+      setSelectedInteractionSlug(null);
     }
-  }, [displayedInteractions, selectedInteractionId]);
+  }, [displayedInteractions, selectedInteractionSlug]);
 
   useEffect(() => {
     if (canonicalSlug && canonicalSlug !== slugOrId) {
@@ -142,8 +146,12 @@ export function OpportunityDetailPage() {
     <>
       {/* Mobile header */}
       <div className="mb-4 md:hidden">
-        <h1 className="text-2xl font-bold text-on-background">{data.company.name}</h1>
-        <p className="mt-1 text-body-md text-on-surface-variant">{data.roleTitle}</p>
+        <h1 className="text-2xl font-bold text-on-background">
+          {data.company.name}
+        </h1>
+        <p className="mt-1 text-body-md text-on-surface-variant">
+          {data.roleTitle}
+        </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge value={data.status} />
           <Badge value={data.priority} />
@@ -169,71 +177,71 @@ export function OpportunityDetailPage() {
       <div className="hidden md:block">
         <PageIntro
           title={
-          <EditableTitleField
-            ariaLabel="Company name"
-            className="font-headline-lg text-headline-lg text-on-background"
-            value={data.company.name}
-            isSaving={updateOpportunityTitle.isPending}
-            onSave={(companyName) =>
-              updateOpportunityTitle.mutate({
-                roleTitle: data.roleTitle,
-              })
-            }
-          />
-        }
-        description={
-          <EditableTitleField
-            ariaLabel="Role title"
-            className="font-body-lg text-body-lg text-on-surface-variant"
-            value={data.roleTitle}
-            isSaving={updateOpportunityTitle.isPending}
-            onSave={(roleTitle) =>
-              updateOpportunityTitle.mutate({
-                roleTitle,
-              })
-            }
-          />
-        }
-        actions={
-          <>
-            {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
-            <div className="flex items-center gap-2">
-              <Badge value={data.status} />
-              <Badge value={data.priority} />
-              <Badge value={data.pipelineType}>
-                {labelForPipelineType(data.pipelineType)}
-              </Badge>
-            </div>
-            <LoadingButton
-              className="btn btn-secondary"
-              icon="add"
-              onClick={() => setShowAddInteractionModal(true)}
-            >
-              Add Interaction
-            </LoadingButton>
-            <Link className="btn btn-primary" to="/opportunities">
-              <MaterialIcon name="arrow_back" />
-              Back to Pipeline
-            </Link>
-            <LoadingButton
-              className="btn btn-secondary text-error hover:bg-error-container"
-              loading={deleteOpportunity.isPending}
-              loadingLabel="Deleting..."
-              icon="delete"
-              onClick={() => {
-                if (
-                  window.confirm(
-                    `Delete ${data.company.name} / ${data.roleTitle}? This also deletes its interactions.`,
+            <EditableTitleField
+              ariaLabel="Company name"
+              className="font-headline-lg text-headline-lg text-on-background"
+              value={data.company.name}
+              isSaving={updateOpportunityTitle.isPending}
+              onSave={(companyName) =>
+                updateOpportunityTitle.mutate({
+                  roleTitle: data.roleTitle,
+                })
+              }
+            />
+          }
+          description={
+            <EditableTitleField
+              ariaLabel="Role title"
+              className="font-body-lg text-body-lg text-on-surface-variant"
+              value={data.roleTitle}
+              isSaving={updateOpportunityTitle.isPending}
+              onSave={(roleTitle) =>
+                updateOpportunityTitle.mutate({
+                  roleTitle,
+                })
+              }
+            />
+          }
+          actions={
+            <>
+              {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
+              <div className="flex items-center gap-2">
+                <Badge value={data.status} />
+                <Badge value={data.priority} />
+                <Badge value={data.pipelineType}>
+                  {labelForPipelineType(data.pipelineType)}
+                </Badge>
+              </div>
+              <LoadingButton
+                className="btn btn-secondary"
+                icon="add"
+                onClick={() => setShowAddInteractionModal(true)}
+              >
+                Add Interaction
+              </LoadingButton>
+              <Link className="btn btn-primary" to="/opportunities">
+                <MaterialIcon name="arrow_back" />
+                Back to Pipeline
+              </Link>
+              <LoadingButton
+                className="btn btn-secondary text-error hover:bg-error-container"
+                loading={deleteOpportunity.isPending}
+                loadingLabel="Deleting..."
+                icon="delete"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `Delete ${data.company.name} / ${data.roleTitle}? This also deletes its interactions.`,
+                    )
                   )
-                )
-                  deleteOpportunity.mutate();
-              }}
-            >
-              Delete
-            </LoadingButton>
-          </>
-        }
-      />
+                    deleteOpportunity.mutate();
+                }}
+              >
+                Delete
+              </LoadingButton>
+            </>
+          }
+        />
       </div>
 
       {focusedInteraction ? (
@@ -242,7 +250,7 @@ export function OpportunityDetailPage() {
             interaction={focusedInteraction}
             opportunitySlug={opportunitySlug}
             opportunityCompanyName={data.company.name}
-            onOpen={() => setSelectedInteractionId(focusedInteraction.slug)}
+            onOpen={() => setSelectedInteractionSlug(focusedInteraction.slug)}
           />
         </div>
       ) : null}
@@ -251,8 +259,8 @@ export function OpportunityDetailPage() {
         <div className="space-y-8">
           <Timeline
             interactions={displayedInteractions}
-            selectedInteractionId={selectedInteractionId}
-            onSelectInteraction={setSelectedInteractionId}
+            selectedInteractionSlug={selectedInteractionSlug}
+            onSelectInteraction={setSelectedInteractionSlug}
             onAddInteraction={() => setShowAddInteractionModal(true)}
             onDeleteInteraction={(interactionId) => {
               if (window.confirm("Delete this interaction?")) {
@@ -281,8 +289,8 @@ export function OpportunityDetailPage() {
         selectedOpportunity={
           data ? { ...data, interactions: displayedInteractions } : null
         }
-        onClose={() => setSelectedInteractionId(null)}
-        onSelectInteraction={setSelectedInteractionId}
+        onClose={() => setSelectedInteractionSlug(null)}
+        onSelectInteraction={setSelectedInteractionSlug}
         onOperationStart={() => setIsInteractionOperationPending(true)}
         onOperationEnd={() => setIsInteractionOperationPending(false)}
       />
@@ -490,7 +498,7 @@ function FocusedInteractionCard({
 
     // 2. Case-insensitive match
     const caseInsensitiveMatch = (contacts as Person[]).find(
-      (c) => c.name.toLowerCase() === name.toLowerCase()
+      (c) => c.name.toLowerCase() === name.toLowerCase(),
     );
     if (caseInsensitiveMatch) return caseInsensitiveMatch;
 
@@ -500,7 +508,10 @@ function FocusedInteractionCard({
       const containsMatch = (contacts as Person[]).find((c) => {
         const nameLower = name.toLowerCase();
         const contactNameLower = c.name.toLowerCase();
-        return nameLower.includes(contactNameLower) || contactNameLower.includes(nameLower);
+        return (
+          nameLower.includes(contactNameLower) ||
+          contactNameLower.includes(nameLower)
+        );
       });
       if (containsMatch) return containsMatch;
     }

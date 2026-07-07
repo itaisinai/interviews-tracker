@@ -1,7 +1,8 @@
+import type { GmailInteractionDraft, GmailStructuredEmail, Interaction } from "../../lib/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
-import type { Interaction, GmailInteractionDraft, GmailStructuredEmail } from "../../lib/types";
 
 type GmailSaveHandlers = {
   opportunitySlug: string;
@@ -119,7 +120,7 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
 
       // Fetch the updated interaction to pass to callback
       const updatedInteraction = await api.opportunity(opportunitySlug).then(
-        opp => opp.interactions.find(i => i.id === attachTargetId)
+        opp => opp.interactions.find(i => i.slug === attachTargetId)
       );
       onSaved?.(updatedInteraction);
     } catch (caughtError) {

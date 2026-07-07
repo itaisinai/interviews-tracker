@@ -1,7 +1,7 @@
 import type { CalendarEvent } from "../calendar";
-import { labelForInteractionType } from "../../lib/enum-labels";
-import { formatDurationBetween } from "../../lib/format";
 import type { Interaction } from "../../lib/types";
+import { formatDurationBetween } from "../../lib/format";
+import { labelForInteractionType } from "../../lib/enum-labels";
 
 export type InteractionFilter = "upcoming" | "done" | "followup" | "all";
 
@@ -138,7 +138,7 @@ export function buildInteractionCalendarEvents(
       ].filter(Boolean);
 
       return {
-        id: interaction.slug ?? interaction.id ?? "unknown",  // Use slug instead of id
+        id: interaction.slug ?? "unknown",
         date: interaction.date,
         title:
           titleParts.length > 0
@@ -151,7 +151,7 @@ export function buildInteractionCalendarEvents(
       console.error("Error building calendar event for interaction:", interaction, error);
       // Return a safe fallback
       return {
-        id: interaction.slug ?? interaction.id ?? "error",
+        id: interaction.slug ?? "error",
         date: interaction.date,
         title: "Error loading interaction",
         time: new Date(interaction.date).toLocaleTimeString(),

@@ -26,8 +26,8 @@ type CompanyDetailViewProps = {
   isRefreshing: boolean;
   isDeletingCompany: boolean;
   onDeleteCompany: () => void;
-  onDeleteInteraction: (interactionId: string) => void;
-  isDeletingInteraction: (interactionId: string) => boolean;
+  onDeleteInteraction: (interactionSlug: string) => void;
+  isDeletingInteraction: (interactionSlug: string) => boolean;
   onResearchSaved?: (research: CompanyResearchResult) => void;
   referenceDate?: Date;
 };
@@ -86,9 +86,10 @@ export function CompanyDetailView({
 
   const selectedInteraction = useMemo(
     () =>
-      displayInteractions.find((item) => item.slug === selectedInteractionId) ??
-      null,
-    [displayInteractions, selectedInteractionId],
+      displayInteractions.find(
+        (item) => item.slug === selectedInteractionSlug,
+      ) ?? null,
+    [displayInteractions, selectedInteractionSlug],
   );
   const selectedOpportunity = useMemo(
     () =>
@@ -104,12 +105,12 @@ export function CompanyDetailView({
 
   useEffect(() => {
     if (
-      selectedInteractionId &&
-      !displayInteractions.some((item) => item.slug === selectedInteractionId)
+      selectedInteractionSlug &&
+      !displayInteractions.some((item) => item.slug === selectedInteractionSlug)
     ) {
-      setSelectedInteractionId(null);
+      setSelectedInteractionSlug(null);
     }
-  }, [displayInteractions, selectedInteractionId]);
+  }, [displayInteractions, selectedInteractionSlug]);
 
   const primary = company.opportunities[0];
   const domains = [
@@ -262,8 +263,8 @@ export function CompanyDetailView({
                 roleTitle={item.roleTitle}
                 interactions={item.interactions}
                 opportunity={item}
-                selectedInteractionId={selectedInteractionId}
-                onSelectInteraction={setSelectedInteractionId}
+                selectedInteractionSlug={selectedInteractionSlug}
+                onSelectInteraction={setSelectedInteractionSlug}
                 onDeleteInteraction={onDeleteInteraction}
                 isDeletingInteraction={isDeletingInteraction}
                 opportunityHref={`/opportunities/${item.slug}`}
@@ -330,8 +331,8 @@ export function CompanyDetailView({
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
         selectedOpportunity={selectedOpportunity}
-        onClose={() => setSelectedInteractionId(null)}
-        onSelectInteraction={setSelectedInteractionId}
+        onClose={() => setSelectedInteractionSlug(null)}
+        onSelectInteraction={setSelectedInteractionSlug}
       />
     </>
   );

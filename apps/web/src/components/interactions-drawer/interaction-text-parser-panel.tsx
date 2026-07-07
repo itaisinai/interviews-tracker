@@ -4,7 +4,11 @@ import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
 import type { Interaction, InteractionDraft } from "../../lib/types";
 import { InteractionDraftFields } from "./interaction-draft-fields";
-import { LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
+import {
+  LoadingButton,
+  MaterialIcon,
+  ProcessStateCard,
+} from "@interviews-tracker/design-system";
 
 type InteractionTextParserPanelProps = {
   opportunitySlug: string;
@@ -13,16 +17,25 @@ type InteractionTextParserPanelProps = {
   onSaved?: (interaction?: Interaction) => void;
 };
 
-export function InteractionTextParserPanel({ opportunitySlug, companyName, roleTitle, onSaved }: InteractionTextParserPanelProps) {
+export function InteractionTextParserPanel({
+  opportunitySlug,
+  companyName,
+  roleTitle,
+  onSaved,
+}: InteractionTextParserPanelProps) {
   const queryClient = useQueryClient();
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [runState, setRunState] = useState<"idle" | "parsing" | "ready" | "failed">("idle");
+  const [runState, setRunState] = useState<
+    "idle" | "parsing" | "ready" | "failed"
+  >("idle");
   const [progress, setProgress] = useState(0);
-  const [runMessage, setRunMessage] = useState("Paste any recruiter message, interview note, or calendar text.");
+  const [runMessage, setRunMessage] = useState(
+    "Paste any recruiter message, interview note, or calendar text.",
+  );
 
   const isParsing = runState === "parsing";
   const actionLabel = draft ? "Parse again" : "Parse text";
@@ -47,7 +60,9 @@ export function InteractionTextParserPanel({ opportunitySlug, companyName, roleT
       return api.createInteraction(opportunitySlug, draft);
     },
     onSuccess: (savedInteraction) => {
-      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunitySlug] });
+      void queryClient.invalidateQueries({
+        queryKey: ["opportunity", opportunitySlug],
+      });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -56,7 +71,7 @@ export function InteractionTextParserPanel({ opportunitySlug, companyName, roleT
     },
     onError: (caughtError) => {
       setSaveError(getErrorMessage(caughtError));
-    }
+    },
   });
 
   async function parseText() {
@@ -68,7 +83,10 @@ export function InteractionTextParserPanel({ opportunitySlug, companyName, roleT
     setRunMessage("Sending pasted text to the AI parser.");
 
     try {
-      const response = await api.parseOpportunityInteractionText(opportunitySlug, { text });
+      const response = await api.parseOpportunityInteractionText(
+        opportunitySlug,
+        { text },
+      );
       setDraft(response.interaction);
       setRunState("ready");
       setProgress(100);
@@ -88,7 +106,9 @@ export function InteractionTextParserPanel({ opportunitySlug, companyName, roleT
     setError(null);
     setSaveError(null);
     setSaveMessage(null);
-    setRunMessage("Paste any recruiter message, interview note, or calendar text.");
+    setRunMessage(
+      "Paste any recruiter message, interview note, or calendar text.",
+    );
     setProgress(0);
   };
 
@@ -96,9 +116,15 @@ export function InteractionTextParserPanel({ opportunitySlug, companyName, roleT
     <section className="rounded-2xl border border-outline-variant bg-surface-container-low p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-label-md text-label-md uppercase text-on-surface-variant">Free text parser</p>
-          <h4 className="font-title-md text-title-md font-bold">Paste message or notes</h4>
-          <p className="mt-1 text-body-md text-on-surface-variant">{companyName} · {roleTitle}</p>
+          <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+            Free text parser
+          </p>
+          <h4 className="font-title-md text-title-md font-bold">
+            Paste message or notes
+          </h4>
+          <p className="mt-1 text-body-md text-on-surface-variant">
+            {companyName} · {roleTitle}
+          </p>
         </div>
         <button className="btn btn-secondary" onClick={resetToDraft}>
           <MaterialIcon name="refresh" />
@@ -116,11 +142,24 @@ export function InteractionTextParserPanel({ opportunitySlug, companyName, roleT
       </Field>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <LoadingButton className="btn btn-primary" loading={isParsing} loadingLabel="Parsing..." icon="auto_awesome" onClick={() => void parseText()} disabled={text.trim().length < 20}>
+        <LoadingButton
+          className="btn btn-primary"
+          loading={isParsing}
+          loadingLabel="Parsing..."
+          icon="auto_awesome"
+          onClick={() => void parseText()}
+          disabled={text.trim().length < 20}
+        >
           {actionLabel}
         </LoadingButton>
         {draft ? (
-          <LoadingButton className="btn btn-secondary" loading={saveInteraction.isPending} loadingLabel="Saving..." icon="save" onClick={() => void saveInteraction.mutate()}>
+          <LoadingButton
+            className="btn btn-secondary"
+            loading={saveInteraction.isPending}
+            loadingLabel="Saving..."
+            icon="save"
+            onClick={() => void saveInteraction.mutate()}
+          >
             Save interaction
           </LoadingButton>
         ) : null}
@@ -138,7 +177,9 @@ export function InteractionTextParserPanel({ opportunitySlug, companyName, roleT
 
       {error && runState === "failed" ? (
         <div className="mt-4 rounded-lg border border-error/30 bg-error-container px-4 py-3 text-on-error-container">
-          <p className="font-body-md text-body-md font-semibold">Parsing failed</p>
+          <p className="font-body-md text-body-md font-semibold">
+            Parsing failed
+          </p>
           <p className="mt-1 font-body-md text-body-md">{error}</p>
         </div>
       ) : null}
@@ -151,16 +192,27 @@ export function InteractionTextParserPanel({ opportunitySlug, companyName, roleT
       ) : null}
 
       {saveMessage ? (
-        <p className="mt-4 rounded-lg bg-primary-container px-4 py-3 text-body-md text-on-primary-container">{saveMessage}</p>
+        <p className="mt-4 rounded-lg bg-primary-container px-4 py-3 text-body-md text-on-primary-container">
+          {saveMessage}
+        </p>
       ) : null}
 
       {draft ? (
         <div className="mt-5 rounded-2xl border border-outline-variant bg-white p-5">
-          <p className="font-label-md text-label-md uppercase text-on-surface-variant">Review interaction</p>
+          <p className="font-label-md text-label-md uppercase text-on-surface-variant">
+            Review interaction
+          </p>
           {draft.meetingLink ? (
             <p className="mt-2 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md text-on-background">
-              <span className="font-semibold text-on-surface-variant">Meeting link: </span>
-              <a className="text-primary hover:underline" href={draft.meetingLink} rel="noreferrer noopener" target="_blank">
+              <span className="font-semibold text-on-surface-variant">
+                Meeting link:{" "}
+              </span>
+              <a
+                className="text-primary hover:underline"
+                href={draft.meetingLink}
+                rel="noreferrer noopener"
+                target="_blank"
+              >
                 {draft.meetingLink}
               </a>
             </p>

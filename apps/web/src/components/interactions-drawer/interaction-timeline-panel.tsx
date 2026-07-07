@@ -1,20 +1,20 @@
-import { Timeline } from "../timeline";
 import type { Interaction } from "../../lib/types";
+import { Timeline } from "../timeline";
 
 type InteractionTimelinePanelProps = {
   companyName: string;
   interactions: readonly Interaction[];
-  selectedInteractionId: string | null;
-  onSelectInteraction?: (interactionId: string) => void;
-  onDeleteInteraction?: (interactionId: string) => void;
-  isDeletingInteraction?: (interactionId: string) => boolean;
+  selectedInteractionSlug: string | null;
+  onSelectInteraction?: (interactionSlug: string) => void;
+  onDeleteInteraction?: (interactionSlug: string) => void;
+  isDeletingInteraction?: (interactionSlug: string) => boolean;
   referenceDate?: Date;
 };
 
 export function InteractionTimelinePanel({
   companyName,
   interactions,
-  selectedInteractionId,
+  selectedInteractionSlug,
   onSelectInteraction,
   onDeleteInteraction,
   isDeletingInteraction,
@@ -42,7 +42,7 @@ export function InteractionTimelinePanel({
           title={companyName}
           interactions={interactions}
           showHeader={false}
-          selectedInteractionId={selectedInteractionId}
+          selectedInteractionSlug={selectedInteractionSlug}
           onSelectInteraction={onSelectInteraction}
           onDeleteInteraction={onDeleteInteraction}
           isDeletingInteraction={isDeletingInteraction}

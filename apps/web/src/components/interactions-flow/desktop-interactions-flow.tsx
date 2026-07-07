@@ -1,19 +1,20 @@
-import { AppCalendar } from "../calendar";
-import { FilterTabs } from "./filter-tabs";
-import { GmailImportPanel } from "./gmail-import-panel";
-import { InteractionHealthPanel } from "./interaction-health-panel";
-import { OpportunityInteractionTimeline } from "../interactions-timeline";
-import { PageIntro } from "../app-shell";
+import {
+  InlineLoadingState,
+  MaterialIcon,
+} from "@interviews-tracker/design-system";
 import type { Interaction, Opportunity } from "../../lib/types";
 import type {
   InteractionCalendarEvent,
   InteractionFilter,
   InteractionOpportunityGroup,
 } from "./interaction-flow-helpers";
-import {
-  InlineLoadingState,
-  MaterialIcon,
-} from "@interviews-tracker/design-system";
+
+import { AppCalendar } from "../calendar";
+import { FilterTabs } from "./filter-tabs";
+import { GmailImportPanel } from "./gmail-import-panel";
+import { InteractionHealthPanel } from "./interaction-health-panel";
+import { OpportunityInteractionTimeline } from "../interactions-timeline";
+import { PageIntro } from "../app-shell";
 
 type DesktopInteractionsFlowProps = {
   filter: InteractionFilter;
@@ -22,9 +23,9 @@ type DesktopInteractionsFlowProps = {
   interactions: readonly Interaction[];
   visibleGroups: InteractionOpportunityGroup[];
   opportunities: Opportunity[];
-  gmailOpportunityId: string;
+  gmailOpportunitySlug: string;
   gmailOpportunity: Opportunity | null;
-  selectedInteractionId: string | null;
+  selectedInteractionSlug: string | null;
   calendarEvents: InteractionCalendarEvent[];
   followUpCount: number;
   followUpPercent: number;
@@ -45,9 +46,9 @@ export function DesktopInteractionsFlow({
   interactions,
   visibleGroups,
   opportunities,
-  gmailOpportunityId,
+  gmailOpportunitySlug,
   gmailOpportunity,
-  selectedInteractionId,
+  selectedInteractionSlug,
   calendarEvents,
   followUpCount,
   followUpPercent,
@@ -84,7 +85,7 @@ export function DesktopInteractionsFlow({
       {showGmailImport ? (
         <GmailImportPanel
           opportunities={opportunities}
-          selectedOpportunityId={gmailOpportunityId}
+          selectedOpportunitySlug={gmailOpportunitySlug}
           selectedOpportunity={gmailOpportunity}
           onSelectOpportunity={onSelectGmailOpportunity}
           onClose={onCloseGmailImport}
@@ -103,7 +104,7 @@ export function DesktopInteractionsFlow({
                 companyName={group.companyName}
                 roleTitle={group.roleTitle}
                 interactions={group.interactions}
-                selectedInteractionId={selectedInteractionId}
+                selectedInteractionSlug={selectedInteractionSlug}
                 onSelectInteraction={onSelectInteraction}
                 onDeleteInteraction={onDeleteInteraction}
                 isDeletingInteraction={isDeletingInteraction}

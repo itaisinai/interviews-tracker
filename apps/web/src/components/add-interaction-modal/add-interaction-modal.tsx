@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Modal, MaterialIcon } from "@interviews-tracker/design-system";
-import { ManualInteractionForm } from "./manual-interaction-form";
+import { MaterialIcon, Modal } from "@interviews-tracker/design-system";
+
 import { GmailImportFlow } from "./gmail-import-flow";
-import { TextParseFlow } from "./text-parse-flow";
 import type { InteractionDraft } from "../../lib/types";
+import { ManualInteractionForm } from "./manual-interaction-form";
+import { TextParseFlow } from "./text-parse-flow";
+import { useState } from "react";
 
 export type AddInteractionModalProps = {
   isOpen: boolean;

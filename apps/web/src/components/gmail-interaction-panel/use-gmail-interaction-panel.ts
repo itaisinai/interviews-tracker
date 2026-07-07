@@ -98,7 +98,7 @@ export function useGmailInteractionPanel({
   const attachTargetInteraction = useMemo(
     () =>
       opportunityQuery.data?.interactions.find(
-        (interaction) => interaction.id === state.attachTargetId
+        (interaction) => interaction.slug === state.attachTargetId
       ) ?? null,
     [state.attachTargetId, opportunityQuery.data?.interactions]
   );

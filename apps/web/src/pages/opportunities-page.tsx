@@ -286,7 +286,7 @@ export function OpportunitiesPage() {
             icon="delete"
             loading={
               deleteOpportunity.isPending &&
-              deleteOpportunity.variables === row.original.id
+              deleteOpportunity.variables === row.original.slug
             }
             onClick={() => {
               if (
@@ -404,8 +404,8 @@ export function OpportunitiesPage() {
             const state = mobileOpportunityState(item);
             return (
               <Link
-                key={item.id}
-                to={`/opportunities/${item.slug || item.id}`}
+                key={item.slug}
+                to={`/opportunities/${item.slug}`}
                 className={`block rounded-xl border bg-surface-container-lowest p-4 shadow-sm ${state.border}`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -489,7 +489,10 @@ export function OpportunitiesPage() {
                 onClick={() => setPipeline("")}
               >
                 <span>
-                  pipeline: {pipelineTypeOptions.find((opt) => opt.value === pipeline)?.label.toLowerCase()}
+                  pipeline:{" "}
+                  {pipelineTypeOptions
+                    .find((opt) => opt.value === pipeline)
+                    ?.label.toLowerCase()}
                 </span>
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
@@ -500,7 +503,10 @@ export function OpportunitiesPage() {
                 onClick={() => setStatus("")}
               >
                 <span>
-                  stage: {jobStatusOptions.find((opt) => opt.value === status)?.label.toLowerCase()}
+                  stage:{" "}
+                  {jobStatusOptions
+                    .find((opt) => opt.value === status)
+                    ?.label.toLowerCase()}
                 </span>
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
@@ -511,7 +517,10 @@ export function OpportunitiesPage() {
                 onClick={() => setPriority("")}
               >
                 <span>
-                  priority: {priorityOptions.find((opt) => opt.value === priority)?.label.toLowerCase()}
+                  priority:{" "}
+                  {priorityOptions
+                    .find((opt) => opt.value === priority)
+                    ?.label.toLowerCase()}
                 </span>
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
@@ -522,17 +531,20 @@ export function OpportunitiesPage() {
                 onClick={() => setDomainId("")}
               >
                 <span>
-                  company: {options?.domains.find((opt) => opt.id === domainId)?.label}
+                  company:{" "}
+                  {options?.domains.find((opt) => opt.id === domainId)?.label}
                 </span>
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
             ) : null}
             {!pipeline && !status && !priority && !domainId ? (
-              <span className="text-[13px] text-on-surface-variant">No filters applied</span>
+              <span className="text-[13px] text-on-surface-variant">
+                No filters applied
+              </span>
             ) : null}
           </div>
 
-          {(pipeline || status || priority || domainId) ? (
+          {pipeline || status || priority || domainId ? (
             <button
               className="flex flex-shrink-0 items-center gap-2 text-[14px] font-medium text-on-surface-variant hover:text-error transition-colors"
               onClick={() => {
@@ -580,12 +592,12 @@ export function OpportunitiesPage() {
                 onClick: (event) => {
                   const target = event.target as HTMLElement;
                   if (target.closest("a,button,input,select,textarea")) return;
-                  navigate(`/opportunities/${row.slug || row.id}`);
+                  navigate(`/opportunities/${row.slug}`);
                 },
                 onKeyDown: (event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    navigate(`/opportunities/${row.slug || row.id}`);
+                    navigate(`/opportunities/${row.slug}`);
                   }
                 },
               })}

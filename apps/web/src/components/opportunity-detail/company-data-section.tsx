@@ -3,7 +3,10 @@ import type { Opportunity } from "../../lib/types";
 import { Badge } from "../badge";
 import { CompanyResearchPanel } from "../company-research-panel";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
-import { InteractionInputChooser, type InteractionInputMode } from "../interaction-input-chooser";
+import {
+  InteractionInputChooser,
+  type InteractionInputMode,
+} from "../interaction-input-chooser";
 import { InteractionTextParserPanel } from "../interactions-drawer/interaction-text-parser-panel";
 import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 import { ArrowLeft } from "lucide-react";
@@ -64,7 +67,9 @@ export function CompanyDataSection({
               icon="add"
               onClick={onToggleInteractionInput}
             >
-              {showInteractionInput ? "Hide add interaction" : "Add interaction"}
+              {showInteractionInput
+                ? "Hide add interaction"
+                : "Add interaction"}
             </LoadingButton>
           </div>
         </div>
@@ -81,11 +86,12 @@ export function CompanyDataSection({
               funding: opportunity.company.funding ?? null,
               customersTraction: opportunity.company.customersTraction ?? null,
               companyDescription: opportunity.company.description ?? null,
-              productDescription: opportunity.company.productDescription ?? null,
+              productDescription:
+                opportunity.company.productDescription ?? null,
               location: opportunity.company.location ?? null,
               employees: opportunity.company.employeesRange?.label ?? null,
             }}
-            targetOpportunityId={opportunity.id}
+            targetOpportunitySlug={opportunity.slug}
             onSaved={onSaved}
           />
         </div>
@@ -104,7 +110,9 @@ export function CompanyDataSection({
             </div>
           </div>
           <div className="mt-4">
-            <InteractionInputChooser onSelectMode={onSelectInteractionInputMode} />
+            <InteractionInputChooser
+              onSelectMode={onSelectInteractionInputMode}
+            />
           </div>
         </section>
       ) : null}
@@ -116,7 +124,9 @@ export function CompanyDataSection({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">
                 Add interaction
               </p>
-              <h4 className="font-title-md text-title-md font-bold">Gmail import</h4>
+              <h4 className="font-title-md text-title-md font-bold">
+                Gmail import
+              </h4>
             </div>
             <button
               className="btn btn-secondary"
@@ -127,7 +137,7 @@ export function CompanyDataSection({
             </button>
           </div>
           <GmailInteractionPanel
-            opportunitySlug={opportunity.slug ?? opportunity.id}
+            opportunitySlug={opportunity.slug}
             companyName={opportunity.company.name}
             roleTitle={opportunity.roleTitle}
             onSaved={onSaved}
@@ -142,7 +152,9 @@ export function CompanyDataSection({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">
                 Add interaction
               </p>
-              <h4 className="font-title-md text-title-md font-bold">Text parser</h4>
+              <h4 className="font-title-md text-title-md font-bold">
+                Text parser
+              </h4>
             </div>
             <button
               className="btn btn-secondary"
@@ -170,8 +182,14 @@ export function CompanyDataSection({
               label="English Search Name"
               value={opportunity.company.searchName}
             />
-            <Detail label="Size" value={opportunity.company.employeesRange?.label} />
-            <Detail label="Stage" value={opportunity.company.companyStage?.label} />
+            <Detail
+              label="Size"
+              value={opportunity.company.employeesRange?.label}
+            />
+            <Detail
+              label="Stage"
+              value={opportunity.company.companyStage?.label}
+            />
             <Detail
               label="Domains"
               value={opportunity.domains
@@ -182,7 +200,10 @@ export function CompanyDataSection({
             <Detail label="Location" value={opportunity.company.location} />
             <Detail label="Funding" value={opportunity.company.funding} />
             <Detail label="Company" value={opportunity.company.description} />
-            <Detail label="Product" value={opportunity.company.productDescription} />
+            <Detail
+              label="Product"
+              value={opportunity.company.productDescription}
+            />
           </div>
 
           <div className="lg:col-span-4">
@@ -208,7 +229,10 @@ export function CompanyDataSection({
               label="Backend / Frontend"
               value={opportunity.company.backendFrontendSplit}
             />
-            <Detail label="Traction" value={opportunity.company.customersTraction} />
+            <Detail
+              label="Traction"
+              value={opportunity.company.customersTraction}
+            />
             <Detail
               label="Compensation Notes"
               value={opportunity.compensationNotes}
