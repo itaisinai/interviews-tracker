@@ -127,7 +127,7 @@ export function CompanyDataSection({
             </button>
           </div>
           <GmailInteractionPanel
-            opportunityId={opportunity.slug ?? opportunity.id}
+            opportunitySlug={opportunity.slug ?? opportunity.id}
             companyName={opportunity.company.name}
             roleTitle={opportunity.roleTitle}
             onSaved={onSaved}
@@ -153,7 +153,7 @@ export function CompanyDataSection({
             </button>
           </div>
           <InteractionTextParserPanel
-            opportunityId={opportunity.slug}
+            opportunitySlug={opportunity.slug}
             companyName={opportunity.company.name}
             roleTitle={opportunity.roleTitle}
             onSaved={onSaved}

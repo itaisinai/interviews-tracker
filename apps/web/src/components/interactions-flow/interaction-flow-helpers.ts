@@ -6,7 +6,7 @@ import type { Interaction } from "../../lib/types";
 export type InteractionFilter = "upcoming" | "done" | "followup" | "all";
 
 export type InteractionOpportunityGroup = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   roleTitle: string;
   interactions: Interaction[];
@@ -36,7 +36,7 @@ export function buildOpportunityGroups(interactions: readonly Interaction[]) {
 
     if (!existing) {
       groups.set(opportunitySlug, {
-        opportunityId: opportunitySlug,
+        opportunitySlug: opportunitySlug,
         companyName:
           interaction.jobOpportunity?.company.name ?? "Unknown company",
         roleTitle: interaction.jobOpportunity?.roleTitle ?? "Unknown role",

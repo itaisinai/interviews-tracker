@@ -4,7 +4,7 @@ import { getErrorMessage } from "../../lib/error";
 import type { Interaction, GmailInteractionDraft, GmailStructuredEmail } from "../../lib/types";
 
 type GmailSaveHandlers = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   draft: GmailInteractionDraft | null;
   selectedEmail: GmailStructuredEmail | null;
@@ -28,7 +28,7 @@ type GmailSaveHandlers = {
 export function useGmailSave(handlers: GmailSaveHandlers) {
   const queryClient = useQueryClient();
   const {
-    opportunityId,
+    opportunitySlug,
     companyName,
     draft,
     selectedEmail,
@@ -53,10 +53,10 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
         throw new Error("No parsed interaction is ready to save.");
       }
 
-      return api.createInteraction(opportunityId, draftToSave);
+      return api.createInteraction(opportunitySlug, draftToSave);
     },
     onSuccess: (savedInteraction) => {
-      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunitySlug] });
       void queryClient.invalidateQueries({ queryKey: ["company", companyName] });
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
@@ -101,7 +101,7 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
       }
 
       void queryClient.invalidateQueries({ queryKey: ["interaction-emails", attachTargetId] });
-      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunitySlug] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -118,7 +118,7 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
       setAnalysis(null);
 
       // Fetch the updated interaction to pass to callback
-      const updatedInteraction = await api.opportunity(opportunityId).then(
+      const updatedInteraction = await api.opportunity(opportunitySlug).then(
         opp => opp.interactions.find(i => i.id === attachTargetId)
       );
       onSaved?.(updatedInteraction);

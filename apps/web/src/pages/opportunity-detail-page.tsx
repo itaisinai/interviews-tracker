@@ -240,7 +240,7 @@ export function OpportunityDetailPage() {
         <div className="mt-8">
           <FocusedInteractionCard
             interaction={focusedInteraction}
-            opportunityId={opportunitySlug}
+            opportunitySlug={opportunitySlug}
             opportunityCompanyName={data.company.name}
             onOpen={() => setSelectedInteractionId(focusedInteraction.slug)}
           />
@@ -266,7 +266,7 @@ export function OpportunityDetailPage() {
           />
           <div id="contacts-section">
             <ContactsList
-              opportunityId={opportunitySlug}
+              opportunitySlug={opportunitySlug}
               companyName={data.company.name}
             />
           </div>
@@ -290,7 +290,7 @@ export function OpportunityDetailPage() {
       <AddInteractionModal
         isOpen={showAddInteractionModal}
         onClose={() => setShowAddInteractionModal(false)}
-        opportunityId={opportunitySlug}
+        opportunitySlug={opportunitySlug}
         companyName={data.company.name}
         roleTitle={data.roleTitle}
         onSaved={() => {
@@ -449,12 +449,12 @@ function buildOpportunityInput(
 
 function FocusedInteractionCard({
   interaction,
-  opportunityId,
+  opportunitySlug,
   opportunityCompanyName,
   onOpen,
 }: {
   interaction: Interaction;
-  opportunityId: string;
+  opportunitySlug: string;
   opportunityCompanyName: string;
   onOpen: () => void;
 }) {
@@ -463,8 +463,8 @@ function FocusedInteractionCard({
 
   // Fetch contacts to get job titles and research status
   const { data: contacts = [] } = useQuery({
-    queryKey: ["opportunity-contacts", opportunityId],
-    queryFn: () => api.getOpportunityContacts(opportunityId),
+    queryKey: ["opportunity-contacts", opportunitySlug],
+    queryFn: () => api.getOpportunityContacts(opportunitySlug),
   });
 
   // Parse participant names and filter out blank entries
@@ -557,7 +557,7 @@ function FocusedInteractionCard({
           <ParticipantsCard
             personNames={personNames}
             personRecords={personRecords}
-            opportunityId={opportunityId}
+            opportunitySlug={opportunitySlug}
             opportunityCompanyName={opportunityCompanyName}
           />
         </div>

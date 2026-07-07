@@ -15,7 +15,7 @@ import {
 } from "./gmail-interaction-panel-helpers";
 
 type GmailInteractionPanelArgs = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   roleTitle: string;
   onSaved?: (interaction?: Interaction) => void;
@@ -26,7 +26,7 @@ type GmailInteractionPanelArgs = {
  * Main Gmail interaction panel hook - orchestrates all Gmail flow logic
  */
 export function useGmailInteractionPanel({
-  opportunityId,
+  opportunitySlug,
   companyName,
   roleTitle,
   onSaved,
@@ -40,15 +40,15 @@ export function useGmailInteractionPanel({
 
   // Queries
   const gmailMessageStatesQuery = useQuery({
-    queryKey: ["gmail-message-states", opportunityId],
-    queryFn: () => api.gmailMessageStates(opportunityId),
-    enabled: Boolean(statusQuery.data?.connected && opportunityId)
+    queryKey: ["gmail-message-states", opportunitySlug],
+    queryFn: () => api.gmailMessageStates(opportunitySlug),
+    enabled: Boolean(statusQuery.data?.connected && opportunitySlug)
   });
 
   const opportunityQuery = useQuery({
-    queryKey: ["opportunity", opportunityId, "gmail-attach"],
-    queryFn: () => api.opportunity(opportunityId),
-    enabled: Boolean(statusQuery.data?.connected && opportunityId),
+    queryKey: ["opportunity", opportunitySlug, "gmail-attach"],
+    queryFn: () => api.opportunity(opportunitySlug),
+    enabled: Boolean(statusQuery.data?.connected && opportunitySlug),
     staleTime: 30_000
   });
 
@@ -74,7 +74,7 @@ export function useGmailInteractionPanel({
 
   // Search logic
   const searchHandlers = useGmailSearch({
-    opportunityId,
+    opportunitySlug,
     searchHint,
     setNeedsReconnect: state.setNeedsReconnect,
     setError: state.setError,
@@ -105,7 +105,7 @@ export function useGmailInteractionPanel({
 
   // Save logic
   const saveHandlers = useGmailSave({
-    opportunityId,
+    opportunitySlug,
     companyName,
     draft: state.draft,
     selectedEmail: state.selectedEmail,
@@ -125,7 +125,7 @@ export function useGmailInteractionPanel({
 
   // Email actions
   const emailActions = useGmailEmailActions({
-    opportunityId,
+    opportunitySlug,
     setError: state.setError,
     setSaveError: state.setSaveError,
     setMessage: state.setMessage,
@@ -142,7 +142,7 @@ export function useGmailInteractionPanel({
     connected: statusQuery.data?.connected,
     selectedEmail: state.selectedEmail,
     attachToInteractionId,
-    opportunityId,
+    opportunitySlug,
     interactions: (opportunityQuery.data?.interactions ?? []).map(i => ({ id: i.slug, gmailMessageId: i.gmailMessageId })),
     setProgress: state.setProgress,
     setSearchResults: state.setSearchResults,

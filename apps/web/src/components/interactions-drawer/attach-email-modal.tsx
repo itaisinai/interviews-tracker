@@ -8,7 +8,7 @@ type AttachEmailModalProps = {
   isOpen: boolean;
   onClose: () => void;
   interactionId: string;
-  opportunityId: string;
+  opportunitySlug: string;
   onAttached?: (aiSuggestion?: any) => void;
 };
 
@@ -16,7 +16,7 @@ export function AttachEmailModal({
   isOpen,
   onClose,
   interactionId,
-  opportunityId,
+  opportunitySlug,
   onAttached
 }: AttachEmailModalProps) {
   const interactionSlug = interactionId;
@@ -25,13 +25,13 @@ export function AttachEmailModal({
 
   // Fetch Gmail search results
   const { data: searchResults, isLoading, refetch: refetchSearch, isRefetching } = useQuery({
-    queryKey: ["gmail-search", opportunityId],
-    queryFn: () => api.gmailSearch(opportunityId),
-    enabled: isOpen && !!opportunityId,
+    queryKey: ["gmail-search", opportunitySlug],
+    queryFn: () => api.gmailSearch(opportunitySlug),
+    enabled: isOpen && !!opportunitySlug,
   });
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+    queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
     refetchSearch();
   };
 
@@ -44,24 +44,24 @@ export function AttachEmailModal({
 
   // Fetch Gmail message states for debug section
   const { data: messageStates } = useQuery({
-    queryKey: ["gmail-message-states", opportunityId],
-    queryFn: () => api.gmailMessageStates(opportunityId),
-    enabled: isOpen && !!opportunityId,
+    queryKey: ["gmail-message-states", opportunitySlug],
+    queryFn: () => api.gmailMessageStates(opportunitySlug),
+    enabled: isOpen && !!opportunitySlug,
   });
 
   const unpickEmail = useMutation({
-    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunityId, messageId),
+    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
     },
   });
 
   const restoreEmail = useMutation({
-    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunityId, messageId),
+    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
     },
   });
 
@@ -79,8 +79,8 @@ export function AttachEmailModal({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["interaction-emails", interactionId] }),
         queryClient.invalidateQueries({ queryKey: ["interactions"] }),
-        queryClient.invalidateQueries({ queryKey: ["opportunities", opportunityId] }),
-        queryClient.refetchQueries({ queryKey: ["opportunity", opportunityId] })
+        queryClient.invalidateQueries({ queryKey: ["opportunities", opportunitySlug] }),
+        queryClient.refetchQueries({ queryKey: ["opportunity", opportunitySlug] })
       ]);
 
       // Close modal

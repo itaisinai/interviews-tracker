@@ -5,7 +5,7 @@ import { MaterialIcon, LoadingButton } from "@interviews-tracker/design-system";
 import type { InteractionDraft } from "../../lib/types";
 
 type TextParseFlowProps = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   roleTitle: string;
   onParsed: (draft: InteractionDraft) => void;
@@ -13,7 +13,7 @@ type TextParseFlowProps = {
 };
 
 export function TextParseFlow({
-  opportunityId,
+  opportunitySlug,
   companyName,
   roleTitle,
   onParsed,
@@ -23,7 +23,7 @@ export function TextParseFlow({
 
   const parseMutation = useMutation({
     mutationFn: async (text: string) => {
-      const result = await api.parseOpportunityInteractionText(opportunityId, { text });
+      const result = await api.parseOpportunityInteractionText(opportunitySlug, { text });
       return result.interaction;
     },
     onSuccess: (draft) => {

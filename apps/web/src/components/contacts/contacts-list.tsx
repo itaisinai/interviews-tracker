@@ -13,12 +13,12 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 type ContactsListProps = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
 };
 
 export function ContactsList({
-  opportunityId,
+  opportunitySlug,
   companyName,
 }: ContactsListProps) {
   const queryClient = useQueryClient();
@@ -48,8 +48,8 @@ export function ContactsList({
   } | null>(null);
 
   const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ["opportunity-contacts", opportunityId],
-    queryFn: () => api.getOpportunityContacts(opportunityId),
+    queryKey: ["opportunity-contacts", opportunitySlug],
+    queryFn: () => api.getOpportunityContacts(opportunitySlug),
   });
 
   const deletePerson = useMutation({
@@ -58,7 +58,7 @@ export function ContactsList({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["opportunity-contacts", opportunityId],
+        queryKey: ["opportunity-contacts", opportunitySlug],
       });
       void queryClient.invalidateQueries({ queryKey: ["people"] });
     },
@@ -105,7 +105,7 @@ export function ContactsList({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["opportunity-contacts", opportunityId],
+        queryKey: ["opportunity-contacts", opportunitySlug],
       });
       void queryClient.invalidateQueries({ queryKey: ["people"] });
       setReviewTimeline(null);
@@ -289,7 +289,7 @@ export function ContactsList({
             setResearchPerson(null);
             setResearchPersonId(undefined);
           }}
-          opportunityId={opportunityId}
+          opportunitySlug={opportunitySlug}
           opportunityCompanyName={companyName}
           personId={researchPersonId} // Use explicit ID state
         />

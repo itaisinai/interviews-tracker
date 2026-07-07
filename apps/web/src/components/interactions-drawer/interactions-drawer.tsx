@@ -53,7 +53,7 @@ export function InteractionsDrawer({
     null;
 
   // Use opportunity slug (prefer nested object's slug, fallback to FK for backward compatibility)
-  const opportunityId = opportunity?.slug ?? mountedInteraction?.jobOpportunityId ?? "";
+  const opportunitySlug = opportunity?.slug ?? mountedInteraction?.jobOpportunityId ?? "";
 
   useEffect(() => {
     if (closeTimerRef.current) {
@@ -118,12 +118,15 @@ export function InteractionsDrawer({
 
   const refreshQueries = () => {
     void queryClient.invalidateQueries({
-      queryKey: ["opportunity", opportunityId],
+      queryKey: ["opportunity", opportunitySlug],
     });
     void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
     void queryClient.invalidateQueries({ queryKey: ["interactions"] });
     void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     void queryClient.invalidateQueries({ queryKey: ["companies"] });
+    if (opportunitySlug) {
+      void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunitySlug] });
+    }
   };
 
   const deleteInteraction = useMutation({
@@ -148,7 +151,7 @@ export function InteractionsDrawer({
     onSuccess: (savedInteraction) => {
       // Update the opportunity cache with saved interaction
       queryClient.setQueryData(
-        ["opportunity", opportunityId],
+        ["opportunity", opportunitySlug],
         (old: any) => {
           if (!old) return old;
           return {

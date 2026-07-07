@@ -5,11 +5,11 @@ import { api } from "../../lib/api";
 import { useState } from "react";
 
 type GmailEmailStatesSectionProps = {
-  opportunityId: string;
+  opportunitySlug: string;
 };
 
 export function GmailEmailStatesSection({
-  opportunityId,
+  opportunitySlug,
 }: GmailEmailStatesSectionProps) {
   const queryClient = useQueryClient();
   const [restoringId, setRestoringId] = useState<string | null>(null);
@@ -19,21 +19,21 @@ export function GmailEmailStatesSection({
   const [pickedExpanded, setPickedExpanded] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["gmail-message-states", opportunityId],
-    queryFn: () => api.gmailMessageStates(opportunityId),
-    enabled: !!opportunityId,
+    queryKey: ["gmail-message-states", opportunitySlug],
+    queryFn: () => api.gmailMessageStates(opportunitySlug),
+    enabled: !!opportunitySlug,
   });
 
   const restoreMutation = useMutation({
     mutationFn: async (messageId: string) => {
-      await api.gmailRestoreEmail(opportunityId, messageId);
+      await api.gmailRestoreEmail(opportunitySlug, messageId);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["gmail-message-states", opportunityId],
+        queryKey: ["gmail-message-states", opportunitySlug],
       });
       void queryClient.invalidateQueries({
-        queryKey: ["gmail-search", opportunityId],
+        queryKey: ["gmail-search", opportunitySlug],
       });
       setRestoringId(null);
     },
@@ -46,14 +46,14 @@ export function GmailEmailStatesSection({
 
   const unpickMutation = useMutation({
     mutationFn: async (messageId: string) => {
-      await api.gmailUnpickEmail(opportunityId, messageId);
+      await api.gmailUnpickEmail(opportunitySlug, messageId);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["gmail-message-states", opportunityId],
+        queryKey: ["gmail-message-states", opportunitySlug],
       });
       void queryClient.invalidateQueries({
-        queryKey: ["gmail-search", opportunityId],
+        queryKey: ["gmail-search", opportunitySlug],
       });
       setUnpickingId(null);
     },

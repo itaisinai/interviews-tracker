@@ -7,7 +7,7 @@ import type { Person } from "../../lib/types";
 type InteractionParticipantsProps = {
   personNames: string[];
   personRecords: Array<Person | undefined>;
-  opportunityId?: string;
+  opportunitySlug?: string;
   opportunityCompanyName?: string;
 };
 
@@ -17,7 +17,7 @@ type InteractionParticipantsProps = {
 export function InteractionParticipants({
   personNames,
   personRecords,
-  opportunityId,
+  opportunitySlug,
   opportunityCompanyName
 }: InteractionParticipantsProps) {
   const [researchModalOpen, setResearchModalOpen] = useState(false);
@@ -103,7 +103,7 @@ export function InteractionParticipants({
         person={{ name: selectedPersonName }}
         isOpen={researchModalOpen}
         onClose={() => setResearchModalOpen(false)}
-        opportunityId={opportunityId}
+        opportunitySlug={opportunitySlug}
         opportunityCompanyName={opportunityCompanyName}
         onSaved={() => setResearchModalOpen(false)}
       />

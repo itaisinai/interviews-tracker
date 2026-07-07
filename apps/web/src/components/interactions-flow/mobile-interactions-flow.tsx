@@ -22,7 +22,7 @@ type MobileInteractionsFlowProps = {
   followUpPercent: number;
   onFilterChange: (filter: InteractionFilter) => void;
   onToggleGmailImport: () => void;
-  onSelectGmailOpportunity: (opportunityId: string) => void;
+  onSelectGmailOpportunity: (opportunitySlug: string) => void;
   onGmailSaved: () => void;
   onSelectInteraction: (interactionId: string) => void;
   onDeleteInteraction: (interactionId: string) => void;
@@ -142,7 +142,7 @@ function TimelineList({
     <div className="space-y-4">
       {groups.map((group) => (
         <OpportunityInteractionTimeline
-          key={group.opportunityId}
+          key={group.opportunitySlug}
           companyName={group.companyName}
           roleTitle={group.roleTitle}
           interactions={group.interactions}

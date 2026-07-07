@@ -8,7 +8,7 @@ import type { InteractionDraft } from "../../lib/types";
 export type AddInteractionModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   roleTitle: string;
   onSaved: () => void;
@@ -19,7 +19,7 @@ type InputMode = "chooser" | "manual" | "gmail" | "text-parse" | "text-review";
 export function AddInteractionModal({
   isOpen,
   onClose,
-  opportunityId,
+  opportunitySlug,
   companyName,
   roleTitle,
   onSaved,
@@ -124,7 +124,7 @@ export function AddInteractionModal({
 
         {mode === "gmail" && (
           <GmailImportFlow
-            opportunityId={opportunityId}
+            opportunitySlug={opportunitySlug}
             companyName={companyName}
             roleTitle={roleTitle}
             onSaved={handleSaved}
@@ -134,7 +134,7 @@ export function AddInteractionModal({
 
         {mode === "text-parse" && (
           <TextParseFlow
-            opportunityId={opportunityId}
+            opportunitySlug={opportunitySlug}
             companyName={companyName}
             roleTitle={roleTitle}
             onParsed={handleTextParsed}
@@ -144,7 +144,7 @@ export function AddInteractionModal({
 
         {mode === "text-review" && parsedDraft && (
           <ManualInteractionForm
-            opportunityId={opportunityId}
+            opportunitySlug={opportunitySlug}
             companyName={companyName}
             roleTitle={roleTitle}
             initialDraft={parsedDraft}
@@ -155,7 +155,7 @@ export function AddInteractionModal({
 
         {mode === "manual" && (
           <ManualInteractionForm
-            opportunityId={opportunityId}
+            opportunitySlug={opportunitySlug}
             companyName={companyName}
             roleTitle={roleTitle}
             onSaved={handleSaved}

@@ -11,7 +11,7 @@ import {
 type ComposerMode = "chooser" | "gmail" | "gmail-attach" | "text" | null;
 
 type InteractionComposerPanelProps = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   roleTitle: string;
   attachToInteractionId: string | null;
@@ -21,7 +21,7 @@ type InteractionComposerPanelProps = {
 };
 
 export function InteractionComposerPanel({
-  opportunityId,
+  opportunitySlug,
   companyName,
   roleTitle,
   attachToInteractionId,
@@ -86,7 +86,7 @@ export function InteractionComposerPanel({
             </button>
           </div>
           <GmailInteractionPanel
-            opportunityId={opportunityId}
+            opportunitySlug={opportunitySlug}
             companyName={companyName}
             roleTitle={roleTitle}
             attachToInteractionId={attachToInteractionId}
@@ -113,7 +113,7 @@ export function InteractionComposerPanel({
             </button>
           </div>
           <InteractionTextParserPanel
-            opportunityId={opportunityId}
+            opportunitySlug={opportunitySlug}
             companyName={companyName}
             roleTitle={roleTitle}
             onSaved={(savedInteraction) => {

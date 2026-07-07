@@ -133,7 +133,7 @@ export const DrawerOpen: Story = {
             onSelectInteraction={() => void 0}
           />
           <InteractionComposerPanel
-            opportunityId={reevolOpportunity.slug}
+            opportunitySlug={reevolOpportunity.slug}
             companyName={reevolOpportunity.company.name}
             roleTitle={reevolOpportunity.roleTitle}
             attachToInteractionId={reevolSelectedInteraction.id}

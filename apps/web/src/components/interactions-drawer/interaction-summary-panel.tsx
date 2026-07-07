@@ -177,13 +177,13 @@ export function InteractionSummaryPanel({
         <ParticipantsCard
           personNames={personNames}
           personRecords={personRecords}
-          opportunityId={opportunitySlug}
+          opportunitySlug={opportunitySlug}
           opportunityCompanyName={opportunityCompanyName}
           columns={1}
         />
         <AttachedEmailsCard
           interactionId={interaction.slug}
-          opportunityId={opportunitySlug!}
+          opportunitySlug={opportunitySlug!}
           onEmailsAttached={onToggleEditing}
         />
       </div>
@@ -226,7 +226,7 @@ export function InteractionSummaryPanel({
       />
 
       {/* Gmail Email States */}
-      {opportunitySlug && <GmailEmailStatesSection opportunityId={opportunitySlug} />}
+      {opportunitySlug && <GmailEmailStatesSection opportunitySlug={opportunitySlug} />}
     </div>
   );
 }
