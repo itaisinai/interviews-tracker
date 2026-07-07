@@ -1,22 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-
-import { CompanyResearchPanel } from "../company-research-panel";
-import { InteractionsDrawer } from "../interactions-drawer";
-import { OpportunityInteractionTimeline } from "../interactions-timeline";
-import { Badge } from "../badge";
-import { CompanyFactsStrip } from "./company-facts-strip";
-import { CompanySummaryCard } from "./company-summary-card";
-import { buildSelectedOpportunityForInteraction } from "../../pages/interactions-page-selection";
-import { promoteOverdueInteractionsForRead, getOpportunityProcessBadgeMeta } from "../../lib/interaction-status";
-import type { CompanyDetail } from "../../lib/types";
-import type { CompanyResearchResult } from "../../lib/types";
 import {
   InlineLoadingState,
   LoadingButton,
   MaterialIcon,
 } from "@interviews-tracker/design-system";
+import {
+  getOpportunityProcessBadgeMeta,
+  promoteOverdueInteractionsForRead,
+} from "../../lib/interaction-status";
+import { useEffect, useMemo, useState } from "react";
+
+import { Badge } from "../badge";
+import type { CompanyDetail } from "../../lib/types";
+import { CompanyFactsStrip } from "./company-facts-strip";
+import { CompanyResearchPanel } from "../company-research-panel";
+import type { CompanyResearchResult } from "../../lib/types";
+import { CompanySummaryCard } from "./company-summary-card";
+import { InteractionsDrawer } from "../interactions-drawer";
+import { Link } from "react-router-dom";
+import { OpportunityInteractionTimeline } from "../interactions-timeline";
+import { buildSelectedOpportunityForInteraction } from "../../pages/interactions-page-selection";
+import { useQueryClient } from "@tanstack/react-query";
 
 type CompanyDetailViewProps = {
   company: CompanyDetail;
@@ -41,7 +44,9 @@ export function CompanyDetailView({
 }: CompanyDetailViewProps) {
   const queryClient = useQueryClient();
   const [showResearch, setShowResearch] = useState(false);
-  const [selectedInteractionId, setSelectedInteractionId] = useState<string | null>(null);
+  const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<
+    string | null
+  >(null);
 
   // Flatten all interactions from opportunities for status processing
   const allInteractions = useMemo(
@@ -67,7 +72,8 @@ export function CompanyDetailView({
       .map((opportunity) => ({
         ...opportunity,
         interactions: displayInteractions.filter(
-          (interaction) => interactionToOppMap.get(interaction.slug) === opportunity.slug,
+          (interaction) =>
+            interactionToOppMap.get(interaction.slug) === opportunity.slug,
         ),
       }))
       .sort((left, right) => {
@@ -79,7 +85,9 @@ export function CompanyDetailView({
   }, [company.opportunities, displayInteractions]);
 
   const selectedInteraction = useMemo(
-    () => displayInteractions.find((item) => item.slug === selectedInteractionId) ?? null,
+    () =>
+      displayInteractions.find((item) => item.slug === selectedInteractionId) ??
+      null,
     [displayInteractions, selectedInteractionId],
   );
   const selectedOpportunity = useMemo(
@@ -97,7 +105,7 @@ export function CompanyDetailView({
   useEffect(() => {
     if (
       selectedInteractionId &&
-      !displayInteractions.some((item) => item.id === selectedInteractionId)
+      !displayInteractions.some((item) => item.slug === selectedInteractionId)
     ) {
       setSelectedInteractionId(null);
     }
@@ -111,12 +119,21 @@ export function CompanyDetailView({
       ),
     ),
   ];
-  const summaryDomain = domains.find((domain) => !domain.includes(".")) ?? domains[0] ?? "-";
+  const summaryDomain =
+    domains.find((domain) => !domain.includes(".")) ?? domains[0] ?? "-";
   const summaryFacts = [
     { label: "Industry", value: summaryDomain, icon: "work" },
     { label: "Location", value: company.location ?? "-", icon: "location_on" },
-    { label: "Size", value: company.employeesRange?.label ?? "-", icon: "groups" },
-    { label: "Stage", value: company.companyStage?.label ?? "-", icon: "route" },
+    {
+      label: "Size",
+      value: company.employeesRange?.label ?? "-",
+      icon: "groups",
+    },
+    {
+      label: "Stage",
+      value: company.companyStage?.label ?? "-",
+      icon: "route",
+    },
     { label: "Funding", value: company.funding ?? "-", icon: "payments" },
     { label: "Domain", value: domains.join(", ") || "-", icon: "public" },
   ] as const;
@@ -152,7 +169,8 @@ export function CompanyDetailView({
           </div>
           <p className="mt-1 text-body-md text-on-surface-variant">
             {company.opportunities.length} role
-            {company.opportunities.length === 1 ? "" : "s"} · {allInteractions.length} interaction
+            {company.opportunities.length === 1 ? "" : "s"} ·{" "}
+            {allInteractions.length} interaction
             {allInteractions.length === 1 ? "" : "s"}
           </p>
         </div>
@@ -203,9 +221,13 @@ export function CompanyDetailView({
             knownContext={researchContext}
             existingCompanyData={researchExistingData}
             onSaved={(research) => {
-              void queryClient.invalidateQueries({ queryKey: ["company", company.name] });
+              void queryClient.invalidateQueries({
+                queryKey: ["company", company.name],
+              });
               void queryClient.invalidateQueries({ queryKey: ["companies"] });
-              void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+              void queryClient.invalidateQueries({
+                queryKey: ["opportunities"],
+              });
               setShowResearch(false);
               onResearchSaved?.(research);
             }}
@@ -235,7 +257,7 @@ export function CompanyDetailView({
           <div className="space-y-4">
             {opportunitiesWithInteractions.map((item) => (
               <OpportunityInteractionTimeline
-                key={item.id}
+                key={item.slug}
                 companyName={company.name}
                 roleTitle={item.roleTitle}
                 interactions={item.interactions}
@@ -244,8 +266,10 @@ export function CompanyDetailView({
                 onSelectInteraction={setSelectedInteractionId}
                 onDeleteInteraction={onDeleteInteraction}
                 isDeletingInteraction={isDeletingInteraction}
-                opportunityHref={`/opportunities/${item.slug || item.id}`}
-                defaultCollapsed={item.id !== opportunitiesWithInteractions[0]?.id}
+                opportunityHref={`/opportunities/${item.slug}`}
+                defaultCollapsed={
+                  item.slug !== opportunitiesWithInteractions[0]?.slug
+                }
                 referenceDate={referenceDate}
               />
             ))}
@@ -257,9 +281,16 @@ export function CompanyDetailView({
             title="Company Profile"
             defaultRows={3}
             rows={[
-              { label: "English Search Name", value: company.searchName ?? "-" },
+              {
+                label: "English Search Name",
+                value: company.searchName ?? "-",
+              },
               { label: "Work Model", value: primary?.workModel?.label ?? "-" },
-              { label: "LinkedIn", value: company.linkedinUrl ?? "-", href: company.linkedinUrl },
+              {
+                label: "LinkedIn",
+                value: company.linkedinUrl ?? "-",
+                href: company.linkedinUrl,
+              },
               { label: "Company", value: company.description ?? "-" },
             ]}
             moreRows={[
@@ -268,7 +299,10 @@ export function CompanyDetailView({
               { label: "Size", value: company.employeesRange?.label ?? "-" },
               { label: "Stage", value: company.companyStage?.label ?? "-" },
               { label: "Funding / Rounds", value: company.funding ?? "-" },
-              { label: "Customers / Traction", value: company.customersTraction ?? "-" },
+              {
+                label: "Customers / Traction",
+                value: company.customersTraction ?? "-",
+              },
             ]}
           />
 
@@ -277,10 +311,16 @@ export function CompanyDetailView({
             defaultRows={2}
             rows={[
               { label: "Tech Stack", value: company.techStack ?? "-" },
-              { label: "Backend / Frontend Split", value: company.backendFrontendSplit ?? "-" },
+              {
+                label: "Backend / Frontend Split",
+                value: company.backendFrontendSplit ?? "-",
+              },
             ]}
             moreRows={[
-              { label: "Compensation Notes", value: primary?.compensationNotes ?? "-" },
+              {
+                label: "Compensation Notes",
+                value: primary?.compensationNotes ?? "-",
+              },
               { label: "Research Notes", value: primary?.notes ?? "-" },
             ]}
           />
