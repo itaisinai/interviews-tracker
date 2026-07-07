@@ -75,9 +75,12 @@ export function serializeCompensation<T extends Record<string, any>>(compensatio
 export function serializeCompany<T extends Record<string, any>>(company: T): any {
   const { id, employeesRangeId, companyStageId, ...rest } = company;
 
-  // Clean nested opportunities
+  // Clean nested opportunities (remove interactions to avoid duplication)
   if ('opportunities' in company && Array.isArray((company as any).opportunities)) {
-    (rest as any).opportunities = (company as any).opportunities.map((o: any) => serializeOpportunity(o));
+    (rest as any).opportunities = (company as any).opportunities.map((o: any) => {
+      const { interactions: _, ...oppWithoutInteractions } = o;
+      return serializeOpportunity(oppWithoutInteractions);
+    });
   }
 
   // Clean nested contacts
