@@ -60,12 +60,12 @@ export function InteractionsPage() {
     [displayInteractions],
   );
   const gmailOpportunity = useMemo(
-    () => opportunities.find((item) => item.id === gmailOpportunityId) ?? null,
+    () => opportunities.find((item) => item.slug === gmailOpportunityId) ?? null,
     [gmailOpportunityId, opportunities],
   );
   const selectedInteraction = useMemo(
     () =>
-      displayInteractions.find((item) => item.id === selectedInteractionId) ??
+      displayInteractions.find((item) => item.slug === selectedInteractionId) ??
       null,
     [displayInteractions, selectedInteractionId],
   );
@@ -109,7 +109,7 @@ export function InteractionsPage() {
   }
 
   function openGmailImport() {
-    setGmailOpportunityId(gmailOpportunityId || opportunities[0]?.id || "");
+    setGmailOpportunityId(gmailOpportunityId || opportunities[0]?.slug || "");
     setShowGmailImport(true);
   }
 
