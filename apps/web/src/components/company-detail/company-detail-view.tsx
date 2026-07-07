@@ -79,7 +79,7 @@ export function CompanyDetailView({
   }, [company.opportunities, displayInteractions]);
 
   const selectedInteraction = useMemo(
-    () => displayInteractions.find((item) => item.id === selectedInteractionId) ?? null,
+    () => displayInteractions.find((item) => item.slug === selectedInteractionId) ?? null,
     [displayInteractions, selectedInteractionId],
   );
   const selectedOpportunity = useMemo(
