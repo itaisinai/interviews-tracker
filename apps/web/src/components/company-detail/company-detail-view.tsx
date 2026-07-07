@@ -239,6 +239,7 @@ export function CompanyDetailView({
                 companyName={company.name}
                 roleTitle={item.roleTitle}
                 interactions={item.interactions}
+                opportunity={item}
                 selectedInteractionId={selectedInteractionId}
                 onSelectInteraction={setSelectedInteractionId}
                 onDeleteInteraction={onDeleteInteraction}

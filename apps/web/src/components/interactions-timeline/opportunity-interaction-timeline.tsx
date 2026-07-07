@@ -11,6 +11,7 @@ type OpportunityInteractionTimelineProps = {
   companyName: string;
   roleTitle: string;
   interactions: Interaction[];
+  opportunity?: Pick<any, "slug" | "roleTitle" | "status" | "priority" | "pipelineType"> | null;
   selectedInteractionId: string | null;
   onSelectInteraction: (interactionId: string) => void;
   onDeleteInteraction?: (interactionId: string) => void;
@@ -24,6 +25,7 @@ export function OpportunityInteractionTimeline({
   companyName,
   roleTitle,
   interactions,
+  opportunity,
   selectedInteractionId,
   onSelectInteraction,
   onDeleteInteraction,
@@ -48,10 +50,10 @@ export function OpportunityInteractionTimeline({
   const opportunityBadge = useMemo(
     () =>
       getOpportunityProcessBadgeMeta(
-        orderedInteractions[0]?.jobOpportunity ?? null,
+        opportunity ?? orderedInteractions[0]?.jobOpportunity ?? null,
         orderedInteractions,
       ),
-    [orderedInteractions],
+    [opportunity, orderedInteractions],
   );
   const latestInteraction = orderedInteractions.at(-1) ?? null;
   const nextStepText =
