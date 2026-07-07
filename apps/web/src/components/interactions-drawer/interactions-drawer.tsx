@@ -46,8 +46,14 @@ export function InteractionsDrawer({
   const closeTimerRef = useRef<number | null>(null);
   const openFrameRef = useRef<number | null>(null);
 
+  // Derive opportunity from selectedOpportunity or mountedInteraction
+  const opportunity =
+    selectedOpportunity ??
+    mountedInteraction?.jobOpportunity ??
+    null;
+
   // Use opportunity slug (prefer nested object's slug, fallback to FK for backward compatibility)
-  const opportunityId = mountedInteraction?.jobOpportunity?.slug ?? mountedInteraction?.jobOpportunityId ?? "";
+  const opportunityId = opportunity?.slug ?? mountedInteraction?.jobOpportunityId ?? "";
 
   useEffect(() => {
     if (closeTimerRef.current) {
@@ -93,11 +99,6 @@ export function InteractionsDrawer({
     setIsEditing(false);
     setDraft(mountedInteraction ? interactionToDraft(mountedInteraction) : null);
   }, [mountedInteraction?.slug]);
-
-  const opportunity =
-    selectedOpportunity ??
-    mountedInteraction?.jobOpportunity ??
-    null;
 
   const timeline = useMemo(
     () =>
