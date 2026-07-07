@@ -116,6 +116,7 @@ export const api = {
   listInteractionFeedback: (interactionSlug: string) => request<Array<{ id: string; interactionId: string; content: string; source: string | null; extractedData: unknown; attachedAt: string }>>(`/interactions/${interactionSlug}/feedback`),
   addFeedbackToInteraction: (interactionSlug: string, content: string, source?: string) => request<unknown>(`/interactions/${interactionSlug}/feedback`, { method: "POST", body: JSON.stringify({ content, source }) }),
   markPersonAsWrong: (personSlug: string, opportunitySlug: string, searchContext: string, notes?: string) => request<{ success: boolean; wrongCandidateId: string }>(`/people/${personSlug}/mark-wrong`, { method: "POST", body: JSON.stringify({ opportunitySlug, searchContext, notes }) }),
+  markResearchAsWrongCandidate: (body: { opportunitySlug: string; linkedinUrl: string; personName: string; company?: string; title?: string; avatarUrl?: string; searchContext?: string; notes?: string }) => request<{ success: boolean; wrongCandidateId: string }>("/people/mark-wrong-candidate", { method: "POST", body: JSON.stringify(body) }),
   getWrongPersonCandidates: (opportunitySlug: string) => request<Array<{ id: string; opportunitySlug: string; searchContext: string; personName: string; linkedinUrl: string | null; company: string | null; title: string | null; avatarUrl: string | null; rejectedAt: string; notes: string | null }>>(`/people/wrong-candidates/${opportunitySlug}`),
   telegramQuery: (text: string) => request<{
     success: boolean;

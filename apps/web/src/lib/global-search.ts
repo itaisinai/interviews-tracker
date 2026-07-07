@@ -52,32 +52,32 @@ export function buildGlobalSearchResults({
 
   return {
     companies: companies
-      .filter((company) => includesQuery([company.companyName, company.location, company.funding, company.stage, ...company.domains], normalized))
+      .filter((company) => includesQuery([company.name, company.location, company.funding, company.stage, ...company.domains], normalized))
       .map((company) => ({
-        id: company.companyName,
+        id: company.name,
         type: "companies",
-        title: company.companyName,
+        title: company.name,
         subtitle: [company.domains[0] ?? company.stage ?? "Company", company.location].filter(Boolean).join(" · "),
-        href: `/companies/${encodeURIComponent(company.companyName)}`,
+        href: `/companies/${company.slug}`,
         icon: "business",
       })),
     opportunities: opportunities
-      .filter((opportunity) => includesQuery([opportunity.roleTitle, opportunity.companyName, opportunity.companySearchName, opportunity.status, opportunity.location, opportunity.notes], normalized))
+      .filter((opportunity) => includesQuery([opportunity.roleTitle, opportunity.name, opportunity.companySearchName, opportunity.status, opportunity.location, opportunity.notes], normalized))
       .map((opportunity) => ({
         id: opportunity.id,
         type: "opportunities",
         title: opportunity.roleTitle,
-        subtitle: `${opportunity.companyName} · ${opportunity.status.replaceAll("_", " ").toLowerCase()}`,
+        subtitle: `${opportunity.name} · ${opportunity.status.replaceAll("_", " ").toLowerCase()}`,
         href: `/opportunities/${opportunity.slug || opportunity.id}`,
         icon: "work",
       })),
     interactions: interactions
-      .filter((interaction) => includesQuery([interaction.type, interaction.stage, interaction.status, interaction.personName, interaction.personRole, interaction.agenda, interaction.notes, interaction.outcome, interaction.followUp, interaction.jobOpportunity?.companyName, interaction.jobOpportunity?.roleTitle], normalized))
+      .filter((interaction) => includesQuery([interaction.type, interaction.stage, interaction.status, interaction.personName, interaction.personRole, interaction.agenda, interaction.notes, interaction.outcome, interaction.followUp, interaction.jobOpportunity?.name, interaction.jobOpportunity?.roleTitle], normalized))
       .map((interaction) => ({
         id: interaction.id,
         type: "interactions",
         title: interaction.type.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()),
-        subtitle: `${interaction.jobOpportunity?.companyName ?? "Interaction"} · ${formatDate(interaction.date)}`,
+        subtitle: `${interaction.jobOpportunity?.name ?? "Interaction"} · ${formatDate(interaction.date)}`,
         href: interaction.jobOpportunity ? `/opportunities/${interaction.jobOpportunity.slug || interaction.jobOpportunity.id}` : "/interactions",
         icon: interaction.type.toLowerCase().includes("phone") ? "call" : "event_note",
       })),

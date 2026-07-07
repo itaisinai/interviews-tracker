@@ -27,7 +27,7 @@ export function toInteractionPublicDTO<T extends Interaction>(interaction: T) {
 export function toPersonPublicDTO<T extends Person & { research?: PersonResearch | null }>(
   person: T
 ) {
-  const { id, jobOpportunityId, research, ...rest } = person;
+  const { id, companyId, research, ...rest } = person;
 
   // Also strip ID from nested research
   const publicResearch = research ? toPersonResearchPublicDTO(research) : null;

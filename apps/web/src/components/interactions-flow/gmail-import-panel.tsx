@@ -92,7 +92,7 @@ function OpportunitySelect({
         <option value="">Select company / role</option>
         {opportunities.map((item) => (
           <option key={item.id} value={item.id}>
-            {item.companyName} · {item.roleTitle}
+            {item.company.name} · {item.roleTitle}
           </option>
         ))}
       </select>
@@ -119,7 +119,7 @@ function ImportBody({
     <div className="mt-6">
       <GmailInteractionPanel
         opportunityId={selectedOpportunity.slug ?? selectedOpportunity.id}
-        companyName={selectedOpportunity.companyName}
+        companyName={selectedOpportunity.company.name}
         roleTitle={selectedOpportunity.roleTitle}
         onSaved={onSaved}
       />

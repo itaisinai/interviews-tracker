@@ -196,7 +196,6 @@ export class LinkedinJobImportService {
 
     const opportunity = await this.createOpportunityRecord({
       companyName: normalized.company.name,
-      companySearchName: normalized.company.name,
       roleTitle: normalized.opportunity.title,
       pipelineType: "POTENTIAL",
       status: "RESEARCH_LEAD",
@@ -204,12 +203,7 @@ export class LinkedinJobImportService {
       source: "linkedin",
       jobUrl: input.sourceUrl,
       sourceUrl: input.sourceUrl,
-      linkedinUrl: normalized.company.linkedinUrl ?? undefined,
       linkedinJobId: input.linkedinJobId ?? undefined,
-      location: normalized.opportunity.location ?? input.location ?? undefined,
-      companyDescription: normalized.company.description ?? undefined,
-      productDescription: normalized.company.industry ? `Industry: ${normalized.company.industry}` : undefined,
-      techStack: normalized.opportunity.technologies.join(", ") || undefined,
       notes: notes || undefined,
       nextStep: "Review imported LinkedIn job details",
       domainIds: []

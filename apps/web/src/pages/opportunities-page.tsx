@@ -153,7 +153,7 @@ export function OpportunitiesPage() {
         cell: ({ row }) => {
           return (
             <span className="block truncate font-medium text-on-background">
-              {row.original.companyName}
+              {row.original.company.name}
             </span>
           );
         },
@@ -266,7 +266,7 @@ export function OpportunitiesPage() {
               href={row.original.jobUrl}
               target="_blank"
               rel="noreferrer"
-              title={`Open job link for ${row.original.companyName}`}
+              title={`Open job link for ${row.original.company.name}`}
             >
               <MaterialIcon name="open_in_new" className="text-[15px]" />
               Job link
@@ -281,7 +281,7 @@ export function OpportunitiesPage() {
         cell: ({ row }) => (
           <LoadingButton
             compact
-            aria-label={`Delete ${row.original.companyName} / ${row.original.roleTitle}`}
+            aria-label={`Delete ${row.original.company.name} / ${row.original.roleTitle}`}
             className="text-error"
             icon="delete"
             loading={
@@ -291,7 +291,7 @@ export function OpportunitiesPage() {
             onClick={() => {
               if (
                 window.confirm(
-                  `Delete ${row.original.companyName} / ${row.original.roleTitle}?`,
+                  `Delete ${row.original.company.name} / ${row.original.roleTitle}?`,
                 )
               )
                 deleteOpportunity.mutate(row.original.id);
@@ -411,7 +411,7 @@ export function OpportunitiesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate font-title-md text-title-md font-bold text-on-background">
-                      {item.companyName}
+                      {item.company.name}
                     </h3>
                     <p className="truncate font-body-md text-body-md text-on-surface-variant">
                       {item.roleTitle}
@@ -575,7 +575,7 @@ export function OpportunitiesPage() {
               getRowProps={(row) => ({
                 role: "link",
                 tabIndex: 0,
-                title: `Open ${row.companyName} / ${row.roleTitle}`,
+                title: `Open ${row.company.name} / ${row.roleTitle}`,
                 className: `cursor-pointer transition-colors hover:bg-surface-container-low ${row.pipelineType === "ACTIVE_PROCESS" ? "bg-primary/[0.02] hover:bg-primary/5" : ""}`,
                 onClick: (event) => {
                   const target = event.target as HTMLElement;

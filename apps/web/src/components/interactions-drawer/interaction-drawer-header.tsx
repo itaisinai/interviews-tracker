@@ -23,8 +23,8 @@ export function InteractionDrawerHeader({
           Interaction details
         </p>
         <h3 className="truncate font-title-md text-title-md font-bold">
-          {opportunity?.companyName ??
-            interaction.jobOpportunity?.companyName ??
+          {opportunity?.company.name ??
+            interaction.jobOpportunity?.company.name ??
             "Interaction"}
         </h3>
         <p className="truncate text-body-md text-on-surface-variant">
@@ -34,11 +34,11 @@ export function InteractionDrawerHeader({
         </p>
       </div>
       <div className="flex items-start gap-2">
-        {opportunity?.companyName ? (
+        {opportunity?.company.name ? (
           <Link
             className="btn btn-secondary"
-            to={`/companies/${encodeURIComponent(opportunity.companyName)}`}
-            title={`Open ${opportunity.companyName} company page`}
+            to={`/companies/${opportunity.company.slug}`}
+            title={`Open ${opportunity.company.name} company page`}
           >
             <Building2 className="h-4 w-4" />
             Company

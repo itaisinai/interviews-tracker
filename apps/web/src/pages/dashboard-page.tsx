@@ -144,7 +144,7 @@ export function DashboardPage() {
                 <Link key={item.id} to={`/opportunities/${item.slug || item.id}`} className={`block rounded-xl border bg-white p-4 shadow-sm ${item.pipelineType === "ACTIVE_PROCESS" ? "border-primary" : "border-outline-variant"}`}>
                   <div className="mb-2 flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="break-words font-title-md text-title-md font-bold text-on-background">{item.companyName}</h3>
+                      <h3 className="break-words font-title-md text-title-md font-bold text-on-background">{item.company.name}</h3>
                       <p className="break-words font-body-md text-body-md text-on-surface-variant">{item.roleTitle}</p>
                     </div>
                     <Badge value={badgeValue} />
@@ -178,7 +178,7 @@ export function DashboardPage() {
                   key={item.id}
                   type="button"
                   className={`flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary ${index > 0 ? "border-t border-outline-variant/40" : ""}`}
-                  aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
+                  aria-label={`Open interaction for ${item.jobOpportunity?.company.name ?? item.type}`}
                   onClick={() => setSelectedInteractionId(item.id)}
                 >
                   <div className="w-10 shrink-0 text-center">
@@ -186,7 +186,7 @@ export function DashboardPage() {
                     <div className="font-headline-md text-headline-md font-semibold text-on-background">{parts.day}</div>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-body-lg text-body-lg font-semibold text-on-background">{item.jobOpportunity?.companyName ?? item.type}</h3>
+                    <h3 className="truncate font-body-lg text-body-lg font-semibold text-on-background">{item.jobOpportunity?.company.name ?? item.type}</h3>
                     <p className="truncate font-body-md text-body-md text-on-surface-variant">{item.agenda ?? item.followUp ?? item.type}</p>
                   </div>
                   <MaterialIcon name={item.type.toLowerCase().includes("email") ? "mail" : "video_call"} className="text-on-surface-variant" />
@@ -237,7 +237,7 @@ export function DashboardPage() {
                   key={item.id}
                   type="button"
                   className="w-full rounded-xl border border-outline-variant bg-white p-5 text-left shadow-sm transition-all hover:border-primary/40 hover:bg-surface-container-low hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  aria-label={`Open interaction for ${item.jobOpportunity?.companyName ?? item.type}`}
+                  aria-label={`Open interaction for ${item.jobOpportunity?.company.name ?? item.type}`}
                   onClick={() => setSelectedInteractionId(item.id)}
                 >
                   <div className="mb-2 flex items-center gap-2">
@@ -246,7 +246,7 @@ export function DashboardPage() {
                     <MaterialIcon name="call" filled className="text-primary" />
                     <span className="font-semibold">{item.type}</span>
                   </div>
-                  <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.companyName}</h4>
+                  <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.company.name}</h4>
                   <p className="mt-1 text-body-md text-on-surface-variant">{item.agenda}</p>
                   {item.followUp ? <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic text-on-background">{item.followUp}</p> : null}
                 </button>
@@ -268,7 +268,7 @@ export function DashboardPage() {
                 {data.activeProcesses.map((item) => (
                   <Link key={item.id} to={`/opportunities/${item.slug || item.id}`} className="flex items-center justify-between rounded-lg bg-surface-container-low p-4 transition-colors hover:bg-surface-container">
                     <div>
-                      <p className="font-semibold">{item.companyName}</p>
+                      <p className="font-semibold">{item.company.name}</p>
                       <p className="text-body-md text-on-surface-variant">{item.roleTitle}</p>
                     </div>
                     <Badge value={item.status} />
@@ -282,7 +282,7 @@ export function DashboardPage() {
               <div className="space-y-3">
                 {data.highPriorityPotential.map((item) => (
                   <Link key={item.id} to={`/opportunities/${item.slug || item.id}`} className="flex items-center justify-between rounded-lg border border-outline-variant bg-white p-4 hover:bg-surface-container-low">
-                    <span className="font-medium">{item.companyName}</span>
+                    <span className="font-medium">{item.company.name}</span>
                     <Badge value={item.priority} />
                   </Link>
                 ))}

@@ -133,7 +133,7 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
 
       // Save research
       if (saveForLater) {
-        await api.savePersonResearch(personRecord.id, researchResult.research);
+        await api.savePersonResearch(personRecord.slug, researchResult.research);
       }
 
       return personRecord;
@@ -177,6 +177,29 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
     save.mutate();
   };
 
+  const handleMarkWrong = async () => {
+    if (!researchResult || !opportunityId) return;
+
+    if (confirm(`Mark ${researchResult.person.name} as wrong candidate? This will exclude them from future searches for this opportunity.`)) {
+      try {
+        await api.markResearchAsWrongCandidate({
+          opportunitySlug: opportunityId,
+          linkedinUrl: researchResult.person.linkedinUrl || "",
+          personName: researchResult.person.name,
+          company: researchResult.person.company,
+          title: researchResult.person.title,
+          avatarUrl: researchResult.person.avatarUrl,
+          searchContext: person.name
+        });
+        console.log('[MARK WRONG] Successfully marked candidate as wrong');
+        resetFlow();
+      } catch (error) {
+        console.error('[MARK WRONG] Failed:', error);
+        alert('Failed to mark as wrong candidate. Please try again.');
+      }
+    }
+  };
+
   return (
     <>
       <ConfirmResearchModal
@@ -196,6 +219,7 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
           saveForLater={saveForLater}
           onDiscard={handleDiscard}
           onSave={handleSave}
+          onMarkWrong={opportunityId ? handleMarkWrong : undefined}
           isSaving={save.isPending}
         />
       ) : null}

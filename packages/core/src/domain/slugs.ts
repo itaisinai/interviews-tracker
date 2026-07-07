@@ -1,3 +1,17 @@
+export const EMPTY_COMPANY_SLUG = "company";
+
+export function createCompanySlug(companyName: string) {
+  const normalized = companyName
+    .normalize("NFKC")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || EMPTY_COMPANY_SLUG;
+}
+
 export const EMPTY_OPPORTUNITY_SLUG = "opportunity";
 
 export function createOpportunitySlug(companyName: string, roleTitle: string) {

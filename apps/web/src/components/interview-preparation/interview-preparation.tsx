@@ -40,13 +40,13 @@ export function InterviewPreparation({
                   <div className="mb-1 text-xs font-medium uppercase text-neutral-500">
                     Stage
                   </div>
-                  <div>{opportunity.companyStage?.label || "Not specified"}</div>
+                  <div>{opportunity.company.companyStage?.label || "Not specified"}</div>
                 </div>
                 <div>
                   <div className="mb-1 text-xs font-medium uppercase text-neutral-500">
                     Company Size
                   </div>
-                  <div>{opportunity.employeesRange?.label || "Not specified"}</div>
+                  <div>{opportunity.company.employeesRange?.label || "Not specified"}</div>
                 </div>
               </div>
             ) : (
@@ -75,27 +75,27 @@ export function InterviewPreparation({
                   </div>
                   <div className="font-medium">{opportunity.roleTitle}</div>
                 </div>
-                {opportunity.techStack && (
+                {opportunity.company.techStack && (
                   <div>
                     <div className="mb-1 text-xs font-medium uppercase text-neutral-500">
                       Tech Stack
                     </div>
-                    <div>{opportunity.techStack}</div>
+                    <div>{opportunity.company.techStack}</div>
                   </div>
                 )}
-                {opportunity.backendFrontendSplit && (
+                {opportunity.company.backendFrontendSplit && (
                   <div>
                     <div className="mb-1 text-xs font-medium uppercase text-neutral-500">
                       Focus Area
                     </div>
-                    <div>{opportunity.backendFrontendSplit}</div>
+                    <div>{opportunity.company.backendFrontendSplit}</div>
                   </div>
                 )}
               </div>
             ) : (
               <p className="line-clamp-2">
                 {opportunity.roleTitle} •{" "}
-                {opportunity.techStack || "Tech stack not specified"}
+                {opportunity.company.techStack || "Tech stack not specified"}
               </p>
             )
           }

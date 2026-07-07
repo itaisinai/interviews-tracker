@@ -89,7 +89,7 @@ export function OpportunityFormPage() {
         throw new Error("Nothing parsed");
       }
 
-      const companyName = parseResult.companyName?.trim();
+      const companyName = parseResult.company.name?.trim();
       const roleTitle = parseResult.roleTitle?.trim();
 
       if (!companyName || !roleTitle) {
@@ -144,7 +144,7 @@ export function OpportunityFormPage() {
     }
 
     return [
-      parseResult.companyName ?? "Unknown company",
+      parseResult.company.name ?? "Unknown company",
       parseResult.roleTitle ?? "Unknown role",
       parseResult.status ?? "RESEARCH_LEAD",
       parseResult.prioritySuggestion ?? "MEDIUM"
@@ -216,7 +216,7 @@ export function OpportunityFormPage() {
     return <PageErrorState title="Add Opportunity" description={error instanceof Error ? error.message : "Unable to load opportunity options."} onRetry={() => void refetch()} />;
   }
 
-  const canSave = Boolean(parseResult?.companyName?.trim() && parseResult?.roleTitle?.trim() && !create.isPending);
+  const canSave = Boolean(parseResult?.company.name?.trim() && parseResult?.roleTitle?.trim() && !create.isPending);
   const pipelineType = (parseResult?.pipelineType ?? "POTENTIAL") as PipelineType;
   const priority = (parseResult?.prioritySuggestion ?? "MEDIUM") as Priority;
 
@@ -285,7 +285,7 @@ export function OpportunityFormPage() {
                 </div>
               ) : null}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <ValueRow label="Company" value={parseResult.companyName ?? "-"} />
+                <ValueRow label="Company" value={parseResult.company.name ?? "-"} />
                 <ValueRow label="Role" value={parseResult.roleTitle ?? "-"} />
                 <ValueRow label="Status" value={labelForJobStatus(normalizeJobStatus(parseResult.status))} />
                 <ValueRow label="Priority" value={labelForPriority(priority)} />

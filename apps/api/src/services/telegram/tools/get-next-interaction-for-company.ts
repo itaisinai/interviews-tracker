@@ -14,9 +14,11 @@ export async function getNextInteractionForCompany(
     where: {
       jobOpportunity: {
         ownerEmail,
-        companyName: {
-          contains: companyName,
-          mode: "insensitive"
+        company: {
+          name: {
+            contains: companyName,
+            mode: "insensitive"
+          }
         }
       },
       status: "SCHEDULED",
@@ -29,8 +31,12 @@ export async function getNextInteractionForCompany(
         select: {
           id: true,
           slug: true,
-          companyName: true,
-          roleTitle: true
+          roleTitle: true,
+          company: {
+            select: {
+              name: true
+            }
+          }
         }
       }
     },
@@ -55,7 +61,7 @@ export async function getNextInteractionForCompany(
     agenda: interaction.agenda,
     notes: interaction.notes,
     meetingLink: interaction.meetingLink,
-    companyName: interaction.jobOpportunity.companyName,
+    companyName: interaction.jobOpportunity.company.name,
     roleTitle: interaction.jobOpportunity.roleTitle,
     opportunityId: interaction.jobOpportunity.id,
     opportunitySlug: interaction.jobOpportunity.slug

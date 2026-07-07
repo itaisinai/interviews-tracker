@@ -14,21 +14,20 @@ export function CompaniesPage() {
   const queryClient = useQueryClient();
   const { data = [], isLoading, isError, error, refetch, isFetching } = useQuery({ queryKey: ["companies"], queryFn: api.companies });
   const deleteCompany = useMutation({ mutationFn: (companyName: string) => api.deleteCompany(companyName), onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ["companies"] }); void queryClient.invalidateQueries({ queryKey: ["opportunities"] }); } });
-  const rows = data.filter((item) => item.companyName.toLowerCase().includes(search.toLowerCase()));
+  const rows = data.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()));
   const columns = [
     {
       header: "Company",
       cell: ({ row }) => (
-        <Link className="flex items-center gap-3 font-semibold text-on-background" to={`/companies/${encodeURIComponent(row.original.companyName)}`}>
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-on-primary-container font-geist font-bold text-white">{initials(row.original.companyName)}</span>
-          {row.original.companyName}
+        <Link className="flex items-center gap-3 font-semibold text-on-background" to={`/companies/${row.original.slug}`}>
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-on-primary-container font-geist font-bold text-white">{initials(row.original.name)}</span>
+          {row.original.name}
         </Link>
       )
     },
     { header: "Domains", cell: ({ row }) => <span className="text-on-surface-variant">{row.original.domains.join(", ") || "-"}</span> },
     { header: "Stage", cell: ({ row }) => <span className="text-on-surface-variant">{row.original.stage ?? "-"}</span> },
     { header: "Size", cell: ({ row }) => <span className="text-on-surface-variant">{row.original.employees ?? "-"}</span> },
-    { header: "Work Model", cell: ({ row }) => <span className="text-on-surface-variant">{row.original.workModel ?? "-"}</span> },
     { header: "Roles", cell: ({ row }) => <span className="font-geist">{row.original.rolesCount}</span> },
     { header: "Interactions", cell: ({ row }) => <span className="font-geist">{row.original.interactionsCount}</span> },
     { header: "Next Interaction", cell: ({ row }) => <span className="text-on-surface-variant">{row.original.nextInteraction ? `${formatDate(row.original.nextInteraction.date)} ${row.original.nextInteraction.type}` : "-"}</span> },
@@ -38,11 +37,11 @@ export function CompaniesPage() {
       cell: ({ row }) => (
         <LoadingButton
           compact
-          aria-label={`Delete ${row.original.companyName}`}
+          aria-label={`Delete ${row.original.name}`}
           className="text-error"
           icon="delete"
-          loading={deleteCompany.isPending && deleteCompany.variables === row.original.companyName}
-          onClick={() => { if (window.confirm(`Delete ${row.original.companyName} and all its opportunities/interactions?`)) deleteCompany.mutate(row.original.companyName); }}
+          loading={deleteCompany.isPending && deleteCompany.variables === row.original.name}
+          onClick={() => { if (window.confirm(`Delete ${row.original.name} and all its opportunities/interactions?`)) deleteCompany.mutate(row.original.name); }}
         />
       )
     }
@@ -74,16 +73,16 @@ export function CompaniesPage() {
         )}
         {rows.map((company) => (
           <Link
-            key={company.companyName}
-            to={`/companies/${encodeURIComponent(company.companyName)}`}
+            key={company.name}
+            to={`/companies/${company.slug}`}
             className="panel block p-4 transition-shadow hover:shadow-md"
           >
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-on-primary-container font-geist font-bold text-white">
-                {initials(company.companyName)}
+                {initials(company.name)}
               </span>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-on-background truncate">{company.companyName}</h3>
+                <h3 className="font-semibold text-on-background truncate">{company.name}</h3>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-on-surface-variant">
                   <span>{company.rolesCount} {company.rolesCount === 1 ? 'role' : 'roles'}</span>
                   <span>•</span>

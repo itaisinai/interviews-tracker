@@ -9,7 +9,7 @@ import type { JobOpportunity, Interaction, Person, PersonResearch, Compensation 
  * Remove internal IDs from opportunity response
  */
 export function serializeOpportunity<T extends Record<string, any>>(opportunity: T): any {
-  const { id, ...rest } = opportunity;
+  const { id, companyId, workModelId, ...rest } = opportunity;
 
   // Recursively clean nested relations
   if ('interactions' in opportunity && Array.isArray((opportunity as any).interactions)) {
@@ -18,6 +18,10 @@ export function serializeOpportunity<T extends Record<string, any>>(opportunity:
 
   if ('compensation' in opportunity && (opportunity as any).compensation) {
     (rest as any).compensation = serializeCompensation((opportunity as any).compensation);
+  }
+
+  if ('company' in opportunity && (opportunity as any).company) {
+    (rest as any).company = serializeCompany((opportunity as any).company);
   }
 
   return rest;
@@ -41,12 +45,17 @@ export function serializeInteraction<T extends Record<string, any>>(interaction:
  * Remove internal IDs from person response
  */
 export function serializePerson<T extends Record<string, any>>(person: T): any {
-  const { id, jobOpportunityId, ...rest } = person;
+  const { id, companyId, ...rest } = person;
 
   // Clean nested research
   if ('research' in person && (person as any).research) {
     const { id: researchId, personId, ...researchRest } = (person as any).research;
     (rest as any).research = researchRest;
+  }
+
+  // Clean nested company
+  if ('company' in person && (person as any).company) {
+    (rest as any).company = serializeCompany((person as any).company);
   }
 
   return rest;
@@ -61,23 +70,36 @@ export function serializeCompensation<T extends Record<string, any>>(compensatio
 }
 
 /**
+ * Remove internal IDs from company
+ */
+export function serializeCompany<T extends Record<string, any>>(company: T): any {
+  const { id, employeesRangeId, companyStageId, ...rest } = company;
+
+  // Clean nested opportunities
+  if ('opportunities' in company && Array.isArray((company as any).opportunities)) {
+    (rest as any).opportunities = (company as any).opportunities.map((o: any) => serializeOpportunity(o));
+  }
+
+  // Clean nested contacts
+  if ('contacts' in company && Array.isArray((company as any).contacts)) {
+    (rest as any).contacts = (company as any).contacts.map((p: any) => serializePerson(p));
+  }
+
+  return rest;
+}
+
+/**
  * Remove internal IDs from company summary
  */
 export function serializeCompanySummary<T extends Record<string, any>>(company: T): any {
-  // Company is virtual, no IDs to remove
-  // But clean nested opportunities if present
-  if ('opportunities' in company && Array.isArray((company as any).opportunities)) {
-    (company as any).opportunities = (company as any).opportunities.map((o: any) => serializeOpportunity(o));
-  }
-
-  return company;
+  return serializeCompany(company);
 }
 
 /**
  * Remove internal IDs from company detail
  */
 export function serializeCompanyDetail<T extends Record<string, any>>(company: T): T {
-  return serializeCompanySummary(company);
+  return serializeCompany(company);
 }
 
 /**

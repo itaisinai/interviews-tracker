@@ -4,11 +4,12 @@ import { asyncHandler } from "../lib/http.js";
 import { createTimer } from "../lib/logger.js";
 import { prisma } from "../lib/prisma.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
-import { companyResearchApplyInputSchema, companyResearchInputSchema } from "../lib/schemas.js";
+import { companyInputSchema, companyResearchApplyInputSchema, companyResearchInputSchema } from "../lib/schemas.js";
 import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";
 import { normalizeOverdueScheduledInteractionsForRead } from "../repositories/interaction-read-normalizer.js";
 import { syncOpportunityStatusRecord } from "../repositories/opportunity-repository.js";
-import { serializeCompanySummary, serializeCompanyDetail, serializeOpportunities } from "../lib/serializers.js";
+import { serializeCompanySummary, serializeCompanyDetail, serializeCompany } from "../lib/serializers.js";
+import { getCompanyService } from "../services/companies/company-service.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
@@ -18,211 +19,253 @@ function isPresent(value: string | null | undefined) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-const include = {
-  employeesRange: true,
-  companyStage: true,
-  workModel: true,
-  domains: { include: { domain: true } },
-  interactions: { orderBy: { date: "asc" as const } },
-  notesList: { orderBy: { createdAt: "desc" as const } },
-  tasks: { orderBy: { dueDate: "asc" as const } },
-  compensation: true
-};
-
+// List all companies (real Company entities, not aggregated from opportunities)
 companiesRouter.get("/", asyncHandler(async (request, response) => {
   const ownerEmail = (request as AuthenticatedRequest).auth.email;
-  const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
-  await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
-  const opportunities = await prisma.jobOpportunity.findMany({ where: { ownerEmail }, include, orderBy: { updatedAt: "desc" } });
-  const companies = new Map<string, typeof opportunities>();
+  const query = request.query as Record<string, string | undefined>;
 
-  for (const opportunity of opportunities) {
-    companies.set(opportunity.companyName, [...(companies.get(opportunity.companyName) ?? []), opportunity]);
-  }
+  const companies = await getCompanyService().list(query, ownerEmail);
 
-  const companySummaries = [...companies.entries()].map(([companyName, items]) => {
-    const primary = items[0];
-    const interactions = items.flatMap((item) => item.interactions);
-    const domains = [...new Set(items.flatMap((item) => item.domains.map((domain: { domain: { label: string } }) => domain.domain.label)))];
+  const companySummaries = companies.map((company) => {
+    const interactions = company.opportunities.flatMap((opp) => opp.interactions);
+    const nextInteraction = interactions
+      .filter((interaction) => interaction.date >= new Date())
+      .sort((a, b) => +a.date - +b.date)[0] ?? null;
+
+    const primaryOpportunity = company.opportunities[0];
 
     return serializeCompanySummary({
-      companyName,
-      rolesCount: items.length,
-      activeProcesses: items.filter((item) => item.pipelineType === "ACTIVE_PROCESS").length,
-      potentialOpportunities: items.filter((item) => item.pipelineType === "POTENTIAL").length,
+      id: company.id,
+      slug: company.slug,
+      name: company.name,
+      isWatchlisted: company.isWatchlisted,
+      rolesCount: company.opportunities.length,
+      activeProcesses: company.opportunities.filter((opp) => opp.pipelineType === "ACTIVE_PROCESS").length,
+      potentialOpportunities: company.opportunities.filter((opp) => opp.pipelineType === "POTENTIAL").length,
       interactionsCount: interactions.length,
-      nextInteraction: interactions.filter((item) => item.date >= new Date()).sort((a, b) => +a.date - +b.date)[0] ?? null,
-      priority: items.some((item) => item.priority === "HIGH") ? "HIGH" : primary?.priority ?? "MEDIUM",
-      status: primary?.status ?? "RESEARCH_LEAD",
-      employees: primary?.employeesRange?.label ?? null,
-      stage: primary?.companyStage?.label ?? null,
-      domains,
-      workModel: primary?.workModel?.label ?? null,
-      location: primary?.location ?? null,
-      funding: primary?.funding ?? null,
-      updatedAt: primary?.updatedAt ?? null
+      nextInteraction,
+      priority: company.opportunities.some((opp) => opp.priority === "HIGH") ? "HIGH" : primaryOpportunity?.priority ?? "MEDIUM",
+      status: primaryOpportunity?.status ?? "RESEARCH_LEAD",
+      employees: company.employeesRange?.label ?? null,
+      stage: company.companyStage?.label ?? null,
+      domains: company.domains.map((d) => d.domain.label),
+      location: company.location ?? null,
+      funding: company.funding ?? null,
+      lastResearchedAt: company.lastResearchedAt ?? null,
+      updatedAt: company.updatedAt
     });
   });
+
   response.json(companySummaries);
 }));
 
-companiesRouter.get("/:companyName", asyncHandler(async (request, response) => {
+// Get single company by slug
+companiesRouter.get("/:slugOrId", asyncHandler(async (request, response) => {
   const ownerEmail = (request as AuthenticatedRequest).auth.email;
-  const companyName = decodeURIComponent(request.params.companyName);
+  const slugOrId = request.params.slugOrId;
+
   const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
   await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
-  const opportunities = await prisma.jobOpportunity.findMany({
-    where: { ownerEmail, companyName },
-    include,
-    orderBy: { updatedAt: "desc" }
-  });
+
+  const company = await getCompanyService().get(slugOrId, ownerEmail);
+
+  if (!company) {
+    response.status(404).json({ message: "Company not found" });
+    return;
+  }
+
+  const interactions = company.opportunities.flatMap((opp) =>
+    opp.interactions.map((interaction) => ({ ...interaction, jobOpportunity: opp }))
+  );
 
   response.json(serializeCompanyDetail({
-    companyName,
-    opportunities: serializeOpportunities(opportunities),
-    interactions: opportunities.flatMap((item) => item.interactions.map((interaction) => ({ ...interaction, jobOpportunity: item }))),
-    notes: opportunities.flatMap((item) => item.notesList),
-    tasks: opportunities.flatMap((item) => item.tasks),
-    compensation: opportunities.map((item) => item.compensation).filter(Boolean)
+    ...company,
+    interactions,
+    compensation: company.opportunities.map((opp) => opp.compensation).filter(Boolean)
   }));
 }));
 
-companiesRouter.delete("/:companyName", asyncHandler(async (request, response) => {
+// Create a new company
+companiesRouter.post("/", asyncHandler(async (request, response) => {
   const ownerEmail = (request as AuthenticatedRequest).auth.email;
-  const companyName = decodeURIComponent(request.params.companyName);
-  await prisma.jobOpportunity.deleteMany({ where: { ownerEmail, companyName } });
-  response.status(204).end();
+  const input = companyInputSchema.parse(request.body);
+
+  const company = await getCompanyService().create(input, ownerEmail);
+
+  response.status(201).json(serializeCompany(company));
 }));
 
-companiesRouter.post("/:companyName/enrich", asyncHandler(async (request, response) => {
+// Update a company
+companiesRouter.patch("/:slugOrId", asyncHandler(async (request, response) => {
   const ownerEmail = (request as AuthenticatedRequest).auth.email;
-  const companyName = decodeURIComponent(request.params.companyName);
-  const timer = createTimer("route", "company enrich", { company: companyName });
-  const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
-  const enrichment = await getAiParserService().parseCompanyEnrichment(text);
-  const targetName = enrichment.companyName ?? companyName;
+  const slugOrId = request.params.slugOrId;
+  const input = companyInputSchema.partial().parse(request.body);
 
-  const employeesRange = enrichment.employees ? await prisma.companySizeOption.upsert({ where: { label: enrichment.employees }, create: { label: enrichment.employees }, update: {} }) : null;
-  const companyStage = enrichment.stage ? await prisma.companyStageOption.upsert({ where: { label: enrichment.stage }, create: { label: enrichment.stage }, update: {} }) : null;
-  const workModel = enrichment.workModel ? await prisma.workModelOption.upsert({ where: { label: enrichment.workModel }, create: { label: enrichment.workModel }, update: {} }) : null;
-  const domains = await Promise.all(enrichment.domains.map((label: string) => prisma.domainOption.upsert({ where: { label }, create: { label }, update: {} })));
+  const company = await getCompanyService().update(slugOrId, input, ownerEmail);
 
-  const opportunities = await prisma.jobOpportunity.findMany({ where: { ownerEmail, companyName }, select: { id: true } });
-
-  for (const opportunity of opportunities) {
-    await prisma.jobOpportunity.update({
-      where: { id: opportunity.id },
-      data: {
-        companyName: targetName,
-        employeesRangeId: employeesRange?.id,
-        companyStageId: companyStage?.id,
-        workModelId: workModel?.id,
-        location: enrichment.location,
-        funding: enrichment.investmentRounds ? [enrichment.funding, enrichment.investmentRounds].filter(Boolean).join(" · ") : enrichment.funding,
-        companyDescription: enrichment.companyDescription,
-        productDescription: enrichment.productDescription,
-        customersTraction: enrichment.customersTraction,
-        techStack: enrichment.techStack.join(", "),
-        backendFrontendSplit: enrichment.backendFrontendSplit,
-        compensationNotes: enrichment.compensationNotes,
-        notes: enrichment.rawImportantNotes.length > 0 ? enrichment.rawImportantNotes.join("\n") : undefined
-      }
-    });
-
-    await prisma.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: opportunity.id, ownerEmail } });
-    if (domains.length > 0) {
-      await prisma.jobOpportunityDomain.createMany({
-        data: domains.map((domain) => ({ ownerEmail, jobOpportunityId: opportunity.id, domainId: domain.id })),
-        skipDuplicates: true
-      });
-    }
+  if (!company) {
+    response.status(404).json({ message: "Company not found" });
+    return;
   }
 
-  timer.end({ updatedOpportunities: opportunities.length });
-  response.json({ enrichment, updatedOpportunities: opportunities.length });
+  response.json(serializeCompany(company));
 }));
 
-companiesRouter.post("/:companyName/research", asyncHandler(async (request, response) => {
-  const companyName = decodeURIComponent(request.params.companyName);
-  const timer = createTimer("route", "company research", { company: companyName });
-  const input = companyResearchInputSchema.parse({ ...request.body, companyName });
+// Delete a company (only if no opportunities exist)
+companiesRouter.delete("/:slugOrId", asyncHandler(async (request, response) => {
+  const ownerEmail = (request as AuthenticatedRequest).auth.email;
+  const slugOrId = request.params.slugOrId;
+
+  try {
+    const deleted = await getCompanyService().delete(slugOrId, ownerEmail);
+    if (!deleted) {
+      response.status(404).json({ message: "Company not found" });
+      return;
+    }
+    response.status(204).end();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Cannot delete company with")) {
+      response.status(400).json({ message: error.message });
+    } else {
+      throw error;
+    }
+  }
+}));
+
+// Enrich company from text (legacy endpoint - now updates Company entity)
+companiesRouter.post("/:slugOrId/enrich", asyncHandler(async (request, response) => {
+  const ownerEmail = (request as AuthenticatedRequest).auth.email;
+  const slugOrId = request.params.slugOrId;
+  const timer = createTimer("route", "company enrich", { slugOrId });
+  const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
+
+  const enrichment = await getAiParserService().parseCompanyEnrichment(text);
+
+  const employeesRange = enrichment.employees
+    ? await prisma.companySizeOption.upsert({ where: { label: enrichment.employees }, create: { label: enrichment.employees }, update: {} })
+    : null;
+  const companyStage = enrichment.stage
+    ? await prisma.companyStageOption.upsert({ where: { label: enrichment.stage }, create: { label: enrichment.stage }, update: {} })
+    : null;
+  const domains = await Promise.all(enrichment.domains.map((label: string) => prisma.domainOption.upsert({ where: { label }, create: { label }, update: {} })));
+
+  const updatedCompany = await getCompanyService().update(
+    slugOrId,
+    {
+      name: enrichment.companyName ?? undefined,
+      location: enrichment.location ?? undefined,
+      funding: enrichment.investmentRounds ? [enrichment.funding, enrichment.investmentRounds].filter(Boolean).join(" · ") : enrichment.funding ?? undefined,
+      employeesRangeId: employeesRange?.id ?? undefined,
+      companyStageId: companyStage?.id ?? undefined,
+      description: enrichment.companyDescription ?? undefined,
+      productDescription: enrichment.productDescription ?? undefined,
+      customersTraction: enrichment.customersTraction ?? undefined,
+      techStack: enrichment.techStack.length > 0 ? enrichment.techStack.join(", ") : undefined,
+      backendFrontendSplit: enrichment.backendFrontendSplit ?? undefined,
+      notes: enrichment.rawImportantNotes.length > 0 ? enrichment.rawImportantNotes.join("\n") : undefined,  // Input schema uses 'notes', maps to 'companyNotes' in DB
+      domainIds: domains.map((d) => d.id)
+    },
+    ownerEmail
+  );
+
+  if (!updatedCompany) {
+    response.status(404).json({ message: "Company not found" });
+    return;
+  }
+
+  timer.end({ companyId: updatedCompany.id });
+  response.json({ enrichment, company: serializeCompany(updatedCompany) });
+}));
+
+// Research company
+companiesRouter.post("/:slugOrId/research", asyncHandler(async (request, response) => {
+  const slugOrId = request.params.slugOrId;
+  const ownerEmail = (request as AuthenticatedRequest).auth.email;
+  const timer = createTimer("route", "company research", { slugOrId });
+
+  const company = await getCompanyService().get(slugOrId, ownerEmail);
+  if (!company) {
+    response.status(404).json({ message: "Company not found" });
+    return;
+  }
+
+  const input = companyResearchInputSchema.parse({ ...request.body, companyName: company.name });
   const research = await getCompanyResearchService().research(input);
+
+  await getCompanyService().markResearched(slugOrId, ownerEmail);
 
   timer.end({ confidence: research.confidence });
   response.json({ research });
 }));
 
-companiesRouter.post("/:companyName/research/apply", asyncHandler(async (request, response) => {
+// Apply research to company
+companiesRouter.post("/:slugOrId/research/apply", asyncHandler(async (request, response) => {
   const ownerEmail = (request as AuthenticatedRequest).auth.email;
-  const companyName = decodeURIComponent(request.params.companyName);
-  const timer = createTimer("route", "company research apply", { company: companyName });
-  const { targetOpportunityId, research } = companyResearchApplyInputSchema.parse(request.body);
-  const targetOpportunities = await prisma.jobOpportunity.findMany({
-    where: targetOpportunityId ? { id: targetOpportunityId, ownerEmail } : { ownerEmail, companyName },
-    select: {
-      id: true,
-      companyName: true,
-      companySearchName: true,
-      funding: true,
-      employeesRangeId: true,
-      location: true,
-      linkedinUrl: true,
-      companyDescription: true,
-      productDescription: true,
-      customersTraction: true
-    }
-  });
+  const slugOrId = request.params.slugOrId;
+  const timer = createTimer("route", "company research apply", { slugOrId });
 
-  if (targetOpportunities.length === 0) {
-    response.status(404).json({ message: "Company opportunity not found" });
+  const { targetOpportunityId, research } = companyResearchApplyInputSchema.parse(request.body);
+
+  const company = await getCompanyService().get(slugOrId, ownerEmail);
+  if (!company) {
+    response.status(404).json({ message: "Company not found" });
     return;
   }
 
   const employeesLabel = research.employees?.trim();
-  const employeesRange = employeesLabel ? await prisma.companySizeOption.upsert({
-    where: { label: employeesLabel },
-    create: { label: employeesLabel },
-    update: {}
-  }) : null;
+  const employeesRange = employeesLabel
+    ? await prisma.companySizeOption.upsert({ where: { label: employeesLabel }, create: { label: employeesLabel }, update: {} })
+    : null;
   const domains = research.domains.length > 0
     ? await Promise.all(research.domains.map((label: string) => prisma.domainOption.upsert({ where: { label }, create: { label }, update: {} })))
     : [];
 
-  for (const opportunity of targetOpportunities) {
-    await prisma.jobOpportunity.update({
-      where: { id: opportunity.id },
+  // Update the Company entity
+  await getCompanyService().update(
+    slugOrId,
+    {
+      name: isPresent(research.companyName) ? research.companyName : company.name,
+      searchName: isPresent(research.companySearchName) ? research.companySearchName : company.searchName,
+      funding: isPresent(company.funding) ? company.funding : research.funding,
+      employeesRangeId: company.employeesRangeId ?? employeesRange?.id ?? undefined,
+      location: isPresent(company.location) ? company.location : research.location,
+      linkedinUrl: isPresent(company.linkedinUrl) ? company.linkedinUrl : research.linkedinUrl,
+      description: isPresent(company.description) ? company.description : research.companyDescription,
+      productDescription: isPresent(company.productDescription) ? company.productDescription : research.productDescription,
+      customersTraction: isPresent(company.customersTraction) ? company.customersTraction : research.customersTraction,
+      domainIds: domains.length > 0 ? [...new Set([...company.domains.map(d => d.domainId), ...domains.map(d => d.id)])] : undefined
+    },
+    ownerEmail
+  );
+
+  // Create note on specific opportunity or first opportunity
+  const targetOpportunity = targetOpportunityId
+    ? company.opportunities.find((opp) => opp.id === targetOpportunityId)
+    : company.opportunities[0];
+
+  if (targetOpportunity) {
+    await prisma.note.create({
       data: {
-        companyName: isPresent(research.companyName) ? research.companyName : opportunity.companyName,
-        funding: isPresent(opportunity.funding) ? opportunity.funding : research.funding,
-        companySearchName: isPresent(research.companySearchName) ? research.companySearchName : opportunity.companySearchName,
-        employeesRangeId: opportunity.employeesRangeId ?? employeesRange?.id ?? null,
-        location: isPresent(opportunity.location) ? opportunity.location : research.location,
-        linkedinUrl: isPresent(opportunity.linkedinUrl) ? opportunity.linkedinUrl : research.linkedinUrl,
-        companyDescription: isPresent(opportunity.companyDescription) ? opportunity.companyDescription : research.companyDescription,
-        productDescription: isPresent(opportunity.productDescription) ? opportunity.productDescription : research.productDescription,
-        customersTraction: isPresent(opportunity.customersTraction) ? opportunity.customersTraction : research.customersTraction
+        ownerEmail,
+        jobOpportunityId: targetOpportunity.id,
+        title: `Company research: ${research.companyName}`,
+        category: "Company Research",
+        content: buildResearchNote(research)
       }
     });
-
-    if (domains.length > 0) {
-      await prisma.jobOpportunityDomain.createMany({
-        data: domains.map((domain) => ({ ownerEmail, jobOpportunityId: opportunity.id, domainId: domain.id })),
-        skipDuplicates: true
-      });
-    }
+  } else {
+    // Create company-level note if no opportunities
+    await prisma.note.create({
+      data: {
+        ownerEmail,
+        companyId: company.id,
+        title: `Company research: ${research.companyName}`,
+        category: "Company Research",
+        content: buildResearchNote(research)
+      }
+    });
   }
 
-  const noteTarget = targetOpportunities[0];
-  await prisma.note.create({
-    data: {
-      ownerEmail,
-      jobOpportunityId: noteTarget.id,
-      title: `Company research: ${research.companyName}`,
-      category: "Company Research",
-      content: buildResearchNote(research)
-    }
-  });
-
-  timer.end({ updatedOpportunities: targetOpportunities.length });
-  response.json({ research, updatedOpportunities: targetOpportunities.length });
+  timer.end({ companyId: company.id });
+  response.json({ research, company: serializeCompany(company) });
 }));

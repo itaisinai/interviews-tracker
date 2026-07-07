@@ -1,9 +1,29 @@
 import { z } from "zod";
 import { interactionStatusSchema, interactionTypeSchema, jobStatusSchema, offerStatusSchema, pipelineTypeSchema, prioritySchema, taskStatusSchema, type InteractionStatus, type InteractionType, type JobStatus, type OfferStatus, type PipelineType, type Priority, type TaskStatus, type Option } from "./enums.js";
 
+export const companyInputSchema = z.object({
+  name: z.string().min(1),
+  searchName: z.string().nullish(),
+  linkedinUrl: z.string().url().nullish(),
+  websiteUrl: z.string().url().nullish(),
+  location: z.string().nullish(),
+  funding: z.string().nullish(),
+  employeesRangeId: z.string().nullish(),
+  companyStageId: z.string().nullish(),
+  description: z.string().nullish(),
+  productDescription: z.string().nullish(),
+  customersTraction: z.string().nullish(),
+  techStack: z.string().nullish(),
+  backendFrontendSplit: z.string().nullish(),
+  notes: z.string().nullish(),
+  isWatchlisted: z.boolean().default(false),
+  watchlistReason: z.string().nullish(),
+  domainIds: z.array(z.string()).default([])
+});
+
 export const opportunityInputSchema = z.object({
-  companyName: z.string().min(1),
-  companySearchName: z.string().nullish(),
+  companyId: z.string().min(1).optional(),  // Optional: can provide companyId OR companyName
+  companyName: z.string().min(1).optional(),  // Optional: for backward compatibility, auto-creates company
   roleTitle: z.string().min(1),
   pipelineType: pipelineTypeSchema,
   status: jobStatusSchema,
@@ -16,18 +36,12 @@ export const opportunityInputSchema = z.object({
   sourceUrl: z.string().url().nullish(),
   nextStep: z.string().nullish(),
   notes: z.string().nullish(),
-  employeesRangeId: z.string().nullish(),
-  companyStageId: z.string().nullish(),
   workModelId: z.string().nullish(),
-  location: z.string().nullish(),
-  funding: z.string().nullish(),
-  companyDescription: z.string().nullish(),
-  productDescription: z.string().nullish(),
-  customersTraction: z.string().nullish(),
-  techStack: z.string().nullish(),
-  backendFrontendSplit: z.string().nullish(),
   compensationNotes: z.string().nullish(),
   domainIds: z.array(z.string()).default([])
+}).refine((data) => data.companyId || data.companyName, {
+  message: "Either companyId or companyName must be provided",
+  path: ["companyId"]
 });
 
 export const interactionInputSchema = z.object({
@@ -50,6 +64,7 @@ export const interactionInputSchema = z.object({
 }, { message: "End date must be at or after start date", path: ["endDate"] });
 
 export const noteInputSchema = z.object({
+  companyId: z.string().nullish(),
   jobOpportunityId: z.string().nullish(),
   interactionId: z.string().nullish(),
   title: z.string().min(1),
@@ -58,6 +73,7 @@ export const noteInputSchema = z.object({
 });
 
 export const taskInputSchema = z.object({
+  companyId: z.string().nullish(),
   jobOpportunityId: z.string().nullish(),
   interactionId: z.string().nullish(),
   title: z.string().min(1),
@@ -80,12 +96,40 @@ export const compensationInputSchema = z.object({
   offerStatus: offerStatusSchema
 });
 
+export type Company = {
+  id: string;
+  ownerEmail: string;
+  slug: string;
+  name: string;
+  searchName?: string | null;
+  linkedinUrl?: string | null;
+  websiteUrl?: string | null;
+  location?: string | null;
+  funding?: string | null;
+  employeesRangeId?: string | null;
+  companyStageId?: string | null;
+  description?: string | null;
+  productDescription?: string | null;
+  customersTraction?: string | null;
+  techStack?: string | null;
+  backendFrontendSplit?: string | null;
+  companyNotes?: string | null;  // Renamed from 'notes' to avoid conflict with notesList
+  isWatchlisted: boolean;
+  watchlistReason?: string | null;
+  lastResearchedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  employeesRange?: Option | null;
+  companyStage?: Option | null;
+  domains: Array<{ domain: Option }>;
+};
+
 export type Opportunity = {
   id?: string;  // Deprecated: Use slug instead. No longer returned in API responses.
   ownerEmail: string;
   slug: string;
-  companyName: string;
-  companySearchName?: string | null;
+  companyId: string;
+  company: Company;
   roleTitle: string;
   pipelineType: PipelineType;
   status: JobStatus;
@@ -98,20 +142,9 @@ export type Opportunity = {
   sourceUrl?: string | null;
   nextStep?: string | null;
   notes?: string | null;
-  employeesRangeId?: string | null;
-  companyStageId?: string | null;
   workModelId?: string | null;
-  location?: string | null;
-  funding?: string | null;
-  companyDescription?: string | null;
-  productDescription?: string | null;
-  customersTraction?: string | null;
-  techStack?: string | null;
-  backendFrontendSplit?: string | null;
   compensationNotes?: string | null;
   updatedAt: string;
-  employeesRange?: Option | null;
-  companyStage?: Option | null;
   workModel?: Option | null;
   domains: Array<{ domain: Option }>;
   interactions: Interaction[];
@@ -156,7 +189,10 @@ export type Compensation = {
 };
 
 export type CompanySummary = {
-  companyName: string;
+  id: string;
+  slug: string;
+  name: string;
+  isWatchlisted: boolean;
   rolesCount: number;
   activeProcesses: number;
   potentialOpportunities: number;
@@ -167,15 +203,82 @@ export type CompanySummary = {
   employees?: string | null;
   stage?: string | null;
   domains: string[];
-  workModel?: string | null;
   location?: string | null;
   funding?: string | null;
-  updatedAt?: string | null;
+  lastResearchedAt?: string | null;
+  updatedAt: string;
 };
 
 export type CompanyDetail = {
-  companyName: string;
+  id: string;
+  slug: string;
+  name: string;
+  searchName?: string | null;
+  linkedinUrl?: string | null;
+  websiteUrl?: string | null;
+  location?: string | null;
+  funding?: string | null;
+  description?: string | null;
+  productDescription?: string | null;
+  customersTraction?: string | null;
+  techStack?: string | null;
+  backendFrontendSplit?: string | null;
+  companyNotes?: string | null;  // Renamed from 'notes' to avoid conflict with notesList
+  isWatchlisted: boolean;
+  watchlistReason?: string | null;
+  lastResearchedAt?: string | null;
+  employeesRange?: Option | null;
+  companyStage?: Option | null;
+  domains: Array<{ domain: Option }>;
   opportunities: Opportunity[];
   interactions: Interaction[];
+  notesList: Note[];  // Renamed from 'notes' for clarity
+  tasks: Task[];
+  contacts: Person[];
   compensation: Compensation[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Note = {
+  id: string;
+  ownerEmail: string;
+  companyId?: string | null;
+  jobOpportunityId?: string | null;
+  interactionId?: string | null;
+  title: string;
+  content: string;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Task = {
+  id: string;
+  ownerEmail: string;
+  companyId?: string | null;
+  jobOpportunityId?: string | null;
+  interactionId?: string | null;
+  title: string;
+  status: TaskStatus;
+  priority: Priority;
+  dueDate?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Person = {
+  id: string;
+  ownerEmail: string;
+  slug: string;
+  name: string;
+  email?: string | null;
+  linkedinUrl?: string | null;
+  title?: string | null;
+  avatarUrl?: string | null;
+  companyId?: string | null;
+  company?: Company | null;
+  createdAt: string;
+  updatedAt: string;
 };

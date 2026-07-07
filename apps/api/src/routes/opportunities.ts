@@ -177,7 +177,8 @@ opportunitiesRouter.get("/:slugOrId/contacts", asyncHandler(async (request, resp
         { id: slugOrId },
         { slug: slugOrId }
       ]
-    }
+    },
+    include: { company: true }
   });
 
   if (!opportunity) {
@@ -186,8 +187,8 @@ opportunitiesRouter.get("/:slugOrId/contacts", asyncHandler(async (request, resp
   }
 
   const contacts = await prisma.person.findMany({
-    where: { jobOpportunityId: opportunity.id },
-    include: { research: true },
+    where: { companyId: opportunity.company.id },
+    include: { research: true, company: true },
     orderBy: { updatedAt: "desc" }
   });
 

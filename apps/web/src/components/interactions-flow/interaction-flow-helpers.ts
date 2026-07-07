@@ -38,7 +38,7 @@ export function buildOpportunityGroups(interactions: readonly Interaction[]) {
       groups.set(opportunitySlug, {
         opportunityId: opportunitySlug,
         companyName:
-          interaction.jobOpportunity?.companyName ?? "Unknown company",
+          interaction.jobOpportunity?.company.name ?? "Unknown company",
         roleTitle: interaction.jobOpportunity?.roleTitle ?? "Unknown role",
         interactions: [interaction],
         latestTimestamp: timestamp,
@@ -123,27 +123,41 @@ export function buildInteractionCalendarEvents(
   interactions: readonly Interaction[],
 ): InteractionCalendarEvent[] {
   return interactions.map((interaction) => {
-    const date = new Date(interaction.date);
-    const isFuture = date.getTime() > Date.now();
-    const duration = formatDurationBetween(interaction.date, interaction.endDate);
+    try {
+      const date = new Date(interaction.date);
+      const isFuture = date.getTime() > Date.now();
+      const duration = formatDurationBetween(interaction.date, interaction.endDate);
 
-    // Build title parts: Company · Stage/Type · Duration (no brackets, use bullet separator)
-    const titleParts = [
-      interaction.jobOpportunity?.companyName,
-      interaction.stage || labelForInteractionType(interaction.type),
-      duration,
-    ].filter(Boolean);
+      // Build title parts: Company · Stage/Type · Duration (no brackets, use bullet separator)
+      // MIGRATION FIX: Handle missing company data gracefully
+      const companyName = interaction.jobOpportunity?.company?.name ?? "Unknown Company";
+      const titleParts = [
+        companyName,
+        interaction.stage || labelForInteractionType(interaction.type),
+        duration,
+      ].filter(Boolean);
 
-    return {
-      id: interaction.slug,  // Use slug instead of id
-      date: interaction.date,
-      title:
-        titleParts.length > 0
-          ? titleParts.join(" · ")
-          : labelForInteractionType(interaction.type),
-      time: timeFormatter.format(date),
-      isFuture,
-    };
+      return {
+        id: interaction.slug ?? interaction.id ?? "unknown",  // Use slug instead of id
+        date: interaction.date,
+        title:
+          titleParts.length > 0
+            ? titleParts.join(" · ")
+            : labelForInteractionType(interaction.type),
+        time: timeFormatter.format(date),
+        isFuture,
+      };
+    } catch (error) {
+      console.error("Error building calendar event for interaction:", interaction, error);
+      // Return a safe fallback
+      return {
+        id: interaction.slug ?? interaction.id ?? "error",
+        date: interaction.date,
+        title: "Error loading interaction",
+        time: new Date(interaction.date).toLocaleTimeString(),
+        isFuture: new Date(interaction.date).getTime() > Date.now(),
+      };
+    }
   });
 }
 

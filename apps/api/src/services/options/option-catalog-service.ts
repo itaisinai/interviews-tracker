@@ -45,13 +45,15 @@ export async function deleteOption(kind: string, id: string) {
     return true;
   }
   if (kind === "company-size") {
-    await prisma.jobOpportunity.updateMany({ where: { employeesRangeId: id }, data: { employeesRangeId: null } });
+    // Update Company records (these fields moved from JobOpportunity to Company)
+    await prisma.company.updateMany({ where: { employeesRangeId: id }, data: { employeesRangeId: null } });
     await prisma.companySizeOption.delete({ where: { id } });
     invalidateOptionsCache();
     return true;
   }
   if (kind === "company-stage") {
-    await prisma.jobOpportunity.updateMany({ where: { companyStageId: id }, data: { companyStageId: null } });
+    // Update Company records (these fields moved from JobOpportunity to Company)
+    await prisma.company.updateMany({ where: { companyStageId: id }, data: { companyStageId: null } });
     await prisma.companyStageOption.delete({ where: { id } });
     invalidateOptionsCache();
     return true;

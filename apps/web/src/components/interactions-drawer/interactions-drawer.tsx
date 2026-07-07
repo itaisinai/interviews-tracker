@@ -248,11 +248,11 @@ export function InteractionsDrawer({
                 deleteInteraction.isPending &&
                 deleteInteraction.variables === displayInteraction.id
               }
-              opportunityCompanyName={opportunity?.companyName}
+              opportunityCompanyName={opportunity?.company.name}
             />
 
             <InteractionTimelinePanel
-              companyName={opportunity?.companyName ?? "Timeline"}
+              companyName={opportunity?.company.name ?? "Timeline"}
               interactions={timeline}
               selectedInteractionId={displayInteraction.id}
               onSelectInteraction={onSelectInteraction}

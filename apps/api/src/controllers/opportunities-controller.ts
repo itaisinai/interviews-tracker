@@ -50,12 +50,12 @@ export async function searchOpportunityGmailHandler(request: AuthenticatedReques
     return null;
   }
 
-  const timer = createTimer("gmail", "search opportunity emails", { company: opportunity.companyName });
+  const timer = createTimer("gmail", "search opportunity emails", { company: opportunity.company.name });
   const result = await searchGmailMessages({
     auth0Email: request.auth.email,
     jobOpportunityId: opportunity.id,
-    companyName: opportunity.companyName,
-    companySearchName: opportunity.companySearchName,
+    companyName: opportunity.company.name,
+    companySearchName: opportunity.company.searchName,
     roleTitle: opportunity.roleTitle,
     companyDomains: opportunity.domains.map((item) => item.domain.label)
   });
@@ -92,7 +92,7 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
   const messageIds = 'messageIds' in body ? body.messageIds : [body.messageId];
 
   const timer = createTimer("gmail", "parse opportunity email", {
-    company: opportunity.companyName,
+    company: opportunity.company.name,
     messageIds: messageIds.join(","),
     count: messageIds.length
   });
@@ -102,7 +102,7 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
     messageIds.map(messageId =>
       parseGmailEmailToInteraction({
         auth0Email: request.auth.email,
-        companyName: opportunity.companyName,
+        companyName: opportunity.company.name,
         roleTitle: opportunity.roleTitle,
         messageId,
         jobOpportunityId: opportunity.id
@@ -112,7 +112,7 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
 
   // If only one email, return it with the message ID list
   if (parsedResults.length === 1) {
-    timer.end({ company: opportunity.companyName, count: 1 });
+    timer.end({ company: opportunity.company.name, count: 1 });
     return {
       ...parsedResults[0],
       allGmailMessageIds: messageIds
@@ -174,7 +174,7 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
     };
   });
 
-  timer.end({ company: opportunity.companyName, count: messageIds.length });
+  timer.end({ company: opportunity.company.name, count: messageIds.length });
 
   // Return the merged interaction along with the list of all message IDs
   return {
@@ -290,16 +290,16 @@ export async function parseOpportunityInteractionTextHandler(request: Authentica
 
   const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
   const timer = createTimer("ai", "parse opportunity interaction text", {
-    company: opportunity.companyName,
+    company: opportunity.company.name,
     role: opportunity.roleTitle
   });
   const result = await getAiParserService().parseInteractionText({
-    companyName: opportunity.companyName,
+    companyName: opportunity.company.name,
     roleTitle: opportunity.roleTitle,
     opportunityContext: `Status: ${opportunity.status} · Pipeline: ${opportunity.pipelineType} · Next step: ${opportunity.nextStep ?? "None"}${opportunity.notes ? ` · Notes: ${opportunity.notes}` : ""}`,
     text,
     nowIso: new Date().toISOString()
   });
-  timer.end({ company: opportunity.companyName });
+  timer.end({ company: opportunity.company.name });
   return { interaction: result };
 }

@@ -52,9 +52,8 @@ export async function createPersonWithSlug(
     email?: string | null;
     linkedinUrl?: string | null;
     title?: string | null;
-    company?: string | null;
     avatarUrl?: string | null;
-    jobOpportunityId?: string | null;
+    companyId?: string | null;
   }
 ) {
   return await prisma.$transaction(async (tx) => {
@@ -65,7 +64,7 @@ export async function createPersonWithSlug(
         ...data,
         slug,
       },
-      include: { research: true }
+      include: { research: true, company: true }
     });
   });
 }
@@ -84,7 +83,7 @@ export async function findPersonBySlug(
         slug
       }
     },
-    include: { research: true }
+    include: { research: true, company: true }
   });
 }
 

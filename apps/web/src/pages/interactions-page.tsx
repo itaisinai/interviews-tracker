@@ -32,14 +32,22 @@ export function InteractionsPage() {
     queryKey: ["interactions"],
     queryFn: api.interactions,
   });
-  const opportunitiesQuery = useQuery({
-    queryKey: ["opportunities", "gmail-import"],
-    queryFn: () => api.opportunities("?summary=1"),
-    staleTime: 30_000,
-  });
 
   const interactions = interactionsQuery.data ?? [];
-  const opportunities = opportunitiesQuery.data ?? [];
+
+  // Derive opportunities from interactions (each interaction has jobOpportunity nested)
+  const opportunities = useMemo(() => {
+    const uniqueOpportunities = new Map();
+    interactions.forEach((interaction) => {
+      if (interaction.jobOpportunity) {
+        uniqueOpportunities.set(
+          interaction.jobOpportunity.slug,
+          interaction.jobOpportunity,
+        );
+      }
+    });
+    return Array.from(uniqueOpportunities.values());
+  }, [interactions]);
   const displayInteractions = useMemo(
     () => promoteOverdueInteractionsForRead(interactions),
     [interactions],
@@ -60,7 +68,8 @@ export function InteractionsPage() {
     [displayInteractions],
   );
   const gmailOpportunity = useMemo(
-    () => opportunities.find((item) => item.slug === gmailOpportunityId) ?? null,
+    () =>
+      opportunities.find((item) => item.slug === gmailOpportunityId) ?? null,
     [gmailOpportunityId, opportunities],
   );
   const selectedInteraction = useMemo(
@@ -98,7 +107,7 @@ export function InteractionsPage() {
   useEffect(() => {
     if (
       selectedInteractionId &&
-      !displayInteractions.some((item) => item.id === selectedInteractionId)
+      !displayInteractions.some((item) => item.slug === selectedInteractionId)
     ) {
       setSelectedInteractionId(null);
     }
@@ -117,7 +126,7 @@ export function InteractionsPage() {
     setShowGmailImport(false);
   }
 
-  if (interactionsQuery.isLoading || opportunitiesQuery.isLoading) {
+  if (interactionsQuery.isLoading) {
     return (
       <PageLoadingState
         title="Interactions"
@@ -136,20 +145,6 @@ export function InteractionsPage() {
             : "Unable to load interactions."
         }
         onRetry={() => void interactionsQuery.refetch()}
-      />
-    );
-  }
-
-  if (opportunitiesQuery.isError) {
-    return (
-      <PageErrorState
-        title="Interactions"
-        description={
-          opportunitiesQuery.error instanceof Error
-            ? opportunitiesQuery.error.message
-            : "Unable to load opportunities for the form."
-        }
-        onRetry={() => void opportunitiesQuery.refetch()}
       />
     );
   }
