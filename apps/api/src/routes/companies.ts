@@ -74,24 +74,8 @@ companiesRouter.get("/:slugOrId", asyncHandler(async (request, response) => {
     return;
   }
 
-  // Flatten interactions with minimal jobOpportunity metadata (avoid circular duplication)
-  const interactions = company.opportunities.flatMap((opp) =>
-    opp.interactions.map((interaction) => ({
-      ...interaction,
-      jobOpportunity: {
-        slug: opp.slug,
-        roleTitle: opp.roleTitle,
-        company: {
-          slug: company.slug,
-          name: company.name,
-        }
-      }
-    }))
-  );
-
   response.json(serializeCompanyDetail({
     ...company,
-    interactions,
     compensation: company.opportunities.map((opp) => opp.compensation).filter(Boolean)
   }));
 }));

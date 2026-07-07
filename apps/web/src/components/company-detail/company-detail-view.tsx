@@ -43,16 +43,31 @@ export function CompanyDetailView({
   const [showResearch, setShowResearch] = useState(false);
   const [selectedInteractionId, setSelectedInteractionId] = useState<string | null>(null);
 
-  const displayInteractions = useMemo(
-    () => promoteOverdueInteractionsForRead(company.interactions),
-    [company.interactions],
+  // Flatten all interactions from opportunities for status processing
+  const allInteractions = useMemo(
+    () => company.opportunities.flatMap((opp) => opp.interactions),
+    [company.opportunities],
   );
+
+  const displayInteractions = useMemo(
+    () => promoteOverdueInteractionsForRead(allInteractions),
+    [allInteractions],
+  );
+
   const opportunitiesWithInteractions = useMemo(() => {
+    // Create a map for fast lookup: interaction slug -> which opportunity it belongs to
+    const interactionToOppMap = new Map<string, string>();
+    company.opportunities.forEach((opp) => {
+      opp.interactions.forEach((int) => {
+        interactionToOppMap.set(int.slug, opp.slug);
+      });
+    });
+
     return [...company.opportunities]
       .map((opportunity) => ({
         ...opportunity,
         interactions: displayInteractions.filter(
-          (interaction) => interaction.jobOpportunity?.slug === opportunity.slug,
+          (interaction) => interactionToOppMap.get(interaction.slug) === opportunity.slug,
         ),
       }))
       .sort((left, right) => {
@@ -117,7 +132,7 @@ export function CompanyDetailView({
     employees: company.employeesRange?.label ?? null,
   };
 
-  const researchContext = `Roles: ${company.opportunities.length} · Interactions: ${company.interactions.length} · Domains: ${domains.join(", ") || "None"}`;
+  const researchContext = `Roles: ${company.opportunities.length} · Interactions: ${allInteractions.length} · Domains: ${domains.join(", ") || "None"}`;
 
   const companyBadge = useMemo(() => {
     return getOpportunityProcessBadgeMeta(primary, displayInteractions);
@@ -137,8 +152,8 @@ export function CompanyDetailView({
           </div>
           <p className="mt-1 text-body-md text-on-surface-variant">
             {company.opportunities.length} role
-            {company.opportunities.length === 1 ? "" : "s"} · {company.interactions.length} interaction
-            {company.interactions.length === 1 ? "" : "s"}
+            {company.opportunities.length === 1 ? "" : "s"} · {allInteractions.length} interaction
+            {allInteractions.length === 1 ? "" : "s"}
           </p>
         </div>
 
