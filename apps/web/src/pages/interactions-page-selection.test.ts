@@ -23,7 +23,7 @@ const baseOpportunity = {
   notesList: [],
   tasks: [],
   ownerEmail: "test@example.com",
-} as Opportunity;
+} as unknown as Opportunity;
 
 const interactionA = {
   slug: "interaction-a",

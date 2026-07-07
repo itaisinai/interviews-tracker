@@ -4,12 +4,12 @@ import { activeNotifications, buildUnlinkedInteractionNotifications, syncNotific
 
 const now = new Date("2026-06-15T12:00:00.000Z");
 const later = new Date("2026-06-15T12:05:00.000Z");
-const base = [
+const base: any[] = [
   { slug: "i1", jobOpportunityId: "reevol", gmailMessageId: null, jobOpportunity: { company: { id: "c1", slug: "reevol", name: "Reevol" } } },
   { slug: "i2", jobOpportunityId: "reevol", gmailMessageId: undefined, jobOpportunity: { company: { id: "c1", slug: "reevol", name: "Reevol" } } },
   { slug: "i3", jobOpportunityId: "alta", gmailMessageId: "gmail-1", jobOpportunity: { company: { id: "c2", slug: "alta", name: "Alta" } } },
   { slug: "i4", jobOpportunityId: "token", gmailMessageId: null, jobOpportunity: { company: { id: "c3", slug: "token", name: "Token Security" } } },
-] as const;
+];
 
 test("detects unlinked interactions and groups notifications by opportunity", () => {
   const notifications = buildUnlinkedInteractionNotifications(base, now);

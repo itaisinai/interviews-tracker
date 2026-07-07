@@ -46,38 +46,22 @@ const reevolCompany = {
   interactions: promoteOverdueInteractionsForRead([
     {
       slug: "reevol-phone-2026-06-15",
-      jobOpportunityId: "reevol-opportunity",
       date: "2026-06-15T12:30:00",
       type: "Phone Call",
       status: "DONE",
-      personName: "Shahar Birger",
-      personRole: "Interview",
+      stage: null,
+      outcome: null,
       followUp:
         "For more details or if you need to change the time of your interview, please reply to this email.",
-      jobOpportunity: {
-        slug: "reevol-opportunity",
-        companyName: "Reevol",
-        roleTitle: "Senior Full Stack Developer",
-        status: "ACTIVE_PROCESS",
-        pipelineType: "ACTIVE_PROCESS",
-      } as never,
     },
     {
-      id: "reevol-interview-2026-06-17",
-      jobOpportunityId: "reevol-opportunity",
+      slug: "reevol-interview-2026-06-17",
       date: "2026-06-17T14:00:00",
       type: "Interview",
       status: "SCHEDULED",
-      personName: "Asaf Halfon",
-      personRole: "Interview",
+      stage: null,
       outcome: "Advanced to final round",
-      jobOpportunity: {
-        id: "reevol-opportunity",
-        companyName: "Reevol",
-        roleTitle: "Senior Full Stack Developer",
-        status: "ACTIVE_PROCESS",
-        pipelineType: "ACTIVE_PROCESS",
-      } as never,
+      followUp: null,
     },
   ]),
 } as unknown as CompanyDetail;
