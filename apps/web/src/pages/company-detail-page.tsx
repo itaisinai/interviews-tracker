@@ -68,8 +68,8 @@ export function CompanyDetailPage() {
         deleteInteraction.variables === interactionId
       }
       onResearchSaved={(research) => {
-        if (research.company.name !== data.company.name) {
-          navigate(`/companies/${research.company.slug}`, {
+        if (research.companyName !== data.name) {
+          navigate(`/companies/${encodeURIComponent(research.companyName)}`, {
             replace: true,
           });
         }

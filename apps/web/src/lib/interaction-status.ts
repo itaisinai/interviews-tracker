@@ -152,8 +152,8 @@ export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | 
 }
 
 export function getInteractionTimelineBadgeMeta(
-  interaction: Pick<Interaction, "id" | "date" | "status" | "type" | "stage" | "outcome" | "followUp">,
-  interactions: readonly Pick<Interaction, "id" | "date" | "status" | "type" | "stage" | "outcome" | "followUp">[],
+  interaction: Pick<Interaction, "slug" | "date" | "status" | "type" | "stage" | "outcome" | "followUp">,
+  interactions: readonly Pick<Interaction, "slug" | "date" | "status" | "type" | "stage" | "outcome" | "followUp">[],
 ) {
   const normalizedType = normalizeInteractionType(interaction.type);
 

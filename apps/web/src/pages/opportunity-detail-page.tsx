@@ -59,7 +59,7 @@ export function OpportunityDetailPage() {
     onSettled: () => setIsInteractionOperationPending(false),
   });
   const updateOpportunityTitle = useMutation({
-    mutationFn: (updates: Pick<Opportunity, "companyName" | "roleTitle">) => {
+    mutationFn: (updates: Pick<Opportunity, "roleTitle">) => {
       if (!data) {
         throw new Error("Opportunity is not loaded");
       }
@@ -176,7 +176,6 @@ export function OpportunityDetailPage() {
             isSaving={updateOpportunityTitle.isPending}
             onSave={(companyName) =>
               updateOpportunityTitle.mutate({
-                companyName,
                 roleTitle: data.roleTitle,
               })
             }
@@ -190,7 +189,6 @@ export function OpportunityDetailPage() {
             isSaving={updateOpportunityTitle.isPending}
             onSave={(roleTitle) =>
               updateOpportunityTitle.mutate({
-                companyName: data.company.name,
                 roleTitle,
               })
             }
@@ -244,7 +242,7 @@ export function OpportunityDetailPage() {
             interaction={focusedInteraction}
             opportunityId={opportunitySlug}
             opportunityCompanyName={data.company.name}
-            onOpen={() => setSelectedInteractionId(focusedInteraction.id)}
+            onOpen={() => setSelectedInteractionId(focusedInteraction.slug)}
           />
         </div>
       ) : null}
@@ -417,10 +415,10 @@ function EditableTitleField({
 
 function buildOpportunityInput(
   opportunity: Opportunity,
-  updates: Pick<Opportunity, "companyName" | "roleTitle">,
+  updates: Pick<Opportunity, "roleTitle">,
 ) {
   return {
-    companyName: updates.company.name,
+    companyName: opportunity.company.name,
     companySearchName: opportunity.company.searchName ?? null,
     roleTitle: updates.roleTitle,
     pipelineType: opportunity.pipelineType,

@@ -79,7 +79,7 @@ export function GmailInteractionPanel(props: GmailInteractionPanelProps) {
     return (
       <section className="rounded-xl border border-neutral-200 bg-white p-8">
         <GmailAiSearch
-          companyName={props.company.name}
+          companyName={props.companyName}
           stage={stage}
           progress={panel.progress}
         />

@@ -294,7 +294,7 @@ export function OpportunitiesPage() {
                   `Delete ${row.original.company.name} / ${row.original.roleTitle}?`,
                 )
               )
-                deleteOpportunity.mutate(row.original.id);
+                deleteOpportunity.mutate(row.original.slug);
             }}
           />
         ),

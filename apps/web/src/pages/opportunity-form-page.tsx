@@ -216,7 +216,7 @@ export function OpportunityFormPage() {
     return <PageErrorState title="Add Opportunity" description={error instanceof Error ? error.message : "Unable to load opportunity options."} onRetry={() => void refetch()} />;
   }
 
-  const canSave = Boolean(parseResult?.company.name?.trim() && parseResult?.roleTitle?.trim() && !create.isPending);
+  const canSave = Boolean(parseResult?.companyName?.trim() && parseResult?.roleTitle?.trim() && !create.isPending);
   const pipelineType = (parseResult?.pipelineType ?? "POTENTIAL") as PipelineType;
   const priority = (parseResult?.prioritySuggestion ?? "MEDIUM") as Priority;
 

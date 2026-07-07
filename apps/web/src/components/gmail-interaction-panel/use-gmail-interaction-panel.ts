@@ -143,7 +143,7 @@ export function useGmailInteractionPanel({
     selectedEmail: state.selectedEmail,
     attachToInteractionId,
     opportunityId,
-    interactions: opportunityQuery.data?.interactions ?? [],
+    interactions: (opportunityQuery.data?.interactions ?? []).map(i => ({ id: i.slug, gmailMessageId: i.gmailMessageId })),
     setProgress: state.setProgress,
     setSearchResults: state.setSearchResults,
     setSelectedCandidate: state.setSelectedCandidate,

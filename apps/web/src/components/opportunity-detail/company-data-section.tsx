@@ -153,7 +153,7 @@ export function CompanyDataSection({
             </button>
           </div>
           <InteractionTextParserPanel
-            opportunityId={opportunity.id}
+            opportunityId={opportunity.slug}
             companyName={opportunity.company.name}
             roleTitle={opportunity.roleTitle}
             onSaved={onSaved}
