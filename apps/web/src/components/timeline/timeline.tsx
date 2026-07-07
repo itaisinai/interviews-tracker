@@ -53,7 +53,7 @@ export function Timeline({
         return leftTime - rightTime;
       }
 
-      return left.id.localeCompare(right.id);
+      return left.slug.localeCompare(right.slug);
     });
   }, [interactions]);
 
@@ -100,15 +100,15 @@ export function Timeline({
               item,
               orderedInteractions,
             );
-            const isSelected = selectedInteractionId === item.id;
+            const isSelected = selectedInteractionId === item.slug;
             const isUpcoming =
               new Date(item.date).getTime() > referenceDate.getTime();
             const isClickable = Boolean(onSelectInteraction);
-            const isDeleting = isDeletingInteraction?.(item.slug || item.id) ?? false;
+            const isDeleting = isDeletingInteraction?.(item.slug) ?? false;
 
             return (
               <li
-                key={item.id}
+                key={item.slug}
                 className={`relative py-4 first:pt-1 last:pb-1 ${isSelected ? "rounded-2xl bg-primary/5" : ""}`}
               >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -130,14 +130,14 @@ export function Timeline({
                       }`}
                       onClick={
                         onSelectInteraction
-                          ? () => onSelectInteraction(item.id)
+                          ? () => onSelectInteraction(item.slug)
                           : undefined
                       }
                       onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
                         if (!onSelectInteraction) return;
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
-                          onSelectInteraction(item.id);
+                          onSelectInteraction(item.slug);
                         }
                       }}
                     >
@@ -195,7 +195,7 @@ export function Timeline({
                           aria-label="Delete interaction"
                           onClick={(event) => {
                             event.stopPropagation();
-                            onDeleteInteraction(item.slug || item.id);
+                            onDeleteInteraction(item.slug);
                           }}
                           disabled={isDeleting}
                         >

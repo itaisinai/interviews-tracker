@@ -41,7 +41,7 @@ export function OpportunityInteractionTimeline({
         return leftTime - rightTime;
       }
 
-      return left.id.localeCompare(right.id);
+      return left.slug.localeCompare(right.slug);
     });
   }, [interactions]);
 
@@ -62,7 +62,7 @@ export function OpportunityInteractionTimeline({
     null;
   const openLatestInteraction = () => {
     if (latestInteraction) {
-      onSelectInteraction(latestInteraction.id);
+      onSelectInteraction(latestInteraction.slug);
     }
   };
 

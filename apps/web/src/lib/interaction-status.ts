@@ -63,8 +63,8 @@ function isTerminalInteraction(interaction: Pick<Interaction, "type" | "status" 
 }
 
 function hasLaterInteraction(
-  interaction: Pick<Interaction, "id" | "date" | "type" | "status" | "outcome" | "followUp">,
-  interactions: readonly Pick<Interaction, "id" | "date" | "type" | "status" | "outcome" | "followUp">[]
+  interaction: Pick<Interaction, "slug" | "date" | "type" | "status" | "outcome" | "followUp">,
+  interactions: readonly Pick<Interaction, "slug" | "date" | "type" | "status" | "outcome" | "followUp">[]
 ) {
   const orderedInteractions = [...interactions].sort((left, right) => {
     const leftTime = new Date(left.date).getTime();
@@ -72,10 +72,10 @@ function hasLaterInteraction(
     if (leftTime !== rightTime) {
       return leftTime - rightTime;
     }
-    return left.id.localeCompare(right.id);
+    return left.slug.localeCompare(right.slug);
   });
 
-  const currentIndex = orderedInteractions.findIndex((item) => item.id === interaction.id);
+  const currentIndex = orderedInteractions.findIndex((item) => item.slug === interaction.slug);
   if (currentIndex === -1) {
     return false;
   }
@@ -105,14 +105,14 @@ export function promoteOverdueInteractionStatusForRead<T extends Pick<Interactio
   };
 }
 
-export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "id" | "date" | "endDate" | "type" | "status" | "stage" | "outcome" | "followUp">>(interactions: readonly T[], now = new Date()) {
+export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "slug" | "date" | "endDate" | "type" | "status" | "stage" | "outcome" | "followUp">>(interactions: readonly T[], now = new Date()) {
   const orderedInteractions = [...interactions].sort((left, right) => {
     const leftTime = new Date(left.date).getTime();
     const rightTime = new Date(right.date).getTime();
     if (leftTime !== rightTime) {
       return leftTime - rightTime;
     }
-    return left.id.localeCompare(right.id);
+    return left.slug.localeCompare(right.slug);
   });
 
   return orderedInteractions.map((interaction) => {
