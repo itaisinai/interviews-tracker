@@ -1,3 +1,17 @@
+export const EMPTY_COMPANY_SLUG = "company";
+
+export function createCompanySlug(companyName: string) {
+  const normalized = companyName
+    .normalize("NFKC")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || EMPTY_COMPANY_SLUG;
+}
+
 export const EMPTY_OPPORTUNITY_SLUG = "opportunity";
 
 export function createOpportunitySlug(companyName: string, roleTitle: string) {
@@ -33,4 +47,18 @@ export function createInteractionTitle(type: string, stage?: string | null) {
 
 export function appendSlugCollisionSuffix(baseSlug: string, index: number) {
   return index <= 1 ? baseSlug : `${baseSlug}-${index}`;
+}
+
+export const EMPTY_PERSON_SLUG = "person";
+
+export function createPersonSlug(name: string) {
+  const normalized = name
+    .normalize("NFKC")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalized || EMPTY_PERSON_SLUG;
 }

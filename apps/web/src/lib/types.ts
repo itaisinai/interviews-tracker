@@ -52,6 +52,7 @@ export type {
 
 export type Person = {
   id: string;
+  slug: string;           // Added for slug-first architecture
   name: string;
   email: string | null;
   linkedinUrl: string | null;

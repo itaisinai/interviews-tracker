@@ -40,9 +40,8 @@ export function OpportunityDetailPage() {
   const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
   const [isInteractionOperationPending, setIsInteractionOperationPending] = useState(false);
 
-  const opportunityRouteId = data?.slug ?? data?.id ?? slugOrId;
-  const opportunityApiId = data?.slug ?? data?.id ?? slugOrId; // For API calls that support slug
-  const opportunityDbId = data?.id ?? slugOrId; // For database foreign keys (e.g., contact creation)
+  // Slug-first architecture: use slug for all operations
+  const opportunitySlug = data?.slug ?? slugOrId;
   const canonicalSlug = data?.slug ?? null;
   const [selectedInteractionId, setSelectedInteractionId] = useState<
     string | null
@@ -50,7 +49,7 @@ export function OpportunityDetailPage() {
   const refresh = () =>
     void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
   const deleteOpportunity = useMutation({
-    mutationFn: () => api.deleteOpportunity(opportunityRouteId),
+    mutationFn: () => api.deleteOpportunity(opportunitySlug),
     onSuccess: () => navigate("/opportunities"),
   });
   const deleteInteraction = useMutation({
@@ -60,12 +59,12 @@ export function OpportunityDetailPage() {
     onSettled: () => setIsInteractionOperationPending(false),
   });
   const updateOpportunityTitle = useMutation({
-    mutationFn: (updates: Pick<Opportunity, "companyName" | "roleTitle">) => {
+    mutationFn: (updates: Pick<Opportunity, "roleTitle">) => {
       if (!data) {
         throw new Error("Opportunity is not loaded");
       }
       return api.updateOpportunity(
-        opportunityRouteId,
+        opportunitySlug,
         buildOpportunityInput(data, updates),
       );
     },
@@ -85,7 +84,7 @@ export function OpportunityDetailPage() {
   );
   const selectedInteraction = useMemo(
     () =>
-      displayedInteractions.find((item) => item.id === selectedInteractionId) ??
+      displayedInteractions.find((item) => item.slug === selectedInteractionId) ??
       null,
     [displayedInteractions, selectedInteractionId],
   );
@@ -106,7 +105,7 @@ export function OpportunityDetailPage() {
   useEffect(() => {
     if (
       selectedInteractionId &&
-      !displayedInteractions.some((item) => item.id === selectedInteractionId)
+      !displayedInteractions.some((item) => item.slug === selectedInteractionId)
     ) {
       setSelectedInteractionId(null);
     }
@@ -143,7 +142,7 @@ export function OpportunityDetailPage() {
     <>
       {/* Mobile header */}
       <div className="mb-4 md:hidden">
-        <h1 className="text-2xl font-bold text-on-background">{data.companyName}</h1>
+        <h1 className="text-2xl font-bold text-on-background">{data.company.name}</h1>
         <p className="mt-1 text-body-md text-on-surface-variant">{data.roleTitle}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge value={data.status} />
@@ -173,11 +172,10 @@ export function OpportunityDetailPage() {
           <EditableTitleField
             ariaLabel="Company name"
             className="font-headline-lg text-headline-lg text-on-background"
-            value={data.companyName}
+            value={data.company.name}
             isSaving={updateOpportunityTitle.isPending}
             onSave={(companyName) =>
               updateOpportunityTitle.mutate({
-                companyName,
                 roleTitle: data.roleTitle,
               })
             }
@@ -191,7 +189,6 @@ export function OpportunityDetailPage() {
             isSaving={updateOpportunityTitle.isPending}
             onSave={(roleTitle) =>
               updateOpportunityTitle.mutate({
-                companyName: data.companyName,
                 roleTitle,
               })
             }
@@ -226,7 +223,7 @@ export function OpportunityDetailPage() {
               onClick={() => {
                 if (
                   window.confirm(
-                    `Delete ${data.companyName} / ${data.roleTitle}? This also deletes its interactions.`,
+                    `Delete ${data.company.name} / ${data.roleTitle}? This also deletes its interactions.`,
                   )
                 )
                   deleteOpportunity.mutate();
@@ -243,9 +240,9 @@ export function OpportunityDetailPage() {
         <div className="mt-8">
           <FocusedInteractionCard
             interaction={focusedInteraction}
-            opportunityId={opportunityDbId}
-            opportunityCompanyName={data.companyName}
-            onOpen={() => setSelectedInteractionId(focusedInteraction.id)}
+            opportunitySlug={opportunitySlug}
+            opportunityCompanyName={data.company.name}
+            onOpen={() => setSelectedInteractionId(focusedInteraction.slug)}
           />
         </div>
       ) : null}
@@ -269,8 +266,8 @@ export function OpportunityDetailPage() {
           />
           <div id="contacts-section">
             <ContactsList
-              opportunityId={opportunityDbId}
-              companyName={data.companyName}
+              opportunitySlug={opportunitySlug}
+              companyName={data.company.name}
             />
           </div>
           <InterviewPreparation opportunity={data} />
@@ -293,8 +290,8 @@ export function OpportunityDetailPage() {
       <AddInteractionModal
         isOpen={showAddInteractionModal}
         onClose={() => setShowAddInteractionModal(false)}
-        opportunityId={opportunityApiId}
-        companyName={data.companyName}
+        opportunitySlug={opportunitySlug}
+        companyName={data.company.name}
         roleTitle={data.roleTitle}
         onSaved={() => {
           setIsInteractionOperationPending(true);
@@ -418,11 +415,11 @@ function EditableTitleField({
 
 function buildOpportunityInput(
   opportunity: Opportunity,
-  updates: Pick<Opportunity, "companyName" | "roleTitle">,
+  updates: Pick<Opportunity, "roleTitle">,
 ) {
   return {
-    companyName: updates.companyName,
-    companySearchName: opportunity.companySearchName ?? null,
+    companyName: opportunity.company.name,
+    companySearchName: opportunity.company.searchName ?? null,
     roleTitle: updates.roleTitle,
     pipelineType: opportunity.pipelineType,
     status: opportunity.status,
@@ -435,16 +432,16 @@ function buildOpportunityInput(
     sourceUrl: opportunity.sourceUrl ?? null,
     nextStep: opportunity.nextStep ?? null,
     notes: opportunity.notes ?? null,
-    employeesRangeId: opportunity.employeesRange?.id ?? null,
-    companyStageId: opportunity.companyStage?.id ?? null,
+    employeesRangeId: opportunity.company.employeesRange?.id ?? null,
+    companyStageId: opportunity.company.companyStage?.id ?? null,
     workModelId: opportunity.workModel?.id ?? null,
-    location: opportunity.location ?? null,
-    funding: opportunity.funding ?? null,
-    companyDescription: opportunity.companyDescription ?? null,
-    productDescription: opportunity.productDescription ?? null,
-    customersTraction: opportunity.customersTraction ?? null,
-    techStack: opportunity.techStack ?? null,
-    backendFrontendSplit: opportunity.backendFrontendSplit ?? null,
+    location: opportunity.company.location ?? null,
+    funding: opportunity.company.funding ?? null,
+    companyDescription: opportunity.company.description ?? null,
+    productDescription: opportunity.company.productDescription ?? null,
+    customersTraction: opportunity.company.customersTraction ?? null,
+    techStack: opportunity.company.techStack ?? null,
+    backendFrontendSplit: opportunity.company.backendFrontendSplit ?? null,
     compensationNotes: opportunity.compensationNotes ?? null,
     domainIds: opportunity.domains.map((item) => item.domain.id),
   };
@@ -452,12 +449,12 @@ function buildOpportunityInput(
 
 function FocusedInteractionCard({
   interaction,
-  opportunityId,
+  opportunitySlug,
   opportunityCompanyName,
   onOpen,
 }: {
   interaction: Interaction;
-  opportunityId: string;
+  opportunitySlug: string;
   opportunityCompanyName: string;
   onOpen: () => void;
 }) {
@@ -466,8 +463,8 @@ function FocusedInteractionCard({
 
   // Fetch contacts to get job titles and research status
   const { data: contacts = [] } = useQuery({
-    queryKey: ["opportunity-contacts", opportunityId],
-    queryFn: () => api.getOpportunityContacts(opportunityId),
+    queryKey: ["opportunity-contacts", opportunitySlug],
+    queryFn: () => api.getOpportunityContacts(opportunitySlug),
   });
 
   // Parse participant names and filter out blank entries
@@ -560,7 +557,7 @@ function FocusedInteractionCard({
           <ParticipantsCard
             personNames={personNames}
             personRecords={personRecords}
-            opportunityId={opportunityId}
+            opportunitySlug={opportunitySlug}
             opportunityCompanyName={opportunityCompanyName}
           />
         </div>

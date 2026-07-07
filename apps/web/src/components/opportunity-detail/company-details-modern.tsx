@@ -29,7 +29,7 @@ export function CompanyDetailsModern({
     <section className={className}>
       <SectionHeader
         title="Company Details"
-        subtitle={`${opportunity.companyName} • ${opportunity.roleTitle}`}
+        subtitle={`${opportunity.company.name} • ${opportunity.roleTitle}`}
       />
 
       <div className="mt-6 space-y-6">
@@ -58,15 +58,15 @@ export function CompanyDetailsModern({
             )}
             <CompactInfoRow
               label="Stage"
-              value={opportunity.companyStage?.label || "Not specified"}
+              value={opportunity.company.companyStage?.label || "Not specified"}
             />
             <CompactInfoRow
               label="Size"
-              value={opportunity.employeesRange?.label || "Not specified"}
+              value={opportunity.company.employeesRange?.label || "Not specified"}
             />
             <CompactInfoRow
               label="Location"
-              value={opportunity.location || "Not specified"}
+              value={opportunity.company.location || "Not specified"}
             />
             <CompactInfoRow
               label="Work Model"
@@ -74,39 +74,39 @@ export function CompanyDetailsModern({
             />
             <CompactInfoRow
               label="Funding"
-              value={opportunity.funding || "Not specified"}
+              value={opportunity.company.funding || "Not specified"}
             />
           </div>
 
-          {opportunity.companyDescription && (
+          {opportunity.company.description && (
             <div className="mt-4 rounded-lg bg-neutral-50 p-4">
               <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
                 About Company
               </div>
               <p className="text-sm leading-relaxed text-neutral-700">
-                {opportunity.companyDescription}
+                {opportunity.company.description}
               </p>
             </div>
           )}
 
-          {opportunity.productDescription && (
+          {opportunity.company.productDescription && (
             <div className="mt-3 rounded-lg bg-neutral-50 p-4">
               <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
                 Product
               </div>
               <p className="text-sm leading-relaxed text-neutral-700">
-                {opportunity.productDescription}
+                {opportunity.company.productDescription}
               </p>
             </div>
           )}
 
-          {opportunity.customersTraction && (
+          {opportunity.company.customersTraction && (
             <div className="mt-3 rounded-lg bg-neutral-50 p-4">
               <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
                 Traction
               </div>
               <p className="text-sm leading-relaxed text-neutral-700">
-                {opportunity.customersTraction}
+                {opportunity.company.customersTraction}
               </p>
             </div>
           )}
@@ -121,11 +121,11 @@ export function CompanyDetailsModern({
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <CompactInfoRow
               label="Technologies"
-              value={opportunity.techStack || "Not specified"}
+              value={opportunity.company.techStack || "Not specified"}
             />
             <CompactInfoRow
               label="Backend / Frontend"
-              value={opportunity.backendFrontendSplit || "Not specified"}
+              value={opportunity.company.backendFrontendSplit || "Not specified"}
             />
             {opportunity.domains.length > 0 && (
               <CompactInfoRow

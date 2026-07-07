@@ -10,7 +10,7 @@ type EffectsHandlers = {
   connected?: boolean;
   selectedEmail: GmailStructuredEmail | null;
   attachToInteractionId: string | null;
-  opportunityId: string;
+  opportunitySlug: string;
   interactions: Array<{ id: string; gmailMessageId?: string | null }>;
   setProgress: (value: number | ((prev: number) => number)) => void;
   setSearchResults: (value: any) => void;
@@ -37,7 +37,7 @@ export function useGmailEffects(handlers: EffectsHandlers) {
     connected,
     selectedEmail,
     attachToInteractionId,
-    opportunityId,
+    opportunitySlug,
     interactions,
     setProgress,
     setSearchResults,
@@ -135,7 +135,7 @@ export function useGmailEffects(handlers: EffectsHandlers) {
         setError(null);
 
         try {
-          const result = await api.gmailParseEmail(opportunityId, {
+          const result = await api.gmailParseEmail(opportunitySlug, {
             messageId: targetInteraction.gmailMessageId!
           });
 
@@ -155,7 +155,7 @@ export function useGmailEffects(handlers: EffectsHandlers) {
     selectedEmail,
     connected,
     flowState,
-    opportunityId,
+    opportunitySlug,
     setFlowState,
     setMessage,
     setError,

@@ -28,6 +28,7 @@ type InteractionSummaryPanelProps = {
   isSaving: boolean;
   onDelete: () => void;
   isDeleting: boolean;
+  opportunitySlug?: string;
   opportunityCompanyName?: string;
 };
 
@@ -43,6 +44,7 @@ export function InteractionSummaryPanel({
   isSaving,
   onDelete,
   isDeleting,
+  opportunitySlug: opportunitySlugProp,
   opportunityCompanyName,
 }: InteractionSummaryPanelProps) {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -55,11 +57,14 @@ export function InteractionSummaryPanel({
         .filter(Boolean)
     : [];
 
+  // Get opportunity slug - prefer prop, then nested object's slug, then FK ID for backward compatibility
+  const opportunitySlug = opportunitySlugProp ?? interaction.jobOpportunity?.slug ?? interaction.jobOpportunityId;
+
   // Fetch contacts for this opportunity
   const { data: contacts = [] } = useQuery({
-    queryKey: ["opportunity-contacts", interaction.jobOpportunityId],
-    queryFn: () => api.getOpportunityContacts(interaction.jobOpportunityId),
-    enabled: !!interaction.jobOpportunityId && !!interaction.personName,
+    queryKey: ["opportunity-contacts", opportunitySlug],
+    queryFn: () => api.getOpportunityContacts(opportunitySlug!),
+    enabled: !!opportunitySlug && !!interaction.personName,
   });
 
   const personRecords = personNames.map((name) => {
@@ -107,7 +112,7 @@ export function InteractionSummaryPanel({
 
     // Call API to add feedback and get AI suggestion
     const result = await api.addFeedbackToInteraction(
-      interaction.slug || interaction.id,
+      interaction.slug,
       content,
       source,
     );
@@ -174,13 +179,13 @@ export function InteractionSummaryPanel({
         <ParticipantsCard
           personNames={personNames}
           personRecords={personRecords}
-          opportunityId={interaction.jobOpportunityId}
+          opportunitySlug={opportunitySlug}
           opportunityCompanyName={opportunityCompanyName}
           columns={1}
         />
         <AttachedEmailsCard
-          interactionId={interaction.slug || interaction.id}
-          opportunityId={interaction.jobOpportunity?.slug ?? interaction.jobOpportunityId}
+          interactionId={interaction.slug}
+          opportunitySlug={opportunitySlug!}
           onEmailsAttached={onToggleEditing}
         />
       </div>
@@ -223,7 +228,7 @@ export function InteractionSummaryPanel({
       />
 
       {/* Gmail Email States */}
-      <GmailEmailStatesSection opportunityId={interaction.jobOpportunityId} />
+      {opportunitySlug && <GmailEmailStatesSection opportunitySlug={opportunitySlug} />}
     </div>
   );
 }

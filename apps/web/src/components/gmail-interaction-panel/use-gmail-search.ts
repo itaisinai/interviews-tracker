@@ -6,7 +6,7 @@ import type { GmailSearchCandidate } from "../../lib/types";
 import { addPickedEmail, type GmailMessageStates } from "./gmail-interaction-panel-helpers";
 
 type GmailSearchHandlers = {
-  opportunityId: string;
+  opportunitySlug: string;
   searchHint: string;
   setNeedsReconnect: (value: boolean) => void;
   setError: (value: string | null) => void;
@@ -36,7 +36,7 @@ function sleep(ms: number) {
 export function useGmailSearch(handlers: GmailSearchHandlers) {
   const queryClient = useQueryClient();
   const {
-    opportunityId,
+    opportunitySlug,
     searchHint,
     setNeedsReconnect,
     setError,
@@ -74,7 +74,7 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
 
     try {
       await sleep(150);
-      const response = await api.gmailSearch(opportunityId);
+      const response = await api.gmailSearch(opportunitySlug);
       if (activeRunIdRef.current !== runId) {
         return;
       }
@@ -90,7 +90,7 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
         setFlowState("fetching_email");
         setMessage(`Found best match: "${bestCandidate.subject}". Extracting details...`);
         setPendingPickedEmailIds((current) => new Set(current).add(bestCandidate.id));
-        queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunityId], (current) =>
+        queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunitySlug], (current) =>
           addPickedEmail(current, { id: bestCandidate.id, subject: bestCandidate.subject, date: bestCandidate.date })
         );
 
@@ -98,7 +98,7 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
         setFlowState("parsing_email");
         setMessage("Parsing the email into interaction fields.");
 
-        const parseResponse = await api.gmailParseEmail(opportunityId, { messageId: bestCandidate.id });
+        const parseResponse = await api.gmailParseEmail(opportunitySlug, { messageId: bestCandidate.id });
         if (activeRunIdRef.current !== runId) {
           return;
         }
@@ -108,7 +108,7 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
         setDraft(parseResponse.interaction);
         setFlowState("ready_for_review");
         setMessage("Email parsed successfully. Review the changes below.");
-        void queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+        void queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
       } else {
         setFlowState("idle");
         setMessage("No matching emails found in Gmail.");
@@ -137,7 +137,7 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
     setFlowState("fetching_email");
     setMessage(`Fetching the full body for "${email.subject}".`);
     setPendingPickedEmailIds((current) => new Set(current).add(email.id));
-    queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunityId], (current) =>
+    queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunitySlug], (current) =>
       addPickedEmail(current, { id: email.id, subject: email.subject, date: email.date })
     );
 
@@ -146,7 +146,7 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
       setFlowState("parsing_email");
       setMessage("Parsing the email into interaction fields.");
 
-      const response = await api.gmailParseEmail(opportunityId, { messageId: email.id });
+      const response = await api.gmailParseEmail(opportunitySlug, { messageId: email.id });
       if (activeRunIdRef.current !== runId) {
         return;
       }
@@ -155,7 +155,7 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
       setAnalysis(response.analysis);
       setDraft({ ...response.interaction, type: normalizeInteractionType(response.interaction.type) });
       setSearchResults((results) => results.filter((candidate) => candidate.id !== email.id));
-      queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunityId], (current) =>
+      queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunitySlug], (current) =>
         addPickedEmail(current, { id: email.id, subject: email.subject, date: email.date })
       );
       setFlowState("ready_for_review");
@@ -175,14 +175,14 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
     setSaveError(null);
 
     try {
-      await api.gmailHideEmail(opportunityId, email.id);
+      await api.gmailHideEmail(opportunitySlug, email.id);
       setSearchResults((results) => results.filter((candidate) => candidate.id !== email.id));
       setPendingPickedEmailIds((current) => {
         const next = new Set(current);
         next.delete(email.id);
         return next;
       });
-      queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunityId], (current) => ({
+      queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunitySlug], (current) => ({
         removedEmails: [{ id: email.id, subject: email.subject, date: email.date }, ...(current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? [])],
         pickedEmails: current?.pickedEmails ?? [],
         ignoredEmails: current?.ignoredEmails ?? []

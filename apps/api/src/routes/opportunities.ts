@@ -21,25 +21,30 @@ import {
 import { Router, type Request } from "express";
 import { asyncHandler } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
+import { serializeOpportunity, serializeOpportunities, serializeInteraction, serializeInteractions } from "../lib/serializers.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export const opportunitiesRouter = Router();
 
 opportunitiesRouter.get("/", asyncHandler(async (request, response) => {
-  response.json(await listOpportunitiesHandler(request as AuthenticatedRequest));
+  const opportunities = await listOpportunitiesHandler(request as AuthenticatedRequest);
+  response.json(serializeOpportunities(opportunities));
 }));
 
 opportunitiesRouter.post("/", asyncHandler(async (request, response) => {
-  response.status(201).json(await createOpportunityHandler(request as AuthenticatedRequest));
+  const opportunity = await createOpportunityHandler(request as AuthenticatedRequest);
+  response.status(201).json(serializeOpportunity(opportunity));
 }));
 
 opportunitiesRouter.get("/:slugOrId", asyncHandler(async (request, response) => {
-  response.json(await getOpportunityHandler(request as AuthenticatedRequest));
+  const opportunity = await getOpportunityHandler(request as AuthenticatedRequest);
+  response.json(serializeOpportunity(opportunity));
 }));
 
 opportunitiesRouter.put("/:slugOrId", asyncHandler(async (request, response) => {
-  response.json(await updateOpportunityHandler(request as AuthenticatedRequest));
+  const opportunity = await updateOpportunityHandler(request as AuthenticatedRequest);
+  response.json(serializeOpportunity(opportunity));
 }));
 
 opportunitiesRouter.delete("/:slugOrId", asyncHandler(async (request, response) => {
@@ -48,7 +53,8 @@ opportunitiesRouter.delete("/:slugOrId", asyncHandler(async (request, response) 
 }));
 
 opportunitiesRouter.get("/:slugOrId/interactions", asyncHandler(async (request, response) => {
-  response.json(await listOpportunityInteractionsHandler(request as AuthenticatedRequest));
+  const interactions = await listOpportunityInteractionsHandler(request as AuthenticatedRequest);
+  response.json(serializeInteractions(interactions));
 }));
 
 opportunitiesRouter.post("/:slugOrId/interactions", asyncHandler(async (request, response) => {
@@ -171,7 +177,8 @@ opportunitiesRouter.get("/:slugOrId/contacts", asyncHandler(async (request, resp
         { id: slugOrId },
         { slug: slugOrId }
       ]
-    }
+    },
+    include: { company: true }
   });
 
   if (!opportunity) {
@@ -180,8 +187,8 @@ opportunitiesRouter.get("/:slugOrId/contacts", asyncHandler(async (request, resp
   }
 
   const contacts = await prisma.person.findMany({
-    where: { jobOpportunityId: opportunity.id },
-    include: { research: true },
+    where: { companyId: opportunity.company.id },
+    include: { research: true, company: true },
     orderBy: { updatedAt: "desc" }
   });
 

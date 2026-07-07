@@ -6,7 +6,7 @@ import { InteractionDraftFields } from "../interactions-drawer/interaction-draft
 import { LoadingButton } from "@interviews-tracker/design-system";
 
 export type ManualInteractionFormProps = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   roleTitle: string;
   initialDraft?: InteractionDraft;
@@ -15,7 +15,7 @@ export type ManualInteractionFormProps = {
 };
 
 export function ManualInteractionForm({
-  opportunityId,
+  opportunitySlug,
   companyName,
   roleTitle,
   initialDraft,
@@ -39,7 +39,7 @@ export function ManualInteractionForm({
   });
 
   const createInteraction = useMutation({
-    mutationFn: () => api.createInteraction(opportunityId, draft),
+    mutationFn: () => api.createInteraction(opportunitySlug, draft),
     onSuccess: onSaved,
   });
 

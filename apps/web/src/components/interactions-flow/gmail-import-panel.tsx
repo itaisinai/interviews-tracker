@@ -7,7 +7,7 @@ type GmailImportPanelProps = {
   opportunities: Opportunity[];
   selectedOpportunityId: string;
   selectedOpportunity: Opportunity | null;
-  onSelectOpportunity: (opportunityId: string) => void;
+  onSelectOpportunity: (opportunitySlug: string) => void;
   onClose?: () => void;
   onSaved: () => void;
   variant: "mobile" | "desktop";
@@ -80,7 +80,7 @@ function OpportunitySelect({
 }: {
   opportunities: Opportunity[];
   selectedOpportunityId: string;
-  onSelectOpportunity: (opportunityId: string) => void;
+  onSelectOpportunity: (opportunitySlug: string) => void;
 }) {
   return (
     <Field label="Opportunity">
@@ -92,7 +92,7 @@ function OpportunitySelect({
         <option value="">Select company / role</option>
         {opportunities.map((item) => (
           <option key={item.id} value={item.id}>
-            {item.companyName} · {item.roleTitle}
+            {item.company.name} · {item.roleTitle}
           </option>
         ))}
       </select>
@@ -118,8 +118,8 @@ function ImportBody({
   return (
     <div className="mt-6">
       <GmailInteractionPanel
-        opportunityId={selectedOpportunity.slug ?? selectedOpportunity.id}
-        companyName={selectedOpportunity.companyName}
+        opportunitySlug={selectedOpportunity.slug ?? selectedOpportunity.id}
+        companyName={selectedOpportunity.company.name}
         roleTitle={selectedOpportunity.roleTitle}
         onSaved={onSaved}
       />

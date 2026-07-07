@@ -46,7 +46,14 @@ export function InteractionsDrawer({
   const closeTimerRef = useRef<number | null>(null);
   const openFrameRef = useRef<number | null>(null);
 
-  const opportunityId = mountedInteraction?.jobOpportunityId ?? "";
+  // Derive opportunity from selectedOpportunity or mountedInteraction
+  const opportunity =
+    selectedOpportunity ??
+    mountedInteraction?.jobOpportunity ??
+    null;
+
+  // Use opportunity slug (prefer nested object's slug, fallback to FK for backward compatibility)
+  const opportunitySlug = opportunity?.slug ?? mountedInteraction?.jobOpportunityId ?? "";
 
   useEffect(() => {
     if (closeTimerRef.current) {
@@ -91,12 +98,7 @@ export function InteractionsDrawer({
   useEffect(() => {
     setIsEditing(false);
     setDraft(mountedInteraction ? interactionToDraft(mountedInteraction) : null);
-  }, [mountedInteraction?.id]);
-
-  const opportunity =
-    selectedOpportunity ??
-    mountedInteraction?.jobOpportunity ??
-    null;
+  }, [mountedInteraction?.slug]);
 
   const timeline = useMemo(
     () =>
@@ -116,12 +118,15 @@ export function InteractionsDrawer({
 
   const refreshQueries = () => {
     void queryClient.invalidateQueries({
-      queryKey: ["opportunity", opportunityId],
+      queryKey: ["opportunity", opportunitySlug],
     });
     void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
     void queryClient.invalidateQueries({ queryKey: ["interactions"] });
     void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     void queryClient.invalidateQueries({ queryKey: ["companies"] });
+    if (opportunitySlug) {
+      void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunitySlug] });
+    }
   };
 
   const deleteInteraction = useMutation({
@@ -140,13 +145,13 @@ export function InteractionsDrawer({
         throw new Error("No interaction is ready to update.");
       }
 
-      return api.updateInteraction(selectedTimelineInteraction.slug || selectedTimelineInteraction.id, draft);
+      return api.updateInteraction(selectedTimelineInteraction.slug, draft);
     },
     onMutate: () => onOperationStart?.(),
     onSuccess: (savedInteraction) => {
       // Update the opportunity cache with saved interaction
       queryClient.setQueryData(
-        ["opportunity", opportunityId],
+        ["opportunity", opportunitySlug],
         (old: any) => {
           if (!old) return old;
           return {
@@ -208,6 +213,7 @@ export function InteractionsDrawer({
               headerBadge={headerBadge}
               isEditing={isEditing}
               draft={draft}
+              opportunitySlug={opportunitySlug}
               onToggleEditing={(aiSuggestion?: any) => {
                 // If AI suggestion provided, use it to create draft
                 if (aiSuggestion) {
@@ -241,19 +247,19 @@ export function InteractionsDrawer({
               onSave={() => void updateInteraction.mutate()}
               isSaving={updateInteraction.isPending}
               onDelete={() => {
-                deleteInteraction.mutate(displayInteraction.slug || displayInteraction.id);
+                deleteInteraction.mutate(displayInteraction.slug);
               }}
               isDeleting={
                 deleteInteraction.isPending &&
-                deleteInteraction.variables === displayInteraction.id
+                deleteInteraction.variables === displayInteraction.slug
               }
-              opportunityCompanyName={opportunity?.companyName}
+              opportunityCompanyName={opportunity?.company.name}
             />
 
             <InteractionTimelinePanel
-              companyName={opportunity?.companyName ?? "Timeline"}
+              companyName={opportunity?.company.name ?? "Timeline"}
               interactions={timeline}
-              selectedInteractionId={displayInteraction.id}
+              selectedInteractionId={displayInteraction.slug}
               onSelectInteraction={onSelectInteraction}
             />
           </div>

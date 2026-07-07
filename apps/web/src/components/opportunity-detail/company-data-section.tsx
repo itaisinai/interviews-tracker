@@ -36,7 +36,7 @@ export function CompanyDataSection({
               Company data
             </p>
             <h2 className="mt-1 font-title-lg text-title-lg font-bold text-on-background">
-              {opportunity.companyName}
+              {opportunity.company.name}
             </h2>
             <p className="mt-1 text-body-md text-on-surface-variant">
               {opportunity.roleTitle}
@@ -73,17 +73,17 @@ export function CompanyDataSection({
       {showResearch ? (
         <div className="mt-6">
           <CompanyResearchPanel
-            companyName={opportunity.companyName}
+            companyName={opportunity.company.name}
             roleTitle={opportunity.roleTitle}
             knownContext={`Status: ${opportunity.status} · Pipeline: ${opportunity.pipelineType} · Next step: ${opportunity.nextStep ?? "None"}${opportunity.notes ? ` · Notes: ${opportunity.notes}` : ""}`}
             existingCompanyData={{
-              companySearchName: opportunity.companySearchName ?? null,
-              funding: opportunity.funding ?? null,
-              customersTraction: opportunity.customersTraction ?? null,
-              companyDescription: opportunity.companyDescription ?? null,
-              productDescription: opportunity.productDescription ?? null,
-              location: opportunity.location ?? null,
-              employees: opportunity.employeesRange?.label ?? null,
+              companySearchName: opportunity.company.searchName ?? null,
+              funding: opportunity.company.funding ?? null,
+              customersTraction: opportunity.company.customersTraction ?? null,
+              companyDescription: opportunity.company.description ?? null,
+              productDescription: opportunity.company.productDescription ?? null,
+              location: opportunity.company.location ?? null,
+              employees: opportunity.company.employeesRange?.label ?? null,
             }}
             targetOpportunityId={opportunity.id}
             onSaved={onSaved}
@@ -127,8 +127,8 @@ export function CompanyDataSection({
             </button>
           </div>
           <GmailInteractionPanel
-            opportunityId={opportunity.slug ?? opportunity.id}
-            companyName={opportunity.companyName}
+            opportunitySlug={opportunity.slug ?? opportunity.id}
+            companyName={opportunity.company.name}
             roleTitle={opportunity.roleTitle}
             onSaved={onSaved}
           />
@@ -153,8 +153,8 @@ export function CompanyDataSection({
             </button>
           </div>
           <InteractionTextParserPanel
-            opportunityId={opportunity.id}
-            companyName={opportunity.companyName}
+            opportunitySlug={opportunity.slug}
+            companyName={opportunity.company.name}
             roleTitle={opportunity.roleTitle}
             onSaved={onSaved}
           />
@@ -168,10 +168,10 @@ export function CompanyDataSection({
             <Detail label="LinkedIn" value={opportunity.linkedinUrl} />
             <Detail
               label="English Search Name"
-              value={opportunity.companySearchName}
+              value={opportunity.company.searchName}
             />
-            <Detail label="Size" value={opportunity.employeesRange?.label} />
-            <Detail label="Stage" value={opportunity.companyStage?.label} />
+            <Detail label="Size" value={opportunity.company.employeesRange?.label} />
+            <Detail label="Stage" value={opportunity.company.companyStage?.label} />
             <Detail
               label="Domains"
               value={opportunity.domains
@@ -179,10 +179,10 @@ export function CompanyDataSection({
                 .join(", ")}
             />
             <Detail label="Work Model" value={opportunity.workModel?.label} />
-            <Detail label="Location" value={opportunity.location} />
-            <Detail label="Funding" value={opportunity.funding} />
-            <Detail label="Company" value={opportunity.companyDescription} />
-            <Detail label="Product" value={opportunity.productDescription} />
+            <Detail label="Location" value={opportunity.company.location} />
+            <Detail label="Funding" value={opportunity.company.funding} />
+            <Detail label="Company" value={opportunity.company.description} />
+            <Detail label="Product" value={opportunity.company.productDescription} />
           </div>
 
           <div className="lg:col-span-4">
@@ -203,12 +203,12 @@ export function CompanyDataSection({
                 <p className="mt-1 text-body-md text-on-surface-variant">-</p>
               )}
             </div>
-            <Detail label="Tech Stack" value={opportunity.techStack} />
+            <Detail label="Tech Stack" value={opportunity.company.techStack} />
             <Detail
               label="Backend / Frontend"
-              value={opportunity.backendFrontendSplit}
+              value={opportunity.company.backendFrontendSplit}
             />
-            <Detail label="Traction" value={opportunity.customersTraction} />
+            <Detail label="Traction" value={opportunity.company.customersTraction} />
             <Detail
               label="Compensation Notes"
               value={opportunity.compensationNotes}

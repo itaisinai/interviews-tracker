@@ -7,13 +7,13 @@ import { InteractionDraftFields } from "./interaction-draft-fields";
 import { LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
 
 type InteractionTextParserPanelProps = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   roleTitle: string;
   onSaved?: (interaction?: Interaction) => void;
 };
 
-export function InteractionTextParserPanel({ opportunityId, companyName, roleTitle, onSaved }: InteractionTextParserPanelProps) {
+export function InteractionTextParserPanel({ opportunitySlug, companyName, roleTitle, onSaved }: InteractionTextParserPanelProps) {
   const queryClient = useQueryClient();
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
@@ -44,10 +44,10 @@ export function InteractionTextParserPanel({ opportunityId, companyName, roleTit
       if (!draft) {
         throw new Error("No parsed interaction is ready to save.");
       }
-      return api.createInteraction(opportunityId, draft);
+      return api.createInteraction(opportunitySlug, draft);
     },
     onSuccess: (savedInteraction) => {
-      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunitySlug] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -68,7 +68,7 @@ export function InteractionTextParserPanel({ opportunityId, companyName, roleTit
     setRunMessage("Sending pasted text to the AI parser.");
 
     try {
-      const response = await api.parseOpportunityInteractionText(opportunityId, { text });
+      const response = await api.parseOpportunityInteractionText(opportunitySlug, { text });
       setDraft(response.interaction);
       setRunState("ready");
       setProgress(100);

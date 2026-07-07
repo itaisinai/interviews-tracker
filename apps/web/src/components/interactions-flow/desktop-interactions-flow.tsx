@@ -31,7 +31,7 @@ type DesktopInteractionsFlowProps = {
   onFilterChange: (filter: InteractionFilter) => void;
   onOpenGmailImport: () => void;
   onCloseGmailImport: () => void;
-  onSelectGmailOpportunity: (opportunityId: string) => void;
+  onSelectGmailOpportunity: (opportunitySlug: string) => void;
   onGmailSaved: () => void;
   onSelectInteraction: (interactionId: string) => void;
   onDeleteInteraction: (interactionId: string) => void;
@@ -99,7 +99,7 @@ export function DesktopInteractionsFlow({
           <div className="space-y-4">
             {visibleGroups.map((group) => (
               <OpportunityInteractionTimeline
-                key={group.opportunityId}
+                key={group.opportunitySlug}
                 companyName={group.companyName}
                 roleTitle={group.roleTitle}
                 interactions={group.interactions}

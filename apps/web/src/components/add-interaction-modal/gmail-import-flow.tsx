@@ -7,7 +7,7 @@ import { formatDateTime } from "../../lib/format";
 import { GmailEmailSelector } from "../shared/gmail-email-selector";
 
 export type GmailImportFlowProps = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   roleTitle: string;
   onSaved: () => void;
@@ -17,7 +17,7 @@ export type GmailImportFlowProps = {
 type FlowStep = "searching" | "select-candidate" | "review-changes" | "no-results" | "error";
 
 export function GmailImportFlow({
-  opportunityId,
+  opportunitySlug,
   companyName,
   roleTitle,
   onSaved,
@@ -30,20 +30,20 @@ export function GmailImportFlow({
   const [isParsing, setIsParsing] = useState(false);
 
   const { data: searchResults, isLoading: isSearching, isError: searchFailed, error: searchError, refetch: refetchSearch, isRefetching } = useQuery({
-    queryKey: ["gmail-search", opportunityId],
-    queryFn: () => api.gmailSearch(opportunityId),
+    queryKey: ["gmail-search", opportunitySlug],
+    queryFn: () => api.gmailSearch(opportunitySlug),
     enabled: step === "searching",
     retry: false,
   });
 
   const { data: messageStates } = useQuery({
-    queryKey: ["gmail-message-states", opportunityId],
-    queryFn: () => api.gmailMessageStates(opportunityId),
+    queryKey: ["gmail-message-states", opportunitySlug],
+    queryFn: () => api.gmailMessageStates(opportunitySlug),
   });
 
   const parseEmail = useMutation({
     mutationFn: (messageId: string) =>
-      api.gmailParseEmail(opportunityId, { messageId }),
+      api.gmailParseEmail(opportunitySlug, { messageId }),
     onSuccess: (result) => {
       setDraft(result.interaction);
       setStep("review-changes");
@@ -51,23 +51,23 @@ export function GmailImportFlow({
   });
 
   const unpickEmail = useMutation({
-    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunityId, messageId),
+    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
     },
   });
 
   const restoreEmail = useMutation({
-    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunityId, messageId),
+    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
     },
   });
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+    queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
     refetchSearch();
   };
 
@@ -76,13 +76,13 @@ export function GmailImportFlow({
       if (!draft) throw new Error("No draft available");
 
       // Create the interaction
-      const interaction = await api.createInteraction(opportunityId, draft);
+      const interaction = await api.createInteraction(opportunitySlug, draft);
 
       // Attach all Gmail messages to the InteractionEmail table
       if (allGmailMessageIds.length > 0) {
         await Promise.all(
           allGmailMessageIds.map(messageId =>
-            api.attachEmailToInteraction(interaction.id, messageId)
+            api.attachEmailToInteraction(interaction.slug, messageId)
           )
         );
       }
@@ -175,7 +175,7 @@ export function GmailImportFlow({
 
     try {
       // Send all message IDs at once - backend will merge them into a single interaction
-      const result = await api.gmailParseEmail(opportunityId, {
+      const result = await api.gmailParseEmail(opportunitySlug, {
         messageIds
       });
 

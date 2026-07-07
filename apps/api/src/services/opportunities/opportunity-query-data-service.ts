@@ -15,6 +15,18 @@ export async function getOpportunitiesDataForQuery(ownerEmail: string) {
       }
     },
     include: {
+      company: {
+        include: {
+          contacts: {
+            select: {
+              id: true,
+              name: true,
+              title: true,
+              email: true
+            }
+          }
+        }
+      },
       interactions: {
         orderBy: { date: "asc" },
         select: {
@@ -30,14 +42,6 @@ export async function getOpportunitiesDataForQuery(ownerEmail: string) {
           notes: true,
           meetingLink: true
         }
-      },
-      contacts: {
-        select: {
-          id: true,
-          name: true,
-          title: true,
-          email: true
-        }
       }
     },
     orderBy: [
@@ -50,7 +54,7 @@ export async function getOpportunitiesDataForQuery(ownerEmail: string) {
   return opportunities.map(opp => ({
     id: opp.id,
     slug: opp.slug,
-    companyName: opp.companyName,
+    companyName: opp.company.name,
     roleTitle: opp.roleTitle,
     status: opp.status,
     pipelineType: opp.pipelineType,
@@ -69,7 +73,7 @@ export async function getOpportunitiesDataForQuery(ownerEmail: string) {
       notes: interaction.notes,
       meetingLink: interaction.meetingLink
     })),
-    contacts: opp.contacts.map(contact => ({
+    contacts: opp.company.contacts.map(contact => ({
       id: contact.id,
       name: contact.name,
       title: contact.title,

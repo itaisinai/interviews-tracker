@@ -52,7 +52,7 @@ export function CompanyDetailView({
       .map((opportunity) => ({
         ...opportunity,
         interactions: displayInteractions.filter(
-          (interaction) => interaction.jobOpportunityId === opportunity.id,
+          (interaction) => interaction.jobOpportunity?.slug === opportunity.slug,
         ),
       }))
       .sort((left, right) => {
@@ -99,38 +99,22 @@ export function CompanyDetailView({
   const summaryDomain = domains.find((domain) => !domain.includes(".")) ?? domains[0] ?? "-";
   const summaryFacts = [
     { label: "Industry", value: summaryDomain, icon: "work" },
-    { label: "Location", value: primary?.location ?? "-", icon: "location_on" },
-    { label: "Size", value: primary?.employeesRange?.label ?? "-", icon: "groups" },
-    { label: "Stage", value: primary?.companyStage?.label ?? "-", icon: "route" },
-    { label: "Funding", value: primary?.funding ?? "-", icon: "payments" },
+    { label: "Location", value: company.location ?? "-", icon: "location_on" },
+    { label: "Size", value: company.employeesRange?.label ?? "-", icon: "groups" },
+    { label: "Stage", value: company.companyStage?.label ?? "-", icon: "route" },
+    { label: "Funding", value: company.funding ?? "-", icon: "payments" },
     { label: "Domain", value: domains.join(", ") || "-", icon: "public" },
   ] as const;
 
   const researchExistingData = {
-    companySearchName:
-      company.opportunities.find((item) => Boolean(item.companySearchName?.trim()))
-        ?.companySearchName ?? null,
-    linkedinUrl:
-      company.opportunities.find((item) => Boolean(item.linkedinUrl?.trim()))
-        ?.linkedinUrl ?? primary?.linkedinUrl ?? null,
-    funding:
-      company.opportunities.find((item) => Boolean(item.funding?.trim()))?.funding ??
-      null,
-    customersTraction:
-      company.opportunities.find((item) => Boolean(item.customersTraction?.trim()))
-        ?.customersTraction ?? null,
-    companyDescription:
-      company.opportunities.find((item) => Boolean(item.companyDescription?.trim()))
-        ?.companyDescription ?? null,
-    productDescription:
-      company.opportunities.find((item) => Boolean(item.productDescription?.trim()))
-        ?.productDescription ?? null,
-    location:
-      company.opportunities.find((item) => Boolean(item.location?.trim()))?.location ??
-      null,
-    employees:
-      company.opportunities.find((item) => Boolean(item.employeesRange?.label?.trim()))
-        ?.employeesRange?.label ?? null,
+    companySearchName: company.searchName ?? null,
+    linkedinUrl: company.linkedinUrl ?? null,
+    funding: company.funding ?? null,
+    customersTraction: company.customersTraction ?? null,
+    companyDescription: company.description ?? null,
+    productDescription: company.productDescription ?? null,
+    location: company.location ?? null,
+    employees: company.employeesRange?.label ?? null,
   };
 
   const researchContext = `Roles: ${company.opportunities.length} · Interactions: ${company.interactions.length} · Domains: ${domains.join(", ") || "None"}`;
@@ -145,7 +129,7 @@ export function CompanyDetailView({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="truncate font-title-lg text-title-lg font-bold text-on-background">
-              {company.companyName}
+              {company.name}
             </h1>
             {companyBadge ? (
               <Badge tone={companyBadge.tone}>{companyBadge.label}</Badge>
@@ -168,7 +152,7 @@ export function CompanyDetailView({
             onClick={() => {
               if (
                 window.confirm(
-                  `Delete ${company.companyName} and all its opportunities/interactions?`,
+                  `Delete ${company.name} and all its opportunities/interactions?`,
                 )
               ) {
                 onDeleteCompany();
@@ -200,11 +184,11 @@ export function CompanyDetailView({
       {showResearch ? (
         <section className="panel mt-4 p-5">
           <CompanyResearchPanel
-            companyName={company.companyName}
+            companyName={company.name}
             knownContext={researchContext}
             existingCompanyData={researchExistingData}
             onSaved={(research) => {
-              void queryClient.invalidateQueries({ queryKey: ["company", company.companyName] });
+              void queryClient.invalidateQueries({ queryKey: ["company", company.name] });
               void queryClient.invalidateQueries({ queryKey: ["companies"] });
               void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
               setShowResearch(false);
@@ -237,7 +221,7 @@ export function CompanyDetailView({
             {opportunitiesWithInteractions.map((item) => (
               <OpportunityInteractionTimeline
                 key={item.id}
-                companyName={item.companyName}
+                companyName={company.name}
                 roleTitle={item.roleTitle}
                 interactions={item.interactions}
                 selectedInteractionId={selectedInteractionId}
@@ -257,18 +241,18 @@ export function CompanyDetailView({
             title="Company Profile"
             defaultRows={3}
             rows={[
-              { label: "English Search Name", value: primary?.companySearchName ?? "-" },
+              { label: "English Search Name", value: company.searchName ?? "-" },
               { label: "Work Model", value: primary?.workModel?.label ?? "-" },
-              { label: "LinkedIn", value: primary?.linkedinUrl ?? "-", href: primary?.linkedinUrl },
-              { label: "Company", value: primary?.companyDescription ?? "-" },
+              { label: "LinkedIn", value: company.linkedinUrl ?? "-", href: company.linkedinUrl },
+              { label: "Company", value: company.description ?? "-" },
             ]}
             moreRows={[
               { label: "Domains", value: domains.join(", ") || "-" },
-              { label: "Location", value: primary?.location ?? "-" },
-              { label: "Size", value: primary?.employeesRange?.label ?? "-" },
-              { label: "Stage", value: primary?.companyStage?.label ?? "-" },
-              { label: "Funding / Rounds", value: primary?.funding ?? "-" },
-              { label: "Customers / Traction", value: primary?.customersTraction ?? "-" },
+              { label: "Location", value: company.location ?? "-" },
+              { label: "Size", value: company.employeesRange?.label ?? "-" },
+              { label: "Stage", value: company.companyStage?.label ?? "-" },
+              { label: "Funding / Rounds", value: company.funding ?? "-" },
+              { label: "Customers / Traction", value: company.customersTraction ?? "-" },
             ]}
           />
 
@@ -276,8 +260,8 @@ export function CompanyDetailView({
             title="Technical / Role Context"
             defaultRows={2}
             rows={[
-              { label: "Tech Stack", value: primary?.techStack ?? "-" },
-              { label: "Backend / Frontend Split", value: primary?.backendFrontendSplit ?? "-" },
+              { label: "Tech Stack", value: company.techStack ?? "-" },
+              { label: "Backend / Frontend Split", value: company.backendFrontendSplit ?? "-" },
             ]}
             moreRows={[
               { label: "Compensation Notes", value: primary?.compensationNotes ?? "-" },

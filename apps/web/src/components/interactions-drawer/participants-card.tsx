@@ -9,7 +9,7 @@ import { api } from "../../lib/api";
 type ParticipantsCardProps = {
   personNames: string[];
   personRecords: Array<Person | undefined>;
-  opportunityId?: string;
+  opportunitySlug?: string;
   opportunityCompanyName?: string;
   columns?: 1 | 2; // 1 for single column (drawer), 2 for two columns (opportunity page)
 };
@@ -17,7 +17,7 @@ type ParticipantsCardProps = {
 export function ParticipantsCard({
   personNames,
   personRecords,
-  opportunityId,
+  opportunitySlug,
   opportunityCompanyName,
   columns = 2
 }: ParticipantsCardProps) {
@@ -30,13 +30,13 @@ export function ParticipantsCard({
 
   const markAsWrong = useMutation({
     mutationFn: async (personId: string) => {
-      if (!opportunityId) throw new Error("No opportunity ID");
-      return api.markPersonAsWrong(personId, opportunityId, selectedPersonName, undefined);
+      if (!opportunitySlug) throw new Error("No opportunity ID");
+      return api.markPersonAsWrong(personId, opportunitySlug, selectedPersonName, undefined);
     },
     onSuccess: () => {
       // Refresh contacts list
-      if (opportunityId) {
-        void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunityId] });
+      if (opportunitySlug) {
+        void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunitySlug] });
       }
       setPersonDetailModalOpen(false);
       setSelectedPerson(null);
@@ -114,7 +114,7 @@ export function ParticipantsCard({
           title: null,
           linkedinUrl: selectedLinkedinUrl
         }}
-        opportunityId={opportunityId}
+        opportunitySlug={opportunitySlug}
         opportunityCompanyName={opportunityCompanyName}
         isOpen={researchModalOpen}
         onClose={() => setResearchModalOpen(false)}
@@ -152,7 +152,7 @@ export function ParticipantsCard({
           }}
           showActions={{
             refreshResearch: true,
-            markAsWrong: !!opportunityId,
+            markAsWrong: !!opportunitySlug,
             delete: false, // Don't show delete in interaction drawer
           }}
         />

@@ -44,13 +44,14 @@ test("buildOpportunityInputFromParsedJobDescription maps parser output to opport
   assert.equal(input.source, "Telegram opportunity webhook");
   assert.equal(input.referrerOrConnection, "Jane Recruiter");
   assert.equal(input.nextStep, "Reply with availability");
-  assert.equal(input.location, "Tel Aviv");
-  assert.equal(input.funding, "Series B");
-  assert.equal(input.companyDescription, "Builds payments software");
-  assert.equal(input.productDescription, "Payment automation");
-  assert.equal(input.customersTraction, "Enterprise customers");
-  assert.equal(input.techStack, "Node.js, TypeScript");
-  assert.equal(input.backendFrontendSplit, "Backend-heavy");
+  // Company fields moved to Company entity (no longer on Opportunity)
+  // assert.equal(input.location, "Tel Aviv");
+  // assert.equal(input.funding, "Series B");
+  // assert.equal(input.companyDescription, "Builds payments software");
+  // assert.equal(input.productDescription, "Payment automation");
+  // assert.equal(input.customersTraction, "Enterprise customers");
+  // assert.equal(input.techStack, "Node.js, TypeScript");
+  // assert.equal(input.backendFrontendSplit, "Backend-heavy");
   assert.equal(input.compensationNotes, "Competitive");
   assert.equal(input.notes, "Recruiter reached out\nRemote friendly");
   assert.deepEqual(input.domainIds, []);

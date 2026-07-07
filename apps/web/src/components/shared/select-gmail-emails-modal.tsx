@@ -6,7 +6,7 @@ import { GmailEmailSelector } from "./gmail-email-selector";
 type SelectGmailEmailsModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  opportunityId: string;
+  opportunitySlug: string;
   onEmailsSelected: (selectedIds: string[]) => void | Promise<void>;
   title?: string;
   submitLabel?: string;
@@ -19,7 +19,7 @@ type SelectGmailEmailsModalProps = {
 export function SelectGmailEmailsModal({
   isOpen,
   onClose,
-  opportunityId,
+  opportunitySlug,
   onEmailsSelected,
   title = "Select Gmail Emails",
   submitLabel = "Continue",
@@ -32,36 +32,36 @@ export function SelectGmailEmailsModal({
 
   // Fetch Gmail search results
   const { data: searchResults, isLoading, refetch: refetchSearch, isRefetching } = useQuery({
-    queryKey: ["gmail-search", opportunityId],
-    queryFn: () => api.gmailSearch(opportunityId),
-    enabled: isOpen && !!opportunityId,
+    queryKey: ["gmail-search", opportunitySlug],
+    queryFn: () => api.gmailSearch(opportunitySlug),
+    enabled: isOpen && !!opportunitySlug,
   });
 
   // Fetch Gmail message states for debug section
   const { data: messageStates } = useQuery({
-    queryKey: ["gmail-message-states", opportunityId],
-    queryFn: () => api.gmailMessageStates(opportunityId),
-    enabled: isOpen && !!opportunityId,
+    queryKey: ["gmail-message-states", opportunitySlug],
+    queryFn: () => api.gmailMessageStates(opportunitySlug),
+    enabled: isOpen && !!opportunitySlug,
   });
 
   const unpickEmail = useMutation({
-    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunityId, messageId),
+    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
     },
   });
 
   const restoreEmail = useMutation({
-    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunityId, messageId),
+    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
+      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
     },
   });
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunityId] });
+    queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
     refetchSearch();
   };
 

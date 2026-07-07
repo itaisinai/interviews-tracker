@@ -180,10 +180,11 @@ type ReviewModalProps = {
   saveForLater: boolean;
   onDiscard: () => void;
   onSave: () => void;
+  onMarkWrong?: () => void;
   isSaving: boolean;
 };
 
-export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onDiscard, onSave, isSaving }: ReviewModalProps) {
+export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onDiscard, onSave, onMarkWrong, isSaving }: ReviewModalProps) {
   const { person, research } = result;
   const [showAllExperience, setShowAllExperience] = useState(false);
   const [showAllEducation, setShowAllEducation] = useState(false);
@@ -343,19 +344,27 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
         ) : null}
       </div>
 
-      <div className="mt-6 flex items-center justify-end gap-3">
-        <button type="button" className="btn btn-secondary" onClick={onDiscard}>
-          Discard
-        </button>
-        <LoadingButton
-          className="btn btn-primary"
-          loading={isSaving}
-          loadingLabel="Saving..."
-          onClick={onSave}
-        >
-          <MaterialIcon name="save" />
-          {saveForLater ? "Save research" : "Done"}
-        </LoadingButton>
+      <div className="mt-6 flex items-center justify-between gap-3">
+        {onMarkWrong ? (
+          <button type="button" className="btn btn-secondary text-error hover:bg-error-container" onClick={onMarkWrong}>
+            <MaterialIcon name="person_remove" />
+            Wrong person
+          </button>
+        ) : <div />}
+        <div className="flex items-center gap-3">
+          <button type="button" className="btn btn-secondary" onClick={onDiscard}>
+            Discard
+          </button>
+          <LoadingButton
+            className="btn btn-primary"
+            loading={isSaving}
+            loadingLabel="Saving..."
+            onClick={onSave}
+          >
+            <MaterialIcon name="save" />
+            {saveForLater ? "Save research" : "Done"}
+          </LoadingButton>
+        </div>
       </div>
     </Modal>
   );

@@ -38,13 +38,17 @@ export async function getInteractionDetails(
       jobOpportunity: {
         select: {
           id: true,
-          companyName: true,
           roleTitle: true,
-          contacts: {
+          company: {
             select: {
               name: true,
-              title: true,
-              email: true
+              contacts: {
+                select: {
+                  name: true,
+                  title: true,
+                  email: true
+                }
+              }
             }
           }
         }
@@ -68,9 +72,9 @@ export async function getInteractionDetails(
     });
   }
 
-  // Add opportunity contacts (avoiding duplicates by name)
+  // Add company contacts (avoiding duplicates by name)
   const existingNames = new Set(participants.map(p => p.name.toLowerCase()));
-  for (const contact of interaction.jobOpportunity.contacts) {
+  for (const contact of interaction.jobOpportunity.company.contacts) {
     if (!existingNames.has(contact.name.toLowerCase())) {
       participants.push({
         name: contact.name,
@@ -94,7 +98,7 @@ export async function getInteractionDetails(
     outcome: interaction.outcome,
     followUp: interaction.followUp,
     meetingLink: interaction.meetingLink,
-    companyName: interaction.jobOpportunity.companyName,
+    companyName: interaction.jobOpportunity.company.name,
     roleTitle: interaction.jobOpportunity.roleTitle,
     opportunityId: interaction.jobOpportunity.id,
     participants

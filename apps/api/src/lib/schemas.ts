@@ -7,6 +7,7 @@ export {
   interactionStatusSchema,
   taskStatusSchema,
   offerStatusSchema,
+  companyInputSchema,
   opportunityInputSchema,
   interactionInputSchema,
   noteInputSchema,

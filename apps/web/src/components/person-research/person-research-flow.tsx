@@ -24,14 +24,14 @@ type PersonResearchFlowProps = {
   isOpen: boolean;
   onClose: () => void;
   onSaved?: () => void;
-  opportunityId?: string;
+  opportunitySlug?: string;
   opportunityCompanyName?: string; // For company validation
   personId?: string; // Existing person ID to update instead of creating new
 };
 
 type FlowStep = "confirm" | "loading" | "review" | "error";
 
-export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportunityId, opportunityCompanyName, personId }: PersonResearchFlowProps) {
+export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportunitySlug, opportunityCompanyName, personId }: PersonResearchFlowProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("confirm");
   const [researchResult, setResearchResult] = useState<PersonResearchResult | null>(null);
@@ -39,8 +39,8 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
   const [linkedinUrlOverride, setLinkedinUrlOverride] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Log personId when component mounts or personId changes
-  console.log('[PersonResearchFlow] Rendered with personId:', personId, 'person:', person);
+  // Log personId when component mounts or personId changes (debug only)
+  // console.log('[PersonResearchFlow] Rendered with personId:', personId, 'person:', person);
 
   const resetFlow = () => {
     setStep("confirm");
@@ -56,13 +56,13 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
       setLinkedinUrlOverride(linkedinUrl);
       setStep("loading");
 
-      // Cast to any to add opportunityId since it's not in the PersonResearchInput type yet
+      // Cast to any to add opportunitySlug since it's not in the PersonResearchInput type yet
       const result = await api.researchPerson({
         name: person.name,
         companyName: opportunityCompanyName || person.company || undefined,
         roleTitle: person.title || undefined,
         linkedinUrl: linkedinUrl || person.linkedinUrl || undefined,
-        opportunityId
+        opportunitySlug
       } as any);
 
       if (!result) {
@@ -93,7 +93,7 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
         throw new Error("No research result to save");
       }
 
-      console.log('[SAVE PERSON] personId:', personId, 'opportunityId:', opportunityId);
+      console.log('[SAVE PERSON] personId:', personId, 'opportunitySlug:', opportunitySlug);
 
       // If personId is provided, update existing person instead of creating new
       if (personId) {
@@ -128,12 +128,12 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
         title: researchResult.person.title || undefined,
         company: researchResult.person.company || undefined,
         avatarUrl: researchResult.person.avatarUrl || undefined,
-        jobOpportunityId: opportunityId
+        opportunitySlug: opportunitySlug  // Use slug, not ID
       });
 
       // Save research
       if (saveForLater) {
-        await api.savePersonResearch(personRecord.id, researchResult.research);
+        await api.savePersonResearch(personRecord.slug, researchResult.research);
       }
 
       return personRecord;
@@ -142,8 +142,8 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
       void queryClient.invalidateQueries({ queryKey: ["people"] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      if (opportunityId) {
-        void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunityId] });
+      if (opportunitySlug) {
+        void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunitySlug] });
       }
 
       onSaved?.();
@@ -177,6 +177,29 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
     save.mutate();
   };
 
+  const handleMarkWrong = async () => {
+    if (!researchResult || !opportunitySlug) return;
+
+    if (confirm(`Mark ${researchResult.person.name} as wrong candidate? This will exclude them from future searches for this opportunity.`)) {
+      try {
+        await api.markResearchAsWrongCandidate({
+          opportunitySlug: opportunitySlug,
+          linkedinUrl: researchResult.person.linkedinUrl || "",
+          personName: researchResult.person.name,
+          company: researchResult.person.company,
+          title: researchResult.person.title,
+          avatarUrl: researchResult.person.avatarUrl,
+          searchContext: person.name
+        });
+        console.log('[MARK WRONG] Successfully marked candidate as wrong');
+        resetFlow();
+      } catch (error) {
+        console.error('[MARK WRONG] Failed:', error);
+        alert('Failed to mark as wrong candidate. Please try again.');
+      }
+    }
+  };
+
   return (
     <>
       <ConfirmResearchModal
@@ -196,6 +219,7 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
           saveForLater={saveForLater}
           onDiscard={handleDiscard}
           onSave={handleSave}
+          onMarkWrong={opportunitySlug ? handleMarkWrong : undefined}
           isSaving={save.isPending}
         />
       ) : null}

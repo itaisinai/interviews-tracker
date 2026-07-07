@@ -6,13 +6,13 @@ import { AttachEmailModal } from "./attach-email-modal";
 
 type AttachedEmailsSectionProps = {
   interactionId: string;
-  opportunityId: string;
+  opportunitySlug: string;
   onEmailsAttached?: () => void;
 };
 
 export function AttachedEmailsSection({
   interactionId,
-  opportunityId,
+  opportunitySlug,
   onEmailsAttached,
 }: AttachedEmailsSectionProps) {
   const interactionSlug = interactionId;
@@ -61,7 +61,7 @@ export function AttachedEmailsSection({
       // Invalidate queries to refresh data
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunityId] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunity", opportunitySlug] });
 
       // Trigger callback to open edit form
       onEmailsAttached?.();
@@ -177,7 +177,7 @@ export function AttachedEmailsSection({
         isOpen={showAttachModal}
         onClose={() => setShowAttachModal(false)}
         interactionId={interactionId}
-        opportunityId={opportunityId}
+        opportunitySlug={opportunitySlug}
         onAttached={onEmailsAttached}
       />
     </>

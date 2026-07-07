@@ -5,14 +5,20 @@ export function buildSelectedOpportunityForInteraction(
   loadedInteractions: readonly Interaction[],
   loadedOpportunities: readonly Opportunity[],
 ): Opportunity | null {
+  // Get opportunity slug from nested object
+  const opportunitySlug = interaction.jobOpportunity?.slug;
+
+  if (!opportunitySlug) {
+    return null;
+  }
+
   const opportunityInteractions = loadedInteractions.filter(
-    (item) => item.jobOpportunityId === interaction.jobOpportunityId,
+    (item) => item.jobOpportunity?.slug === opportunitySlug,
   );
+
   const baseOpportunity =
     interaction.jobOpportunity ??
-    loadedOpportunities.find(
-      (item) => item.id === interaction.jobOpportunityId,
-    ) ??
+    loadedOpportunities.find((item) => item.slug === opportunitySlug) ??
     null;
 
   return baseOpportunity

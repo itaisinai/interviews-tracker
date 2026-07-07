@@ -45,8 +45,12 @@ export async function getNextInteractions(
         select: {
           id: true,
           slug: true,
-          companyName: true,
-          roleTitle: true
+          roleTitle: true,
+          company: {
+            select: {
+              name: true
+            }
+          }
         }
       }
     },
@@ -68,7 +72,7 @@ export async function getNextInteractions(
     agenda: interaction.agenda,
     notes: interaction.notes,
     meetingLink: interaction.meetingLink,
-    companyName: interaction.jobOpportunity.companyName,
+    companyName: interaction.jobOpportunity.company.name,
     roleTitle: interaction.jobOpportunity.roleTitle,
     opportunityId: interaction.jobOpportunity.id,
     opportunitySlug: interaction.jobOpportunity.slug

@@ -10,7 +10,7 @@ import { useGmailInteractionPanel } from "./use-gmail-interaction-panel";
 import { useState } from "react";
 
 type GmailInteractionPanelProps = {
-  opportunityId: string;
+  opportunitySlug: string;
   companyName: string;
   roleTitle: string;
   onSaved?: (interaction?: Interaction) => void;

@@ -8,13 +8,13 @@ import type { GmailSearchCandidate } from "../../lib/types";
 
 type AttachedEmailsCardProps = {
   interactionId: string;
-  opportunityId: string;
+  opportunitySlug: string;
   onEmailsAttached?: (aiSuggestion?: any) => void;
 };
 
 export function AttachedEmailsCard({
   interactionId,
-  opportunityId,
+  opportunitySlug,
   onEmailsAttached,
 }: AttachedEmailsCardProps) {
   const interactionSlug = interactionId;
@@ -30,9 +30,9 @@ export function AttachedEmailsCard({
 
   // Fetch Gmail search results to get full email details and relevance
   const { data: searchResults } = useQuery({
-    queryKey: ["gmail-search", opportunityId],
-    queryFn: () => api.gmailSearch(opportunityId),
-    enabled: !!opportunityId,
+    queryKey: ["gmail-search", opportunitySlug],
+    queryFn: () => api.gmailSearch(opportunitySlug),
+    enabled: !!opportunitySlug,
   });
 
   // Map attached emails to their full Gmail data
@@ -51,7 +51,7 @@ export function AttachedEmailsCard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interaction-emails", interactionId] });
       queryClient.invalidateQueries({ queryKey: ["interactions"] });
-      queryClient.invalidateQueries({ queryKey: ["opportunities", opportunityId] });
+      queryClient.invalidateQueries({ queryKey: ["opportunities", opportunitySlug] });
     },
   });
 
@@ -64,7 +64,7 @@ export function AttachedEmailsCard({
       const result = await api.reparseInteractionEmails(interactionSlug);
 
       // Store result in cache for background sync
-      queryClient.setQueryData(["opportunity", opportunityId], (old: any) => {
+      queryClient.setQueryData(["opportunity", opportunitySlug], (old: any) => {
         if (!old) return old;
         return {
           ...old,
@@ -205,7 +205,7 @@ export function AttachedEmailsCard({
         isOpen={showAttachModal}
         onClose={() => setShowAttachModal(false)}
         interactionId={interactionId}
-        opportunityId={opportunityId}
+        opportunitySlug={opportunitySlug}
         onAttached={onEmailsAttached}
       />
     </>

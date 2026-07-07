@@ -6,7 +6,7 @@ import { getInteractionTimelineBadgeMeta, getOpportunityProcessBadgeMeta } from 
 test("older interactions hide status badges when a later interaction exists", () => {
   const interactions = [
     {
-      id: "interaction-a",
+      slug: "interaction-a",
       date: "2026-06-08T11:00:00.000Z",
       type: "Phone Call" as const,
       status: "SCHEDULED" as const,
@@ -15,7 +15,7 @@ test("older interactions hide status badges when a later interaction exists", ()
       followUp: null
     },
     {
-      id: "interaction-b",
+      slug: "interaction-b",
       date: "2026-06-09T11:00:00.000Z",
       type: "Rejection" as const,
       status: "REJECTED" as const,
@@ -32,7 +32,7 @@ test("older interactions hide status badges when a later interaction exists", ()
 test("older scheduled interactions do not show waiting when a later interview exists", () => {
   const interactions = [
     {
-      id: "interaction-a",
+      slug: "interaction-a",
       date: "2026-06-09T12:30:00.000Z",
       type: "Phone Call" as const,
       status: "SCHEDULED" as const,
@@ -41,7 +41,7 @@ test("older scheduled interactions do not show waiting when a later interview ex
       followUp: null
     },
     {
-      id: "interaction-b",
+      slug: "interaction-b",
       date: "2026-06-11T08:30:00.000Z",
       type: "Interview" as const,
       status: "SCHEDULED" as const,
@@ -61,7 +61,7 @@ test("older scheduled interactions do not show waiting when a later interview ex
 test("completed interactions still show a passed badge when unresolved", () => {
   const interactions = [
     {
-      id: "interaction-a",
+      slug: "interaction-a",
       date: "2026-06-08T11:00:00.000Z",
       type: "Interview" as const,
       status: "DONE" as const,

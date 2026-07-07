@@ -25,7 +25,7 @@ export async function createOpportunityFromWebhookHandler(request: Request) {
 
   try {
     const opportunity = await createOpportunityFromText(input.text);
-    timer.end({ opportunityId: opportunity.id, company: opportunity.companyName });
+    timer.end({ opportunityId: opportunity.id, company: opportunity.company.name });
     return { opportunity };
   } catch (error) {
     timer.fail(error, { source: input.source ?? "unknown" });

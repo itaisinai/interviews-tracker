@@ -39,6 +39,11 @@ export async function getOpportunitiesByStatus(
   const opportunities = await prisma.jobOpportunity.findMany({
     where,
     include: {
+      company: {
+        select: {
+          name: true
+        }
+      },
       interactions: {
         where: {
           status: "SCHEDULED",
@@ -71,7 +76,7 @@ export async function getOpportunitiesByStatus(
   return opportunities.map(opp => ({
     id: opp.id,
     slug: opp.slug,
-    companyName: opp.companyName,
+    companyName: opp.company.name,
     roleTitle: opp.roleTitle,
     status: opp.status,
     pipelineType: opp.pipelineType,

@@ -15,21 +15,25 @@ import {
   listInteractionEmails,
   reparseInteractionEmails
 } from "../services/interactions/interaction-email-service.js";
+import { serializeInteraction, serializeInteractions } from "../lib/serializers.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export const interactionsRouter = Router();
 
 interactionsRouter.get("/", asyncHandler(async (request, response) => {
-  response.json(await listInteractionsHandler(request as AuthenticatedRequest));
+  const interactions = await listInteractionsHandler(request as AuthenticatedRequest);
+  response.json(serializeInteractions(interactions));
 }));
 
 interactionsRouter.post("/", asyncHandler(async (request, response) => {
-  response.status(201).json(await createInteractionHandler(request as AuthenticatedRequest));
+  const interaction = await createInteractionHandler(request as AuthenticatedRequest);
+  response.status(201).json(serializeInteraction(interaction));
 }));
 
 interactionsRouter.put("/:id", asyncHandler(async (request, response) => {
-  response.json(await updateInteractionHandler(request as AuthenticatedRequest));
+  const interaction = await updateInteractionHandler(request as AuthenticatedRequest);
+  response.json(serializeInteraction(interaction));
 }));
 
 interactionsRouter.delete("/:id", asyncHandler(async (request, response) => {

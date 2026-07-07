@@ -5,7 +5,7 @@ import type { GmailSearchCandidate } from "../../lib/types";
 import type { GmailMessageStates, TrackedGmailEmail } from "./gmail-interaction-panel-helpers";
 
 type EmailActionsHandlers = {
-  opportunityId: string;
+  opportunitySlug: string;
   setError: (value: string | null) => void;
   setSaveError: (value: string | null) => void;
   setMessage: (value: string) => void;
@@ -21,7 +21,7 @@ type EmailActionsHandlers = {
 export function useGmailEmailActions(handlers: EmailActionsHandlers) {
   const queryClient = useQueryClient();
   const {
-    opportunityId,
+    opportunitySlug,
     setError,
     setSaveError,
     setMessage,
@@ -36,9 +36,9 @@ export function useGmailEmailActions(handlers: EmailActionsHandlers) {
     setError(null);
 
     try {
-      await api.gmailRestoreEmail(opportunityId, email.id);
+      await api.gmailRestoreEmail(opportunitySlug, email.id);
       queryClient.setQueryData<GmailMessageStates>(
-        ["gmail-message-states", opportunityId],
+        ["gmail-message-states", opportunitySlug],
         (current) => ({
           removedEmails:
             current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? [],
@@ -62,14 +62,14 @@ export function useGmailEmailActions(handlers: EmailActionsHandlers) {
     setSaveError(null);
 
     try {
-      await api.gmailUnpickEmail(opportunityId, email.id);
+      await api.gmailUnpickEmail(opportunitySlug, email.id);
       setPendingPickedEmailIds((current) => {
         const next = new Set(current);
         next.delete(email.id);
         return next;
       });
       queryClient.setQueryData<GmailMessageStates>(
-        ["gmail-message-states", opportunityId],
+        ["gmail-message-states", opportunitySlug],
         (current) => ({
           removedEmails: current?.removedEmails ?? [],
           pickedEmails:
@@ -92,9 +92,9 @@ export function useGmailEmailActions(handlers: EmailActionsHandlers) {
     setError(null);
 
     try {
-      await api.gmailIgnoreEmail(opportunityId, email.id);
+      await api.gmailIgnoreEmail(opportunitySlug, email.id);
       queryClient.setQueryData<GmailMessageStates>(
-        ["gmail-message-states", opportunityId],
+        ["gmail-message-states", opportunitySlug],
         (current) => ({
           removedEmails: current?.removedEmails ?? [],
           pickedEmails: current?.pickedEmails ?? [],
@@ -119,9 +119,9 @@ export function useGmailEmailActions(handlers: EmailActionsHandlers) {
     setError(null);
 
     try {
-      await api.gmailUnignoreEmail(opportunityId, email.id);
+      await api.gmailUnignoreEmail(opportunitySlug, email.id);
       queryClient.setQueryData<GmailMessageStates>(
-        ["gmail-message-states", opportunityId],
+        ["gmail-message-states", opportunitySlug],
         (current) => ({
           removedEmails: current?.removedEmails ?? [],
           pickedEmails: current?.pickedEmails ?? [],

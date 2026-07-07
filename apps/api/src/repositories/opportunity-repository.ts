@@ -19,8 +19,13 @@ export function preserveLinkedinMetadataForUpdate(input: OpportunityInput, exist
 }
 
 export const opportunityInclude = {
-  employeesRange: true,
-  companyStage: true,
+  company: {
+    include: {
+      employeesRange: true,
+      companyStage: true,
+      domains: { include: { domain: true } }
+    }
+  },
   workModel: true,
   domains: { include: { domain: true } },
   interactions: { orderBy: { date: "asc" as const } },
@@ -29,11 +34,12 @@ export const opportunityInclude = {
   compensation: true
 } satisfies Prisma.JobOpportunityInclude;
 
-function toWrite(input: OpportunityInput, ownerEmail: string): Omit<Prisma.JobOpportunityCreateInput, "slug"> {
-  const { domainIds, employeesRangeId, companyStageId, workModelId, ...rest } = input;
+function toWrite(input: OpportunityInput & { companyId: string }, ownerEmail: string): Omit<Prisma.JobOpportunityCreateInput, "slug"> {
+  const { domainIds, workModelId, companyId, companyName, ...rest } = input;
   return {
     ...rest,
     ownerEmail,
+    company: { connect: { id: companyId } },
     referrerOrConnection: rest.referrerOrConnection ?? null,
     source: rest.source ?? null,
     jobUrl: rest.jobUrl ?? null,
@@ -42,23 +48,14 @@ function toWrite(input: OpportunityInput, ownerEmail: string): Omit<Prisma.JobOp
     sourceUrl: rest.sourceUrl ?? null,
     nextStep: rest.nextStep ?? null,
     notes: rest.notes ?? null,
-    location: rest.location ?? null,
-    funding: rest.funding ?? null,
-    companyDescription: rest.companyDescription ?? null,
-    productDescription: rest.productDescription ?? null,
-    customersTraction: rest.customersTraction ?? null,
-    techStack: rest.techStack ?? null,
-    backendFrontendSplit: rest.backendFrontendSplit ?? null,
     compensationNotes: rest.compensationNotes ?? null,
-    employeesRange: employeesRangeId ? { connect: { id: employeesRangeId } } : undefined,
-    companyStage: companyStageId ? { connect: { id: companyStageId } } : undefined,
     workModel: workModelId ? { connect: { id: workModelId } } : undefined,
     domains: { create: domainIds.map((domainId) => ({ ownerEmail, domain: { connect: { id: domainId } } })) }
   };
 }
 
-async function createUniqueOpportunitySlug(input: Pick<OpportunityInput, "companyName" | "roleTitle">, ownerEmail: string, tx: Prisma.TransactionClient = prisma, excludeId?: string) {
-  const baseSlug = createOpportunitySlug(input.companyName, input.roleTitle);
+async function createUniqueOpportunitySlug(companyName: string, roleTitle: string, ownerEmail: string, tx: Prisma.TransactionClient = prisma, excludeId?: string) {
+  const baseSlug = createOpportunitySlug(companyName, roleTitle);
   const existing = await tx.jobOpportunity.findMany({
     where: {
       ownerEmail,
@@ -97,7 +94,7 @@ export async function listOpportunityRecords(query: Record<string, string | unde
     priority: query.priority ? { equals: query.priority as Prisma.EnumPriorityFilter<"JobOpportunity">["equals"] } : undefined,
     OR: query.search
       ? [
-          { companyName: { contains: query.search, mode: "insensitive" } },
+          { company: { name: { contains: query.search, mode: "insensitive" } } },
           { roleTitle: { contains: query.search, mode: "insensitive" } }
         ]
       : undefined,
@@ -159,28 +156,52 @@ export async function getOpportunitySummaryRecord(slugOrId: string, ownerEmail: 
     where: { id, ownerEmail },
     select: {
       id: true,
-      companyName: true,
-      companySearchName: true,
+      company: { select: { id: true, name: true, searchName: true } },
       roleTitle: true,
       domains: { select: { domain: { select: { label: true } } } }
     }
   });
 }
 
-export async function createOpportunityRecord(input: OpportunityInput, ownerEmail: string) {
-  const slug = await createUniqueOpportunitySlug(input, ownerEmail);
-  const opportunity = await prisma.jobOpportunity.create({ data: { ...toWrite(input, ownerEmail), slug }, include: opportunityInclude });
+export async function createOpportunityRecord(input: OpportunityInput, ownerEmail: string, companyId: string) {
+  // Get company name for slug generation
+  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { name: true } });
+  if (!company) throw new Error("Company not found");
+
+  const slug = await createUniqueOpportunitySlug(company.name, input.roleTitle, ownerEmail);
+  const opportunity = await prisma.jobOpportunity.create({
+    data: { ...toWrite({ ...input, companyId }, ownerEmail), slug },
+    include: opportunityInclude
+  });
   return promoteOpportunityInteractionsForRead(opportunity);
 }
 
-export async function updateOpportunityRecord(slugOrId: string, input: OpportunityInput, ownerEmail: string) {
+export async function updateOpportunityRecord(slugOrId: string, input: OpportunityInput, ownerEmail: string, companyId?: string) {
   const id = await resolveOpportunityId(slugOrId, ownerEmail);
   if (!id) throw new Error("Opportunity not found");
+
   const opportunity = await prisma.$transaction(async (tx) => {
-    const existing = await tx.jobOpportunity.findFirst({ where: { id, ownerEmail }, select: { slug: true, linkedinJobId: true, sourceUrl: true } });
-    const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input, existing ?? {});
-    const data = toWrite(inputWithPreservedMetadata, ownerEmail);
-    const slug = existing?.slug || await createUniqueOpportunitySlug(inputWithPreservedMetadata, ownerEmail, tx, id);
+    const existing = await tx.jobOpportunity.findFirst({
+      where: { id, ownerEmail },
+      include: { company: { select: { name: true } } }
+    });
+
+    if (!existing) throw new Error("Opportunity not found");
+
+    const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input, existing);
+    const finalCompanyId = companyId || existing.companyId;
+
+    // Get company name for slug regeneration if needed
+    let companyName = existing.company.name;
+    if (companyId && companyId !== existing.companyId) {
+      const company = await tx.company.findUnique({ where: { id: companyId }, select: { name: true } });
+      if (!company) throw new Error("Company not found");
+      companyName = company.name;
+    }
+
+    const slug = existing.slug || await createUniqueOpportunitySlug(companyName, inputWithPreservedMetadata.roleTitle, ownerEmail, tx, id);
+    const data = toWrite({ ...inputWithPreservedMetadata, companyId: finalCompanyId }, ownerEmail);
+
     await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
     return tx.jobOpportunity.update({ where: { id }, data: { ...data, slug }, include: opportunityInclude });
   });
