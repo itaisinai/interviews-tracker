@@ -43,9 +43,9 @@ export function DashboardPage() {
 
   const selectedInteraction = useMemo(
     () =>
-      interactions.find((item) => item.id === selectedInteractionId) ??
+      interactions.find((item) => item.slug === selectedInteractionId) ??
       data?.upcomingInteractions.find(
-        (item) => item.id === selectedInteractionId,
+        (item) => item.slug === selectedInteractionId,
       ) ??
       null,
     [data?.upcomingInteractions, interactions, selectedInteractionId],

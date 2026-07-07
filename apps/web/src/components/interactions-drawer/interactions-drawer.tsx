@@ -92,7 +92,7 @@ export function InteractionsDrawer({
   useEffect(() => {
     setIsEditing(false);
     setDraft(mountedInteraction ? interactionToDraft(mountedInteraction) : null);
-  }, [mountedInteraction?.id]);
+  }, [mountedInteraction?.slug]);
 
   const opportunity =
     selectedOpportunity ??

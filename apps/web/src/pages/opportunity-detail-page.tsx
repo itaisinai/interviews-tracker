@@ -84,7 +84,7 @@ export function OpportunityDetailPage() {
   );
   const selectedInteraction = useMemo(
     () =>
-      displayedInteractions.find((item) => item.id === selectedInteractionId) ??
+      displayedInteractions.find((item) => item.slug === selectedInteractionId) ??
       null,
     [displayedInteractions, selectedInteractionId],
   );
@@ -105,7 +105,7 @@ export function OpportunityDetailPage() {
   useEffect(() => {
     if (
       selectedInteractionId &&
-      !displayedInteractions.some((item) => item.id === selectedInteractionId)
+      !displayedInteractions.some((item) => item.slug === selectedInteractionId)
     ) {
       setSelectedInteractionId(null);
     }
