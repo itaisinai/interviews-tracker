@@ -128,7 +128,7 @@ export function PersonResearchFlow({ person, isOpen, onClose, onSaved, opportuni
         title: researchResult.person.title || undefined,
         company: researchResult.person.company || undefined,
         avatarUrl: researchResult.person.avatarUrl || undefined,
-        jobOpportunityId: opportunityId
+        opportunitySlug: opportunityId  // Use slug, not ID
       });
 
       // Save research

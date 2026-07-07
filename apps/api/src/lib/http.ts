@@ -5,9 +5,13 @@ import { GmailReconnectRequiredError } from "../services/gmail/gmail-service.js"
 import { PersonResearchProviderError } from "../services/people/exa-provider.js";
 import { NotFoundError } from "./slug-resolver.js";
 
-export function asyncHandler(handler: (request: Request, response: Response, next: NextFunction) => Promise<unknown>) {
+export type AuthenticatedRequest = Request & { auth: { email: string } };
+
+export function asyncHandler<T extends Request = Request>(
+  handler: (request: T, response: Response, next: NextFunction) => Promise<unknown>
+) {
   return (request: Request, response: Response, next: NextFunction) => {
-    handler(request, response, next).catch(next);
+    handler(request as T, response, next).catch(next);
   };
 }
 
