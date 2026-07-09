@@ -93,6 +93,32 @@ export function GmailImportFlow({
     },
   });
 
+  const ignoreEmail = useMutation({
+    mutationFn: (messageId: string) =>
+      api.gmailIgnoreEmail(opportunitySlug, messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
+    },
+  });
+
+  const unignoreEmail = useMutation({
+    mutationFn: (messageId: string) =>
+      api.gmailUnignoreEmail(opportunitySlug, messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
+    },
+  });
+
   const handleRefresh = () => {
     queryClient.invalidateQueries({
       queryKey: ["gmail-message-states", opportunitySlug],
@@ -238,6 +264,11 @@ export function GmailImportFlow({
             subject: e.subject,
             date: e.date,
           })),
+          ignoredEmails: messageStates.ignoredEmails.map((e) => ({
+            id: e.id,
+            subject: e.subject,
+            date: e.date,
+          })),
         }
       : undefined;
 
@@ -256,8 +287,12 @@ export function GmailImportFlow({
         messageStates={transformedMessageStates}
         onUnpick={(messageId) => unpickEmail.mutate(messageId)}
         onRestore={(messageId) => restoreEmail.mutate(messageId)}
+        onIgnore={(messageId) => ignoreEmail.mutate(messageId)}
+        onUnignore={(messageId) => unignoreEmail.mutate(messageId)}
         isUnpickPending={unpickEmail.isPending}
         isRestorePending={restoreEmail.isPending}
+        isIgnorePending={ignoreEmail.isPending}
+        isUnignorePending={unignoreEmail.isPending}
         showDebugSection={true}
         onRefresh={handleRefresh}
         isRefreshing={isRefetching}

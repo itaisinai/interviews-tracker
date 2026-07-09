@@ -11,6 +11,7 @@ type TrackedGmailEmail = {
 type GmailMessageStates = {
   pickedEmails: TrackedGmailEmail[];
   removedEmails: TrackedGmailEmail[];
+  ignoredEmails: TrackedGmailEmail[];
 };
 
 type GmailEmailSelectorProps = {
@@ -28,8 +29,12 @@ type GmailEmailSelectorProps = {
   messageStates?: GmailMessageStates;
   onUnpick?: (messageId: string) => void;
   onRestore?: (messageId: string) => void;
+  onIgnore?: (messageId: string) => void;
+  onUnignore?: (messageId: string) => void;
   isUnpickPending?: boolean;
   isRestorePending?: boolean;
+  isIgnorePending?: boolean;
+  isUnignorePending?: boolean;
   showDebugSection?: boolean;
   onRefresh?: () => void;
   isRefreshing?: boolean;
@@ -50,17 +55,22 @@ export function GmailEmailSelector({
   messageStates,
   onUnpick,
   onRestore,
+  onIgnore,
+  onUnignore,
   isUnpickPending = false,
   isRestorePending = false,
+  isIgnorePending = false,
+  isUnignorePending = false,
   showDebugSection = false,
   onRefresh,
   isRefreshing = false,
 }: GmailEmailSelectorProps) {
   const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(new Set());
+  const [locallyIgnoredIds, setLocallyIgnoredIds] = useState<Set<string>>(new Set());
 
-  // Filter out excluded emails
+  // Filter out excluded emails and locally ignored emails
   const availableCandidates = candidates.filter(
-    candidate => !filterOutIds.has(candidate.id)
+    candidate => !filterOutIds.has(candidate.id) && !locallyIgnoredIds.has(candidate.id)
   );
 
   const handleToggleEmail = (emailId: string) => {
@@ -141,59 +151,87 @@ export function GmailEmailSelector({
             const isRelevant = candidate.relevance.isRelevant;
 
             return (
-              <button
+              <div
                 key={candidate.id}
-                onClick={() => handleToggleEmail(candidate.id)}
-                disabled={isSubmitting}
-                className={`w-full flex items-start gap-3 p-3 rounded-lg border transition-colors text-left ${
+                className={`w-full flex items-start gap-3 p-3 rounded-lg border transition-colors ${
                   isSelected
                     ? "border-blue-500 bg-blue-50"
                     : "border-neutral-200 hover:bg-neutral-50"
-                } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+                } ${isSubmitting || isIgnorePending ? "opacity-50" : ""}`}
               >
-                {/* Checkbox */}
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
-                  isSelected
-                    ? "border-blue-500 bg-blue-500"
-                    : "border-neutral-300"
-                }`}>
-                  {isSelected && (
-                    <MaterialIcon name="check" className="text-[14px] text-white" />
-                  )}
-                </div>
-
-                {/* Email info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <div className="font-medium text-sm text-neutral-900 truncate">
-                      {candidate.subject}
-                    </div>
-                    {isRelevant && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex-shrink-0">
-                        <MaterialIcon name="check_circle" className="text-[12px]" />
-                        Relevant
-                      </span>
+                {/* Checkbox button */}
+                <button
+                  onClick={() => handleToggleEmail(candidate.id)}
+                  disabled={isSubmitting || isIgnorePending}
+                  className="flex items-start gap-3 flex-1 min-w-0 text-left"
+                >
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
+                    isSelected
+                      ? "border-blue-500 bg-blue-500"
+                      : "border-neutral-300"
+                  }`}>
+                    {isSelected && (
+                      <MaterialIcon name="check" className="text-[14px] text-white" />
                     )}
                   </div>
-                  <div className="text-xs text-neutral-500 mb-1">
-                    From: {candidate.from}
-                  </div>
-                  <div className="text-xs text-neutral-400">
-                    {new Date(candidate.date).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit"
-                    })}
-                  </div>
-                  {candidate.snippet && (
-                    <div className="text-xs text-neutral-500 mt-2 line-clamp-2">
-                      {candidate.snippet}
+
+                  {/* Email info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="font-medium text-sm text-neutral-900 truncate">
+                        {candidate.subject}
+                      </div>
+                      {isRelevant && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex-shrink-0">
+                          <MaterialIcon name="check_circle" className="text-[12px]" />
+                          Relevant
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-              </button>
+                    <div className="text-xs text-neutral-500 mb-1">
+                      From: {candidate.from}
+                    </div>
+                    <div className="text-xs text-neutral-400">
+                      {new Date(candidate.date).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
+                    </div>
+                    {candidate.snippet && (
+                      <div className="text-xs text-neutral-500 mt-2 line-clamp-2">
+                        {candidate.snippet}
+                      </div>
+                    )}
+                  </div>
+                </button>
+
+                {/* Ignore button */}
+                {onIgnore && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Optimistically hide it from UI immediately
+                      setLocallyIgnoredIds(prev => new Set(prev).add(candidate.id));
+                      // Also remove from selected if it was selected
+                      setSelectedEmailIds(prev => {
+                        const next = new Set(prev);
+                        next.delete(candidate.id);
+                        return next;
+                      });
+                      // Call API in background
+                      onIgnore(candidate.id);
+                    }}
+                    disabled={isSubmitting || isIgnorePending}
+                    className="flex-shrink-0 self-center px-2 py-1 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Mark as not relevant"
+                  >
+                    Not Relevant
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
@@ -232,12 +270,12 @@ export function GmailEmailSelector({
       </div>
 
       {/* Debug Section */}
-      {showDebugSection && messageStates && (messageStates.pickedEmails.length > 0 || messageStates.removedEmails.length > 0) && (
+      {showDebugSection && messageStates && (messageStates.pickedEmails.length > 0 || messageStates.removedEmails.length > 0 || messageStates.ignoredEmails.length > 0) && (
         <div className="border-t border-neutral-200 pt-4 mt-4">
           <details className="group">
             <summary className="cursor-pointer text-sm font-medium text-neutral-600 hover:text-neutral-900 flex items-center gap-2">
               <MaterialIcon name="expand_more" className="text-[18px] group-open:rotate-180 transition-transform" />
-              Debug: Picked/Cleared emails ({messageStates.pickedEmails.length + messageStates.removedEmails.length})
+              Debug: Picked/Cleared/Ignored emails ({messageStates.pickedEmails.length + messageStates.removedEmails.length + messageStates.ignoredEmails.length})
             </summary>
             <div className="mt-3 space-y-3">
               {messageStates.pickedEmails.length > 0 && (
@@ -260,6 +298,16 @@ export function GmailEmailSelector({
                   onAction={onRestore}
                 />
               )}
+              {messageStates.ignoredEmails.length > 0 && (
+                <EmailStateList
+                  emails={messageStates.ignoredEmails}
+                  title="Ignored"
+                  tone="ignored"
+                  pending={isUnignorePending}
+                  actionLabel="Undo"
+                  onAction={onUnignore}
+                />
+              )}
             </div>
           </details>
         </div>
@@ -271,7 +319,7 @@ export function GmailEmailSelector({
 type EmailStateListProps = {
   emails: TrackedGmailEmail[];
   title: string;
-  tone: "picked" | "removed";
+  tone: "picked" | "removed" | "ignored";
   pending: boolean;
   actionLabel: string;
   onAction?: (messageId: string) => void;
@@ -283,10 +331,11 @@ function EmailStateList({ emails, title, tone, pending, actionLabel, onAction }:
   }
 
   const picked = tone === "picked";
-  const headingClass = picked ? "text-emerald-600" : "text-neutral-500";
-  const dateClass = picked ? "text-emerald-600" : "text-neutral-500";
-  const cardClass = `flex items-start justify-between gap-2 rounded border ${picked ? "border-emerald-200 bg-emerald-50" : "border-neutral-200 bg-neutral-50"} p-2`;
-  const buttonClass = `flex-shrink-0 rounded px-2 py-1 text-xs font-medium ${picked ? "text-emerald-700 hover:bg-emerald-100" : "text-neutral-700 hover:bg-neutral-100"} disabled:opacity-50`;
+  const ignored = tone === "ignored";
+  const headingClass = picked ? "text-emerald-600" : ignored ? "text-orange-600" : "text-neutral-500";
+  const dateClass = picked ? "text-emerald-600" : ignored ? "text-orange-600" : "text-neutral-500";
+  const cardClass = `flex items-start justify-between gap-2 rounded border ${picked ? "border-emerald-200 bg-emerald-50" : ignored ? "border-orange-200 bg-orange-50" : "border-neutral-200 bg-neutral-50"} p-2`;
+  const buttonClass = `flex-shrink-0 rounded px-2 py-1 text-xs font-medium ${picked ? "text-emerald-700 hover:bg-emerald-100" : ignored ? "text-orange-700 hover:bg-orange-100" : "text-neutral-700 hover:bg-neutral-100"} disabled:opacity-50`;
 
   const formatDate = (dateString: string) => {
     try {
