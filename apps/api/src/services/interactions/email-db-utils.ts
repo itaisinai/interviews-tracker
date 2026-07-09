@@ -11,7 +11,12 @@ export async function fetchInteractionWithEmails(interactionId: string) {
         orderBy: { receivedDate: 'desc' }
       },
       jobOpportunity: {
-        select: { companyName: true, roleTitle: true }
+        select: {
+          roleTitle: true,
+          company: {
+            select: { name: true }
+          }
+        }
       }
     }
   });
