@@ -4,20 +4,26 @@
  */
 
 import { z } from "zod";
+
 import { logError, logInfo } from "../../lib/logger.js";
+
+import { handleHelpCommand, handleStartCommand, handleUnknownCommand, isCommand } from "./telegram-commands.js";
 import { classifyMessageIntent } from "./telegram-intent-classifier.js";
-import { isCommand, handleStartCommand, handleHelpCommand, handleUnknownCommand } from "./telegram-commands.js";
 import { handleOpportunityCreation, handleOpportunityQuery } from "./telegram-message-handlers.js";
 
-export const telegramUpdateSchema = z.object({
-  update_id: z.number().optional(),
-  message: z.object({
-    message_id: z.number(),
-    chat: z.object({ id: z.union([z.number(), z.string()]) }),
-    text: z.string().optional(),
-    from: z.object({ id: z.number().optional(), username: z.string().optional() }).optional()
-  }).optional()
-}).passthrough();
+export const telegramUpdateSchema = z
+  .object({
+    update_id: z.number().optional(),
+    message: z
+      .object({
+        message_id: z.number(),
+        chat: z.object({ id: z.union([z.number(), z.string()]) }),
+        text: z.string().optional(),
+        from: z.object({ id: z.number().optional(), username: z.string().optional() }).optional(),
+      })
+      .optional(),
+  })
+  .passthrough();
 
 export type TelegramUpdate = z.infer<typeof telegramUpdateSchema>;
 
@@ -34,7 +40,7 @@ export function extractTelegramTextMessage(update: TelegramUpdate) {
     messageId: message.message_id,
     text,
     fromUserId: message.from?.id ?? null,
-    username: message.from?.username ?? null
+    username: message.from?.username ?? null,
   };
 }
 
@@ -51,7 +57,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     messageId: message.messageId,
     text: message.text.substring(0, 50),
     fromUserId: message.fromUserId,
-    username: message.username
+    username: message.username,
   });
 
   // Handle commands
@@ -81,7 +87,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       messageId: message.messageId,
       intent: intent.intent,
       confidence: intent.confidence,
-      reasoning: intent.reasoning
+      reasoning: intent.reasoning,
     });
 
     // Route based on intent
@@ -94,7 +100,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     // If classification fails, fall back to opportunity creation (old behavior)
     logError("telegram", "Intent classification failed, falling back to opportunity creation", {
       messageId: message.messageId,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     });
 
     return handleOpportunityCreation(message);

@@ -17,7 +17,7 @@ const STORAGE_KEYS = {
   ACCESS_TOKEN: "oauthAccessToken",
   TOKEN_EXPIRY: "oauthTokenExpiry",
   USER_EMAIL: "oauthUserEmail",
-  REFRESH_TOKEN: "oauthRefreshToken"
+  REFRESH_TOKEN: "oauthRefreshToken",
 };
 
 /**
@@ -30,7 +30,7 @@ function getAuth0Config() {
     clientId: "hlI5kn4lePStXeHJohsGqyKnyoBHJtTW",
     audience: "https://interviews-tracker-api.com",
     redirectUri: chrome.identity.getRedirectURL(),
-    scope: "openid profile email offline_access"
+    scope: "openid profile email offline_access",
   };
 }
 
@@ -84,7 +84,7 @@ async function buildAuthUrl(codeChallenge) {
     scope: config.scope,
     audience: config.audience,
     code_challenge: codeChallenge,
-    code_challenge_method: "S256"
+    code_challenge_method: "S256",
   });
   return `https://${config.domain}/authorize?${params.toString()}`;
 }
@@ -119,15 +119,15 @@ async function exchangeCodeForToken(code, codeVerifier) {
   const response = await fetch(`https://${config.domain}/oauth/token`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       grant_type: "authorization_code",
       client_id: config.clientId,
       code,
       code_verifier: codeVerifier,
-      redirect_uri: config.redirectUri
-    })
+      redirect_uri: config.redirectUri,
+    }),
   });
 
   if (!response.ok) {
@@ -166,7 +166,7 @@ function extractEmail(payload) {
     return payload.email;
   }
 
-  const namespacedKey = Object.keys(payload).find(key => key.endsWith("/email"));
+  const namespacedKey = Object.keys(payload).find((key) => key.endsWith("/email"));
   if (namespacedKey) {
     return payload[namespacedKey];
   }
@@ -182,13 +182,13 @@ async function storeAuthData(tokenData) {
   const email = extractEmail(payload);
 
   const expiresIn = tokenData.expires_in || 3600;
-  const expiryTime = Date.now() + (expiresIn * 1000);
+  const expiryTime = Date.now() + expiresIn * 1000;
 
   await chrome.storage.local.set({
     [STORAGE_KEYS.ACCESS_TOKEN]: tokenData.access_token,
     [STORAGE_KEYS.TOKEN_EXPIRY]: expiryTime,
     [STORAGE_KEYS.USER_EMAIL]: email,
-    [STORAGE_KEYS.REFRESH_TOKEN]: tokenData.refresh_token || null
+    [STORAGE_KEYS.REFRESH_TOKEN]: tokenData.refresh_token || null,
   });
 
   return { email };
@@ -202,14 +202,14 @@ export async function getAuthData() {
     STORAGE_KEYS.ACCESS_TOKEN,
     STORAGE_KEYS.TOKEN_EXPIRY,
     STORAGE_KEYS.USER_EMAIL,
-    STORAGE_KEYS.REFRESH_TOKEN
+    STORAGE_KEYS.REFRESH_TOKEN,
   ]);
 
   return {
     accessToken: data[STORAGE_KEYS.ACCESS_TOKEN] || null,
     tokenExpiry: data[STORAGE_KEYS.TOKEN_EXPIRY] || null,
     userEmail: data[STORAGE_KEYS.USER_EMAIL] || null,
-    refreshToken: data[STORAGE_KEYS.REFRESH_TOKEN] || null
+    refreshToken: data[STORAGE_KEYS.REFRESH_TOKEN] || null,
   };
 }
 
@@ -219,7 +219,7 @@ export async function getAuthData() {
 export function isTokenExpired(tokenExpiry) {
   if (!tokenExpiry) return true;
   const bufferMs = 5 * 60 * 1000;
-  return Date.now() >= (tokenExpiry - bufferMs);
+  return Date.now() >= tokenExpiry - bufferMs;
 }
 
 /**
@@ -231,13 +231,13 @@ async function refreshAccessToken(refreshToken) {
   const response = await fetch(`https://${config.domain}/oauth/token`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       grant_type: "refresh_token",
       client_id: config.clientId,
-      refresh_token: refreshToken
-    })
+      refresh_token: refreshToken,
+    }),
   });
 
   if (!response.ok) {
@@ -273,7 +273,7 @@ export async function signIn() {
 
     const redirectUrl = await chrome.identity.launchWebAuthFlow({
       url: authUrl,
-      interactive: true
+      interactive: true,
     });
 
     console.log("Auth flow completed successfully");
@@ -313,7 +313,7 @@ export async function signIn() {
 
     return {
       success: false,
-      error: errorMessage
+      error: errorMessage,
     };
   }
 }
@@ -326,7 +326,7 @@ export async function signOut() {
     STORAGE_KEYS.ACCESS_TOKEN,
     STORAGE_KEYS.TOKEN_EXPIRY,
     STORAGE_KEYS.USER_EMAIL,
-    STORAGE_KEYS.REFRESH_TOKEN
+    STORAGE_KEYS.REFRESH_TOKEN,
   ]);
 }
 

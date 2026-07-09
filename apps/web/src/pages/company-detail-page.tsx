@@ -1,9 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { PageLoadingState, PageErrorState } from "@interviews-tracker/design-system";
-import { api } from "../lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+
 import { CompanyDetailView } from "../components/company-detail";
+import { api } from "../lib/api";
 
 export function CompanyDetailPage() {
   const { companyName = "" } = useParams();
@@ -34,23 +36,14 @@ export function CompanyDetailPage() {
   });
 
   if (isLoading || !data) {
-    return (
-      <PageLoadingState
-        title="Company"
-        description="Loading company details, opportunities, and interactions."
-      />
-    );
+    return <PageLoadingState title="Company" description="Loading company details, opportunities, and interactions." />;
   }
 
   if (isError) {
     return (
       <PageErrorState
         title="Company"
-        description={
-          error instanceof Error
-            ? error.message
-            : "Unable to load company details."
-        }
+        description={error instanceof Error ? error.message : "Unable to load company details."}
         onRetry={() => void refetch()}
       />
     );
@@ -64,8 +57,7 @@ export function CompanyDetailPage() {
       onDeleteCompany={() => deleteCompany.mutate()}
       onDeleteInteraction={(interactionId) => deleteInteraction.mutate(interactionId)}
       isDeletingInteraction={(interactionId) =>
-        deleteInteraction.isPending &&
-        deleteInteraction.variables === interactionId
+        deleteInteraction.isPending && deleteInteraction.variables === interactionId
       }
       onResearchSaved={(research) => {
         if (research.companyName !== data.name) {

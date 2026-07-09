@@ -1,14 +1,15 @@
-import type { opportunityInputSchema } from "../../lib/schemas.js";
 import type { z } from "zod";
+
 import { logger } from "../../lib/logger.js";
+import type { opportunityInputSchema } from "../../lib/schemas.js";
+import { findOrCreateCompanyByName } from "../../repositories/company-repository.js";
 import {
   createOpportunityRecord,
   deleteOpportunityRecord,
   getOpportunityRecord,
   listOpportunityRecords,
-  updateOpportunityRecord
+  updateOpportunityRecord,
 } from "../../repositories/opportunity-repository.js";
-import { findOrCreateCompanyByName } from "../../repositories/company-repository.js";
 
 type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
@@ -30,14 +31,22 @@ export async function createOpportunity(input: OpportunityInput, ownerEmail: str
   } else if (input.companyName) {
     // Auto-create or find company by name for backward compatibility
     companyId = await findOrCreateCompanyByName(input.companyName, ownerEmail);
-    logger.operational("create_opportunity_called", { source: "api", companyName: input.companyName, autoCreatedCompanyId: companyId });
+    logger.operational("create_opportunity_called", {
+      source: "api",
+      companyName: input.companyName,
+      autoCreatedCompanyId: companyId,
+    });
   } else {
     throw new Error("Either companyId or companyName must be provided");
   }
 
   logger.operational("create_opportunity_started", { companyId });
   const opportunity = await createOpportunityRecord(input, ownerEmail, companyId);
-  logger.operational("create_opportunity_completed", { opportunityId: opportunity.id, companyId, companyName: opportunity.company.name });
+  logger.operational("create_opportunity_completed", {
+    opportunityId: opportunity.id,
+    companyId,
+    companyName: opportunity.company.name,
+  });
   return opportunity;
 }
 
@@ -52,7 +61,11 @@ export async function updateOpportunity(id: string, input: OpportunityInput, own
   }
 
   const opportunity = await updateOpportunityRecord(id, input, ownerEmail, companyId);
-  logger.operational("opportunity_updated", { opportunityId: id, companyId: opportunity.company.id, companyName: opportunity.company.name });
+  logger.operational("opportunity_updated", {
+    opportunityId: id,
+    companyId: opportunity.company.id,
+    companyName: opportunity.company.name,
+  });
   return opportunity;
 }
 

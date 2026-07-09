@@ -20,25 +20,25 @@ test("does not mutate the current timeline when adjusting the previous job", () 
   ];
   const originalExperience = structuredClone(currentExperience);
 
-  const updatedTimeline = applyParsedJobToTimeline({
-    currentJob: {
-      company: "New Company",
-      title: "Senior Software Engineer",
-      startDate: "Jun 2026",
-      description: "Lead product development",
+  const updatedTimeline = applyParsedJobToTimeline(
+    {
+      currentJob: {
+        company: "New Company",
+        title: "Senior Software Engineer",
+        startDate: "Jun 2026",
+        description: "Lead product development",
+      },
+      adjustedPreviousJob: {
+        company: "Previous Company",
+        title: "Software Engineer",
+        startDate: "Jan 2024",
+        endDate: "May 2026",
+      },
     },
-    adjustedPreviousJob: {
-      company: "Previous Company",
-      title: "Software Engineer",
-      startDate: "Jan 2024",
-      endDate: "May 2026",
-    },
-  }, currentExperience);
+    currentExperience
+  );
 
   assert.deepEqual(currentExperience, originalExperience);
-  assert.equal(
-    updatedTimeline[1]?.positions[0]?.dates,
-    "Jan 2024 - May 2026",
-  );
+  assert.equal(updatedTimeline[1]?.positions[0]?.dates, "Jan 2024 - May 2026");
   assert.equal(updatedTimeline[1]?.positions[0]?.duration, undefined);
 });

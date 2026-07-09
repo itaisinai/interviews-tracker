@@ -1,24 +1,12 @@
-import { useMemo, type KeyboardEvent } from "react";
-import {
-  Ban,
-  CalendarDays,
-  CircleDollarSign,
-  ClipboardList,
-  Mail,
-  PhoneCall,
-  Plus,
-  Reply,
-  Trash2,
-} from "lucide-react";
+import { type KeyboardEvent, useMemo } from "react";
 
-import { Badge } from "../badge";
+import { Ban, CalendarDays, CircleDollarSign, ClipboardList, Mail, PhoneCall, Plus, Reply, Trash2 } from "lucide-react";
+
+import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
 import { formatDateTime } from "../../lib/format";
-import {
-  displayLabelForEnumValue,
-  normalizeInteractionType,
-} from "../../lib/enum-labels";
 import { getInteractionTimelineBadgeMeta } from "../../lib/interaction-status";
 import type { Interaction } from "../../lib/types";
+import { Badge } from "../badge";
 
 type TimelineProps = {
   title?: string;
@@ -66,9 +54,7 @@ export function Timeline({
               <CalendarDays className="h-5 w-5" />
             </div>
             <h3 className="font-title-md text-title-md font-bold">Timeline</h3>
-            <span className="font-label-md text-label-md text-on-surface-variant">
-              {title}
-            </span>
+            <span className="font-label-md text-label-md text-on-surface-variant">{title}</span>
           </div>
           {onAddInteraction ? (
             <button
@@ -90,19 +76,12 @@ export function Timeline({
       ) : (
         <ol className="relative ml-8">
           {orderedInteractions.length > 1 ? (
-            <div
-              className="absolute bottom-6 left-0 top-6 border-l border-outline-variant"
-              aria-hidden="true"
-            />
+            <div className="absolute bottom-6 left-0 top-6 border-l border-outline-variant" aria-hidden="true" />
           ) : null}
           {orderedInteractions.map((item, index) => {
-            const badge = getInteractionTimelineBadgeMeta(
-              item,
-              orderedInteractions,
-            );
+            const badge = getInteractionTimelineBadgeMeta(item, orderedInteractions);
             const isSelected = selectedInteractionSlug === item.slug;
-            const isUpcoming =
-              new Date(item.date).getTime() > referenceDate.getTime();
+            const isUpcoming = new Date(item.date).getTime() > referenceDate.getTime();
             const isClickable = Boolean(onSelectInteraction);
             const isDeleting = isDeletingInteraction?.(item.slug) ?? false;
 
@@ -115,24 +94,16 @@ export function Timeline({
                   <div className="relative min-w-0">
                     <span
                       className={`absolute left-0 top-6 z-10 h-3.5 w-3.5 -translate-x-1/2 rounded-full border-2 ${
-                        isUpcoming
-                          ? "border-primary bg-white"
-                          : "border-primary bg-primary"
+                        isUpcoming ? "border-primary bg-white" : "border-primary bg-primary"
                       }`}
                       aria-hidden="true"
                     />
                     <button
                       type={isClickable ? "button" : undefined}
                       className={`block w-full rounded-2xl text-left transition-colors ${
-                        isClickable
-                          ? "cursor-pointer hover:bg-surface-container-low/60"
-                          : ""
+                        isClickable ? "cursor-pointer hover:bg-surface-container-low/60" : ""
                       }`}
-                      onClick={
-                        onSelectInteraction
-                          ? () => onSelectInteraction(item.slug)
-                          : undefined
-                      }
+                      onClick={onSelectInteraction ? () => onSelectInteraction(item.slug) : undefined}
                       onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
                         if (!onSelectInteraction) return;
                         if (event.key === "Enter" || event.key === " ") {
@@ -161,9 +132,7 @@ export function Timeline({
                         <div className="flex items-center gap-2">
                           <InteractionTypeIcon type={item.type} />
                           <span className="font-title-sm text-title-sm font-bold text-on-background">
-                            {displayLabelForEnumValue(
-                              normalizeInteractionType(item.type),
-                            ) ?? item.type}
+                            {displayLabelForEnumValue(normalizeInteractionType(item.type)) ?? item.type}
                           </span>
                         </div>
 
@@ -174,16 +143,12 @@ export function Timeline({
                         </p>
                       </div>
                     </button>
-                    {index < orderedInteractions.length - 1 ? (
-                      <div className="h-0.5" aria-hidden="true" />
-                    ) : null}
+                    {index < orderedInteractions.length - 1 ? <div className="h-0.5" aria-hidden="true" /> : null}
                   </div>
                   <div className="min-w-0">
                     {item.followUp ? (
                       <div className="rounded-xl border border-outline-variant bg-surface-container-low/60 px-3 py-2 text-body-md text-on-background">
-                        <span className="font-semibold text-on-surface-variant">
-                          Next action:{" "}
-                        </span>
+                        <span className="font-semibold text-on-surface-variant">Next action: </span>
                         {item.followUp}
                       </div>
                     ) : null}
@@ -218,17 +183,11 @@ export function Timeline({
 function InteractionTypeIcon({ type }: { type: string }) {
   const normalizedType = normalizeInteractionType(type);
 
-  if (normalizedType === "Email")
-    return <Mail className="h-4 w-4 text-primary" />;
-  if (normalizedType === "Phone Call")
-    return <PhoneCall className="h-4 w-4 text-primary" />;
-  if (normalizedType === "Home Assignment")
-    return <ClipboardList className="h-4 w-4 text-primary" />;
-  if (normalizedType === "Offer")
-    return <CircleDollarSign className="h-4 w-4 text-primary" />;
-  if (normalizedType === "Rejection")
-    return <Ban className="h-4 w-4 text-primary" />;
-  if (normalizedType === "Follow-up")
-    return <Reply className="h-4 w-4 text-primary" />;
+  if (normalizedType === "Email") return <Mail className="h-4 w-4 text-primary" />;
+  if (normalizedType === "Phone Call") return <PhoneCall className="h-4 w-4 text-primary" />;
+  if (normalizedType === "Home Assignment") return <ClipboardList className="h-4 w-4 text-primary" />;
+  if (normalizedType === "Offer") return <CircleDollarSign className="h-4 w-4 text-primary" />;
+  if (normalizedType === "Rejection") return <Ban className="h-4 w-4 text-primary" />;
+  if (normalizedType === "Follow-up") return <Reply className="h-4 w-4 text-primary" />;
   return <CalendarDays className="h-4 w-4 text-primary" />;
 }

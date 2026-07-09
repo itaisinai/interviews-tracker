@@ -6,9 +6,7 @@ type InteractionInputChooserProps = {
   onSelectMode: (mode: InteractionInputMode) => void;
 };
 
-export function InteractionInputChooser({
-  onSelectMode,
-}: InteractionInputChooserProps) {
+export function InteractionInputChooser({ onSelectMode }: InteractionInputChooserProps) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <button

@@ -8,7 +8,11 @@ type Timer = {
 };
 
 function toEventName(message: string, suffix: "started" | "completed" | "failed") {
-  return `${message.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")}_${suffix}`;
+  return `${message
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")}_${suffix}`;
 }
 
 export function logInfo(scope: string, message: string, metadata?: LogMetadata) {
@@ -27,10 +31,19 @@ export function createTimer(scope: string, message: string, metadata?: LogMetada
 
   return {
     end(extraContext?: LogMetadata) {
-      logger.operational(toEventName(message, "completed"), { ...metadata, ...extraContext, durationMs: Date.now() - startedAt }, baseContext);
+      logger.operational(
+        toEventName(message, "completed"),
+        { ...metadata, ...extraContext, durationMs: Date.now() - startedAt },
+        baseContext
+      );
     },
     fail(error: unknown, extraContext?: LogMetadata) {
-      logger.error(toEventName(message, "failed"), error, { ...metadata, ...extraContext, durationMs: Date.now() - startedAt }, baseContext);
-    }
+      logger.error(
+        toEventName(message, "failed"),
+        error,
+        { ...metadata, ...extraContext, durationMs: Date.now() - startedAt },
+        baseContext
+      );
+    },
   };
 }

@@ -1,10 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import {
-  InlineLoadingState,
-  PageErrorState,
-  PageLoadingState,
-  ProcessStateCard,
-} from "./loading-state";
+
+import { InlineLoadingState, PageErrorState, PageLoadingState, ProcessStateCard } from "./loading-state";
 
 const meta: Meta = {
   title: "UI/LoadingState",
@@ -20,20 +16,13 @@ export const Inline: Story = {
 
 export const PageLoading: Story = {
   render: () => (
-    <PageLoadingState
-      title="Opportunity"
-      description="Loading opportunity details, notes, and interaction history."
-    />
+    <PageLoadingState title="Opportunity" description="Loading opportunity details, notes, and interaction history." />
   ),
 };
 
 export const PageError: Story = {
   render: () => (
-    <PageErrorState
-      title="Opportunity"
-      description="Unable to load opportunity."
-      onRetry={() => undefined}
-    />
+    <PageErrorState title="Opportunity" description="Unable to load opportunity." onRetry={() => undefined} />
   ),
 };
 

@@ -1,5 +1,5 @@
-import { timingSafeEqual } from "node:crypto";
 import type { Request, Response } from "express";
+import { timingSafeEqual } from "node:crypto";
 
 export function timingSafeEqualString(actual: string | undefined, expected: string | undefined) {
   if (!actual || !expected) {
@@ -16,7 +16,11 @@ export function timingSafeEqualString(actual: string | undefined, expected: stri
   return timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
-export function verifySharedSecretHeader(request: Request, response: Response, input: { headerName: string; expectedSecret?: string; missingConfigMessage: string }) {
+export function verifySharedSecretHeader(
+  request: Request,
+  response: Response,
+  input: { headerName: string; expectedSecret?: string; missingConfigMessage: string }
+) {
   if (!input.expectedSecret) {
     response.status(503).json({ message: input.missingConfigMessage });
     return false;

@@ -10,8 +10,8 @@ export function NotesCard({ notes }: NotesCardProps) {
   }
 
   // Parse notes into bullet points if they contain dashes or asterisks
-  const lines = notes.split('\n').filter(line => line.trim());
-  const hasBullets = lines.some(line => /^[\-\*•]\s/.test(line.trim()));
+  const lines = notes.split("\n").filter((line) => line.trim());
+  const hasBullets = lines.some((line) => /^[\-\*•]\s/.test(line.trim()));
 
   return (
     <div className="bg-white rounded-lg border border-neutral-200 p-4">
@@ -26,7 +26,7 @@ export function NotesCard({ notes }: NotesCardProps) {
             {lines.map((line, index) => {
               const trimmed = line.trim();
               // Remove leading dash/asterisk/bullet
-              const content = trimmed.replace(/^[\-\*•]\s*/, '');
+              const content = trimmed.replace(/^[\-\*•]\s*/, "");
               return (
                 <li key={index} className="flex items-start gap-2">
                   <span className="text-emerald-600 mt-0.5">•</span>

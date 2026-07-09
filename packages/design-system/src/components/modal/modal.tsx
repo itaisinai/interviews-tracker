@@ -1,6 +1,8 @@
-import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+
+import type { ReactNode } from "react";
+
 import { MaterialIcon } from "../material-icon/material-icon";
 
 export type ModalProps = {
@@ -68,11 +70,14 @@ export function Modal({ isOpen, onClose, title, children, footer, size = "md" }:
   const sizeClasses = {
     sm: "max-w-md",
     md: "max-w-2xl",
-    lg: "max-w-4xl"
+    lg: "max-w-4xl",
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}
+    >
       <button
         type="button"
         className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}
@@ -98,13 +103,9 @@ export function Modal({ isOpen, onClose, title, children, footer, size = "md" }:
             <MaterialIcon name="close" />
           </button>
         </div>
-        <div className="max-h-[calc(100vh-12rem)] overflow-y-auto px-6 py-5">
-          {children}
-        </div>
+        <div className="max-h-[calc(100vh-12rem)] overflow-y-auto px-6 py-5">{children}</div>
         {footer ? (
-          <div className="flex items-center justify-end gap-3 border-t border-outline-variant px-6 py-4">
-            {footer}
-          </div>
+          <div className="flex items-center justify-end gap-3 border-t border-outline-variant px-6 py-4">{footer}</div>
         ) : null}
       </div>
     </div>

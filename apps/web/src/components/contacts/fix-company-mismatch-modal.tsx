@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Modal, MaterialIcon } from "@interviews-tracker/design-system";
+
+import { MaterialIcon, Modal } from "@interviews-tracker/design-system";
+
 import type { Person } from "../../lib/types";
 
 type FixCompanyMismatchModalProps = {
@@ -17,15 +19,10 @@ export function FixCompanyMismatchModal({
   person,
   opportunityCompanyName,
   onAutoRefresh,
-  onManualUpdate
+  onManualUpdate,
 }: FixCompanyMismatchModalProps) {
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      size="md"
-      title="Company Mismatch Detected"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} size="md" title="Company Mismatch Detected">
       <div className="flex flex-col">
         {/* Content */}
         <div className="p-6">
@@ -33,9 +30,7 @@ export function FixCompanyMismatchModal({
             <div className="flex items-start gap-3">
               <MaterialIcon name="info" className="text-[24px] text-warning" />
               <div className="flex-1">
-                <p className="text-body-md font-medium text-on-surface">
-                  LinkedIn profile shows different company
-                </p>
+                <p className="text-body-md font-medium text-on-surface">LinkedIn profile shows different company</p>
                 <div className="mt-2 space-y-1 text-body-sm text-on-surface-variant">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">LinkedIn:</span>
@@ -87,9 +82,7 @@ export function FixCompanyMismatchModal({
                 <MaterialIcon name="refresh" className="text-[24px] text-primary" />
               </div>
               <div className="flex-1">
-                <p className="font-title-sm text-title-sm font-bold text-on-surface">
-                  Auto-refresh from LinkedIn
-                </p>
+                <p className="font-title-sm text-title-sm font-bold text-on-surface">Auto-refresh from LinkedIn</p>
                 <p className="mt-1 text-body-sm text-on-surface-variant">
                   Automatically fetch latest data from their LinkedIn profile
                 </p>
@@ -109,9 +102,7 @@ export function FixCompanyMismatchModal({
                 <MaterialIcon name="edit" className="text-[24px] text-on-surface-variant" />
               </div>
               <div className="flex-1">
-                <p className="font-title-sm text-title-sm font-bold text-on-surface">
-                  Manually update current job
-                </p>
+                <p className="font-title-sm text-title-sm font-bold text-on-surface">Manually update current job</p>
                 <p className="mt-1 text-body-sm text-on-surface-variant">
                   Paste job description text to update their timeline
                 </p>

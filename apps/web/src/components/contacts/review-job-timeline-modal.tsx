@@ -1,5 +1,5 @@
-import { Modal, MaterialIcon, JobHistoryTimeline } from "@interviews-tracker/design-system";
 import type { CompanyExperience } from "@interviews-tracker/design-system";
+import { JobHistoryTimeline, MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
 type ReviewJobTimelineModalProps = {
   isOpen: boolean;
@@ -38,7 +38,7 @@ export function ReviewJobTimelineModal({
   currentTimeline,
   updatedTimeline,
   onApply,
-  isApplying
+  isApplying,
 }: ReviewJobTimelineModalProps) {
   // Transform to CompanyExperience format for JobHistoryTimeline
   const transformToCompanyExperience = (timeline: typeof updatedTimeline): CompanyExperience[] => {
@@ -50,7 +50,7 @@ export function ReviewJobTimelineModal({
           startDate: startDate.trim(),
           endDate: endDate.trim() || "Present",
           duration: pos.duration || "",
-          description: pos.description
+          description: pos.description,
         };
       });
 
@@ -58,7 +58,7 @@ export function ReviewJobTimelineModal({
         companyName: exp.company,
         companyUrl: exp.companyUrl,
         totalDuration: exp.totalDuration || "",
-        positions
+        positions,
       };
     });
   };
@@ -68,15 +68,10 @@ export function ReviewJobTimelineModal({
   // Detect changes for highlighting
   const hasChanges = JSON.stringify(currentTimeline) !== JSON.stringify(updatedTimeline);
   const newCompany = updatedTimeline[0];
-  const isNewJob = !currentTimeline.some(exp => exp.company === newCompany?.company);
+  const isNewJob = !currentTimeline.some((exp) => exp.company === newCompany?.company);
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      size="lg"
-      title="Review Timeline Changes"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="Review Timeline Changes">
       <div className="flex flex-col">
         {/* Content */}
         <div className="max-h-[60vh] overflow-y-auto p-6">
@@ -88,8 +83,8 @@ export function ReviewJobTimelineModal({
                   Review the updated job timeline for {personName}
                 </p>
                 <p className="mt-1 text-body-sm text-on-surface-variant">
-                  {isNewJob ? "A new current position has been added." : "The existing timeline has been updated."}
-                  {" "}Check the changes below and apply if everything looks correct.
+                  {isNewJob ? "A new current position has been added." : "The existing timeline has been updated."}{" "}
+                  Check the changes below and apply if everything looks correct.
                 </p>
               </div>
             </div>
@@ -107,35 +102,32 @@ export function ReviewJobTimelineModal({
                     <MaterialIcon name="add" className="text-[20px] text-tertiary" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-body-sm font-medium text-on-surface">
-                      New current position added
-                    </p>
+                    <p className="text-body-sm font-medium text-on-surface">New current position added</p>
                     <p className="mt-1 text-body-sm text-on-surface-variant">
                       {newCompany.positions[0]?.title} at {newCompany.company}
                     </p>
-                    <p className="text-body-xs text-on-surface-variant">
-                      {newCompany.positions[0]?.dates}
-                    </p>
+                    <p className="text-body-xs text-on-surface-variant">{newCompany.positions[0]?.dates}</p>
                   </div>
                 </div>
               )}
 
               {/* Check for adjusted previous jobs */}
               {currentTimeline.map((oldExp, index) => {
-                const oldPosition = oldExp.positions.find(p => p.dates?.includes("Present"));
-                const newExp = updatedTimeline.find(e => e.company === oldExp.company);
-                const newPosition = newExp?.positions.find(p => p.title === oldPosition?.title);
+                const oldPosition = oldExp.positions.find((p) => p.dates?.includes("Present"));
+                const newExp = updatedTimeline.find((e) => e.company === oldExp.company);
+                const newPosition = newExp?.positions.find((p) => p.title === oldPosition?.title);
 
                 if (oldPosition && newPosition && oldPosition.dates !== newPosition.dates) {
                   return (
-                    <div key={index} className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 p-3">
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 p-3"
+                    >
                       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-warning/20">
                         <MaterialIcon name="edit" className="text-[20px] text-warning" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-body-sm font-medium text-on-surface">
-                          Previous position end date adjusted
-                        </p>
+                        <p className="text-body-sm font-medium text-on-surface">Previous position end date adjusted</p>
                         <p className="mt-1 text-body-sm text-on-surface-variant">
                           {oldPosition.title} at {oldExp.company}
                         </p>

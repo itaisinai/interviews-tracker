@@ -1,16 +1,15 @@
-import type { Meta, StoryObj } from "@storybook/react";
 import { MemoryRouter } from "react-router-dom";
 
+import type { Meta, StoryObj } from "@storybook/react";
+
+import { getInteractionTimelineBadgeMeta, promoteOverdueInteractionsForRead } from "../../lib/interaction-status";
 import type { Interaction, Opportunity } from "../../lib/types";
-import {
-  getInteractionTimelineBadgeMeta,
-  promoteOverdueInteractionsForRead,
-} from "../../lib/interaction-status";
-import { OpportunityInteractionTimeline } from "./opportunity-interaction-timeline";
+import { InteractionComposerPanel } from "../interactions-drawer/interaction-composer-panel";
 import { InteractionDrawerHeader } from "../interactions-drawer/interaction-drawer-header";
 import { InteractionSummaryPanel } from "../interactions-drawer/interaction-summary-panel";
 import { InteractionTimelinePanel } from "../interactions-drawer/interaction-timeline-panel";
-import { InteractionComposerPanel } from "../interactions-drawer/interaction-composer-panel";
+
+import { OpportunityInteractionTimeline } from "./opportunity-interaction-timeline";
 
 const reevolOpportunity = {
   slug: "reevol",
@@ -34,8 +33,7 @@ const reevolInteractions = promoteOverdueInteractionsForRead([
     status: "DONE",
     personName: "Shahar Birger",
     personRole: "Interview",
-    followUp:
-      "For more details or if you need to change the time of your interview, please reply to this email.",
+    followUp: "For more details or if you need to change the time of your interview, please reply to this email.",
     jobOpportunity: reevolOpportunity,
   },
   {
@@ -52,10 +50,7 @@ const reevolInteractions = promoteOverdueInteractionsForRead([
 ] satisfies Interaction[]);
 
 const reevolSelectedInteraction = reevolInteractions[1];
-const reevolHeaderBadge = getInteractionTimelineBadgeMeta(
-  reevolSelectedInteraction,
-  reevolInteractions,
-);
+const reevolHeaderBadge = getInteractionTimelineBadgeMeta(reevolSelectedInteraction, reevolInteractions);
 const storyReferenceDate = new Date("2026-06-15T12:00:00.000Z");
 
 const meta: Meta<typeof OpportunityInteractionTimeline> = {
@@ -89,10 +84,7 @@ export const ExpandedPage: Story = {
   render: (args) => (
     <div className="min-h-screen bg-[#f7f5ef] p-6">
       <div className="mx-auto max-w-[60rem]">
-        <OpportunityInteractionTimeline
-          {...args}
-          onSelectInteraction={() => void 0}
-        />
+        <OpportunityInteractionTimeline {...args} onSelectInteraction={() => void 0} />
       </div>
     </div>
   ),

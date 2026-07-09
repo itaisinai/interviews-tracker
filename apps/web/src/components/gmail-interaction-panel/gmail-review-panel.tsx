@@ -1,21 +1,21 @@
 import type { ReactNode } from "react";
+
+import { LoadingButton } from "@interviews-tracker/design-system";
+
+import { interactionStatusOptions, interactionTypeOptions } from "../../lib/enum-labels";
 import type {
   GmailEmailExtractionAnalysis,
   GmailInteractionDraft,
   GmailStructuredEmail,
   Interaction,
 } from "../../lib/types";
-import {
-  interactionStatusOptions,
-  interactionTypeOptions,
-} from "../../lib/enum-labels";
 import { Badge } from "../badge";
-import { LoadingButton } from "@interviews-tracker/design-system";
+
 import {
+  type InteractionDiffField,
   toDatetimeLocalValue,
   toDateValue,
   toTimeValue,
-  type InteractionDiffField,
 } from "./gmail-interaction-panel-helpers";
 
 type GmailReviewPanelProps = {
@@ -65,15 +65,9 @@ export function GmailReviewPanel({
     <div className="mt-6 rounded-2xl border border-outline-variant bg-surface-container-low p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-            Review interaction
-          </p>
-          <h4 className="font-title-md text-title-md font-bold">
-            {selectedEmail.subject}
-          </h4>
-          <p className="mt-1 text-body-md text-on-surface-variant">
-            {selectedEmail.fromRaw}
-          </p>
+          <p className="font-label-md text-label-md uppercase text-on-surface-variant">Review interaction</p>
+          <h4 className="font-title-md text-title-md font-bold">{selectedEmail.subject}</h4>
+          <p className="mt-1 text-body-md text-on-surface-variant">{selectedEmail.fromRaw}</p>
           <p className="mt-2 text-body-sm text-on-surface-variant">
             {analysis?.dateSource === "calendar"
               ? "Date source: calendar invite"
@@ -105,9 +99,7 @@ export function GmailReviewPanel({
             <LoadingButton
               className="btn btn-primary"
               loading={isAttaching}
-              loadingLabel={
-                hasParsedInteractionChanges ? "Accepting..." : "Attaching..."
-              }
+              loadingLabel={hasParsedInteractionChanges ? "Accepting..." : "Attaching..."}
               icon="link"
               disabled={!draft || !selectedEmail || !attachTargetId}
               onClick={onAttachToExistingInteraction}
@@ -124,17 +116,13 @@ export function GmailReviewPanel({
         </p>
       ) : null}
       {saveError ? (
-        <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-body-md text-on-error-container">
-          {saveError}
-        </p>
+        <p className="mt-4 rounded-lg bg-error-container px-4 py-3 text-body-md text-on-error-container">{saveError}</p>
       ) : null}
 
       {attachTargetInteraction ? (
         <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-              Parsed changes
-            </p>
+            <p className="font-label-md text-label-md uppercase text-on-surface-variant">Parsed changes</p>
             {hasParsedInteractionChanges ? (
               <Badge value="Changed" tone="warning">
                 {changedInteractionFields.size} changed
@@ -166,27 +154,17 @@ export function GmailReviewPanel({
         <div className="mt-5 rounded-xl border border-outline-variant bg-surface-container-low p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                Attach to existing
-              </p>
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Attach to existing</p>
               <p className="mt-1 text-body-md text-on-surface-variant">
-                Update an existing interaction with this email instead of
-                creating a new one.
+                Update an existing interaction with this email instead of creating a new one.
               </p>
             </div>
             <LoadingButton
               className="btn btn-secondary"
               loading={isAttaching}
-              loadingLabel={
-                hasParsedInteractionChanges ? "Accepting..." : "Attaching..."
-              }
+              loadingLabel={hasParsedInteractionChanges ? "Accepting..." : "Attaching..."}
               icon="link"
-              disabled={
-                !draft ||
-                !selectedEmail ||
-                !attachTargetId ||
-                saveInteractionPending
-              }
+              disabled={!draft || !selectedEmail || !attachTargetId || saveInteractionPending}
               onClick={onAttachToExistingInteraction}
             >
               {hasParsedInteractionChanges ? "Accept changes" : "Attach email"}
@@ -202,67 +180,49 @@ export function GmailReviewPanel({
               >
                 {opportunityInteractions.map((interaction) => (
                   <option key={interaction.slug} value={interaction.slug}>
-                    {new Date(interaction.date).toLocaleString()} ·{" "}
-                    {interaction.type}
-                    {interaction.personName
-                      ? ` · ${interaction.personName}`
-                      : ""}
+                    {new Date(interaction.date).toLocaleString()} · {interaction.type}
+                    {interaction.personName ? ` · ${interaction.personName}` : ""}
                   </option>
                 ))}
               </select>
             </label>
           ) : (
-            <p className="mt-4 text-body-md text-on-surface-variant">
-              No existing interactions yet.
-            </p>
+            <p className="mt-4 text-body-md text-on-surface-variant">No existing interactions yet.</p>
           )}
         </div>
       ) : null}
 
       <div className="mt-5 rounded-xl border border-outline-variant bg-white p-4 text-body-md text-on-surface-variant">
         <p>
-          <span className="font-semibold text-on-background">
-            Source email:
-          </span>{" "}
-          {selectedEmail.subject}
+          <span className="font-semibold text-on-background">Source email:</span> {selectedEmail.subject}
         </p>
         <p className="mt-1">
-          <span className="font-semibold text-on-background">From:</span>{" "}
-          {selectedEmail.fromRaw}
+          <span className="font-semibold text-on-background">From:</span> {selectedEmail.fromRaw}
         </p>
         <p className="mt-1">
-          <span className="font-semibold text-on-background">
-            Message date:
-          </span>{" "}
+          <span className="font-semibold text-on-background">Message date:</span>{" "}
           {new Date(selectedEmail.internalDate).toLocaleString()}
         </p>
         {selectedEmail.calendar?.start ? (
           <p className="mt-1">
-            <span className="font-semibold text-on-background">
-              Calendar start:
-            </span>{" "}
+            <span className="font-semibold text-on-background">Calendar start:</span>{" "}
             {new Date(selectedEmail.calendar.start).toLocaleString()}
           </p>
         ) : null}
         {selectedEmail.calendar?.end ? (
           <p className="mt-1">
-            <span className="font-semibold text-on-background">
-              Calendar end:
-            </span>{" "}
+            <span className="font-semibold text-on-background">Calendar end:</span>{" "}
             {new Date(selectedEmail.calendar.end).toLocaleString()}
           </p>
         ) : null}
         {selectedEmail.calendar?.location ? (
           <p className="mt-1">
-            <span className="font-semibold text-on-background">Location:</span>{" "}
-            {selectedEmail.calendar.location}
+            <span className="font-semibold text-on-background">Location:</span> {selectedEmail.calendar.location}
           </p>
         ) : null}
         {draft.meetingLink ? (
           <p className="mt-1">
-            <span className="font-semibold text-on-background">
-              Meeting link:
-            </span>{" "}
+            <span className="font-semibold text-on-background">Meeting link:</span>{" "}
             <a
               className="text-primary hover:underline"
               href={draft.meetingLink}
@@ -286,9 +246,7 @@ export function GmailReviewPanel({
               onChange={(event) => {
                 if (!event.target.value) return;
                 const startDate = new Date(draft.date);
-                const [year, month, day] = event.target.value
-                  .split("-")
-                  .map(Number);
+                const [year, month, day] = event.target.value.split("-").map(Number);
                 startDate.setFullYear(year, month - 1, day);
 
                 const updates: Partial<typeof draft> = {
@@ -313,9 +271,7 @@ export function GmailReviewPanel({
               onChange={(event) => {
                 if (!event.target.value) return;
                 const date = new Date(draft.date);
-                const [hours, minutes] = event.target.value
-                  .split(":")
-                  .map(Number);
+                const [hours, minutes] = event.target.value.split(":").map(Number);
                 date.setHours(hours, minutes);
                 onDraftChange({ ...draft, date: date.toISOString() });
               }}
@@ -333,9 +289,7 @@ export function GmailReviewPanel({
                 }
 
                 const date = new Date(draft.date);
-                const [hours, minutes] = event.target.value
-                  .split(":")
-                  .map(Number);
+                const [hours, minutes] = event.target.value.split(":").map(Number);
                 date.setHours(hours, minutes);
                 onDraftChange({ ...draft, endDate: date.toISOString() });
               }}
@@ -366,15 +320,10 @@ export function GmailReviewPanel({
             <input
               className="input"
               value={draft.stage ?? ""}
-              onChange={(event) =>
-                onDraftChange({ ...draft, stage: event.target.value || null })
-              }
+              onChange={(event) => onDraftChange({ ...draft, stage: event.target.value || null })}
             />
           </Field>
-          <Field
-            label="Status"
-            changed={changedInteractionFields.has("status")}
-          >
+          <Field label="Status" changed={changedInteractionFields.has("status")}>
             <select
               className="input"
               value={draft.status}
@@ -392,10 +341,7 @@ export function GmailReviewPanel({
               ))}
             </select>
           </Field>
-          <Field
-            label="Person name"
-            changed={changedInteractionFields.has("personName")}
-          >
+          <Field label="Person name" changed={changedInteractionFields.has("personName")}>
             <input
               className="input"
               value={draft.personName ?? ""}
@@ -407,10 +353,7 @@ export function GmailReviewPanel({
               }
             />
           </Field>
-          <Field
-            label="Person role"
-            changed={changedInteractionFields.has("personRole")}
-          >
+          <Field label="Person role" changed={changedInteractionFields.has("personRole")}>
             <input
               className="input"
               value={draft.personRole ?? ""}
@@ -422,22 +365,14 @@ export function GmailReviewPanel({
               }
             />
           </Field>
-          <Field
-            label="Agenda"
-            changed={changedInteractionFields.has("agenda")}
-          >
+          <Field label="Agenda" changed={changedInteractionFields.has("agenda")}>
             <textarea
               className="input min-h-24"
               value={draft.agenda ?? ""}
-              onChange={(event) =>
-                onDraftChange({ ...draft, agenda: event.target.value || null })
-              }
+              onChange={(event) => onDraftChange({ ...draft, agenda: event.target.value || null })}
             />
           </Field>
-          <Field
-            label="Meeting link"
-            changed={changedInteractionFields.has("meetingLink")}
-          >
+          <Field label="Meeting link" changed={changedInteractionFields.has("meetingLink")}>
             <input
               className="input"
               type="url"
@@ -455,27 +390,17 @@ export function GmailReviewPanel({
             <textarea
               className="input min-h-24"
               value={draft.notes ?? ""}
-              onChange={(event) =>
-                onDraftChange({ ...draft, notes: event.target.value || null })
-              }
+              onChange={(event) => onDraftChange({ ...draft, notes: event.target.value || null })}
             />
           </Field>
-          <Field
-            label="Outcome"
-            changed={changedInteractionFields.has("outcome")}
-          >
+          <Field label="Outcome" changed={changedInteractionFields.has("outcome")}>
             <textarea
               className="input min-h-24"
               value={draft.outcome ?? ""}
-              onChange={(event) =>
-                onDraftChange({ ...draft, outcome: event.target.value || null })
-              }
+              onChange={(event) => onDraftChange({ ...draft, outcome: event.target.value || null })}
             />
           </Field>
-          <Field
-            label="Follow-up"
-            changed={changedInteractionFields.has("followUp")}
-          >
+          <Field label="Follow-up" changed={changedInteractionFields.has("followUp")}>
             <textarea
               className="input min-h-24"
               value={draft.followUp ?? ""}
@@ -493,15 +418,7 @@ export function GmailReviewPanel({
   );
 }
 
-function Field({
-  label,
-  changed = false,
-  children,
-}: {
-  label: string;
-  changed?: boolean;
-  children: ReactNode;
-}) {
+function Field({ label, changed = false, children }: { label: string; changed?: boolean; children: ReactNode }) {
   return (
     <label className="space-y-1">
       <span className="flex flex-wrap items-center gap-2">

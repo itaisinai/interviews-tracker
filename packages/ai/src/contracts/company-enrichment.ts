@@ -16,7 +16,7 @@ export const companyEnrichmentSchema = z.object({
   backendFrontendSplit: z.string().nullable(),
   compensationNotes: z.string().nullable(),
   officeDaysPerWeek: z.number().nullable(),
-  rawImportantNotes: z.array(z.string())
+  rawImportantNotes: z.array(z.string()),
 });
 
 export type CompanyEnrichment = z.infer<typeof companyEnrichmentSchema>;

@@ -3,19 +3,25 @@
  * Controls who can access sensitive bot features
  */
 
-import { logInfo, logError } from "../../lib/logger.js";
+import { logError, logInfo } from "../../lib/logger.js";
 
 export function isAuthorizedTelegramUser(userId: number | null, chatId: string | number): boolean {
   // Check if user is authorized via user ID or chat ID
-  const allowedUserIds = process.env.TELEGRAM_ALLOWED_USER_IDS?.split(",").map(id => id.trim()).filter(Boolean) || [];
-  const allowedChatIds = process.env.TELEGRAM_ALLOWED_CHAT_IDS?.split(",").map(id => id.trim()).filter(Boolean) || [];
+  const allowedUserIds =
+    process.env.TELEGRAM_ALLOWED_USER_IDS?.split(",")
+      .map((id) => id.trim())
+      .filter(Boolean) || [];
+  const allowedChatIds =
+    process.env.TELEGRAM_ALLOWED_CHAT_IDS?.split(",")
+      .map((id) => id.trim())
+      .filter(Boolean) || [];
 
   logInfo("telegram", "Authorization check", {
     fromUserId: userId,
     chatId: chatId,
     allowedUserIdsCount: allowedUserIds.length,
     allowedChatIdsCount: allowedChatIds.length,
-    envVarConfigured: !!process.env.TELEGRAM_ALLOWED_USER_IDS || !!process.env.TELEGRAM_ALLOWED_CHAT_IDS
+    envVarConfigured: !!process.env.TELEGRAM_ALLOWED_USER_IDS || !!process.env.TELEGRAM_ALLOWED_CHAT_IDS,
   });
 
   // If no restrictions configured, deny access (fail-safe)
@@ -23,7 +29,7 @@ export function isAuthorizedTelegramUser(userId: number | null, chatId: string |
     logError("telegram", "Authorization denied: No allowed users or chats configured", {
       fromUserId: userId,
       chatId: chatId,
-      hint: "Set TELEGRAM_ALLOWED_USER_IDS or TELEGRAM_ALLOWED_CHAT_IDS environment variable"
+      hint: "Set TELEGRAM_ALLOWED_USER_IDS or TELEGRAM_ALLOWED_CHAT_IDS environment variable",
     });
     return false;
   }
@@ -32,7 +38,7 @@ export function isAuthorizedTelegramUser(userId: number | null, chatId: string |
   if (userId !== null && allowedUserIds.includes(String(userId))) {
     logInfo("telegram", "Authorization granted via user ID", {
       fromUserId: userId,
-      chatId: chatId
+      chatId: chatId,
     });
     return true;
   }
@@ -41,7 +47,7 @@ export function isAuthorizedTelegramUser(userId: number | null, chatId: string |
   if (allowedChatIds.includes(String(chatId))) {
     logInfo("telegram", "Authorization granted via chat ID", {
       fromUserId: userId,
-      chatId: chatId
+      chatId: chatId,
     });
     return true;
   }
@@ -50,7 +56,7 @@ export function isAuthorizedTelegramUser(userId: number | null, chatId: string |
     fromUserId: userId,
     chatId: chatId,
     allowedUserIdsCount: allowedUserIds.length,
-    allowedChatIdsCount: allowedChatIds.length
+    allowedChatIdsCount: allowedChatIds.length,
   });
   return false;
 }

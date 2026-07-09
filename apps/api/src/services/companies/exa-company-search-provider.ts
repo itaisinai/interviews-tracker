@@ -1,5 +1,6 @@
-import type { SearchResult, CompanySearchProvider } from "./company-search-provider.js";
 import { createTimer } from "../../lib/logger.js";
+
+import type { CompanySearchProvider, SearchResult } from "./company-search-provider.js";
 
 type ExaSearchResponse = {
   results?: Array<{
@@ -45,15 +46,15 @@ export class ExaCompanySearchProvider implements CompanySearchProvider {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": this.apiKey
+        "x-api-key": this.apiKey,
       },
       body: JSON.stringify({
         query,
         type: "auto",
         category: "company",
         numResults: 5,
-        text: true
-      })
+        text: true,
+      }),
     });
 
     if (!response.ok) {
@@ -75,7 +76,9 @@ export class ExaCompanySearchProvider implements CompanySearchProvider {
           publishedDate: result.publishedDate ?? null,
           author: result.author ?? null,
           text: result.text ?? null,
-          highlights: Array.isArray(result.highlights) ? result.highlights.filter((item): item is string => typeof item === "string" && item.trim().length > 0) : []
+          highlights: Array.isArray(result.highlights)
+            ? result.highlights.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+            : [],
         };
       })
       .filter((result): result is SearchResult => result !== null);
@@ -86,7 +89,9 @@ export class ExaCompanySearchProvider implements CompanySearchProvider {
   }
 
   private async hydrateMissingContents(results: SearchResult[], query: string) {
-    const missing = results.filter((result) => !result.text || result.text.trim().length === 0 || result.highlights.length === 0);
+    const missing = results.filter(
+      (result) => !result.text || result.text.trim().length === 0 || result.highlights.length === 0
+    );
 
     if (missing.length === 0) {
       return results;
@@ -97,7 +102,7 @@ export class ExaCompanySearchProvider implements CompanySearchProvider {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": this.apiKey as string
+        "x-api-key": this.apiKey as string,
       },
       body: JSON.stringify({
         urls: missing.map((result) => result.url),
@@ -105,10 +110,10 @@ export class ExaCompanySearchProvider implements CompanySearchProvider {
         highlights: {
           query,
           numSentences: 3,
-          highlightsPerUrl: 3
+          highlightsPerUrl: 3,
         },
-        livecrawl: "fallback"
-      })
+        livecrawl: "fallback",
+      }),
     });
 
     if (!response.ok) {
@@ -138,7 +143,7 @@ export class ExaCompanySearchProvider implements CompanySearchProvider {
         publishedDate: content.publishedDate ?? current.publishedDate,
         author: content.author ?? current.author,
         text: content.text ?? current.text,
-        highlights: content.highlights?.length ? content.highlights : current.highlights
+        highlights: content.highlights?.length ? content.highlights : current.highlights,
       });
     }
 

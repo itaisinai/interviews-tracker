@@ -35,7 +35,7 @@ const frontendRequired = [
   "VITE_AUTH0_DOMAIN",
   "VITE_AUTH0_CLIENT_ID",
   "VITE_AUTH0_AUDIENCE",
-  "VITE_ALLOWED_EMAIL"
+  "VITE_ALLOWED_EMAIL",
 ];
 const backendRequired = [
   "DATABASE_URL",
@@ -57,7 +57,7 @@ const backendRequired = [
   "GMAIL_CLIENT_ID",
   "GMAIL_CLIENT_SECRET",
   "GMAIL_REDIRECT_URI",
-  "GMAIL_TOKEN_ENCRYPTION_KEY"
+  "GMAIL_TOKEN_ENCRYPTION_KEY",
 ];
 const required = [...backendRequired, ...frontendRequired];
 const missing = required.filter((key) => !hasValue(rootEnv, key));
@@ -65,11 +65,21 @@ const missing = required.filter((key) => !hasValue(rootEnv, key));
 console.log(`Root .env: ${fs.existsSync(rootEnvPath) ? "found" : "missing"}`);
 console.log(`apps/web/.env: ${fs.existsSync(webEnvPath) ? "present (ignored in normal setup)" : "not present"}`);
 
-printSection("Backend env", backendRequired.map((key) => [key, valueOrMissing(rootEnv, key)]));
-printSection("Frontend env", frontendRequired.map((key) => [key, valueOrMissing(rootEnv, key)]));
+printSection(
+  "Backend env",
+  backendRequired.map((key) => [key, valueOrMissing(rootEnv, key)])
+);
+printSection(
+  "Frontend env",
+  frontendRequired.map((key) => [key, valueOrMissing(rootEnv, key)])
+);
 
-console.log(`AUTH0_AUDIENCE match: ${rootEnv.AUTH0_AUDIENCE && rootEnv.VITE_AUTH0_AUDIENCE && rootEnv.AUTH0_AUDIENCE === rootEnv.VITE_AUTH0_AUDIENCE ? "MATCH" : "MISMATCH"}`);
-console.log(`ALLOWED_EMAIL match: ${rootEnv.ALLOWED_EMAIL && rootEnv.VITE_ALLOWED_EMAIL && rootEnv.ALLOWED_EMAIL === rootEnv.VITE_ALLOWED_EMAIL ? "MATCH" : "MISMATCH"}`);
+console.log(
+  `AUTH0_AUDIENCE match: ${rootEnv.AUTH0_AUDIENCE && rootEnv.VITE_AUTH0_AUDIENCE && rootEnv.AUTH0_AUDIENCE === rootEnv.VITE_AUTH0_AUDIENCE ? "MATCH" : "MISMATCH"}`
+);
+console.log(
+  `ALLOWED_EMAIL match: ${rootEnv.ALLOWED_EMAIL && rootEnv.VITE_ALLOWED_EMAIL && rootEnv.ALLOWED_EMAIL === rootEnv.VITE_ALLOWED_EMAIL ? "MATCH" : "MISMATCH"}`
+);
 
 if (missing.length > 0) {
   console.error(`Missing required env vars: ${missing.join(", ")}`);

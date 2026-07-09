@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+
 import { JobHistoryTimeline } from "./job-history-timeline";
 
 const meta = {

@@ -1,8 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
-import { logger } from "./logger.js";
+
 import { GmailReconnectRequiredError } from "../services/gmail/gmail-service.js";
 import { PersonResearchProviderError } from "../services/people/exa-provider.js";
+
+import { logger } from "./logger.js";
 import { NotFoundError } from "./slug-resolver.js";
 
 export type AuthenticatedRequest = Request & { auth: { email: string } };
@@ -37,7 +39,7 @@ export function errorHandler(error: unknown, request: Request, response: Respons
     logger.error("internal_exception", error, {
       method: request.method,
       route: request.originalUrl.split("?")[0] || request.path,
-      statusCode: 500
+      statusCode: 500,
     });
     return response.status(500).json({ message: error.message });
   }
@@ -45,7 +47,7 @@ export function errorHandler(error: unknown, request: Request, response: Respons
   logger.error("internal_exception", error, {
     method: request.method,
     route: request.originalUrl.split("?")[0] || request.path,
-    statusCode: 500
+    statusCode: 500,
   });
   return response.status(500).json({ message: "Unexpected server error" });
 }

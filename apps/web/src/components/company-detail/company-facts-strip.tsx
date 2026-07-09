@@ -1,6 +1,7 @@
 import { MaterialIcon } from "@interviews-tracker/design-system";
-import { formatCompactFunding } from "./company-detail-formatters";
+
 import { CompanyDetailField } from "./company-detail-field";
+import { formatCompactFunding } from "./company-detail-formatters";
 
 type CompanyFact = {
   label: string;

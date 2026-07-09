@@ -4,12 +4,13 @@
  */
 
 import { z } from "zod";
+
 import { createTimer } from "../../lib/logger.js";
 
 export const messageIntentSchema = z.object({
   intent: z.enum(["QUERY", "CREATE_OPPORTUNITY"]),
   confidence: z.number().min(0).max(1),
-  reasoning: z.string()
+  reasoning: z.string(),
 });
 
 export type MessageIntent = z.infer<typeof messageIntentSchema>;
@@ -21,17 +22,17 @@ const intentClassificationSchema = {
   properties: {
     intent: {
       type: "string",
-      enum: ["QUERY", "CREATE_OPPORTUNITY"]
+      enum: ["QUERY", "CREATE_OPPORTUNITY"],
     },
     confidence: {
       type: "number",
       minimum: 0,
-      maximum: 1
+      maximum: 1,
     },
     reasoning: {
-      type: "string"
-    }
-  }
+      type: "string",
+    },
+  },
 } as const;
 
 const INTENT_CLASSIFICATION_PROMPT = `You are an intent classifier for a job opportunity tracking bot.
@@ -93,29 +94,29 @@ export async function classifyMessageIntent(message: string): Promise<MessageInt
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: INTENT_CLASSIFICATION_PROMPT
+          content: INTENT_CLASSIFICATION_PROMPT,
         },
         {
           role: "user",
-          content: message
-        }
+          content: message,
+        },
       ],
       response_format: {
         type: "json_schema",
         json_schema: {
           name: "classify_message_intent",
           strict: true,
-          schema: intentClassificationSchema
-        }
-      }
-    })
+          schema: intentClassificationSchema,
+        },
+      },
+    }),
   });
 
   if (!response.ok) {
@@ -123,7 +124,7 @@ export async function classifyMessageIntent(message: string): Promise<MessageInt
     throw new Error(`Intent classification failed: ${response.status} ${await response.text()}`);
   }
 
-  const payload = await response.json() as {
+  const payload = (await response.json()) as {
     choices?: Array<{
       message?: {
         content?: string;

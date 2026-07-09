@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import { Button } from "../button/index.js";
 import { MaterialIcon } from "../material-icon/index.js";
 
@@ -30,9 +31,7 @@ export function Drawer({
         <header className="flex items-start justify-between gap-4 border-b border-outline-variant px-6 py-5">
           <div className="min-w-0">
             <h2 className="truncate font-title-md text-title-md font-bold">{title}</h2>
-            {description ? (
-              <p className="mt-1 text-body-md text-on-surface-variant">{description}</p>
-            ) : null}
+            {description ? <p className="mt-1 text-body-md text-on-surface-variant">{description}</p> : null}
           </div>
           <Button variant="secondary" size="sm" leadingIcon="close" onClick={onClose}>
             Close

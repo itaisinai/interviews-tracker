@@ -1,23 +1,16 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ReactNode, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+
 import { PageIntro } from "../components/app-shell";
 import { ParserLoadingState } from "../components/parser-loading-state";
 import { api } from "../lib/api";
-import {
-  jobStatusOptions,
-  labelForJobStatus,
-  labelForPipelineType,
-  labelForPriority,
-} from "../lib/enum-labels";
-import type { JobStatus, Option, PipelineType, Priority } from "../lib/types";
+import { jobStatusOptions, labelForJobStatus, labelForPipelineType, labelForPriority } from "../lib/enum-labels";
 import type { ParserRunState } from "../lib/parser-run";
-import {
-  LoadingButton,
-  MaterialIcon,
-  PageErrorState,
-  PageLoadingState,
-} from "@interviews-tracker/design-system";
+import type { JobStatus, Option, PipelineType, Priority } from "../lib/types";
 
 type ParsedJobDescription = Awaited<ReturnType<typeof api.parseJob>>;
 
@@ -28,10 +21,7 @@ function sleep(ms: number) {
 function friendlyParseError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
 
-  if (
-    message.includes("API auth token is not ready") ||
-    message.includes("API auth token is empty")
-  ) {
+  if (message.includes("API auth token is not ready") || message.includes("API auth token is empty")) {
     return "Your session is still loading. Wait a moment and try again.";
   }
 
@@ -49,9 +39,7 @@ function friendlyParseError(error: unknown) {
 const validJobStatuses = new Set(jobStatusOptions.map((item) => item.value));
 
 function normalizeJobStatus(value: string | null | undefined): JobStatus {
-  return validJobStatuses.has(value as JobStatus)
-    ? (value as JobStatus)
-    : "RESEARCH_LEAD";
+  return validJobStatuses.has(value as JobStatus) ? (value as JobStatus) : "RESEARCH_LEAD";
 }
 
 function normalizeLookupValue(value: string) {
@@ -61,10 +49,7 @@ function normalizeLookupValue(value: string) {
     .trim();
 }
 
-function findMatchingOption(
-  options: Option[] | undefined,
-  value: string | null | undefined,
-) {
+function findMatchingOption(options: Option[] | undefined, value: string | null | undefined) {
   const target = value?.trim();
   if (!target) return null;
   const normalizedTarget = normalizeLookupValue(target);
@@ -83,9 +68,7 @@ function findMatchingOption(
 function ValueRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4">
-      <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-        {label}
-      </p>
+      <p className="font-label-md text-label-md uppercase text-on-surface-variant">{label}</p>
       <div className="mt-2 text-body-md text-on-background">{value}</div>
     </div>
   );
@@ -93,13 +76,11 @@ function ValueRow({ label, value }: { label: string; value: ReactNode }) {
 
 export function OpportunityFormPage() {
   const [text, setText] = useState("");
-  const [parseResult, setParseResult] = useState<ParsedJobDescription | null>(
-    null,
-  );
+  const [parseResult, setParseResult] = useState<ParsedJobDescription | null>(null);
   const [runState, setRunState] = useState<ParserRunState>("idle");
   const [runError, setRunError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>(
-    "Paste raw company or job text, review the parsed opportunity, then save.",
+    "Paste raw company or job text, review the parsed opportunity, then save."
   );
   const [progress, setProgress] = useState(0);
   const {
@@ -118,18 +99,9 @@ export function OpportunityFormPage() {
     runState === "extracting_fields" ||
     runState === "normalizing_result";
 
-  const companySizeOption = findMatchingOption(
-    options?.companySizes,
-    parseResult?.company.employees,
-  );
-  const companyStageOption = findMatchingOption(
-    options?.companyStages,
-    parseResult?.company.stage,
-  );
-  const workModelOption = findMatchingOption(
-    options?.workModels,
-    parseResult?.company.workModel,
-  );
+  const companySizeOption = findMatchingOption(options?.companySizes, parseResult?.company.employees);
+  const companyStageOption = findMatchingOption(options?.companyStages, parseResult?.company.stage);
+  const workModelOption = findMatchingOption(options?.workModels, parseResult?.company.workModel);
   const parsedDomains = useMemo(() => {
     const raw = parseResult?.company.domains ?? [];
     return [...new Set(raw.map((item) => item.trim()).filter(Boolean))];
@@ -145,9 +117,7 @@ export function OpportunityFormPage() {
       const roleTitle = parseResult.roleTitle?.trim();
 
       if (!companyName || !roleTitle) {
-        throw new Error(
-          "The parser must extract both a company name and a role title before saving.",
-        );
+        throw new Error("The parser must extract both a company name and a role title before saving.");
       }
 
       const domainIds = new Set<string>();
@@ -155,12 +125,8 @@ export function OpportunityFormPage() {
         const existing = options?.domains.find(
           (item) =>
             normalizeLookupValue(item.label) === normalizeLookupValue(label) ||
-            normalizeLookupValue(item.label).includes(
-              normalizeLookupValue(label),
-            ) ||
-            normalizeLookupValue(label).includes(
-              normalizeLookupValue(item.label),
-            ),
+            normalizeLookupValue(item.label).includes(normalizeLookupValue(label)) ||
+            normalizeLookupValue(label).includes(normalizeLookupValue(item.label))
         );
         if (existing) {
           domainIds.add(existing.id);
@@ -224,8 +190,7 @@ export function OpportunityFormPage() {
 
     if (trimmed.length < 20) {
       await sleep(120);
-      const message =
-        "Paste at least a few lines so the parser has enough context to work with.";
+      const message = "Paste at least a few lines so the parser has enough context to work with.";
       setRunError(message);
       setStatusMessage("The pasted text is too short to parse reliably.");
       setProgress(100);
@@ -250,9 +215,7 @@ export function OpportunityFormPage() {
       const parsePromise = api.parseJob(trimmed);
       await sleep(160);
       setRunState("extracting_fields");
-      setStatusMessage(
-        "The AI is extracting company, role, and process details.",
-      );
+      setStatusMessage("The AI is extracting company, role, and process details.");
 
       const parsed = await parsePromise;
       setRunState("normalizing_result");
@@ -275,35 +238,21 @@ export function OpportunityFormPage() {
   };
 
   if (isLoading) {
-    return (
-      <PageLoadingState
-        title="Add Opportunity"
-        description="Loading option lists for the review step."
-      />
-    );
+    return <PageLoadingState title="Add Opportunity" description="Loading option lists for the review step." />;
   }
 
   if (isError) {
     return (
       <PageErrorState
         title="Add Opportunity"
-        description={
-          error instanceof Error
-            ? error.message
-            : "Unable to load opportunity options."
-        }
+        description={error instanceof Error ? error.message : "Unable to load opportunity options."}
         onRetry={() => void refetch()}
       />
     );
   }
 
-  const canSave = Boolean(
-    parseResult?.companyName?.trim() &&
-    parseResult?.roleTitle?.trim() &&
-    !create.isPending,
-  );
-  const pipelineType = (parseResult?.pipelineType ??
-    "POTENTIAL") as PipelineType;
+  const canSave = Boolean(parseResult?.companyName?.trim() && parseResult?.roleTitle?.trim() && !create.isPending);
+  const pipelineType = (parseResult?.pipelineType ?? "POTENTIAL") as PipelineType;
   const priority = (parseResult?.prioritySuggestion ?? "MEDIUM") as Priority;
 
   return (
@@ -338,11 +287,7 @@ export function OpportunityFormPage() {
               Parse
             </LoadingButton>
             {runState === "failed" ? (
-              <LoadingButton
-                className="btn btn-secondary"
-                icon="refresh"
-                onClick={() => void runParser(text)}
-              >
+              <LoadingButton className="btn btn-secondary" icon="refresh" onClick={() => void runParser(text)}>
                 Retry
               </LoadingButton>
             ) : null}
@@ -351,12 +296,9 @@ export function OpportunityFormPage() {
         <section className="panel p-6 lg:col-span-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="font-title-md text-title-md font-bold">
-                Review Parsed Data
-              </h3>
+              <h3 className="font-title-md text-title-md font-bold">Review Parsed Data</h3>
               <p className="mt-1 text-body-md text-on-surface-variant">
-                The form is generated from the parser output. The remaining
-                values are auto-mapped where possible.
+                The form is generated from the parser output. The remaining values are auto-mapped where possible.
               </p>
             </div>
             {parseResult ? (
@@ -375,21 +317,13 @@ export function OpportunityFormPage() {
           {runState !== "idle" ? (
             <div className="mb-4 space-y-4">
               <ParserLoadingState
-                state={
-                  runState === "failed"
-                    ? "failed"
-                    : runState === "completed"
-                      ? "completed"
-                      : runState
-                }
+                state={runState === "failed" ? "failed" : runState === "completed" ? "completed" : runState}
                 message={statusMessage}
                 progress={progress}
               />
               {runError ? (
                 <div className="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-on-error-container">
-                  <p className="font-body-md text-body-md font-semibold">
-                    Parsing failed
-                  </p>
+                  <p className="font-body-md text-body-md font-semibold">Parsing failed</p>
                   <p className="mt-1 font-body-md text-body-md">{runError}</p>
                 </div>
               ) : null}
@@ -397,13 +331,9 @@ export function OpportunityFormPage() {
           ) : null}
           {create.error ? (
             <div className="mb-4 rounded-lg border border-error/30 bg-error-container px-4 py-3 text-on-error-container">
-              <p className="font-body-md text-body-md font-semibold">
-                Save failed
-              </p>
+              <p className="font-body-md text-body-md font-semibold">Save failed</p>
               <p className="mt-1 font-body-md text-body-md">
-                {create.error instanceof Error
-                  ? create.error.message
-                  : "Unable to save the opportunity."}
+                {create.error instanceof Error ? create.error.message : "Unable to save the opportunity."}
               </p>
             </div>
           ) : null}
@@ -422,67 +352,25 @@ export function OpportunityFormPage() {
               </div>
               {!canSave ? (
                 <div className="mb-4 rounded-xl border border-warning/30 bg-warning-container px-4 py-3 text-on-warning-container">
-                  The parser must extract both a company name and a role title
-                  before this can be saved.
+                  The parser must extract both a company name and a role title before this can be saved.
                 </div>
               ) : null}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <ValueRow
-                  label="Company"
-                  value={parseResult.companyName ?? "-"}
-                />
+                <ValueRow label="Company" value={parseResult.companyName ?? "-"} />
                 <ValueRow label="Role" value={parseResult.roleTitle ?? "-"} />
-                <ValueRow
-                  label="Status"
-                  value={labelForJobStatus(
-                    normalizeJobStatus(parseResult.status),
-                  )}
-                />
+                <ValueRow label="Status" value={labelForJobStatus(normalizeJobStatus(parseResult.status))} />
                 <ValueRow label="Priority" value={labelForPriority(priority)} />
                 <ValueRow
                   label="Company size"
-                  value={
-                    companySizeOption?.label ??
-                    parseResult.company.employees ??
-                    "-"
-                  }
+                  value={companySizeOption?.label ?? parseResult.company.employees ?? "-"}
                 />
-                <ValueRow
-                  label="Stage"
-                  value={
-                    companyStageOption?.label ??
-                    parseResult.company.stage ??
-                    "-"
-                  }
-                />
-                <ValueRow
-                  label="Work model"
-                  value={
-                    workModelOption?.label ??
-                    parseResult.company.workModel ??
-                    "-"
-                  }
-                />
-                <ValueRow
-                  label="Location"
-                  value={parseResult.company.location ?? "-"}
-                />
-                <ValueRow
-                  label="Known contact"
-                  value={parseResult.process.knownContact ?? "-"}
-                />
-                <ValueRow
-                  label="Next step"
-                  value={parseResult.process.suggestedNextStep ?? "-"}
-                />
-                <ValueRow
-                  label="Company description"
-                  value={parseResult.company.companyDescription ?? "-"}
-                />
-                <ValueRow
-                  label="Product description"
-                  value={parseResult.company.productDescription ?? "-"}
-                />
+                <ValueRow label="Stage" value={companyStageOption?.label ?? parseResult.company.stage ?? "-"} />
+                <ValueRow label="Work model" value={workModelOption?.label ?? parseResult.company.workModel ?? "-"} />
+                <ValueRow label="Location" value={parseResult.company.location ?? "-"} />
+                <ValueRow label="Known contact" value={parseResult.process.knownContact ?? "-"} />
+                <ValueRow label="Next step" value={parseResult.process.suggestedNextStep ?? "-"} />
+                <ValueRow label="Company description" value={parseResult.company.companyDescription ?? "-"} />
+                <ValueRow label="Product description" value={parseResult.company.productDescription ?? "-"} />
               </div>
               <div className="mt-4">
                 <p className="label">Domains</p>
@@ -497,43 +385,25 @@ export function OpportunityFormPage() {
                       </span>
                     ))
                   ) : (
-                    <span className="text-body-md text-on-surface-variant">
-                      -
-                    </span>
+                    <span className="text-body-md text-on-surface-variant">-</span>
                   )}
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <ValueRow
                   label="Tech stack"
-                  value={
-                    parseResult.role.techStack.length > 0
-                      ? parseResult.role.techStack.join(", ")
-                      : "-"
-                  }
+                  value={parseResult.role.techStack.length > 0 ? parseResult.role.techStack.join(", ") : "-"}
                 />
-                <ValueRow
-                  label="Backend / frontend split"
-                  value={parseResult.role.backendFrontendSplit ?? "-"}
-                />
-                <ValueRow
-                  label="Compensation"
-                  value={parseResult.role.compensation ?? "-"}
-                />
-                <ValueRow
-                  label="Customers / traction"
-                  value={parseResult.company.customersTraction ?? "-"}
-                />
+                <ValueRow label="Backend / frontend split" value={parseResult.role.backendFrontendSplit ?? "-"} />
+                <ValueRow label="Compensation" value={parseResult.role.compensation ?? "-"} />
+                <ValueRow label="Customers / traction" value={parseResult.company.customersTraction ?? "-"} />
               </div>
               {parseResult.rawImportantNotes.length > 0 ? (
                 <div className="mt-4">
                   <p className="label">Important notes</p>
                   <ul className="mt-2 space-y-2 rounded-xl bg-surface-container-low p-4">
                     {parseResult.rawImportantNotes.map((note) => (
-                      <li
-                        key={note}
-                        className="text-body-md text-on-background"
-                      >
+                      <li key={note} className="text-body-md text-on-background">
                         {note}
                       </li>
                     ))}
@@ -541,9 +411,8 @@ export function OpportunityFormPage() {
                 </div>
               ) : null}
               <p className="mt-4 text-body-md text-on-surface-variant">
-                The parser will auto-create missing domains and map company
-                size, stage, and work model when the labels match existing
-                options.
+                The parser will auto-create missing domains and map company size, stage, and work model when the labels
+                match existing options.
               </p>
             </>
           ) : runState === "failed" ? (

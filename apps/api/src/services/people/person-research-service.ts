@@ -1,8 +1,10 @@
 import { z } from "zod";
+
+import { prisma } from "../../lib/prisma.js";
 import { personResearchInputSchema, personResearchResultSchema } from "../../lib/schemas.js";
+
 import { ExaProvider } from "./exa-provider.js";
 import { llmPersonResearch } from "./person-research-llm-fallback.js";
-import { prisma } from "../../lib/prisma.js";
 
 export type PersonResearchInput = z.infer<typeof personResearchInputSchema>;
 export type PersonResearchResult = z.infer<typeof personResearchResultSchema>;
@@ -12,8 +14,8 @@ export type PersonResearchResult = z.infer<typeof personResearchResultSchema>;
  * rotem@altahq.com -> rotem
  */
 function extractNameFromEmail(nameOrEmail: string): string {
-  if (nameOrEmail.includes('@')) {
-    return nameOrEmail.split('@')[0];
+  if (nameOrEmail.includes("@")) {
+    return nameOrEmail.split("@")[0];
   }
   return nameOrEmail;
 }
@@ -31,59 +33,57 @@ export function getPersonResearchService() {
     async researchPerson(input: PersonResearchInput, opportunityId?: string): Promise<PersonResearchResult | null> {
       const searchName = extractNameFromEmail(input.name);
 
-      console.log('[RESEARCH] Query:', {
+      console.log("[RESEARCH] Query:", {
         name: searchName,
         company: input.companyName,
         linkedinUrl: input.linkedinUrl,
-        opportunityId
+        opportunityId,
       });
 
       // Get wrong candidates for this opportunity
       const wrongCandidates = opportunityId
         ? await prisma.wrongPersonCandidate.findMany({
             where: { opportunityId },
-            select: { linkedinUrl: true }
+            select: { linkedinUrl: true },
           })
         : [];
 
       const wrongLinkedinUrls = new Set(
-        wrongCandidates
-          .map(c => c.linkedinUrl)
-          .filter((url): url is string => url !== null)
+        wrongCandidates.map((c) => c.linkedinUrl).filter((url): url is string => url !== null)
       );
 
-      console.log('[RESEARCH] Wrong candidates to exclude:', Array.from(wrongLinkedinUrls));
+      console.log("[RESEARCH] Wrong candidates to exclude:", Array.from(wrongLinkedinUrls));
 
       // Try Exa
-      console.log('[RESEARCH] Trying Exa...');
+      console.log("[RESEARCH] Trying Exa...");
       const exaResult = await exa.researchPerson(searchName, input.companyName, input.linkedinUrl);
 
       if (exaResult) {
         // Check if this result is in the wrong candidates list
         if (exaResult.person.linkedinUrl && wrongLinkedinUrls.has(exaResult.person.linkedinUrl)) {
-          console.log('[RESEARCH] ❌ Exa result is in wrong candidates list, skipping');
+          console.log("[RESEARCH] ❌ Exa result is in wrong candidates list, skipping");
         } else {
-          console.log('[RESEARCH] ✅ Exa found result');
-          console.log('[RESEARCH] Full result:', JSON.stringify(exaResult, null, 2));
+          console.log("[RESEARCH] ✅ Exa found result");
+          console.log("[RESEARCH] Full result:", JSON.stringify(exaResult, null, 2));
           return exaResult;
         }
       }
 
       // Fallback to Perplexity with same query
-      console.log('[RESEARCH] Exa failed, trying Perplexity...');
+      console.log("[RESEARCH] Exa failed, trying Perplexity...");
       const llmResult = await llmPersonResearch({
         name: searchName,
         company: input.companyName,
-        linkedinUrl: input.linkedinUrl
+        linkedinUrl: input.linkedinUrl,
       });
 
-      if (llmResult && llmResult.status === 'found' && llmResult.person.fullName) {
+      if (llmResult && llmResult.status === "found" && llmResult.person.fullName) {
         // Check if this result is in the wrong candidates list
         if (llmResult.person.linkedinUrl && wrongLinkedinUrls.has(llmResult.person.linkedinUrl)) {
-          console.log('[RESEARCH] ❌ Perplexity result is in wrong candidates list, skipping');
+          console.log("[RESEARCH] ❌ Perplexity result is in wrong candidates list, skipping");
         } else {
-          console.log('[RESEARCH] ✅ Perplexity found result');
-          console.log('[RESEARCH] Full result:', JSON.stringify(llmResult, null, 2));
+          console.log("[RESEARCH] ✅ Perplexity found result");
+          console.log("[RESEARCH] Full result:", JSON.stringify(llmResult, null, 2));
 
           return {
             person: {
@@ -92,20 +92,20 @@ export function getPersonResearchService() {
               title: llmResult.person.currentTitle ?? undefined,
               company: llmResult.person.currentCompany ?? undefined,
               id: undefined,
-              avatarUrl: undefined
+              avatarUrl: undefined,
             },
             research: {
               about: llmResult.person.summary ?? undefined,
               experience: undefined,
               education: undefined,
-              skills: undefined
-            }
+              skills: undefined,
+            },
           };
         }
       }
 
-      console.log('[RESEARCH] ❌ Not found');
+      console.log("[RESEARCH] ❌ Not found");
       return null;
-    }
+    },
   };
 }

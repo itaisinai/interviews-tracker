@@ -1,6 +1,7 @@
 import { MaterialIcon } from "@interviews-tracker/design-system";
-import type { Interaction } from "../../lib/types";
+
 import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
+import type { Interaction } from "../../lib/types";
 
 type QuickInfoCardProps = {
   interaction: Interaction;
@@ -41,9 +42,7 @@ export function QuickInfoCard({ interaction }: QuickInfoCardProps) {
         <div>
           <div className="text-xs text-neutral-500 mb-1 flex items-center gap-1">
             Source
-            {source === "Gmail" && (
-              <MaterialIcon name="mail" className="text-[14px] text-red-500" />
-            )}
+            {source === "Gmail" && <MaterialIcon name="mail" className="text-[14px] text-red-500" />}
           </div>
           <div className="text-sm text-neutral-900">{source}</div>
         </div>

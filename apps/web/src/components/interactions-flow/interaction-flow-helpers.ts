@@ -1,7 +1,7 @@
-import type { CalendarEvent } from "../calendar";
-import type { Interaction } from "../../lib/types";
-import { formatDurationBetween } from "../../lib/format";
 import { labelForInteractionType } from "../../lib/enum-labels";
+import { formatDurationBetween } from "../../lib/format";
+import type { Interaction } from "../../lib/types";
+import type { CalendarEvent } from "../calendar";
 
 export type InteractionFilter = "upcoming" | "done" | "followup" | "all";
 
@@ -30,15 +30,14 @@ export function buildOpportunityGroups(interactions: readonly Interaction[]) {
 
   for (const interaction of interactions) {
     // Use nested opportunity slug as the group key
-    const opportunitySlug = interaction.jobOpportunity?.slug ?? 'unknown';
+    const opportunitySlug = interaction.jobOpportunity?.slug ?? "unknown";
     const existing = groups.get(opportunitySlug);
     const timestamp = new Date(interaction.date).getTime();
 
     if (!existing) {
       groups.set(opportunitySlug, {
         opportunitySlug: opportunitySlug,
-        companyName:
-          interaction.jobOpportunity?.company.name ?? "Unknown company",
+        companyName: interaction.jobOpportunity?.company.name ?? "Unknown company",
         roleTitle: interaction.jobOpportunity?.roleTitle ?? "Unknown role",
         interactions: [interaction],
         latestTimestamp: timestamp,
@@ -49,11 +48,7 @@ export function buildOpportunityGroups(interactions: readonly Interaction[]) {
 
     existing.interactions.push(interaction);
     existing.latestTimestamp = Math.max(existing.latestTimestamp, timestamp);
-    existing.closestTimestamp = getClosestTimestamp(
-      existing.closestTimestamp,
-      timestamp,
-      now,
-    );
+    existing.closestTimestamp = getClosestTimestamp(existing.closestTimestamp, timestamp, now);
   }
 
   return [...groups.values()].sort((left, right) => {
@@ -79,10 +74,7 @@ export function buildOpportunityGroups(interactions: readonly Interaction[]) {
   });
 }
 
-export function filterOpportunityGroup(
-  group: InteractionOpportunityGroup,
-  filter: InteractionFilter,
-) {
+export function filterOpportunityGroup(group: InteractionOpportunityGroup, filter: InteractionFilter) {
   if (filter === "upcoming") {
     return group.interactions.some((item) => new Date(item.date) >= new Date());
   }
@@ -95,7 +87,7 @@ export function filterOpportunityGroup(
     return group.interactions.some(
       (item) =>
         isLatestInteraction(item, group.interactions) &&
-        (item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim())),
+        (item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim()))
     );
   }
 
@@ -105,23 +97,19 @@ export function filterOpportunityGroup(
 export function countFollowUps(interactions: readonly Interaction[]) {
   return interactions.filter(
     (item) =>
-      isLatestInteraction(item, interactions) &&
-      (item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim())),
+      isLatestInteraction(item, interactions) && (item.status === "NEEDS_FOLLOW_UP" || Boolean(item.followUp?.trim()))
   ).length;
 }
 
 export function countUpcoming(interactions: readonly Interaction[]) {
-  return interactions.filter((item) => new Date(item.date) >= new Date())
-    .length;
+  return interactions.filter((item) => new Date(item.date) >= new Date()).length;
 }
 
 export function calculatePercent(count: number, total: number) {
   return total > 0 ? Math.round((count / total) * 100) : 0;
 }
 
-export function buildInteractionCalendarEvents(
-  interactions: readonly Interaction[],
-): InteractionCalendarEvent[] {
+export function buildInteractionCalendarEvents(interactions: readonly Interaction[]): InteractionCalendarEvent[] {
   return interactions.map((interaction) => {
     try {
       const date = new Date(interaction.date);
@@ -131,19 +119,14 @@ export function buildInteractionCalendarEvents(
       // Build title parts: Company · Stage/Type · Duration (no brackets, use bullet separator)
       // MIGRATION FIX: Handle missing company data gracefully
       const companyName = interaction.jobOpportunity?.company?.name ?? "Unknown Company";
-      const titleParts = [
-        companyName,
-        interaction.stage || labelForInteractionType(interaction.type),
-        duration,
-      ].filter(Boolean);
+      const titleParts = [companyName, interaction.stage || labelForInteractionType(interaction.type), duration].filter(
+        Boolean
+      );
 
       return {
         id: interaction.slug ?? "unknown",
         date: interaction.date,
-        title:
-          titleParts.length > 0
-            ? titleParts.join(" · ")
-            : labelForInteractionType(interaction.type),
+        title: titleParts.length > 0 ? titleParts.join(" · ") : labelForInteractionType(interaction.type),
         time: timeFormatter.format(date),
         isFuture,
       };
@@ -161,10 +144,7 @@ export function buildInteractionCalendarEvents(
   });
 }
 
-function isLatestInteraction(
-  interaction: Interaction,
-  interactions: readonly Interaction[],
-) {
+function isLatestInteraction(interaction: Interaction, interactions: readonly Interaction[]) {
   return !interactions.some((item) => {
     // Compare opportunity slugs
     const itemOpportunitySlug = item.jobOpportunity?.slug;
@@ -177,8 +157,7 @@ function isLatestInteraction(
     const itemTime = new Date(item.date).getTime();
     const interactionTime = new Date(interaction.date).getTime();
     return (
-      itemTime > interactionTime ||
-      (itemTime === interactionTime && item.slug.localeCompare(interaction.slug) > 0)
+      itemTime > interactionTime || (itemTime === interactionTime && item.slug.localeCompare(interaction.slug) > 0)
     );
   });
 }

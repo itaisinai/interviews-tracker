@@ -12,12 +12,10 @@ test("hasUsefulJobContent accepts title, company, description, or raw text", () 
 
 test("getDetectedJobRows marks missing detected job fields", () => {
   const rows = getDetectedJobRows({ title: "Engineer", linkedinJobId: "123" });
-  assert.deepEqual(rows.map((row) => row.value || row.missingText), [
-    "Engineer",
-    "Missing company",
-    "Missing location",
-    "ID: 123"
-  ]);
+  assert.deepEqual(
+    rows.map((row) => row.value || row.missingText),
+    ["Engineer", "Missing company", "Missing location", "ID: 123"]
+  );
 });
 
 test("buildAuthHeaders includes bearer token only when provided", () => {

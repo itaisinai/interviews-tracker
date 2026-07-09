@@ -18,26 +18,26 @@ async function main() {
     const records = await prisma.person.findMany({
       where: {
         name: dup.name,
-        jobOpportunityId: dup.jobOpportunityId
+        jobOpportunityId: dup.jobOpportunityId,
       },
       include: {
         research: true,
         jobOpportunity: {
           select: {
             companyName: true,
-            roleTitle: true
-          }
-        }
+            roleTitle: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'asc'
-      }
+        createdAt: "asc",
+      },
     });
 
     console.log(`\n=== ${dup.name} (${records[0].jobOpportunity?.companyName}) ===`);
 
     // Strategy: Keep the one with research if only one has it, otherwise keep the most recent
-    const withResearch = records.filter(r => r.research);
+    const withResearch = records.filter((r) => r.research);
 
     let toKeep;
     if (withResearch.length === 1) {
@@ -48,17 +48,17 @@ async function main() {
       console.log(`Keeping: ID ${toKeep.id} (most recent)`);
     }
 
-    const toDelete = records.filter(r => r.id !== toKeep.id);
+    const toDelete = records.filter((r) => r.id !== toKeep.id);
 
     for (const record of toDelete) {
       console.log(`Deleting: ID ${record.id} - ${record.title} at ${record.company}`);
       await prisma.person.delete({
-        where: { id: record.id }
+        where: { id: record.id },
       });
     }
   }
 
-  console.log('\n✅ Duplicates resolved');
+  console.log("\n✅ Duplicates resolved");
 }
 
 main()

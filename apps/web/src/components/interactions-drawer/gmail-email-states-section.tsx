@@ -1,16 +1,16 @@
+import { useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
-import { useState } from "react";
 
 type GmailEmailStatesSectionProps = {
   opportunitySlug: string;
 };
 
-export function GmailEmailStatesSection({
-  opportunitySlug,
-}: GmailEmailStatesSectionProps) {
+export function GmailEmailStatesSection({ opportunitySlug }: GmailEmailStatesSectionProps) {
   const queryClient = useQueryClient();
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [unpickingId, setUnpickingId] = useState<string | null>(null);
@@ -92,10 +92,7 @@ export function GmailEmailStatesSection({
         className="flex items-center justify-between w-full text-sm font-medium text-neutral-900 mb-3 hover:text-neutral-700 transition-colors"
       >
         <span>Gmail Email States</span>
-        <MaterialIcon
-          name={isExpanded ? "expand_less" : "expand_more"}
-          className="text-[18px] text-neutral-500"
-        />
+        <MaterialIcon name={isExpanded ? "expand_less" : "expand_more"} className="text-[18px] text-neutral-500" />
       </button>
 
       {isExpanded && (
@@ -108,10 +105,7 @@ export function GmailEmailStatesSection({
                 className="flex items-center justify-between w-full text-xs font-medium text-neutral-600 mb-2 hover:text-neutral-800 transition-colors"
               >
                 <span>Hidden Emails ({data.removedEmails.length})</span>
-                <MaterialIcon
-                  name={hiddenExpanded ? "expand_less" : "expand_more"}
-                  className="text-[16px]"
-                />
+                <MaterialIcon name={hiddenExpanded ? "expand_less" : "expand_more"} className="text-[16px]" />
               </button>
               {hiddenExpanded && (
                 <div className="space-y-1">
@@ -143,16 +137,10 @@ export function GmailEmailStatesSection({
                         title="Restore to search results"
                       >
                         {restoringId === email.id ? (
-                          <MaterialIcon
-                            name="progress_activity"
-                            className="text-[14px] animate-spin"
-                          />
+                          <MaterialIcon name="progress_activity" className="text-[14px] animate-spin" />
                         ) : (
                           <>
-                            <MaterialIcon
-                              name="restore"
-                              className="text-[14px]"
-                            />
+                            <MaterialIcon name="restore" className="text-[14px]" />
                             Restore
                           </>
                         )}
@@ -172,10 +160,7 @@ export function GmailEmailStatesSection({
                 className="flex items-center justify-between w-full text-xs font-medium text-neutral-600 mb-2 hover:text-neutral-800 transition-colors"
               >
                 <span>Picked Emails ({data.pickedEmails.length})</span>
-                <MaterialIcon
-                  name={pickedExpanded ? "expand_less" : "expand_more"}
-                  className="text-[16px]"
-                />
+                <MaterialIcon name={pickedExpanded ? "expand_less" : "expand_more"} className="text-[16px]" />
               </button>
               {pickedExpanded && (
                 <div className="space-y-1">
@@ -184,10 +169,7 @@ export function GmailEmailStatesSection({
                       key={email.id}
                       className="flex items-start gap-3 p-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 transition-colors group"
                     >
-                      <MaterialIcon
-                        name="check_circle"
-                        className="text-[16px] text-emerald-600 mt-0.5 flex-shrink-0"
-                      />
+                      <MaterialIcon name="check_circle" className="text-[16px] text-emerald-600 mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-neutral-900 font-medium truncate">
                           {email.subject || "No subject"}
@@ -207,10 +189,7 @@ export function GmailEmailStatesSection({
                         title="Mark as not picked"
                       >
                         {unpickingId === email.id ? (
-                          <MaterialIcon
-                            name="progress_activity"
-                            className="text-[14px] animate-spin"
-                          />
+                          <MaterialIcon name="progress_activity" className="text-[14px] animate-spin" />
                         ) : (
                           <>
                             <MaterialIcon name="undo" className="text-[14px]" />

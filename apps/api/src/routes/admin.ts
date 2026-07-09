@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { getEnvironmentDiagnostics } from "../config/env-validation.js";
-import { requireAuth } from "../lib/auth.js";
 import fs from "fs";
 import path from "path";
+
+import { getEnvironmentDiagnostics } from "../config/env-validation.js";
+import { requireAuth } from "../lib/auth.js";
 
 export const adminRouter = Router();
 
@@ -17,17 +18,17 @@ adminRouter.get("/runtime", requireAuth, async (_request, response) => {
   const startTime = process.env.START_TIME || new Date().toISOString();
 
   // Get git SHA if available
-  let gitSha = 'unknown';
-  let gitBranch = 'unknown';
+  let gitSha = "unknown";
+  let gitBranch = "unknown";
   try {
-    const gitHeadPath = path.join(cwd, '.git', 'HEAD');
+    const gitHeadPath = path.join(cwd, ".git", "HEAD");
     if (fs.existsSync(gitHeadPath)) {
-      const head = fs.readFileSync(gitHeadPath, 'utf-8').trim();
-      if (head.startsWith('ref: ')) {
-        gitBranch = head.replace('ref: refs/heads/', '');
-        const refPath = path.join(cwd, '.git', head.slice(5));
+      const head = fs.readFileSync(gitHeadPath, "utf-8").trim();
+      if (head.startsWith("ref: ")) {
+        gitBranch = head.replace("ref: refs/heads/", "");
+        const refPath = path.join(cwd, ".git", head.slice(5));
         if (fs.existsSync(refPath)) {
-          gitSha = fs.readFileSync(refPath, 'utf-8').trim().slice(0, 8);
+          gitSha = fs.readFileSync(refPath, "utf-8").trim().slice(0, 8);
         }
       } else {
         gitSha = head.slice(0, 8);
@@ -38,7 +39,7 @@ adminRouter.get("/runtime", requireAuth, async (_request, response) => {
   }
 
   // Get release directory from cwd
-  const cwdParts = cwd.split('/');
+  const cwdParts = cwd.split("/");
   const releaseDir = cwdParts[cwdParts.length - 1];
 
   // Check if running from "current" symlink
@@ -66,7 +67,7 @@ adminRouter.get("/runtime", requireAuth, async (_request, response) => {
       gitBranch,
       nodeVersion: process.version,
       platform: process.platform,
-      arch: process.arch
+      arch: process.arch,
     },
     runtime: {
       startedAt: startTime,
@@ -74,10 +75,10 @@ adminRouter.get("/runtime", requireAuth, async (_request, response) => {
       memoryUsage: {
         heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
         heapTotal: `${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)}MB`,
-        rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`
+        rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`,
       },
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || "development",
     },
-    configuration: diagnostics
+    configuration: diagnostics,
   });
 });

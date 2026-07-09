@@ -1,13 +1,11 @@
 import { MessageSquare, Pencil, PencilOff, Trash2 } from "lucide-react";
-import {
-  displayLabelForEnumValue,
-  normalizeInteractionType,
-} from "../../lib/enum-labels";
 
-import { Badge } from "../badge";
-import type { Interaction } from "../../lib/types";
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
+import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
 import { formatDateTimeRange } from "../../lib/format";
+import type { Interaction } from "../../lib/types";
+import { Badge } from "../badge";
 
 type InteractionSummaryCompactProps = {
   interaction: Interaction;
@@ -33,13 +31,8 @@ export function InteractionSummaryCompact({
   isAddFeedbackDisabled = false,
   isEditing = false,
 }: InteractionSummaryCompactProps) {
-  const typeLabel =
-    displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ??
-    interaction.type;
-  const dateTimeRange = formatDateTimeRange(
-    interaction.date,
-    interaction.endDate,
-  );
+  const typeLabel = displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ?? interaction.type;
+  const dateTimeRange = formatDateTimeRange(interaction.date, interaction.endDate);
 
   return (
     <div className="flex items-start gap-4 p-4 bg-white rounded-lg border border-neutral-200">
@@ -52,9 +45,7 @@ export function InteractionSummaryCompact({
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-base font-semibold text-neutral-900 mb-1">
-              {typeLabel}
-            </h3>
+            <h3 className="text-base font-semibold text-neutral-900 mb-1">{typeLabel}</h3>
             <div className="flex items-center gap-2 text-sm text-neutral-600">
               <MaterialIcon name="schedule" className="text-[16px]" />
               <span>{dateTimeRange}</span>
@@ -62,9 +53,7 @@ export function InteractionSummaryCompact({
             {interaction.stage && (
               <div className="flex items-center gap-2 mt-2">
                 <Badge tone="blue">{interaction.stage}</Badge>
-                {statusBadge && (
-                  <Badge tone={statusBadge.tone}>{statusBadge.label}</Badge>
-                )}
+                {statusBadge && <Badge tone={statusBadge.tone}>{statusBadge.label}</Badge>}
               </div>
             )}
           </div>
@@ -75,11 +64,7 @@ export function InteractionSummaryCompact({
               onClick={onAddFeedback}
               disabled={isAddFeedbackDisabled}
               className="p-2 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-neutral-200 disabled:text-neutral-400 disabled:hover:bg-transparent transition-colors"
-              title={
-                isAddFeedbackDisabled
-                  ? "Save or cancel edits before adding feedback"
-                  : "Add Feedback"
-              }
+              title={isAddFeedbackDisabled ? "Save or cancel edits before adding feedback" : "Add Feedback"}
             >
               <MessageSquare className="w-4 h-4" />
             </button>
@@ -94,11 +79,7 @@ export function InteractionSummaryCompact({
               className="p-2 rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors"
               title="Edit"
             >
-              {isEditing ? (
-                <PencilOff className="w-4 h-4" />
-              ) : (
-                <Pencil className="w-4 h-4" />
-              )}
+              {isEditing ? <PencilOff className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
             </button>
             <button
               onClick={onDelete}

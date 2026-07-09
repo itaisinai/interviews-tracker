@@ -1,16 +1,15 @@
 import type { ReactNode } from "react";
-import {
-  Badge as DesignBadge,
-  type BadgeTone,
-} from "@interviews-tracker/design-system";
+
+import { Badge as DesignBadge, type BadgeTone } from "@interviews-tracker/design-system";
+
 import {
   displayLabelForEnumValue,
+  interactionStatusLabels,
+  jobStatusLabels,
   offerStatusLabels,
   pipelineTypeLabels,
   priorityLabels,
   taskStatusLabels,
-  interactionStatusLabels,
-  jobStatusLabels,
 } from "../../lib/enum-labels";
 import { pipelineTone, priorityTone, statusTone } from "../../lib/format";
 
@@ -41,20 +40,12 @@ function toneForValue(value?: string | null): BadgeTone | undefined {
     return tone;
   }
 
-  if (
-    value in jobStatusLabels ||
-    value in taskStatusLabels ||
-    value in interactionStatusLabels
-  ) {
+  if (value in jobStatusLabels || value in taskStatusLabels || value in interactionStatusLabels) {
     return statusTone(value);
   }
 
   if (value in offerStatusLabels) {
-    if (
-      value === "ACCEPTED" ||
-      value === "VERBAL_OFFER" ||
-      value === "WRITTEN_OFFER"
-    ) {
+    if (value === "ACCEPTED" || value === "VERBAL_OFFER" || value === "WRITTEN_OFFER") {
       return "green";
     }
 

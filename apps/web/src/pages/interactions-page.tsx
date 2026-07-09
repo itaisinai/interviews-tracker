@@ -1,31 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+
 import { InteractionsDrawer } from "../components/interactions-drawer";
 import {
-  DesktopInteractionsFlow,
-  MobileInteractionsFlow,
   buildInteractionCalendarEvents,
   buildOpportunityGroups,
   calculatePercent,
   countFollowUps,
+  DesktopInteractionsFlow,
   filterOpportunityGroup,
   type InteractionFilter,
+  MobileInteractionsFlow,
 } from "../components/interactions-flow";
 import { api } from "../lib/api";
-import { buildSelectedOpportunityForInteraction } from "./interactions-page-selection";
 import { promoteOverdueInteractionsForRead } from "../lib/interaction-status";
-import {
-  PageErrorState,
-  PageLoadingState,
-} from "@interviews-tracker/design-system";
+
+import { buildSelectedOpportunityForInteraction } from "./interactions-page-selection";
 
 export function InteractionsPage() {
   const [filter, setFilter] = useState<InteractionFilter>("upcoming");
   const [showGmailImport, setShowGmailImport] = useState(false);
   const [gmailOpportunitySlug, setGmailOpportunitySlug] = useState("");
-  const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<
-    string | null
-  >(null);
+  const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const interactionsQuery = useQuery({
@@ -40,61 +39,35 @@ export function InteractionsPage() {
     const uniqueOpportunities = new Map();
     interactions.forEach((interaction) => {
       if (interaction.jobOpportunity) {
-        uniqueOpportunities.set(
-          interaction.jobOpportunity.slug,
-          interaction.jobOpportunity,
-        );
+        uniqueOpportunities.set(interaction.jobOpportunity.slug, interaction.jobOpportunity);
       }
     });
     return Array.from(uniqueOpportunities.values());
   }, [interactions]);
-  const displayInteractions = useMemo(
-    () => promoteOverdueInteractionsForRead(interactions),
-    [interactions],
-  );
-  const opportunityGroups = useMemo(
-    () => buildOpportunityGroups(displayInteractions),
-    [displayInteractions],
-  );
+  const displayInteractions = useMemo(() => promoteOverdueInteractionsForRead(interactions), [interactions]);
+  const opportunityGroups = useMemo(() => buildOpportunityGroups(displayInteractions), [displayInteractions]);
   const visibleOpportunityGroups = useMemo(
-    () =>
-      opportunityGroups.filter((group) =>
-        filterOpportunityGroup(group, filter),
-      ),
-    [filter, opportunityGroups],
+    () => opportunityGroups.filter((group) => filterOpportunityGroup(group, filter)),
+    [filter, opportunityGroups]
   );
-  const calendarEvents = useMemo(
-    () => buildInteractionCalendarEvents(displayInteractions),
-    [displayInteractions],
-  );
+  const calendarEvents = useMemo(() => buildInteractionCalendarEvents(displayInteractions), [displayInteractions]);
   const gmailOpportunity = useMemo(
-    () =>
-      opportunities.find((item) => item.slug === gmailOpportunitySlug) ?? null,
-    [gmailOpportunitySlug, opportunities],
+    () => opportunities.find((item) => item.slug === gmailOpportunitySlug) ?? null,
+    [gmailOpportunitySlug, opportunities]
   );
   const selectedInteraction = useMemo(
-    () =>
-      displayInteractions.find(
-        (item) => item.slug === selectedInteractionSlug,
-      ) ?? null,
-    [displayInteractions, selectedInteractionSlug],
+    () => displayInteractions.find((item) => item.slug === selectedInteractionSlug) ?? null,
+    [displayInteractions, selectedInteractionSlug]
   );
   const selectedOpportunity = useMemo(
     () =>
       selectedInteraction
-        ? buildSelectedOpportunityForInteraction(
-            selectedInteraction,
-            displayInteractions,
-            opportunities,
-          )
+        ? buildSelectedOpportunityForInteraction(selectedInteraction, displayInteractions, opportunities)
         : null,
-    [displayInteractions, opportunities, selectedInteraction],
+    [displayInteractions, opportunities, selectedInteraction]
   );
   const followUpCount = countFollowUps(displayInteractions);
-  const followUpPercent = calculatePercent(
-    followUpCount,
-    displayInteractions.length,
-  );
+  const followUpPercent = calculatePercent(followUpCount, displayInteractions.length);
 
   const deleteInteraction = useMutation({
     mutationFn: (id: string) => api.deleteInteraction(id),
@@ -106,10 +79,7 @@ export function InteractionsPage() {
   });
 
   useEffect(() => {
-    if (
-      selectedInteractionSlug &&
-      !displayInteractions.some((item) => item.slug === selectedInteractionSlug)
-    ) {
+    if (selectedInteractionSlug && !displayInteractions.some((item) => item.slug === selectedInteractionSlug)) {
       setSelectedInteractionSlug(null);
     }
   }, [displayInteractions, selectedInteractionSlug]);
@@ -119,9 +89,7 @@ export function InteractionsPage() {
   }
 
   function openGmailImport() {
-    setGmailOpportunitySlug(
-      gmailOpportunitySlug || opportunities[0]?.slug || "",
-    );
+    setGmailOpportunitySlug(gmailOpportunitySlug || opportunities[0]?.slug || "");
     setShowGmailImport(true);
   }
 
@@ -130,12 +98,7 @@ export function InteractionsPage() {
   }
 
   if (interactionsQuery.isLoading) {
-    return (
-      <PageLoadingState
-        title="Interactions"
-        description="Loading interactions and available opportunities."
-      />
-    );
+    return <PageLoadingState title="Interactions" description="Loading interactions and available opportunities." />;
   }
 
   if (interactionsQuery.isError) {
@@ -143,9 +106,7 @@ export function InteractionsPage() {
       <PageErrorState
         title="Interactions"
         description={
-          interactionsQuery.error instanceof Error
-            ? interactionsQuery.error.message
-            : "Unable to load interactions."
+          interactionsQuery.error instanceof Error ? interactionsQuery.error.message : "Unable to load interactions."
         }
         onRetry={() => void interactionsQuery.refetch()}
       />
@@ -167,20 +128,16 @@ export function InteractionsPage() {
     onSelectGmailOpportunity: setGmailOpportunitySlug,
     onGmailSaved: closeGmailImport,
     onSelectInteraction: setSelectedInteractionSlug,
-    onDeleteInteraction: (interactionId: string) =>
-      deleteInteraction.mutate(interactionId),
+    onDeleteInteraction: (interactionId: string) => deleteInteraction.mutate(interactionId),
     isDeletingInteraction: (interactionId: string) =>
-      deleteInteraction.isPending &&
-      deleteInteraction.variables === interactionId,
+      deleteInteraction.isPending && deleteInteraction.variables === interactionId,
   };
 
   return (
     <>
       <MobileInteractionsFlow
         {...sharedFlowProps}
-        onToggleGmailImport={
-          showGmailImport ? closeGmailImport : openGmailImport
-        }
+        onToggleGmailImport={showGmailImport ? closeGmailImport : openGmailImport}
       />
       <DesktopInteractionsFlow
         {...sharedFlowProps}

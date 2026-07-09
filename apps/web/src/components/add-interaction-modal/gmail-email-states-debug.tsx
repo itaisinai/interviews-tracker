@@ -15,7 +15,7 @@ export function GmailEmailStatesDebug({
   onRestore,
   isUnpickPending,
   isRestorePending,
-  compact = false
+  compact = false,
 }: GmailEmailStatesDebugProps) {
   if (!messageStates || (messageStates.pickedEmails.length === 0 && messageStates.removedEmails.length === 0)) {
     return null;
@@ -88,14 +88,16 @@ function EmailStateList({ emails, title, tone, pending, actionLabel, onAction, c
         {emails.map((email) => (
           <div key={email.id} className={cardClass}>
             <div className="flex-1 min-w-0 text-xs">
-              <div className={`font-medium truncate ${!compact && picked ? "text-emerald-900" : !compact ? "text-neutral-700" : ""}`}>{email.subject}</div>
-              <div className={compact ? dateClass : `mt-1 ${dateClass}`}>{compact ? email.date : new Date(email.date).toLocaleDateString()}</div>
+              <div
+                className={`font-medium truncate ${!compact && picked ? "text-emerald-900" : !compact ? "text-neutral-700" : ""}`}
+              >
+                {email.subject}
+              </div>
+              <div className={compact ? dateClass : `mt-1 ${dateClass}`}>
+                {compact ? email.date : new Date(email.date).toLocaleDateString()}
+              </div>
             </div>
-            <button
-              onClick={() => onAction(email.id)}
-              disabled={pending}
-              className={buttonClass}
-            >
+            <button onClick={() => onAction(email.id)} disabled={pending} className={buttonClass}>
               {pending ? "..." : actionLabel}
             </button>
           </div>

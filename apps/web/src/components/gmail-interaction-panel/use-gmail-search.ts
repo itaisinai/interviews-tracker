@@ -1,8 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
+
 import { api } from "../../lib/api";
-import { getErrorMessage } from "../../lib/error";
 import { normalizeInteractionType } from "../../lib/enum-labels";
+import { getErrorMessage } from "../../lib/error";
 import type { GmailSearchCandidate } from "../../lib/types";
+
 import { addPickedEmail, type GmailMessageStates } from "./gmail-interaction-panel-helpers";
 
 type GmailSearchHandlers = {
@@ -15,7 +17,9 @@ type GmailSearchHandlers = {
   setSaveError: (value: string | null) => void;
   setSaveMessage: (value: string | null) => void;
   setLastAction: (value: "connect" | "search" | "parse" | null) => void;
-  setSearchResults: (value: GmailSearchCandidate[] | ((prev: GmailSearchCandidate[]) => GmailSearchCandidate[])) => void;
+  setSearchResults: (
+    value: GmailSearchCandidate[] | ((prev: GmailSearchCandidate[]) => GmailSearchCandidate[])
+  ) => void;
   setSelectedCandidate: (value: GmailSearchCandidate | null) => void;
   setSelectedEmail: (value: any) => void;
   setAnalysis: (value: any) => void;
@@ -53,7 +57,7 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
     setPendingPickedEmailIds,
     setClearingEmailId,
     activeRunIdRef,
-    handleGmailActionError
+    handleGmailActionError,
   } = handlers;
 
   async function searchEmails() {
@@ -82,7 +86,7 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
       setSearchResults(response.candidates);
 
       // Auto-parse the best candidate (highest confidence, relevant email)
-      const bestCandidate = response.candidates.find(c => c.relevance.isRelevant) || response.candidates[0];
+      const bestCandidate = response.candidates.find((c) => c.relevance.isRelevant) || response.candidates[0];
 
       if (bestCandidate) {
         // Automatically parse the best candidate
@@ -183,9 +187,12 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
         return next;
       });
       queryClient.setQueryData<GmailMessageStates>(["gmail-message-states", opportunitySlug], (current) => ({
-        removedEmails: [{ id: email.id, subject: email.subject, date: email.date }, ...(current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? [])],
+        removedEmails: [
+          { id: email.id, subject: email.subject, date: email.date },
+          ...(current?.removedEmails.filter((hiddenEmail) => hiddenEmail.id !== email.id) ?? []),
+        ],
         pickedEmails: current?.pickedEmails ?? [],
-        ignoredEmails: current?.ignoredEmails ?? []
+        ignoredEmails: current?.ignoredEmails ?? [],
       }));
       setMessage("Email cleared from future Gmail searches.");
     } catch (caughtError) {
@@ -200,6 +207,6 @@ export function useGmailSearch(handlers: GmailSearchHandlers) {
   return {
     searchEmails,
     parseEmail,
-    clearEmail
+    clearEmail,
   };
 }

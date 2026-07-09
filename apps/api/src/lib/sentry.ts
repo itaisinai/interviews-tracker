@@ -4,6 +4,7 @@
  */
 
 import * as Sentry from "@sentry/node";
+
 import { logger } from "./logger.js";
 
 /**
@@ -19,7 +20,7 @@ function loadProfilingIntegration() {
     logger.warn("sentry_profiling_unavailable", {
       message: "Profiling integration not available for this Node version",
       nodeVersion: process.version,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     });
     return null;
   }
@@ -35,7 +36,7 @@ export function initSentry() {
   // Skip initialization if DSN is not configured
   if (!dsn) {
     logger.info("sentry_not_configured", {
-      message: "SENTRY_DSN not set, error tracking disabled"
+      message: "SENTRY_DSN not set, error tracking disabled",
     });
     return;
   }
@@ -64,11 +65,11 @@ export function initSentry() {
     logger.info("sentry_initialized", {
       environment,
       dsn: dsn.substring(0, 30) + "...", // Log partial DSN for verification
-      profilingEnabled: !!profiling
+      profilingEnabled: !!profiling,
     });
   } catch (error) {
     logger.error("sentry_init_failed", {
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }

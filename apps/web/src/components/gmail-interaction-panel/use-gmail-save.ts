@@ -1,8 +1,8 @@
-import type { GmailInteractionDraft, GmailStructuredEmail, Interaction } from "../../lib/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
+import type { GmailInteractionDraft, GmailStructuredEmail, Interaction } from "../../lib/types";
 
 type GmailSaveHandlers = {
   opportunitySlug: string;
@@ -44,7 +44,7 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
     setSelectedEmail,
     setSelectedCandidate,
     setAnalysis,
-    setPendingPickedEmailIds
+    setPendingPickedEmailIds,
   } = handlers;
 
   const saveInteraction = useMutation({
@@ -79,7 +79,7 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
     },
     onError: (caughtError) => {
       setSaveError(getErrorMessage(caughtError));
-    }
+    },
   });
 
   async function attachToExistingInteraction() {
@@ -119,9 +119,9 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
       setAnalysis(null);
 
       // Fetch the updated interaction to pass to callback
-      const updatedInteraction = await api.opportunity(opportunitySlug).then(
-        opp => opp.interactions.find(i => i.slug === attachTargetId)
-      );
+      const updatedInteraction = await api
+        .opportunity(opportunitySlug)
+        .then((opp) => opp.interactions.find((i) => i.slug === attachTargetId));
       onSaved?.(updatedInteraction);
     } catch (caughtError) {
       setSaveError(getErrorMessage(caughtError));
@@ -133,6 +133,6 @@ export function useGmailSave(handlers: GmailSaveHandlers) {
 
   return {
     saveInteraction,
-    attachToExistingInteraction
+    attachToExistingInteraction,
   };
 }

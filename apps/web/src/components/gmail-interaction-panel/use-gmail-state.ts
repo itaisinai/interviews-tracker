@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
+
 import type { GmailFlowState } from "../../lib/gmail";
 import type {
   GmailEmailExtractionAnalysis,
   GmailInteractionDraft,
   GmailSearchCandidate,
-  GmailStructuredEmail
+  GmailStructuredEmail,
 } from "../../lib/types";
 
 /**
@@ -87,6 +88,6 @@ export function useGmailState() {
     setAttachTargetId,
     setPendingPickedEmailIds,
     setLastAction,
-    setNeedsReconnect
+    setNeedsReconnect,
   };
 }

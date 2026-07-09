@@ -1,20 +1,18 @@
-import {
-  InlineLoadingState,
-  MaterialIcon,
-} from "@interviews-tracker/design-system";
+import { InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
+
 import type { Interaction, Opportunity } from "../../lib/types";
+import { PageIntro } from "../app-shell";
+import { AppCalendar } from "../calendar";
+import { OpportunityInteractionTimeline } from "../interactions-timeline";
+
+import { FilterTabs } from "./filter-tabs";
+import { GmailImportPanel } from "./gmail-import-panel";
 import type {
   InteractionCalendarEvent,
   InteractionFilter,
   InteractionOpportunityGroup,
 } from "./interaction-flow-helpers";
-
-import { AppCalendar } from "../calendar";
-import { FilterTabs } from "./filter-tabs";
-import { GmailImportPanel } from "./gmail-import-panel";
 import { InteractionHealthPanel } from "./interaction-health-panel";
-import { OpportunityInteractionTimeline } from "../interactions-timeline";
-import { PageIntro } from "../app-shell";
 
 type DesktopInteractionsFlowProps = {
   filter: InteractionFilter;
@@ -75,9 +73,7 @@ export function DesktopInteractionsFlow({
               onClick={showGmailImport ? onCloseGmailImport : onOpenGmailImport}
             >
               <MaterialIcon name="mail" />
-              {showGmailImport
-                ? "Hide Gmail Import"
-                : "Add interaction from Gmail"}
+              {showGmailImport ? "Hide Gmail Import" : "Add interaction from Gmail"}
             </button>
           </>
         }
@@ -138,16 +134,10 @@ export function DesktopInteractionsFlow({
                     {event.isFuture ? "Upcoming" : "Meeting"}
                   </span>
                   {event.time ? (
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">
-                      {event.time}
-                    </span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">{event.time}</span>
                   ) : null}
                 </div>
-                <div
-                  className={`text-body-sm ${
-                    event.isFuture ? "text-primary" : "text-on-surface-variant"
-                  }`}
-                >
+                <div className={`text-body-sm ${event.isFuture ? "text-primary" : "text-on-surface-variant"}`}>
                   {event.title}
                 </div>
               </button>
@@ -171,12 +161,8 @@ function TimelineHeading() {
         <MaterialIcon name="event" filled />
       </div>
       <div className="min-w-0">
-        <h3 className="font-title-md text-title-md font-bold">
-          Opportunity timelines
-        </h3>
-        <p className="text-body-md text-on-surface-variant">
-          Each opportunity is grouped into its own timeline.
-        </p>
+        <h3 className="font-title-md text-title-md font-bold">Opportunity timelines</h3>
+        <p className="text-body-md text-on-surface-variant">Each opportunity is grouped into its own timeline.</p>
       </div>
     </div>
   );

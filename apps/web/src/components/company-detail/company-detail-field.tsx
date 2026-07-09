@@ -15,7 +15,7 @@ type CompanyDetailFieldProps = {
 function isSafeUrl(value: string): boolean {
   try {
     const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
+    return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
   }
@@ -23,9 +23,7 @@ function isSafeUrl(value: string): boolean {
 
 export function CompanyDetailField({ label, value, icon, className, href }: CompanyDetailFieldProps) {
   // Validate both explicit href prop and inferred URL from value
-  const effectiveHref =
-    (href && isSafeUrl(href) ? href : null) ||
-    (isSafeUrl(value) ? value : null);
+  const effectiveHref = (href && isSafeUrl(href) ? href : null) || (isSafeUrl(value) ? value : null);
 
   return (
     <div className={`flex min-w-0 items-start gap-2 ${className ?? ""}`.trim()}>
@@ -35,9 +33,7 @@ export function CompanyDetailField({ label, value, icon, className, href }: Comp
         </div>
       ) : null}
       <div className="min-w-0">
-        <p className="truncate font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
-          {label}
-        </p>
+        <p className="truncate font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">{label}</p>
         {effectiveHref ? (
           <a
             href={effectiveHref}

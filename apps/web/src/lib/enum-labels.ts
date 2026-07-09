@@ -1,4 +1,12 @@
-import type { InteractionStatus, InteractionType, JobStatus, OfferStatus, PipelineType, Priority, TaskStatus } from "./types";
+import type {
+  InteractionStatus,
+  InteractionType,
+  JobStatus,
+  OfferStatus,
+  PipelineType,
+  Priority,
+  TaskStatus,
+} from "./types";
 
 type LabeledOption<T extends string> = {
   value: T;
@@ -12,14 +20,14 @@ function createOptions<T extends string>(labels: Record<T, string>) {
 export const pipelineTypeLabels: Record<PipelineType, string> = {
   POTENTIAL: "potential / research",
   ACTIVE_PROCESS: "active process",
-  ARCHIVED: "archived / rejected"
+  ARCHIVED: "archived / rejected",
 };
 
 export const priorityLabels: Record<Priority, string> = {
   HIGH: "high",
   MEDIUM: "medium",
   LOW: "low",
-  MAYBE: "maybe"
+  MAYBE: "maybe",
 };
 
 export const jobStatusLabels: Record<JobStatus, string> = {
@@ -37,7 +45,7 @@ export const jobStatusLabels: Record<JobStatus, string> = {
   OFFER: "offer",
   REJECTED: "rejected",
   PAUSED: "paused",
-  NOT_RELEVANT: "not relevant"
+  NOT_RELEVANT: "not relevant",
 };
 
 export const offerStatusLabels: Record<OfferStatus, string> = {
@@ -46,7 +54,7 @@ export const offerStatusLabels: Record<OfferStatus, string> = {
   VERBAL_OFFER: "verbal offer",
   WRITTEN_OFFER: "written offer",
   ACCEPTED: "accepted",
-  DECLINED: "declined"
+  DECLINED: "declined",
 };
 
 export const interactionStatusLabels: Record<InteractionStatus, string> = {
@@ -54,7 +62,7 @@ export const interactionStatusLabels: Record<InteractionStatus, string> = {
   DONE: "passed",
   REJECTED: "rejected",
   CANCELLED: "cancelled",
-  NEEDS_FOLLOW_UP: "waiting for response"
+  NEEDS_FOLLOW_UP: "waiting for response",
 };
 
 export const interactionTypeLabels: Record<InteractionType, string> = {
@@ -68,7 +76,7 @@ export const interactionTypeLabels: Record<InteractionType, string> = {
   "Home Assignment": "Home Assignment",
   "Follow-up": "Follow-up",
   Offer: "Offer",
-  Rejection: "Rejection"
+  Rejection: "Rejection",
 };
 
 const interactionTypeAliases: Record<string, InteractionType> = {
@@ -81,14 +89,14 @@ const interactionTypeAliases: Record<string, InteractionType> = {
   "follow up email": "Follow-up",
   "recruiter call": "Recruiter Screen",
   "recruiter interview": "Recruiter Screen",
-  "onsite interview": "Onsite"
+  "onsite interview": "Onsite",
 };
 
 export const taskStatusLabels: Record<TaskStatus, string> = {
   PENDING: "pending",
   IN_PROGRESS: "in progress",
   DONE: "done",
-  CANCELLED: "cancelled"
+  CANCELLED: "cancelled",
 };
 
 export const pipelineTypeOptions = createOptions(pipelineTypeLabels);
@@ -151,6 +159,7 @@ export function displayLabelForEnumValue(value: string) {
   if (value in interactionStatusLabels) return interactionStatusLabels[value as InteractionStatus];
   if (value in interactionTypeLabels) return interactionTypeLabels[value as InteractionType];
   const normalizedInteractionType = normalizeInteractionType(value);
-  if (normalizedInteractionType !== "Interview" || value.trim().toLowerCase() === "interview") return interactionTypeLabels[normalizedInteractionType];
+  if (normalizedInteractionType !== "Interview" || value.trim().toLowerCase() === "interview")
+    return interactionTypeLabels[normalizedInteractionType];
   return null;
 }

@@ -1,7 +1,9 @@
-import { Field } from "./field";
-import { GmailInteractionPanel } from "../gmail-interaction-panel";
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
 import type { Opportunity } from "../../lib/types";
+import { GmailInteractionPanel } from "../gmail-interaction-panel";
+
+import { Field } from "./field";
 
 type GmailImportPanelProps = {
   opportunities: Opportunity[];
@@ -31,10 +33,7 @@ export function GmailImportPanel({
           selectedOpportunitySlug={selectedOpportunitySlug}
           onSelectOpportunity={onSelectOpportunity}
         />
-        <ImportBody
-          selectedOpportunity={selectedOpportunity}
-          onSaved={onSaved}
-        />
+        <ImportBody selectedOpportunity={selectedOpportunity} onSaved={onSaved} />
       </section>
     );
   }
@@ -68,9 +67,7 @@ export function GmailImportPanel({
 function Header({ description }: { description: string }) {
   return (
     <div className="min-w-0">
-      <h3 className="font-title-md text-title-md font-bold">
-        Add interaction from Gmail
-      </h3>
+      <h3 className="font-title-md text-title-md font-bold">Add interaction from Gmail</h3>
       <p className="mt-1 text-body-md text-on-surface-variant">{description}</p>
     </div>
   );

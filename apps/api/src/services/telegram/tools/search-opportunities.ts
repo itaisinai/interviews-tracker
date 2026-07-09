@@ -4,57 +4,55 @@
  */
 
 import { prisma } from "../../../lib/prisma.js";
+
 import type { OpportunitySummary } from "./get-opportunities-by-status.js";
 
-export async function searchOpportunities(
-  ownerEmail: string,
-  searchTerm: string
-): Promise<OpportunitySummary[]> {
+export async function searchOpportunities(ownerEmail: string, searchTerm: string): Promise<OpportunitySummary[]> {
   const opportunities = await prisma.jobOpportunity.findMany({
     where: {
       ownerEmail,
       company: {
         name: {
           contains: searchTerm,
-          mode: "insensitive"
-        }
-      }
+          mode: "insensitive",
+        },
+      },
     },
     include: {
       company: {
         select: {
-          name: true
-        }
+          name: true,
+        },
       },
       interactions: {
         where: {
           status: "SCHEDULED",
           date: {
-            gte: new Date()
-          }
+            gte: new Date(),
+          },
         },
         orderBy: {
-          date: "asc"
+          date: "asc",
         },
         take: 1,
         select: {
           date: true,
           type: true,
-          stage: true
-        }
+          stage: true,
+        },
       },
       _count: {
         select: {
-          interactions: true
-        }
-      }
+          interactions: true,
+        },
+      },
     },
     orderBy: {
-      updatedAt: "desc"
-    }
+      updatedAt: "desc",
+    },
   });
 
-  return opportunities.map(opp => ({
+  return opportunities.map((opp) => ({
     id: opp.id,
     slug: opp.slug,
     companyName: opp.company.name,
@@ -64,12 +62,14 @@ export async function searchOpportunities(
     priority: opp.priority,
     nextStep: opp.nextStep,
     interactionCount: opp._count.interactions,
-    nextScheduledInteraction: opp.interactions[0] ? {
-      date: opp.interactions[0].date.toISOString(),
-      type: opp.interactions[0].type,
-      stage: opp.interactions[0].stage
-    } : null,
-    updatedAt: opp.updatedAt.toISOString()
+    nextScheduledInteraction: opp.interactions[0]
+      ? {
+          date: opp.interactions[0].date.toISOString(),
+          type: opp.interactions[0].type,
+          stage: opp.interactions[0].stage,
+        }
+      : null,
+    updatedAt: opp.updatedAt.toISOString(),
   }));
 }
 
@@ -77,16 +77,17 @@ export const searchOpportunitiesTool = {
   type: "function" as const,
   function: {
     name: "searchOpportunities",
-    description: "Search opportunities by company name. Use this when user asks about a specific company or mentions a company name.",
+    description:
+      "Search opportunities by company name. Use this when user asks about a specific company or mentions a company name.",
     parameters: {
       type: "object",
       properties: {
         companyName: {
           type: "string",
-          description: "Company name to search for (case-insensitive partial match)"
-        }
+          description: "Company name to search for (case-insensitive partial match)",
+        },
       },
-      required: ["companyName"]
-    }
-  }
+      required: ["companyName"],
+    },
+  },
 };

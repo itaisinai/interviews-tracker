@@ -1,12 +1,16 @@
-import type { ReactNode } from "react";
 import React, { useState } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+
+import { useAuth0 } from "@auth0/auth0-react";
+import { AnimatePresence, motion } from "framer-motion";
+import type { ReactNode } from "react";
+
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
 import { NotificationsBell } from "../notifications";
-import { GlobalSearchBox } from "./global-search-box";
 import { TelegramBot } from "../telegram-bot";
+
+import { GlobalSearchBox } from "./global-search-box";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
@@ -14,7 +18,7 @@ const nav = [
   { to: "/opportunities", label: "Opportunities", icon: "work" },
   { to: "/interactions", label: "Interactions", icon: "forum" },
   { to: "/search", label: "Search", icon: "search" },
-  { to: "/settings", label: "Settings", icon: "settings" }
+  { to: "/settings", label: "Settings", icon: "settings" },
 ];
 
 const placeholders: Record<string, string> = {
@@ -24,7 +28,7 @@ const placeholders: Record<string, string> = {
   "/interactions": "Search interactions...",
   "/search": "Search companies, opportunities, interactions...",
   "/parse": "Search parsed jobs...",
-  "/settings": "Search options..."
+  "/settings": "Search options...",
 };
 
 export function AppShell() {
@@ -32,10 +36,7 @@ export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const activeBase =
-    `/${location.pathname.split("/")[1]}` === "/"
-      ? "/"
-      : `/${location.pathname.split("/")[1]}`;
+  const activeBase = `/${location.pathname.split("/")[1]}` === "/" ? "/" : `/${location.pathname.split("/")[1]}`;
   const displayName = user?.name ?? user?.email ?? "User";
   const initials = (user?.name ?? user?.email ?? "U")
     .split(/[\s@.]+/)
@@ -45,30 +46,22 @@ export function AppShell() {
     .join("");
   const activeNavItem = nav.find((item) => item.to === activeBase) ?? nav[0];
   const mobileTitle =
-    activeBase === "/parse"
-      ? "Parse Job"
-      : activeNavItem.to === "/"
-        ? "CareerFlow"
-        : activeNavItem.label;
+    activeBase === "/parse" ? "Parse Job" : activeNavItem.to === "/" ? "CareerFlow" : activeNavItem.label;
   const mobileIcon =
-    activeBase === "/parse"
-      ? "auto_awesome"
-      : activeNavItem.to === "/"
-        ? "rocket_launch"
-        : activeNavItem.icon;
+    activeBase === "/parse" ? "auto_awesome" : activeNavItem.to === "/" ? "rocket_launch" : activeNavItem.icon;
   const avatar = user?.picture ?? null;
   const sidebarWidth = sidebarCollapsed ? 72 : 260;
   const transitionDuration = 0.3; // seconds
 
   // Apply sidebar offset only on desktop (md breakpoint and up)
-  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' && window.innerWidth >= 768);
+  const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" && window.innerWidth >= 768);
 
   React.useEffect(() => {
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 768);
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
@@ -79,7 +72,7 @@ export function AppShell() {
           top: "var(--dev-banner-height, 0)",
           height: "calc(100vh - var(--dev-banner-height, 0))",
           width: `${sidebarWidth}px`,
-          transition: `width ${transitionDuration}s ease-out`
+          transition: `width ${transitionDuration}s ease-out`,
         }}
       >
         <div className="flex h-16 items-center border-b border-outline-variant px-4 overflow-hidden">
@@ -109,8 +102,8 @@ export function AppShell() {
           >
             <div
               style={{
-                transform: sidebarCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
-                transition: `transform ${transitionDuration}s ease-out`
+                transform: sidebarCollapsed ? "rotate(0deg)" : "rotate(180deg)",
+                transition: `transform ${transitionDuration}s ease-out`,
               }}
             >
               <MaterialIcon name="menu" />
@@ -126,7 +119,7 @@ export function AppShell() {
               title={sidebarCollapsed ? item.label : undefined}
               className={({ isActive }) =>
                 `flex items-center py-2 transition-colors hover:bg-surface-container-low/80 pl-6 ${
-                  sidebarCollapsed ? '' : 'gap-4 pr-6'
+                  sidebarCollapsed ? "" : "gap-4 pr-6"
                 } ${
                   isActive
                     ? "border-l-2 border-primary bg-surface-container-lowest font-bold text-primary"
@@ -155,12 +148,14 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-        <div className={`mt-auto space-y-1 border-t border-outline-variant pt-4 overflow-hidden ${sidebarCollapsed ? 'px-2' : 'px-4'}`}>
+        <div
+          className={`mt-auto space-y-1 border-t border-outline-variant pt-4 overflow-hidden ${sidebarCollapsed ? "px-2" : "px-4"}`}
+        >
           <button
             className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
-              sidebarCollapsed ? '' : 'gap-4'
+              sidebarCollapsed ? "" : "gap-4"
             }`}
-            title={sidebarCollapsed ? user?.email ?? displayName : undefined}
+            title={sidebarCollapsed ? (user?.email ?? displayName) : undefined}
           >
             <MaterialIcon name="person" className="flex-shrink-0" />
             <AnimatePresence initial={false}>
@@ -179,11 +174,9 @@ export function AppShell() {
           </button>
           <button
             className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
-              sidebarCollapsed ? '' : 'gap-4'
+              sidebarCollapsed ? "" : "gap-4"
             }`}
-            onClick={() =>
-              void logout({ logoutParams: { returnTo: window.location.origin } })
-            }
+            onClick={() => void logout({ logoutParams: { returnTo: window.location.origin } })}
             title={sidebarCollapsed ? "Logout" : undefined}
           >
             <MaterialIcon name="logout" className="flex-shrink-0" />
@@ -207,18 +200,16 @@ export function AppShell() {
         className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm md:z-40"
         style={{
           top: "var(--dev-banner-height, 0)",
-          left: isDesktop ? `${sidebarWidth}px` : '0',
-          transition: `left ${transitionDuration}s ease-out`
+          left: isDesktop ? `${sidebarWidth}px` : "0",
+          transition: `left ${transitionDuration}s ease-out`,
         }}
       >
-          <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
+        <div className="flex w-full items-center justify-between px-4 md:mx-auto md:max-w-[1280px] md:px-6">
           <div className="flex items-center gap-3 md:hidden">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-on-primary">
               <MaterialIcon name={mobileIcon} filled={activeBase === "/"} />
             </div>
-            <span className="font-headline-md text-headline-md font-medium text-on-background">
-              {mobileTitle}
-            </span>
+            <span className="font-headline-md text-headline-md font-medium text-on-background">{mobileTitle}</span>
           </div>
           <div className="hidden w-full max-w-md items-center md:flex">
             <GlobalSearchBox placeholder={placeholders[activeBase] ?? "Search..."} />
@@ -229,28 +220,19 @@ export function AppShell() {
               <MaterialIcon name="help_outline" />
             </button>
             <div className="hidden lg:block">
-              <button
-                className="btn btn-primary rounded-full shadow-sm"
-                onClick={() => navigate("/opportunities/new")}
-              >
+              <button className="btn btn-primary rounded-full shadow-sm" onClick={() => navigate("/opportunities/new")}>
                 <MaterialIcon name="add" />
                 Add Opportunity
               </button>
             </div>
             <div className="hidden text-right sm:block">
-              <p className="max-w-40 truncate font-label-md text-label-md text-on-background">
-                {displayName}
-              </p>
+              <p className="max-w-40 truncate font-label-md text-label-md text-on-background">{displayName}</p>
               <p className="max-w-40 truncate font-label-sm text-label-sm text-on-surface-variant">
                 {user?.email ?? "Authenticated"}
               </p>
             </div>
             <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-primary-container bg-on-primary-container font-geist text-sm font-bold text-white">
-              {avatar ? (
-                <img alt={displayName} className="h-full w-full object-cover" src={avatar} />
-              ) : (
-                initials || "U"
-              )}
+              {avatar ? <img alt={displayName} className="h-full w-full object-cover" src={avatar} /> : initials || "U"}
             </div>
           </div>
         </div>
@@ -258,11 +240,7 @@ export function AppShell() {
       <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-outline-variant bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] md:hidden">
         <div className="grid grid-cols-5">
           {nav
-            .filter((item) =>
-              ["/", "/opportunities", "/interactions", "/search", "/settings"].includes(
-                item.to,
-              ),
-            )
+            .filter((item) => ["/", "/opportunities", "/interactions", "/search", "/settings"].includes(item.to))
             .map((item) => (
               <NavLink
                 key={item.to}
@@ -290,8 +268,8 @@ export function AppShell() {
         className="min-h-screen pb-24 md:pb-8 md:overflow-x-hidden"
         style={{
           paddingTop: "calc(4rem + var(--dev-banner-height, 0))",
-          marginLeft: isDesktop ? `${sidebarWidth}px` : '0',
-          transition: `margin-left ${transitionDuration}s ease-out`
+          marginLeft: isDesktop ? `${sidebarWidth}px` : "0",
+          transition: `margin-left ${transitionDuration}s ease-out`,
         }}
       >
         <div className="mx-auto w-full max-w-[1280px] px-4 py-4 md:px-6 md:py-8">
@@ -315,14 +293,8 @@ export function PageIntro({
   return (
     <div className="mb-8 hidden flex-col justify-between gap-6 md:flex md:flex-row md:items-end">
       <div>
-        <h2 className="font-headline-lg text-headline-lg text-on-background">
-          {title}
-        </h2>
-        {description ? (
-          <p className="mt-1 font-body-lg text-body-lg text-on-surface-variant">
-            {description}
-          </p>
-        ) : null}
+        <h2 className="font-headline-lg text-headline-lg text-on-background">{title}</h2>
+        {description ? <p className="mt-1 font-body-lg text-body-lg text-on-surface-variant">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
     </div>

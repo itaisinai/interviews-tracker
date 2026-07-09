@@ -1,16 +1,15 @@
 import { useState } from "react";
-import type { Opportunity } from "../../lib/types";
+
 import { PreparationCard, SectionHeader } from "@interviews-tracker/design-system";
+
+import type { Opportunity } from "../../lib/types";
 
 export type InterviewPreparationProps = {
   opportunity: Opportunity;
   className?: string;
 };
 
-export function InterviewPreparation({
-  opportunity,
-  className = "",
-}: InterviewPreparationProps) {
+export function InterviewPreparation({ opportunity, className = "" }: InterviewPreparationProps) {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   const toggleCard = (cardId: string) => {
@@ -37,22 +36,17 @@ export function InterviewPreparation({
             expandedCard === "company" ? (
               <div className="space-y-3">
                 <div>
-                  <div className="mb-1 text-xs font-medium uppercase text-neutral-500">
-                    Stage
-                  </div>
+                  <div className="mb-1 text-xs font-medium uppercase text-neutral-500">Stage</div>
                   <div>{opportunity.company.companyStage?.label || "Not specified"}</div>
                 </div>
                 <div>
-                  <div className="mb-1 text-xs font-medium uppercase text-neutral-500">
-                    Company Size
-                  </div>
+                  <div className="mb-1 text-xs font-medium uppercase text-neutral-500">Company Size</div>
                   <div>{opportunity.company.employeesRange?.label || "Not specified"}</div>
                 </div>
               </div>
             ) : (
               <p className="line-clamp-2">
-                {opportunity.notes ||
-                  "Research the company's recent developments, culture, and tech stack."}
+                {opportunity.notes || "Research the company's recent developments, culture, and tech stack."}
               </p>
             )
           }
@@ -70,32 +64,25 @@ export function InterviewPreparation({
             expandedCard === "role" ? (
               <div className="space-y-3">
                 <div>
-                  <div className="mb-1 text-xs font-medium uppercase text-neutral-500">
-                    Role Title
-                  </div>
+                  <div className="mb-1 text-xs font-medium uppercase text-neutral-500">Role Title</div>
                   <div className="font-medium">{opportunity.roleTitle}</div>
                 </div>
                 {opportunity.company.techStack && (
                   <div>
-                    <div className="mb-1 text-xs font-medium uppercase text-neutral-500">
-                      Tech Stack
-                    </div>
+                    <div className="mb-1 text-xs font-medium uppercase text-neutral-500">Tech Stack</div>
                     <div>{opportunity.company.techStack}</div>
                   </div>
                 )}
                 {opportunity.company.backendFrontendSplit && (
                   <div>
-                    <div className="mb-1 text-xs font-medium uppercase text-neutral-500">
-                      Focus Area
-                    </div>
+                    <div className="mb-1 text-xs font-medium uppercase text-neutral-500">Focus Area</div>
                     <div>{opportunity.company.backendFrontendSplit}</div>
                   </div>
                 )}
               </div>
             ) : (
               <p className="line-clamp-2">
-                {opportunity.roleTitle} •{" "}
-                {opportunity.company.techStack || "Tech stack not specified"}
+                {opportunity.roleTitle} • {opportunity.company.techStack || "Tech stack not specified"}
               </p>
             )
           }
@@ -108,9 +95,7 @@ export function InterviewPreparation({
           action={{
             label: "View contacts",
             onClick: () => {
-              document
-                .getElementById("contacts-section")
-                ?.scrollIntoView({ behavior: "smooth" });
+              document.getElementById("contacts-section")?.scrollIntoView({ behavior: "smooth" });
             },
           }}
           content={

@@ -1,12 +1,15 @@
 import * as React from "react";
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
-import assert from "node:assert/strict";
-import test from "node:test";
 import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
-import { NotificationsBell, NotificationsDropdown } from "./notifications-ui.js";
-import { NotificationsContext, type NotificationsContextValue } from "./notifications-context.js";
+
+import assert from "node:assert/strict";
+import test from "node:test";
+
 import type { AppNotification } from "../../lib/notifications.js";
+
+import { NotificationsContext, type NotificationsContextValue } from "./notifications-context.js";
+import { NotificationsBell, NotificationsDropdown } from "./notifications-ui.js";
 
 const notification: AppNotification = {
   id: "unlinked-interactions:reevol",
@@ -34,7 +37,7 @@ function renderWithNotifications(children: React.ReactNode, value?: Partial<Noti
   return renderToString(
     <MemoryRouter>
       <NotificationsContext.Provider value={context}>{children}</NotificationsContext.Provider>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 

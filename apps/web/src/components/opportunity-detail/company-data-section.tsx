@@ -1,15 +1,14 @@
+import { ArrowLeft } from "lucide-react";
+
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+
 import { labelForPipelineType } from "../../lib/enum-labels";
 import type { Opportunity } from "../../lib/types";
 import { Badge } from "../badge";
 import { CompanyResearchPanel } from "../company-research-panel";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
-import {
-  InteractionInputChooser,
-  type InteractionInputMode,
-} from "../interaction-input-chooser";
+import { InteractionInputChooser, type InteractionInputMode } from "../interaction-input-chooser";
 import { InteractionTextParserPanel } from "../interactions-drawer/interaction-text-parser-panel";
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
-import { ArrowLeft } from "lucide-react";
 
 type CompanyDataSectionProps = {
   opportunity: Opportunity;
@@ -35,21 +34,15 @@ export function CompanyDataSection({
       <section className="panel p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-              Company data
-            </p>
+            <p className="font-label-md text-label-md uppercase text-on-surface-variant">Company data</p>
             <h2 className="mt-1 font-title-lg text-title-lg font-bold text-on-background">
               {opportunity.company.name}
             </h2>
-            <p className="mt-1 text-body-md text-on-surface-variant">
-              {opportunity.roleTitle}
-            </p>
+            <p className="mt-1 text-body-md text-on-surface-variant">{opportunity.roleTitle}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge value={opportunity.status} />
               <Badge value={opportunity.priority} />
-              <Badge value={opportunity.pipelineType}>
-                {labelForPipelineType(opportunity.pipelineType)}
-              </Badge>
+              <Badge value={opportunity.pipelineType}>{labelForPipelineType(opportunity.pipelineType)}</Badge>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -61,15 +54,11 @@ export function CompanyDataSection({
               {showResearch ? "Hide company research" : "Company research"}
             </LoadingButton>
             <LoadingButton
-              className={
-                showInteractionInput ? "btn btn-primary" : "btn btn-secondary"
-              }
+              className={showInteractionInput ? "btn btn-primary" : "btn btn-secondary"}
               icon="add"
               onClick={onToggleInteractionInput}
             >
-              {showInteractionInput
-                ? "Hide add interaction"
-                : "Add interaction"}
+              {showInteractionInput ? "Hide add interaction" : "Add interaction"}
             </LoadingButton>
           </div>
         </div>
@@ -86,8 +75,7 @@ export function CompanyDataSection({
               funding: opportunity.company.funding ?? null,
               customersTraction: opportunity.company.customersTraction ?? null,
               companyDescription: opportunity.company.description ?? null,
-              productDescription:
-                opportunity.company.productDescription ?? null,
+              productDescription: opportunity.company.productDescription ?? null,
               location: opportunity.company.location ?? null,
               employees: opportunity.company.employeesRange?.label ?? null,
             }}
@@ -101,18 +89,12 @@ export function CompanyDataSection({
         <section className="panel mt-6 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                Add interaction
-              </p>
-              <h4 className="font-title-md text-title-md font-bold">
-                Choose input method
-              </h4>
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Add interaction</p>
+              <h4 className="font-title-md text-title-md font-bold">Choose input method</h4>
             </div>
           </div>
           <div className="mt-4">
-            <InteractionInputChooser
-              onSelectMode={onSelectInteractionInputMode}
-            />
+            <InteractionInputChooser onSelectMode={onSelectInteractionInputMode} />
           </div>
         </section>
       ) : null}
@@ -121,17 +103,10 @@ export function CompanyDataSection({
         <section className="panel mt-6 p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                Add interaction
-              </p>
-              <h4 className="font-title-md text-title-md font-bold">
-                Gmail import
-              </h4>
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Add interaction</p>
+              <h4 className="font-title-md text-title-md font-bold">Gmail import</h4>
             </div>
-            <button
-              className="btn btn-secondary"
-              onClick={() => onSelectInteractionInputMode("chooser")}
-            >
+            <button className="btn btn-secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
             </button>
@@ -149,17 +124,10 @@ export function CompanyDataSection({
         <section className="panel mt-6 p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                Add interaction
-              </p>
-              <h4 className="font-title-md text-title-md font-bold">
-                Text parser
-              </h4>
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Add interaction</p>
+              <h4 className="font-title-md text-title-md font-bold">Text parser</h4>
             </div>
-            <button
-              className="btn btn-secondary"
-              onClick={() => onSelectInteractionInputMode("chooser")}
-            >
+            <button className="btn btn-secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
             </button>
@@ -178,32 +146,15 @@ export function CompanyDataSection({
           <div className="lg:col-span-4">
             <SectionTitle title="Company Details" icon="business" />
             <Detail label="LinkedIn" value={opportunity.linkedinUrl} />
-            <Detail
-              label="English Search Name"
-              value={opportunity.company.searchName}
-            />
-            <Detail
-              label="Size"
-              value={opportunity.company.employeesRange?.label}
-            />
-            <Detail
-              label="Stage"
-              value={opportunity.company.companyStage?.label}
-            />
-            <Detail
-              label="Domains"
-              value={opportunity.domains
-                .map((item) => item.domain.label)
-                .join(", ")}
-            />
+            <Detail label="English Search Name" value={opportunity.company.searchName} />
+            <Detail label="Size" value={opportunity.company.employeesRange?.label} />
+            <Detail label="Stage" value={opportunity.company.companyStage?.label} />
+            <Detail label="Domains" value={opportunity.domains.map((item) => item.domain.label).join(", ")} />
             <Detail label="Work Model" value={opportunity.workModel?.label} />
             <Detail label="Location" value={opportunity.company.location} />
             <Detail label="Funding" value={opportunity.company.funding} />
             <Detail label="Company" value={opportunity.company.description} />
-            <Detail
-              label="Product"
-              value={opportunity.company.productDescription}
-            />
+            <Detail label="Product" value={opportunity.company.productDescription} />
           </div>
 
           <div className="lg:col-span-4">
@@ -225,18 +176,9 @@ export function CompanyDataSection({
               )}
             </div>
             <Detail label="Tech Stack" value={opportunity.company.techStack} />
-            <Detail
-              label="Backend / Frontend"
-              value={opportunity.company.backendFrontendSplit}
-            />
-            <Detail
-              label="Traction"
-              value={opportunity.company.customersTraction}
-            />
-            <Detail
-              label="Compensation Notes"
-              value={opportunity.compensationNotes}
-            />
+            <Detail label="Backend / Frontend" value={opportunity.company.backendFrontendSplit} />
+            <Detail label="Traction" value={opportunity.company.customersTraction} />
+            <Detail label="Compensation Notes" value={opportunity.compensationNotes} />
             <Detail label="General Notes" value={opportunity.notes} />
           </div>
 
@@ -265,9 +207,7 @@ function Detail({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="mt-4">
       <p className="label">{label}</p>
-      <p className="mt-1 text-body-md text-on-surface-variant">
-        {value || "-"}
-      </p>
+      <p className="mt-1 text-body-md text-on-surface-variant">{value || "-"}</p>
     </div>
   );
 }

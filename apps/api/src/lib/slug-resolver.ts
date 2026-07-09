@@ -11,18 +11,15 @@ export class NotFoundError extends Error {
  * Resolve Opportunity slug to internal database ID
  * @throws NotFoundError if opportunity not found or not owned by user
  */
-export async function resolveOpportunitySlug(
-  slug: string,
-  ownerEmail: string
-): Promise<string> {
+export async function resolveOpportunitySlug(slug: string, ownerEmail: string): Promise<string> {
   const opportunity = await prisma.jobOpportunity.findUnique({
     where: {
       ownerEmail_slug: {
         ownerEmail,
-        slug
-      }
+        slug,
+      },
     },
-    select: { id: true }
+    select: { id: true },
   });
 
   if (!opportunity) {
@@ -36,18 +33,15 @@ export async function resolveOpportunitySlug(
  * Resolve Interaction slug to internal database ID
  * @throws NotFoundError if interaction not found or not owned by user
  */
-export async function resolveInteractionSlug(
-  slug: string,
-  ownerEmail: string
-): Promise<string> {
+export async function resolveInteractionSlug(slug: string, ownerEmail: string): Promise<string> {
   const interaction = await prisma.interaction.findUnique({
     where: {
       ownerEmail_slug: {
         ownerEmail,
-        slug
-      }
+        slug,
+      },
     },
-    select: { id: true }
+    select: { id: true },
   });
 
   if (!interaction) {
@@ -61,18 +55,15 @@ export async function resolveInteractionSlug(
  * Resolve Person slug to internal database ID
  * @throws NotFoundError if person not found or not owned by user
  */
-export async function resolvePersonSlug(
-  slug: string,
-  ownerEmail: string
-): Promise<string> {
+export async function resolvePersonSlug(slug: string, ownerEmail: string): Promise<string> {
   const person = await prisma.person.findUnique({
     where: {
       ownerEmail_slug: {
         ownerEmail,
-        slug
-      }
+        slug,
+      },
     },
-    select: { id: true }
+    select: { id: true },
   });
 
   if (!person) {
@@ -86,19 +77,16 @@ export async function resolvePersonSlug(
  * Batch resolve Opportunity slugs to IDs
  * More efficient than calling resolveOpportunitySlug in a loop
  */
-export async function batchResolveOpportunitySlugs(
-  slugs: string[],
-  ownerEmail: string
-): Promise<Map<string, string>> {
+export async function batchResolveOpportunitySlugs(slugs: string[], ownerEmail: string): Promise<Map<string, string>> {
   const opportunities = await prisma.jobOpportunity.findMany({
     where: {
       ownerEmail,
       slug: {
-        in: slugs
-      }
+        in: slugs,
+      },
     },
-    select: { slug: true, id: true }
+    select: { slug: true, id: true },
   });
 
-  return new Map(opportunities.map(o => [o.slug, o.id]));
+  return new Map(opportunities.map((o) => [o.slug, o.id]));
 }

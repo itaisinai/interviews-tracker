@@ -1,5 +1,8 @@
 export { DesktopInteractionsFlow } from "./desktop-interactions-flow";
-export { MobileInteractionsFlow } from "./mobile-interactions-flow";
+export type {
+  InteractionFilter,
+  InteractionOpportunityGroup,
+} from "./interaction-flow-helpers";
 export {
   buildInteractionCalendarEvents,
   buildOpportunityGroups,
@@ -7,7 +10,4 @@ export {
   countFollowUps,
   filterOpportunityGroup,
 } from "./interaction-flow-helpers";
-export type {
-  InteractionFilter,
-  InteractionOpportunityGroup,
-} from "./interaction-flow-helpers";
+export { MobileInteractionsFlow } from "./mobile-interactions-flow";

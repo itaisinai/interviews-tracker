@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from "react";
+
 import { MaterialIcon } from "../material-icon/index.js";
 
 export type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

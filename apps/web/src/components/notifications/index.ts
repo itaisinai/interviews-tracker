@@ -1,3 +1,9 @@
+export { NotificationsContext, type NotificationsContextValue, useNotifications } from "./notifications-context";
 export { NotificationsProvider } from "./notifications-provider";
-export { useNotifications, NotificationsContext, type NotificationsContextValue } from "./notifications-context";
-export { NotificationsBell, NotificationsDropdown, NotificationRow, NotificationWarningIcon, formatRelativeTime } from "./notifications-ui";
+export {
+  formatRelativeTime,
+  NotificationRow,
+  NotificationsBell,
+  NotificationsDropdown,
+  NotificationWarningIcon,
+} from "./notifications-ui";

@@ -1,15 +1,20 @@
 import type { Request } from "express";
 import { z } from "zod";
+
 import { createTimer, logError, logInfo } from "../lib/logger.js";
 import { createOpportunityFromText } from "../services/opportunities/opportunity-text-ingestion-service.js";
-import { handleTelegramUpdate, telegramUpdateSchema, type TelegramUpdate } from "../services/telegram/telegram-service.js";
+import {
+  handleTelegramUpdate,
+  type TelegramUpdate,
+  telegramUpdateSchema,
+} from "../services/telegram/telegram-service.js";
 
 const opportunityWebhookSchema = z.object({
   text: z.string().trim().min(20),
   source: z.string().trim().min(1).optional(),
   telegramMessageId: z.number().optional(),
   fromUserId: z.number().nullable().optional(),
-  username: z.string().nullable().optional()
+  username: z.string().nullable().optional(),
 });
 
 type TelegramUpdateProcessor = (update: TelegramUpdate) => Promise<unknown>;
@@ -20,7 +25,7 @@ export async function createOpportunityFromWebhookHandler(request: Request) {
     source: input.source ?? "unknown",
     telegramMessageId: input.telegramMessageId,
     fromUserId: input.fromUserId,
-    username: input.username
+    username: input.username,
   });
 
   try {
@@ -33,12 +38,15 @@ export async function createOpportunityFromWebhookHandler(request: Request) {
   }
 }
 
-export function queueTelegramUpdateProcessing(update: TelegramUpdate, processUpdate: TelegramUpdateProcessor = handleTelegramUpdate) {
+export function queueTelegramUpdateProcessing(
+  update: TelegramUpdate,
+  processUpdate: TelegramUpdateProcessor = handleTelegramUpdate
+) {
   setImmediate(() => {
     void processUpdate(update).catch((error) => {
       logError("telegram", "Background webhook processing failed", {
         updateId: update.update_id,
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     });
   });

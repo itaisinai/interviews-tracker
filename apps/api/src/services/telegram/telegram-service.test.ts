@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { extractTelegramTextMessage, telegramUpdateSchema } from "./telegram-service.js";
 
 test("extractTelegramTextMessage returns trimmed Telegram message text", () => {
@@ -9,8 +10,8 @@ test("extractTelegramTextMessage returns trimmed Telegram message text", () => {
       message_id: 10,
       chat: { id: 123 },
       from: { id: 456, username: "jobhunter" },
-      text: "  Senior backend role at ExampleCo  "
-    }
+      text: "  Senior backend role at ExampleCo  ",
+    },
   });
 
   assert.deepEqual(extractTelegramTextMessage(update), {
@@ -18,7 +19,7 @@ test("extractTelegramTextMessage returns trimmed Telegram message text", () => {
     messageId: 10,
     text: "Senior backend role at ExampleCo",
     fromUserId: 456,
-    username: "jobhunter"
+    username: "jobhunter",
   });
 });
 

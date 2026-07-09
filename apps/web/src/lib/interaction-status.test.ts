@@ -12,7 +12,7 @@ test("older interactions hide status badges when a later interaction exists", ()
       status: "SCHEDULED" as const,
       stage: "Interview",
       outcome: null,
-      followUp: null
+      followUp: null,
     },
     {
       slug: "interaction-b",
@@ -21,8 +21,8 @@ test("older interactions hide status badges when a later interaction exists", ()
       status: "REJECTED" as const,
       stage: null,
       outcome: "The company decided not to continue.",
-      followUp: null
-    }
+      followUp: null,
+    },
   ];
 
   assert.equal(getInteractionTimelineBadgeMeta(interactions[0], interactions), null);
@@ -38,7 +38,7 @@ test("older scheduled interactions do not show waiting when a later interview ex
       status: "SCHEDULED" as const,
       stage: "Interview",
       outcome: null,
-      followUp: null
+      followUp: null,
     },
     {
       slug: "interaction-b",
@@ -47,14 +47,14 @@ test("older scheduled interactions do not show waiting when a later interview ex
       status: "SCHEDULED" as const,
       stage: "Interview",
       outcome: null,
-      followUp: null
-    }
+      followUp: null,
+    },
   ];
 
   assert.equal(getInteractionTimelineBadgeMeta(interactions[0], interactions), null);
   assert.deepEqual(getInteractionTimelineBadgeMeta(interactions[1], interactions), {
     label: "Waiting for response",
-    tone: "warning"
+    tone: "warning",
   });
 });
 
@@ -67,13 +67,13 @@ test("completed interactions still show a passed badge when unresolved", () => {
       status: "DONE" as const,
       stage: "Interview",
       outcome: "Advanced to technical interview",
-      followUp: null
-    }
+      followUp: null,
+    },
   ];
 
   assert.deepEqual(getInteractionTimelineBadgeMeta(interactions[0], interactions), {
     label: "Passed",
-    tone: "green"
+    tone: "green",
   });
 });
 
@@ -82,13 +82,13 @@ test("company badge reflects rejected process state", () => {
     getOpportunityProcessBadgeMeta(
       {
         status: "REJECTED",
-        pipelineType: "ACTIVE_PROCESS"
+        pipelineType: "ACTIVE_PROCESS",
       },
       []
     ),
     {
       label: "Rejected",
-      tone: "red"
+      tone: "red",
     }
   );
 });
@@ -98,13 +98,13 @@ test("company badge reflects offer state as contract", () => {
     getOpportunityProcessBadgeMeta(
       {
         status: "OFFER",
-        pipelineType: "ACTIVE_PROCESS"
+        pipelineType: "ACTIVE_PROCESS",
       },
       []
     ),
     {
       label: "Contract",
-      tone: "violet"
+      tone: "violet",
     }
   );
 });
@@ -114,20 +114,20 @@ test("company badge reflects active process", () => {
     getOpportunityProcessBadgeMeta(
       {
         status: "PHONE_DONE",
-        pipelineType: "ACTIVE_PROCESS"
+        pipelineType: "ACTIVE_PROCESS",
       },
       [
         {
           type: "Interview" as const,
           status: "DONE" as const,
           outcome: "Advanced",
-          followUp: null
-        }
+          followUp: null,
+        },
       ]
     ),
     {
       label: "In process",
-      tone: "green"
+      tone: "green",
     }
   );
 });

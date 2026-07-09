@@ -1,107 +1,138 @@
-import { Router, type Request } from "express";
-import { asyncHandler } from "../lib/http.js";
+import { type Request, Router } from "express";
+
 import {
+  addFeedbackHandler,
   createInteractionHandler,
   deleteInteractionHandler,
+  listFeedbackHandler,
   listInteractionsHandler,
   updateInteractionHandler,
-  addFeedbackHandler,
-  listFeedbackHandler
 } from "../controllers/interactions-controller.js";
+import { asyncHandler } from "../lib/http.js";
+import { serializeInteraction, serializeInteractions } from "../lib/serializers.js";
 import {
   attachEmailToInteraction,
   attachMultipleEmailsToInteraction,
-  removeEmailFromInteraction,
   listInteractionEmails,
-  reparseInteractionEmails
+  removeEmailFromInteraction,
+  reparseInteractionEmails,
 } from "../services/interactions/interaction-email-service.js";
-import { serializeInteraction, serializeInteractions } from "../lib/serializers.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export const interactionsRouter = Router();
 
-interactionsRouter.get("/", asyncHandler(async (request, response) => {
-  const interactions = await listInteractionsHandler(request as AuthenticatedRequest);
-  response.json(serializeInteractions(interactions));
-}));
+interactionsRouter.get(
+  "/",
+  asyncHandler(async (request, response) => {
+    const interactions = await listInteractionsHandler(request as AuthenticatedRequest);
+    response.json(serializeInteractions(interactions));
+  })
+);
 
-interactionsRouter.post("/", asyncHandler(async (request, response) => {
-  const interaction = await createInteractionHandler(request as AuthenticatedRequest);
-  response.status(201).json(serializeInteraction(interaction));
-}));
+interactionsRouter.post(
+  "/",
+  asyncHandler(async (request, response) => {
+    const interaction = await createInteractionHandler(request as AuthenticatedRequest);
+    response.status(201).json(serializeInteraction(interaction));
+  })
+);
 
-interactionsRouter.put("/:id", asyncHandler(async (request, response) => {
-  const interaction = await updateInteractionHandler(request as AuthenticatedRequest);
-  response.json(serializeInteraction(interaction));
-}));
+interactionsRouter.put(
+  "/:id",
+  asyncHandler(async (request, response) => {
+    const interaction = await updateInteractionHandler(request as AuthenticatedRequest);
+    response.json(serializeInteraction(interaction));
+  })
+);
 
-interactionsRouter.delete("/:id", asyncHandler(async (request, response) => {
-  await deleteInteractionHandler(request as AuthenticatedRequest);
-  response.status(204).end();
-}));
+interactionsRouter.delete(
+  "/:id",
+  asyncHandler(async (request, response) => {
+    await deleteInteractionHandler(request as AuthenticatedRequest);
+    response.status(204).end();
+  })
+);
 
 // Get all emails attached to an interaction
-interactionsRouter.get("/:id/emails", asyncHandler(async (request, response) => {
-  const { id } = request.params;
-  const auth0Email = (request as AuthenticatedRequest).auth.email;
-  const emails = await listInteractionEmails(auth0Email, id);
-  response.json(emails);
-}));
+interactionsRouter.get(
+  "/:id/emails",
+  asyncHandler(async (request, response) => {
+    const { id } = request.params;
+    const auth0Email = (request as AuthenticatedRequest).auth.email;
+    const emails = await listInteractionEmails(auth0Email, id);
+    response.json(emails);
+  })
+);
 
 // Attach Gmail message(s) to an interaction
-interactionsRouter.post("/:id/emails", asyncHandler(async (request, response) => {
-  const { id: interactionId } = request.params;
-  const { gmailMessageId, gmailMessageIds } = request.body;
-  const auth0Email = (request as AuthenticatedRequest).auth.email;
+interactionsRouter.post(
+  "/:id/emails",
+  asyncHandler(async (request, response) => {
+    const { id: interactionId } = request.params;
+    const { gmailMessageId, gmailMessageIds } = request.body;
+    const auth0Email = (request as AuthenticatedRequest).auth.email;
 
-  // Support both single and batch attachment
-  if (gmailMessageIds && Array.isArray(gmailMessageIds)) {
-    const result = await attachMultipleEmailsToInteraction({
-      auth0Email,
-      interactionId,
-      gmailMessageIds
-    });
-    response.status(201).json(result);
-  } else if (gmailMessageId) {
-    const result = await attachEmailToInteraction({
-      auth0Email,
-      interactionId,
-      gmailMessageId
-    });
-    // Return full result including AI suggestion (consistent with batch attach)
-    response.status(result.alreadyAttached ? 200 : 201).json(result);
-  } else {
-    response.status(400).json({ error: "gmailMessageId or gmailMessageIds required" });
-  }
-}));
+    // Support both single and batch attachment
+    if (gmailMessageIds && Array.isArray(gmailMessageIds)) {
+      const result = await attachMultipleEmailsToInteraction({
+        auth0Email,
+        interactionId,
+        gmailMessageIds,
+      });
+      response.status(201).json(result);
+    } else if (gmailMessageId) {
+      const result = await attachEmailToInteraction({
+        auth0Email,
+        interactionId,
+        gmailMessageId,
+      });
+      // Return full result including AI suggestion (consistent with batch attach)
+      response.status(result.alreadyAttached ? 200 : 201).json(result);
+    } else {
+      response.status(400).json({ error: "gmailMessageId or gmailMessageIds required" });
+    }
+  })
+);
 
 // Remove an email attachment from an interaction
-interactionsRouter.delete("/:id/emails/:emailId", asyncHandler(async (request, response) => {
-  const { id: interactionId, emailId } = request.params;
-  const auth0Email = (request as AuthenticatedRequest).auth.email;
+interactionsRouter.delete(
+  "/:id/emails/:emailId",
+  asyncHandler(async (request, response) => {
+    const { id: interactionId, emailId } = request.params;
+    const auth0Email = (request as AuthenticatedRequest).auth.email;
 
-  await removeEmailFromInteraction({ auth0Email, interactionId, emailId });
+    await removeEmailFromInteraction({ auth0Email, interactionId, emailId });
 
-  response.status(204).end();
-}));
+    response.status(204).end();
+  })
+);
 
 // Re-parse and re-aggregate all attached emails
-interactionsRouter.post("/:id/reparse", asyncHandler(async (request, response) => {
-  const { id: interactionId } = request.params;
-  const auth0Email = (request as AuthenticatedRequest).auth.email;
+interactionsRouter.post(
+  "/:id/reparse",
+  asyncHandler(async (request, response) => {
+    const { id: interactionId } = request.params;
+    const auth0Email = (request as AuthenticatedRequest).auth.email;
 
-  const updatedInteraction = await reparseInteractionEmails(auth0Email, interactionId);
+    const updatedInteraction = await reparseInteractionEmails(auth0Email, interactionId);
 
-  response.json(updatedInteraction);
-}));
+    response.json(updatedInteraction);
+  })
+);
 
 // Get all feedback for an interaction
-interactionsRouter.get("/:id/feedback", asyncHandler(async (request, response) => {
-  response.json(await listFeedbackHandler(request as AuthenticatedRequest));
-}));
+interactionsRouter.get(
+  "/:id/feedback",
+  asyncHandler(async (request, response) => {
+    response.json(await listFeedbackHandler(request as AuthenticatedRequest));
+  })
+);
 
 // Add feedback to an interaction (smart-merge with AI)
-interactionsRouter.post("/:id/feedback", asyncHandler(async (request, response) => {
-  response.status(201).json(await addFeedbackHandler(request as AuthenticatedRequest));
-}));
+interactionsRouter.post(
+  "/:id/feedback",
+  asyncHandler(async (request, response) => {
+    response.status(201).json(await addFeedbackHandler(request as AuthenticatedRequest));
+  })
+);

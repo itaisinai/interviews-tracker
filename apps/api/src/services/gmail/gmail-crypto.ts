@@ -30,16 +30,9 @@ export function decryptText(value: string, secret: string) {
   }
 
   const key = deriveKey(secret);
-  const decipher = crypto.createDecipheriv(
-    "aes-256-gcm",
-    key,
-    Buffer.from(ivPart, "base64url")
-  );
+  const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(ivPart, "base64url"));
   decipher.setAuthTag(Buffer.from(tagPart, "base64url"));
-  const decrypted = Buffer.concat([
-    decipher.update(Buffer.from(encryptedPart, "base64url")),
-    decipher.final()
-  ]);
+  const decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedPart, "base64url")), decipher.final()]);
 
   return decrypted.toString("utf8");
 }
@@ -84,7 +77,7 @@ export function verifyState(state: string, secret: string): GmailStatePayload {
     auth0Email: parsed.auth0Email,
     returnTo: parsed.returnTo,
     expiresAt: parsed.expiresAt,
-    nonce: parsed.nonce
+    nonce: parsed.nonce,
   };
 }
 
@@ -118,6 +111,6 @@ export function clientIdFingerprint(clientId: string) {
 
   return {
     clientIdPrefix: clientId.slice(0, 4),
-    clientIdSuffix: clientId.slice(-4)
+    clientIdSuffix: clientId.slice(-4),
   };
 }

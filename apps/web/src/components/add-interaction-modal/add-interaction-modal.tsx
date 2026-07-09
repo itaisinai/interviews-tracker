@@ -1,10 +1,12 @@
+import { useState } from "react";
+
 import { MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
-import { GmailImportFlow } from "./gmail-import-flow";
 import type { InteractionDraft } from "../../lib/types";
+
+import { GmailImportFlow } from "./gmail-import-flow";
 import { ManualInteractionForm } from "./manual-interaction-form";
 import { TextParseFlow } from "./text-parse-flow";
-import { useState } from "react";
 
 export type AddInteractionModalProps = {
   isOpen: boolean;
@@ -65,8 +67,7 @@ export function AddInteractionModal({
         {mode === "chooser" && (
           <div className="space-y-4">
             <p className="text-sm text-neutral-600">
-              Choose how you'd like to add an interaction for{" "}
-              <span className="font-medium">{companyName}</span>
+              Choose how you'd like to add an interaction for <span className="font-medium">{companyName}</span>
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <button
@@ -77,12 +78,8 @@ export function AddInteractionModal({
                   <MaterialIcon name="mail" className="text-[24px]" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-neutral-900">
-                    Import from Gmail
-                  </h3>
-                  <p className="mt-1 text-sm text-neutral-600">
-                    Search your emails and auto-extract details
-                  </p>
+                  <h3 className="font-semibold text-neutral-900">Import from Gmail</h3>
+                  <p className="mt-1 text-sm text-neutral-600">Search your emails and auto-extract details</p>
                 </div>
               </button>
 
@@ -94,12 +91,8 @@ export function AddInteractionModal({
                   <MaterialIcon name="auto_awesome" className="text-[24px]" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-neutral-900">
-                    Parse from Text
-                  </h3>
-                  <p className="mt-1 text-sm text-neutral-600">
-                    Paste a message and extract details
-                  </p>
+                  <h3 className="font-semibold text-neutral-900">Parse from Text</h3>
+                  <p className="mt-1 text-sm text-neutral-600">Paste a message and extract details</p>
                 </div>
               </button>
 
@@ -111,12 +104,8 @@ export function AddInteractionModal({
                   <MaterialIcon name="edit" className="text-[24px]" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-neutral-900">
-                    Add Manually
-                  </h3>
-                  <p className="mt-1 text-sm text-neutral-600">
-                    Enter interaction details yourself
-                  </p>
+                  <h3 className="font-semibold text-neutral-900">Add Manually</h3>
+                  <p className="mt-1 text-sm text-neutral-600">Enter interaction details yourself</p>
                 </div>
               </button>
             </div>

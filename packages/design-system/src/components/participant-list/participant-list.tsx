@@ -26,7 +26,10 @@ export function ParticipantList({
       {/* Search (optional) */}
       {onSearch && (
         <div className="relative">
-          <MaterialIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant" />
+          <MaterialIcon
+            name="search"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant"
+          />
           <input
             type="text"
             placeholder={searchPlaceholder}
@@ -39,9 +42,7 @@ export function ParticipantList({
       {/* Participants List */}
       <div className="space-y-2">
         {participants.length === 0 ? (
-          <p className="text-body-sm text-on-surface-variant text-center py-4">
-            {emptyMessage}
-          </p>
+          <p className="text-body-sm text-on-surface-variant text-center py-4">{emptyMessage}</p>
         ) : (
           participants.map((participant) => (
             <div
@@ -52,13 +53,9 @@ export function ParticipantList({
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <MaterialIcon name="person" className="text-[20px] text-on-surface-variant flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-body-md font-medium text-on-surface truncate">
-                    {participant.name}
-                  </div>
+                  <div className="text-body-md font-medium text-on-surface truncate">{participant.name}</div>
                   {participant.title && (
-                    <div className="text-body-sm text-on-surface-variant truncate">
-                      {participant.title}
-                    </div>
+                    <div className="text-body-sm text-on-surface-variant truncate">{participant.title}</div>
                   )}
                 </div>
               </div>
@@ -75,10 +72,7 @@ export function ParticipantList({
                   className="flex-shrink-0 rounded-lg p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-primary"
                   title={participant.hasResearch ? "View details" : "Research person"}
                 >
-                  <MaterialIcon
-                    name={participant.hasResearch ? "badge" : "search"}
-                    className="text-[18px]"
-                  />
+                  <MaterialIcon name={participant.hasResearch ? "badge" : "search"} className="text-[18px]" />
                 </button>
               )}
             </div>

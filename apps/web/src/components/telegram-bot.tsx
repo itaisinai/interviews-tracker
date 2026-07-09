@@ -1,6 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { Button, MaterialIcon, Spinner } from "@interviews-tracker/design-system";
+
 import { api } from "../lib/api";
+
 import styles from "./telegram-bot.module.css";
 
 interface Message {
@@ -34,7 +37,7 @@ function loadMessages(): Message[] {
     const parsed = JSON.parse(stored);
     return parsed.map((msg: { role: string; text: string; timestamp: string }) => ({
       ...msg,
-      timestamp: new Date(msg.timestamp)
+      timestamp: new Date(msg.timestamp),
     }));
   } catch {
     return [];
@@ -174,9 +177,9 @@ export function TelegramBot() {
   // Lock body scroll when chat is open on mobile
   useEffect(() => {
     if (isOpen && window.innerWidth < 768) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
       return () => {
-        document.body.style.overflow = '';
+        document.body.style.overflow = "";
       };
     }
   }, [isOpen]);
@@ -198,7 +201,7 @@ export function TelegramBot() {
     const userMsg: Message = {
       role: "user",
       text: userMessage,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
@@ -212,7 +215,7 @@ export function TelegramBot() {
         .map((msg) => ({
           role: msg.role,
           text: msg.text,
-          timestamp: new Date(msg.timestamp)
+          timestamp: new Date(msg.timestamp),
         }));
 
       setMessages((prev) => [...prev, ...botMessages]);
@@ -223,8 +226,8 @@ export function TelegramBot() {
         {
           role: "bot",
           text: `❌ Error: ${error instanceof Error ? error.message : "Failed to send message"}`,
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       ]);
     } finally {
       setIsLoading(false);
@@ -246,26 +249,19 @@ export function TelegramBot() {
     <>
       {/* Floating button */}
       {!isOpen && !isClosing && (
-        <button
-          className={styles.floatingButton}
-          onClick={handleOpen}
-          aria-label="Open Telegram bot"
-        >
+        <button className={styles.floatingButton} onClick={handleOpen} aria-label="Open Telegram bot">
           <MaterialIcon name="chat" className={styles.floatingIcon} />
         </button>
       )}
 
       {/* Mobile backdrop */}
       {(isOpen || isClosing) && (
-        <div
-          className={`${styles.backdrop} ${isClosing ? styles.backdropClosing : ''}`}
-          onClick={handleClose}
-        />
+        <div className={`${styles.backdrop} ${isClosing ? styles.backdropClosing : ""}`} onClick={handleClose} />
       )}
 
       {/* Chat window */}
       {(isOpen || isClosing) && (
-        <div className={`${styles.chatWindow} ${isClosing ? styles.chatWindowClosing : ''}`}>
+        <div className={`${styles.chatWindow} ${isClosing ? styles.chatWindowClosing : ""}`}>
           {/* Header */}
           <div className={styles.header}>
             <div className={styles.headerTitle}>
@@ -283,11 +279,7 @@ export function TelegramBot() {
                   <MaterialIcon name="delete" />
                 </button>
               )}
-              <button
-                className={styles.iconButton}
-                onClick={handleClose}
-                aria-label="Close chat"
-              >
+              <button className={styles.iconButton} onClick={handleClose} aria-label="Close chat">
                 <MaterialIcon name="close" />
               </button>
             </div>
@@ -299,25 +291,19 @@ export function TelegramBot() {
               <div className={styles.emptyState}>
                 <MaterialIcon name="chat_bubble_outline" className={styles.emptyStateIcon} />
                 <p>Test your Telegram bot here</p>
-                <p className={styles.emptyStateHint}>
-                  Try creating an opportunity or asking a query
-                </p>
+                <p className={styles.emptyStateHint}>Try creating an opportunity or asking a query</p>
               </div>
             )}
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`${styles.message} ${
-                  message.role === "user" ? styles.userMessage : styles.botMessage
-                }`}
+                className={`${styles.message} ${message.role === "user" ? styles.userMessage : styles.botMessage}`}
               >
-                <div className={styles.messageContent}>
-                  {formatMarkdown(message.text)}
-                </div>
+                <div className={styles.messageContent}>{formatMarkdown(message.text)}</div>
                 <div className={styles.messageTimestamp}>
                   {message.timestamp.toLocaleTimeString([], {
                     hour: "2-digit",
-                    minute: "2-digit"
+                    minute: "2-digit",
                   })}
                 </div>
               </div>

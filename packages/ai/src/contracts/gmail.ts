@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { gmailInteractionDraftSchema } from "./interaction.js";
 
 export const gmailEmailExtractionAnalysisSchema = z.object({
@@ -7,22 +8,15 @@ export const gmailEmailExtractionAnalysisSchema = z.object({
   typeSource: z.enum(["explicit", "derived"]),
   statusSource: z.enum(["calendar", "text", "header"]),
   hasCalendar: z.boolean(),
-  notes: z.array(z.string())
+  notes: z.array(z.string()),
 });
 
 export const gmailEmailClassificationSchema = z.object({
   messageId: z.string().min(1),
   isRelevant: z.boolean(),
   confidence: z.number().min(0).max(1),
-  emailType: z.enum([
-    "INTERVIEW_INVITATION",
-    "RECRUITER_MESSAGE",
-    "FOLLOW_UP",
-    "REJECTION",
-    "OFFER",
-    "UNRELATED"
-  ]),
-  reason: z.string().min(1)
+  emailType: z.enum(["INTERVIEW_INVITATION", "RECRUITER_MESSAGE", "FOLLOW_UP", "REJECTION", "OFFER", "UNRELATED"]),
+  reason: z.string().min(1),
 });
 
 export type GmailEmailExtractionAnalysis = z.infer<typeof gmailEmailExtractionAnalysisSchema>;

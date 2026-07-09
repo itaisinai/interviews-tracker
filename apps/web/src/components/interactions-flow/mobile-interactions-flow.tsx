@@ -1,16 +1,11 @@
-import { GmailImportPanel } from "./gmail-import-panel";
-import { FilterTabs } from "./filter-tabs";
-import { OpportunityInteractionTimeline } from "../interactions-timeline";
+import { InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
+
 import type { Interaction, Opportunity } from "../../lib/types";
-import {
-  countUpcoming,
-  type InteractionFilter,
-  type InteractionOpportunityGroup,
-} from "./interaction-flow-helpers";
-import {
-  InlineLoadingState,
-  MaterialIcon,
-} from "@interviews-tracker/design-system";
+import { OpportunityInteractionTimeline } from "../interactions-timeline";
+
+import { FilterTabs } from "./filter-tabs";
+import { GmailImportPanel } from "./gmail-import-panel";
+import { countUpcoming, type InteractionFilter, type InteractionOpportunityGroup } from "./interaction-flow-helpers";
 
 type MobileInteractionsFlowProps = {
   filter: InteractionFilter;
@@ -56,12 +51,8 @@ export function MobileInteractionsFlow({
       <section className="mb-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-background">
-              Interactions
-            </h1>
-            <p className="font-body-md text-on-surface-variant">
-              Track networking and interview progress.
-            </p>
+            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Interactions</h1>
+            <p className="font-body-md text-on-surface-variant">Track networking and interview progress.</p>
           </div>
           {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
         </div>
@@ -76,17 +67,10 @@ export function MobileInteractionsFlow({
       </section>
 
       <section className="mb-5">
-        <FilterTabs
-          filter={filter}
-          onChange={onFilterChange}
-          variant="mobile"
-        />
+        <FilterTabs filter={filter} onChange={onFilterChange} variant="mobile" />
         <div className="grid grid-cols-2 gap-3">
           <MobileStat label="Upcoming" value={countUpcoming(interactions)} />
-          <MobileStat
-            label="Waiting for response"
-            value={`${followUpPercent}%`}
-          />
+          <MobileStat label="Waiting for response" value={`${followUpPercent}%`} />
         </div>
       </section>
 
@@ -103,12 +87,8 @@ export function MobileInteractionsFlow({
 
       <section className="mb-5">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-title-md text-title-md font-bold">
-            Opportunity timelines
-          </h2>
-          <span className="font-label-md text-label-md text-on-surface-variant">
-            {visibleGroups.length}
-          </span>
+          <h2 className="font-title-md text-title-md font-bold">Opportunity timelines</h2>
+          <span className="font-label-md text-label-md text-on-surface-variant">{visibleGroups.length}</span>
         </div>
         <TimelineList
           groups={visibleGroups}
@@ -122,21 +102,11 @@ export function MobileInteractionsFlow({
   );
 }
 
-function MobileStat({
-  label,
-  value,
-}: {
-  label: string;
-  value: number | string;
-}) {
+function MobileStat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-xl border border-outline-variant bg-white p-4 shadow-sm">
-      <div className="font-label-md text-label-md uppercase text-on-surface-variant">
-        {label}
-      </div>
-      <div className="mt-2 font-headline-md text-headline-md font-bold">
-        {value}
-      </div>
+      <div className="font-label-md text-label-md uppercase text-on-surface-variant">{label}</div>
+      <div className="mt-2 font-headline-md text-headline-md font-bold">{value}</div>
     </div>
   );
 }

@@ -1,3 +1,9 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { FormEvent } from "react";
+
 import {
   InlineLoadingState,
   LoadingButton,
@@ -5,28 +11,21 @@ import {
   PageErrorState,
   PageLoadingState,
 } from "@interviews-tracker/design-system";
-import type { Interaction, Opportunity, Person } from "../lib/types";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
-import {
-  getInteractionBadgeMeta,
-  promoteOverdueInteractionsForRead,
-} from "../lib/interaction-status";
-import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { AddInteractionModal } from "../components/add-interaction-modal";
-import { Badge } from "../components/badge";
-import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
-import { ContactsList } from "../components/contacts/contacts-list";
-import type { FormEvent } from "react";
-import { InteractionsDrawer } from "../components/interactions-drawer";
-import { InterviewPreparation } from "../components/interview-preparation";
 import { PageIntro } from "../components/app-shell";
+import { Badge } from "../components/badge";
+import { ContactsList } from "../components/contacts/contacts-list";
+import { InteractionsDrawer } from "../components/interactions-drawer";
 import { ParticipantsCard } from "../components/interactions-drawer/participants-card";
+import { InterviewPreparation } from "../components/interview-preparation";
+import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
 import { Timeline } from "../components/timeline";
 import { api } from "../lib/api";
 import { labelForPipelineType } from "../lib/enum-labels";
+import { formatDateTimeRange, formatDurationBetween } from "../lib/format";
+import { getInteractionBadgeMeta, promoteOverdueInteractionsForRead } from "../lib/interaction-status";
+import type { Interaction, Opportunity, Person } from "../lib/types";
 
 export function OpportunityDetailPage() {
   const { slugOrId = "" } = useParams();
@@ -38,17 +37,13 @@ export function OpportunityDetailPage() {
     enabled: Boolean(slugOrId),
   });
   const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
-  const [isInteractionOperationPending, setIsInteractionOperationPending] =
-    useState(false);
+  const [isInteractionOperationPending, setIsInteractionOperationPending] = useState(false);
 
   // Slug-first architecture: use slug for all operations
   const opportunitySlug = data?.slug ?? slugOrId;
   const canonicalSlug = data?.slug ?? null;
-  const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<
-    string | null
-  >(null);
-  const refresh = () =>
-    void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
+  const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<string | null>(null);
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
   const deleteOpportunity = useMutation({
     mutationFn: () => api.deleteOpportunity(opportunitySlug),
     onSuccess: () => navigate("/opportunities"),
@@ -64,10 +59,7 @@ export function OpportunityDetailPage() {
       if (!data) {
         throw new Error("Opportunity is not loaded");
       }
-      return api.updateOpportunity(
-        opportunitySlug,
-        buildOpportunityInput(data, updates),
-      );
+      return api.updateOpportunity(opportunitySlug, buildOpportunityInput(data, updates));
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(["opportunity", slugOrId], updated);
@@ -81,36 +73,25 @@ export function OpportunityDetailPage() {
 
   const displayedInteractions = useMemo(
     () => (data ? promoteOverdueInteractionsForRead(data.interactions) : []),
-    [data],
+    [data]
   );
   const selectedInteraction = useMemo(
-    () =>
-      displayedInteractions.find(
-        (item) => item.slug === selectedInteractionSlug,
-      ) ?? null,
-    [displayedInteractions, selectedInteractionSlug],
+    () => displayedInteractions.find((item) => item.slug === selectedInteractionSlug) ?? null,
+    [displayedInteractions, selectedInteractionSlug]
   );
   const focusedInteraction = useMemo(() => {
     const now = Date.now();
     return (
-      displayedInteractions.find(
-        (item) => new Date(item.date).getTime() >= now,
-      ) ??
+      displayedInteractions.find((item) => new Date(item.date).getTime() >= now) ??
       [...displayedInteractions].sort(
-        (left, right) =>
-          new Date(right.date).getTime() - new Date(left.date).getTime(),
+        (left, right) => new Date(right.date).getTime() - new Date(left.date).getTime()
       )[0] ??
       null
     );
   }, [displayedInteractions]);
 
   useEffect(() => {
-    if (
-      selectedInteractionSlug &&
-      !displayedInteractions.some(
-        (item) => item.slug === selectedInteractionSlug,
-      )
-    ) {
+    if (selectedInteractionSlug && !displayedInteractions.some((item) => item.slug === selectedInteractionSlug)) {
       setSelectedInteractionSlug(null);
     }
   }, [displayedInteractions, selectedInteractionSlug]);
@@ -122,21 +103,14 @@ export function OpportunityDetailPage() {
   }, [canonicalSlug, navigate, slugOrId]);
 
   if (isLoading || !data) {
-    return (
-      <PageLoadingState
-        title="Opportunity"
-        description="Loading opportunity details, interaction history."
-      />
-    );
+    return <PageLoadingState title="Opportunity" description="Loading opportunity details, interaction history." />;
   }
 
   if (isError) {
     return (
       <PageErrorState
         title="Opportunity"
-        description={
-          error instanceof Error ? error.message : "Unable to load opportunity."
-        }
+        description={error instanceof Error ? error.message : "Unable to load opportunity."}
         onRetry={() => void refetch()}
       />
     );
@@ -146,18 +120,12 @@ export function OpportunityDetailPage() {
     <>
       {/* Mobile header */}
       <div className="mb-4 md:hidden">
-        <h1 className="text-2xl font-bold text-on-background">
-          {data.company.name}
-        </h1>
-        <p className="mt-1 text-body-md text-on-surface-variant">
-          {data.roleTitle}
-        </p>
+        <h1 className="text-2xl font-bold text-on-background">{data.company.name}</h1>
+        <p className="mt-1 text-body-md text-on-surface-variant">{data.roleTitle}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge value={data.status} />
           <Badge value={data.priority} />
-          <Badge value={data.pipelineType}>
-            {labelForPipelineType(data.pipelineType)}
-          </Badge>
+          <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
         </div>
         <div className="mt-4 flex gap-2">
           <LoadingButton
@@ -208,15 +176,9 @@ export function OpportunityDetailPage() {
               <div className="flex items-center gap-2">
                 <Badge value={data.status} />
                 <Badge value={data.priority} />
-                <Badge value={data.pipelineType}>
-                  {labelForPipelineType(data.pipelineType)}
-                </Badge>
+                <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
               </div>
-              <LoadingButton
-                className="btn btn-secondary"
-                icon="add"
-                onClick={() => setShowAddInteractionModal(true)}
-              >
+              <LoadingButton className="btn btn-secondary" icon="add" onClick={() => setShowAddInteractionModal(true)}>
                 Add Interaction
               </LoadingButton>
               <Link className="btn btn-primary" to="/opportunities">
@@ -231,7 +193,7 @@ export function OpportunityDetailPage() {
                 onClick={() => {
                   if (
                     window.confirm(
-                      `Delete ${data.company.name} / ${data.roleTitle}? This also deletes its interactions.`,
+                      `Delete ${data.company.name} / ${data.roleTitle}? This also deletes its interactions.`
                     )
                   )
                     deleteOpportunity.mutate();
@@ -268,15 +230,11 @@ export function OpportunityDetailPage() {
               }
             }}
             isDeletingInteraction={(interactionId) =>
-              deleteInteraction.isPending &&
-              deleteInteraction.variables === interactionId
+              deleteInteraction.isPending && deleteInteraction.variables === interactionId
             }
           />
           <div id="contacts-section">
-            <ContactsList
-              opportunitySlug={opportunitySlug}
-              companyName={data.company.name}
-            />
+            <ContactsList opportunitySlug={opportunitySlug} companyName={data.company.name} />
           </div>
           <InterviewPreparation opportunity={data} />
         </div>
@@ -286,9 +244,7 @@ export function OpportunityDetailPage() {
       </div>
       <InteractionsDrawer
         selectedInteraction={selectedInteraction}
-        selectedOpportunity={
-          data ? { ...data, interactions: displayedInteractions } : null
-        }
+        selectedOpportunity={data ? { ...data, interactions: displayedInteractions } : null}
         onClose={() => setSelectedInteractionSlug(null)}
         onSelectInteraction={setSelectedInteractionSlug}
         onOperationStart={() => setIsInteractionOperationPending(true)}
@@ -316,9 +272,7 @@ export function OpportunityDetailPage() {
           <div className="rounded-lg bg-white p-6 shadow-xl">
             <div className="flex items-center gap-4">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-200 border-t-emerald-600"></div>
-              <span className="text-lg font-medium text-neutral-900">
-                Updating interactions...
-              </span>
+              <span className="text-lg font-medium text-neutral-900">Updating interactions...</span>
             </div>
           </div>
         </div>
@@ -367,10 +321,7 @@ function EditableTitleField({
 
   if (isEditing) {
     return (
-      <form
-        className="group/title-edit flex max-w-full items-center gap-2"
-        onSubmit={submit}
-      >
+      <form className="group/title-edit flex max-w-full items-center gap-2" onSubmit={submit}>
         <input
           aria-label={ariaLabel}
           autoFocus
@@ -421,10 +372,7 @@ function EditableTitleField({
   );
 }
 
-function buildOpportunityInput(
-  opportunity: Opportunity,
-  updates: Pick<Opportunity, "roleTitle">,
-) {
+function buildOpportunityInput(opportunity: Opportunity, updates: Pick<Opportunity, "roleTitle">) {
   return {
     companyName: opportunity.company.name,
     companySearchName: opportunity.company.searchName ?? null,
@@ -497,9 +445,7 @@ function FocusedInteractionCard({
     if (exactMatch) return exactMatch;
 
     // 2. Case-insensitive match
-    const caseInsensitiveMatch = (contacts as Person[]).find(
-      (c) => c.name.toLowerCase() === name.toLowerCase(),
-    );
+    const caseInsensitiveMatch = (contacts as Person[]).find((c) => c.name.toLowerCase() === name.toLowerCase());
     if (caseInsensitiveMatch) return caseInsensitiveMatch;
 
     // 3. Full name contains contact name (e.g., "Rotem Zikorel" contains "Rotem")
@@ -508,10 +454,7 @@ function FocusedInteractionCard({
       const containsMatch = (contacts as Person[]).find((c) => {
         const nameLower = name.toLowerCase();
         const contactNameLower = c.name.toLowerCase();
-        return (
-          nameLower.includes(contactNameLower) ||
-          contactNameLower.includes(nameLower)
-        );
+        return nameLower.includes(contactNameLower) || contactNameLower.includes(nameLower);
       });
       if (containsMatch) return containsMatch;
     }
@@ -527,16 +470,12 @@ function FocusedInteractionCard({
             <MaterialIcon name="calendar_month" className="text-[22px]" />
           </div>
           <div className="min-w-0">
-            <p className="font-label-sm text-label-sm uppercase tracking-widest text-primary">
-              Interview focus
-            </p>
+            <p className="font-label-sm text-label-sm uppercase tracking-widest text-primary">Interview focus</p>
             <h2 className="mt-1 font-title-xl text-title-xl font-bold text-on-background">
               {interaction.stage || interaction.type}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-body-md text-on-surface-variant">
-              <span>
-                {formatDateTimeRange(interaction.date, interaction.endDate)}
-              </span>
+              <span>{formatDateTimeRange(interaction.date, interaction.endDate)}</span>
               {duration ? <span>· {duration}</span> : null}
               <Badge value={interaction.status} tone={badge.tone}>
                 {badge.label}
@@ -547,12 +486,7 @@ function FocusedInteractionCard({
         </div>
         <div className="flex flex-wrap gap-2">
           {interaction.meetingLink ? (
-            <a
-              className="btn btn-primary"
-              href={interaction.meetingLink}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a className="btn btn-primary" href={interaction.meetingLink} target="_blank" rel="noreferrer">
               <MaterialIcon name="videocam" />
               Join meeting
             </a>

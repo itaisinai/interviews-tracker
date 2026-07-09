@@ -6,7 +6,7 @@ export function getDetectedJobRows(payload) {
   return [
     { label: "Job", value: payload?.title, missingText: "Missing title" },
     { label: "Company", value: payload?.companyName, missingText: "Missing company" },
-    { label: "Location", value: payload?.location, missingText: "Missing location" }
+    { label: "Location", value: payload?.location, missingText: "Missing location" },
   ];
 }
 

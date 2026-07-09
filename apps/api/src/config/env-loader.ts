@@ -8,17 +8,16 @@
  *    - Always loads from /interviews-tracker/prod (shared across environments)
  */
 
-import { dirname, resolve } from 'path';
-
-import { existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { config as loadDotenv } from 'dotenv';
+import { config as loadDotenv } from "dotenv";
+import { existsSync } from "fs";
+import { dirname, resolve } from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const ROOT_DIR = resolve(__dirname, '../../../..');
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const ROOT_DIR = resolve(__dirname, "../../../..");
 
 /**
  * Load environment variables from Parameter Store
@@ -26,10 +25,10 @@ const ROOT_DIR = resolve(__dirname, '../../../..');
  */
 async function loadFromParameterStore(): Promise<Record<string, string>> {
   try {
-    const { SSMClient, GetParametersByPathCommand } = await import('@aws-sdk/client-ssm');
+    const { SSMClient, GetParametersByPathCommand } = await import("@aws-sdk/client-ssm");
 
-    const region = process.env.AWS_REGION || 'eu-central-1';
-    const ssmPath = '/interviews-tracker/prod';
+    const region = process.env.AWS_REGION || "eu-central-1";
+    const ssmPath = "/interviews-tracker/prod";
 
     console.log(`Attempting to load from AWS SSM (path: ${ssmPath}, region: ${region})...`);
 
@@ -51,7 +50,7 @@ async function loadFromParameterStore(): Promise<Record<string, string>> {
 
       for (const param of response.Parameters ?? []) {
         if (param.Name && param.Value) {
-          const varName = param.Name.split('/').pop()!;
+          const varName = param.Name.split("/").pop()!;
           params[varName] = param.Value;
         }
       }
@@ -62,8 +61,8 @@ async function loadFromParameterStore(): Promise<Record<string, string>> {
     console.log(`✓ Retrieved ${Object.keys(params).length} parameters from SSM`);
     return params;
   } catch (error) {
-    console.warn('⚠️  Could not load from Parameter Store:', error instanceof Error ? error.message : error);
-    console.warn('   Continuing with local environment variables only...');
+    console.warn("⚠️  Could not load from Parameter Store:", error instanceof Error ? error.message : error);
+    console.warn("   Continuing with local environment variables only...");
     return {};
   }
 }
@@ -72,25 +71,25 @@ async function loadFromParameterStore(): Promise<Record<string, string>> {
  * Load environment variables with fallbacks
  */
 export async function loadEnvironment(): Promise<void> {
-  console.log('Loading environment variables...');
-  console.log(`Environment: ${IS_PRODUCTION ? 'production' : 'development'}`);
+  console.log("Loading environment variables...");
+  console.log(`Environment: ${IS_PRODUCTION ? "production" : "development"}`);
 
   // 1. Load .env.dev (development defaults)
-  const envDevPath = resolve(ROOT_DIR, '.env.dev');
+  const envDevPath = resolve(ROOT_DIR, ".env.dev");
   if (existsSync(envDevPath)) {
     loadDotenv({ path: envDevPath });
-    console.log('✓ Loaded .env.dev');
+    console.log("✓ Loaded .env.dev");
   }
 
   // 2. Load .env (local overrides)
-  const envPath = resolve(ROOT_DIR, '.env');
+  const envPath = resolve(ROOT_DIR, ".env");
   if (existsSync(envPath)) {
     loadDotenv({ path: envPath, override: true });
-    console.log('✓ Loaded .env (local overrides)');
+    console.log("✓ Loaded .env (local overrides)");
   }
 
   // 3. Load from Parameter Store for missing variables (both dev and prod)
-  console.log('Checking AWS Parameter Store for missing variables...');
+  console.log("Checking AWS Parameter Store for missing variables...");
   const ssmParams = await loadFromParameterStore();
 
   if (Object.keys(ssmParams).length > 0) {
@@ -116,7 +115,7 @@ export async function loadEnvironment(): Promise<void> {
     }
   }
 
-  console.log('Environment loading complete');
+  console.log("Environment loading complete");
 }
 
 /**
@@ -127,8 +126,8 @@ export function requireEnv(name: string): string {
   if (!value) {
     throw new Error(
       `Missing required environment variable: ${name}\n` +
-      `\nLocal files: Add to .env.dev or .env` +
-      `\nAWS SSM: Add to Parameter Store at /interviews-tracker/prod/${name}`
+        `\nLocal files: Add to .env.dev or .env` +
+        `\nAWS SSM: Add to Parameter Store at /interviews-tracker/prod/${name}`
     );
   }
   return value;

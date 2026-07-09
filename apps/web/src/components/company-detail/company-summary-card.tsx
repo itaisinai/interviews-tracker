@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import { ChevronDown } from "lucide-react";
 
 import { CompanyDetailField } from "./company-detail-field";
@@ -16,12 +17,7 @@ type CompanySummaryCardProps = {
   defaultRows: number;
 };
 
-export function CompanySummaryCard({
-  title,
-  rows,
-  moreRows = [],
-  defaultRows,
-}: CompanySummaryCardProps) {
+export function CompanySummaryCard({ title, rows, moreRows = [], defaultRows }: CompanySummaryCardProps) {
   const [showMore, setShowMore] = useState(false);
   const visibleRows = showMore ? [...rows, ...moreRows] : rows.slice(0, defaultRows);
 

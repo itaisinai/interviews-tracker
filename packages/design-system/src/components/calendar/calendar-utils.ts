@@ -65,18 +65,13 @@ export function createMonthCalendar<Event extends CalendarEvent>({
 
   const days: Array<CalendarDay<Event>> = [];
 
-  for (
-    const date = new Date(calendarStart);
-    date <= calendarEnd;
-    date.setDate(date.getDate() + 1)
-  ) {
+  for (const date = new Date(calendarStart); date <= calendarEnd; date.setDate(date.getDate() + 1)) {
     const dayDate = new Date(date);
     const isCurrentMonth =
-      dayDate.getFullYear() === monthStart.getFullYear() &&
-      dayDate.getMonth() === monthStart.getMonth();
+      dayDate.getFullYear() === monthStart.getFullYear() && dayDate.getMonth() === monthStart.getMonth();
     const key = formatCalendarDateKey(dayDate);
     const dayEvents = [...(eventsByDay.get(key) ?? [])].sort(
-      (left, right) => new Date(left.date).getTime() - new Date(right.date).getTime(),
+      (left, right) => new Date(left.date).getTime() - new Date(right.date).getTime()
     );
 
     days.push({
@@ -93,10 +88,7 @@ export function createMonthCalendar<Event extends CalendarEvent>({
     monthLabel: monthFormatter.format(monthStart),
     leadingBlankDays: 0,
     days,
-    totalEvents: days.reduce(
-      (total, day) => total + (day.isCurrentMonth ? day.events.length : 0),
-      0,
-    ),
+    totalEvents: days.reduce((total, day) => total + (day.isCurrentMonth ? day.events.length : 0), 0),
   };
 }
 
@@ -107,9 +99,10 @@ export function getCalendarEventTone(eventCount: number): CalendarEventTone {
 }
 
 export function formatCalendarDateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate(),
-  ).padStart(2, "0")}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(
+    2,
+    "0"
+  )}`;
 }
 
 function isSameCalendarDate(left: Date, right: Date) {

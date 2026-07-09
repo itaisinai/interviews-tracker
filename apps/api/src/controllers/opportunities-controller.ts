@@ -1,14 +1,34 @@
-import { createOpportunity, deleteOpportunity, getOpportunity, listOpportunities, updateOpportunity } from "../services/opportunities/opportunity-service.js";
-import { getOpportunityRecord, getOpportunitySummaryRecord, listOpportunityInteractionsRecord } from "../repositories/opportunity-repository.js";
-import { hideGmailMessage, ignoreGmailMessage, listTrackedGmailMessages, parseGmailEmailToInteraction, restoreHiddenGmailMessage, searchGmailMessages, syncAttachedGmailInteractionData, unignoreGmailMessage, unmarkUsedGmailMessageState } from "../services/gmail/gmail-service.js";
-import { interactionInputSchema, opportunityInputSchema } from "../lib/schemas.js";
-
 import type { Request } from "express";
-import { createInteraction as createInteractionRecord } from "../services/interactions/interaction-service.js";
-import { attachEmailToInteraction } from "../services/interactions/interaction-email-service.js";
-import { createTimer } from "../lib/logger.js";
-import { getAiParserService } from "../services/ai/ai-parser-service.js";
 import { z } from "zod";
+
+import { createTimer } from "../lib/logger.js";
+import { interactionInputSchema, opportunityInputSchema } from "../lib/schemas.js";
+import {
+  getOpportunityRecord,
+  getOpportunitySummaryRecord,
+  listOpportunityInteractionsRecord,
+} from "../repositories/opportunity-repository.js";
+import { getAiParserService } from "../services/ai/ai-parser-service.js";
+import {
+  hideGmailMessage,
+  ignoreGmailMessage,
+  listTrackedGmailMessages,
+  parseGmailEmailToInteraction,
+  restoreHiddenGmailMessage,
+  searchGmailMessages,
+  syncAttachedGmailInteractionData,
+  unignoreGmailMessage,
+  unmarkUsedGmailMessageState,
+} from "../services/gmail/gmail-service.js";
+import { attachEmailToInteraction } from "../services/interactions/interaction-email-service.js";
+import { createInteraction as createInteractionRecord } from "../services/interactions/interaction-service.js";
+import {
+  createOpportunity,
+  deleteOpportunity,
+  getOpportunity,
+  listOpportunities,
+  updateOpportunity,
+} from "../services/opportunities/opportunity-service.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
@@ -57,7 +77,7 @@ export async function searchOpportunityGmailHandler(request: AuthenticatedReques
     companyName: opportunity.company.name,
     companySearchName: opportunity.company.searchName,
     roleTitle: opportunity.roleTitle,
-    companyDomains: opportunity.domains.map((item) => item.domain.label)
+    companyDomains: opportunity.domains.map((item) => item.domain.label),
   });
   timer.end({ candidates: result.candidates.length });
   return result;
@@ -72,7 +92,7 @@ export async function listTrackedOpportunityGmailMessagesHandler(request: Authen
 
   return listTrackedGmailMessages({
     auth0Email: request.auth.email,
-    jobOpportunityId: opportunity.id
+    jobOpportunityId: opportunity.id,
   });
 }
 
@@ -84,28 +104,27 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
   }
 
   // Support both single messageId and array of messageIds
-  const body = z.union([
-    z.object({ messageId: z.string().min(1) }),
-    z.object({ messageIds: z.array(z.string().min(1)).min(1) })
-  ]).parse(request.body);
+  const body = z
+    .union([z.object({ messageId: z.string().min(1) }), z.object({ messageIds: z.array(z.string().min(1)).min(1) })])
+    .parse(request.body);
 
-  const messageIds = 'messageIds' in body ? body.messageIds : [body.messageId];
+  const messageIds = "messageIds" in body ? body.messageIds : [body.messageId];
 
   const timer = createTimer("gmail", "parse opportunity email", {
     company: opportunity.company.name,
     messageIds: messageIds.join(","),
-    count: messageIds.length
+    count: messageIds.length,
   });
 
   // Parse all emails and merge their data
   const parsedResults = await Promise.all(
-    messageIds.map(messageId =>
+    messageIds.map((messageId) =>
       parseGmailEmailToInteraction({
         auth0Email: request.auth.email,
         companyName: opportunity.company.name,
         roleTitle: opportunity.roleTitle,
         messageId,
-        jobOpportunityId: opportunity.id
+        jobOpportunityId: opportunity.id,
       })
     )
   );
@@ -115,29 +134,31 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
     timer.end({ company: opportunity.company.name, count: 1 });
     return {
       ...parsedResults[0],
-      allGmailMessageIds: messageIds
+      allGmailMessageIds: messageIds,
     };
   }
 
   // Merge the parsed interactions into one
   // Strategy: take the most complete data from all emails
   // Collect all Gmail message IDs from all parsed results
-  const allGmailMessageIds = parsedResults
-    .map(r => r.interaction.gmailMessageId)
-    .filter(Boolean) as string[];
+  const allGmailMessageIds = parsedResults.map((r) => r.interaction.gmailMessageId).filter(Boolean) as string[];
 
   const mergedInteraction = parsedResults.reduce((merged, current) => {
     // Merge personName lists (comma-separated)
-    const mergedPersonNames = new Set([
-      ...(merged.interaction.personName?.split(',').map(n => n.trim()) || []),
-      ...(current.interaction.personName?.split(',').map(n => n.trim()) || [])
-    ].filter(Boolean));
+    const mergedPersonNames = new Set(
+      [
+        ...(merged.interaction.personName?.split(",").map((n) => n.trim()) || []),
+        ...(current.interaction.personName?.split(",").map((n) => n.trim()) || []),
+      ].filter(Boolean)
+    );
 
     // Merge personRole lists (comma-separated)
-    const mergedPersonRoles = new Set([
-      ...(merged.interaction.personRole?.split(',').map(r => r.trim()) || []),
-      ...(current.interaction.personRole?.split(',').map(r => r.trim()) || [])
-    ].filter(Boolean));
+    const mergedPersonRoles = new Set(
+      [
+        ...(merged.interaction.personRole?.split(",").map((r) => r.trim()) || []),
+        ...(current.interaction.personRole?.split(",").map((r) => r.trim()) || []),
+      ].filter(Boolean)
+    );
 
     return {
       interaction: {
@@ -151,26 +172,22 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
         stage: merged.interaction.stage || current.interaction.stage,
         status: merged.interaction.status || current.interaction.status,
         // Merge all participant names
-        personName: mergedPersonNames.size > 0 ? Array.from(mergedPersonNames).join(', ') : null,
+        personName: mergedPersonNames.size > 0 ? Array.from(mergedPersonNames).join(", ") : null,
         // Merge all participant roles
-        personRole: mergedPersonRoles.size > 0 ? Array.from(mergedPersonRoles).join(', ') : null,
+        personRole: mergedPersonRoles.size > 0 ? Array.from(mergedPersonRoles).join(", ") : null,
         meetingLink: merged.interaction.meetingLink || current.interaction.meetingLink,
         // Concatenate notes/agendas if both exist
-        notes: [merged.interaction.notes, current.interaction.notes]
-          .filter(Boolean)
-          .join("\n\n") || null,
-        agenda: [merged.interaction.agenda, current.interaction.agenda]
-          .filter(Boolean)
-          .join("\n\n") || null,
+        notes: [merged.interaction.notes, current.interaction.notes].filter(Boolean).join("\n\n") || null,
+        agenda: [merged.interaction.agenda, current.interaction.agenda].filter(Boolean).join("\n\n") || null,
         // Keep first non-null outcome/followUp
         outcome: merged.interaction.outcome || current.interaction.outcome,
         followUp: merged.interaction.followUp || current.interaction.followUp,
         // Use the first Gmail message ID (primary)
-        gmailMessageId: allGmailMessageIds[0] || null
+        gmailMessageId: allGmailMessageIds[0] || null,
       },
       // Also pass through the email metadata from the first result
       email: merged.email || current.email,
-      analysis: merged.analysis || current.analysis
+      analysis: merged.analysis || current.analysis,
     };
   });
 
@@ -179,7 +196,7 @@ export async function parseOpportunityGmailEmailHandler(request: AuthenticatedRe
   // Return the merged interaction along with the list of all message IDs
   return {
     ...mergedInteraction,
-    allGmailMessageIds: messageIds
+    allGmailMessageIds: messageIds,
   };
 }
 
@@ -192,7 +209,7 @@ export async function syncOpportunityAttachedGmailDataHandler(request: Authentic
 
   const result = await syncAttachedGmailInteractionData({
     auth0Email: request.auth?.email ?? "",
-    jobOpportunityId: opportunity.id
+    jobOpportunityId: opportunity.id,
   });
   return result;
 }
@@ -208,7 +225,7 @@ export async function hideOpportunityGmailMessageHandler(request: AuthenticatedR
   await hideGmailMessage({
     auth0Email: request.auth.email,
     messageId,
-    jobOpportunityId: opportunity.id
+    jobOpportunityId: opportunity.id,
   });
 
   return { ok: true };
@@ -225,7 +242,7 @@ export async function restoreOpportunityGmailMessageHandler(request: Authenticat
   await restoreHiddenGmailMessage({
     auth0Email: request.auth.email,
     messageId,
-    jobOpportunityId: opportunity.id
+    jobOpportunityId: opportunity.id,
   });
 
   return { ok: true };
@@ -242,7 +259,7 @@ export async function unpickOpportunityGmailMessageHandler(request: Authenticate
   await unmarkUsedGmailMessageState({
     auth0Email: request.auth.email,
     messageId,
-    jobOpportunityId: opportunity.id
+    jobOpportunityId: opportunity.id,
   });
 
   return { ok: true };
@@ -259,7 +276,7 @@ export async function ignoreOpportunityGmailMessageHandler(request: Authenticate
   await ignoreGmailMessage({
     auth0Email: request.auth.email,
     messageId,
-    jobOpportunityId: opportunity.id
+    jobOpportunityId: opportunity.id,
   });
 
   return { ok: true };
@@ -275,7 +292,7 @@ export async function unignoreOpportunityGmailMessageHandler(request: Authentica
   const { messageId } = z.object({ messageId: z.string().min(1) }).parse(request.params);
   await unignoreGmailMessage({
     auth0Email: request.auth.email,
-    messageId
+    messageId,
   });
 
   return { ok: true };
@@ -291,14 +308,14 @@ export async function parseOpportunityInteractionTextHandler(request: Authentica
   const { text } = z.object({ text: z.string().min(20) }).parse(request.body);
   const timer = createTimer("ai", "parse opportunity interaction text", {
     company: opportunity.company.name,
-    role: opportunity.roleTitle
+    role: opportunity.roleTitle,
   });
   const result = await getAiParserService().parseInteractionText({
     companyName: opportunity.company.name,
     roleTitle: opportunity.roleTitle,
     opportunityContext: `Status: ${opportunity.status} · Pipeline: ${opportunity.pipelineType} · Next step: ${opportunity.nextStep ?? "None"}${opportunity.notes ? ` · Notes: ${opportunity.notes}` : ""}`,
     text,
-    nowIso: new Date().toISOString()
+    nowIso: new Date().toISOString(),
   });
   timer.end({ company: opportunity.company.name });
   return { interaction: result };

@@ -1,10 +1,12 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 
-import { CompanyDetailView } from "./company-detail-view";
+import type { Meta, StoryObj } from "@storybook/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { promoteOverdueInteractionsForRead } from "../../lib/interaction-status";
 import type { CompanyDetail } from "../../lib/types";
+
+import { CompanyDetailView } from "./company-detail-view";
 
 const queryClient = new QueryClient();
 const referenceDate = new Date("2026-06-15T12:00:00.000Z");
@@ -34,10 +36,7 @@ const reevolCompany = {
       backendFrontendSplit: "Full Stack",
       compensationNotes: null,
       notes: null,
-      domains: [
-        { domain: { label: "Fintech" } },
-        { domain: { label: "reevol.com" } },
-      ],
+      domains: [{ domain: { label: "Fintech" } }, { domain: { label: "reevol.com" } }],
       interactions: [],
       nextStep: "Interview",
       updatedAt: "2026-06-15T12:30:00.000Z",
@@ -51,8 +50,7 @@ const reevolCompany = {
       status: "DONE",
       stage: null,
       outcome: null,
-      followUp:
-        "For more details or if you need to change the time of your interview, please reply to this email.",
+      followUp: "For more details or if you need to change the time of your interview, please reply to this email.",
     },
     {
       slug: "reevol-interview-2026-06-17",

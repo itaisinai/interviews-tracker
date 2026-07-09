@@ -1,8 +1,10 @@
 import type { Prisma } from "@prisma/client";
+import type { z } from "zod";
+
 import { appendSlugCollisionSuffix, createCompanySlug } from "@interviews-tracker/core";
+
 import { prisma } from "../lib/prisma.js";
 import { companyInputSchema } from "../lib/schemas.js";
-import type { z } from "zod";
 
 export type CompanyInput = z.infer<typeof companyInputSchema>;
 
@@ -15,12 +17,12 @@ export const companyInclude = {
       interactions: { orderBy: { date: "asc" as const } },
       compensation: true,
       workModel: true,
-      domains: { include: { domain: true } }
-    }
+      domains: { include: { domain: true } },
+    },
   },
   notesList: { orderBy: { createdAt: "desc" as const } },
   tasks: { orderBy: { dueDate: "asc" as const } },
-  contacts: { orderBy: { name: "asc" as const } }
+  contacts: { orderBy: { name: "asc" as const } },
 } satisfies Prisma.CompanyInclude;
 
 function toWrite(input: CompanyInput, ownerEmail: string): Omit<Prisma.CompanyCreateInput, "slug"> {
@@ -42,7 +44,7 @@ function toWrite(input: CompanyInput, ownerEmail: string): Omit<Prisma.CompanyCr
     watchlistReason: rest.watchlistReason ?? null,
     employeesRange: employeesRangeId ? { connect: { id: employeesRangeId } } : undefined,
     companyStage: companyStageId ? { connect: { id: companyStageId } } : undefined,
-    domains: { create: domainIds.map((domainId: string) => ({ ownerEmail, domain: { connect: { id: domainId } } })) }
+    domains: { create: domainIds.map((domainId: string) => ({ ownerEmail, domain: { connect: { id: domainId } } })) },
   };
 }
 
@@ -57,9 +59,9 @@ async function createUniqueCompanySlug(
     where: {
       ownerEmail,
       slug: { startsWith: baseSlug },
-      id: excludeId ? { not: excludeId } : undefined
+      id: excludeId ? { not: excludeId } : undefined,
     },
-    select: { slug: true }
+    select: { slug: true },
   });
   const usedSlugs = new Set(existing.map((item) => item.slug));
 
@@ -88,15 +90,15 @@ export async function listCompanyRecords(query: Record<string, string | undefine
     OR: query.search
       ? [
           { name: { contains: query.search, mode: "insensitive" } },
-          { searchName: { contains: query.search, mode: "insensitive" } }
+          { searchName: { contains: query.search, mode: "insensitive" } },
         ]
-      : undefined
+      : undefined,
   };
 
   const companies = await prisma.company.findMany({
     where,
     include: companyInclude,
-    orderBy: { updatedAt: "desc" }
+    orderBy: { updatedAt: "desc" },
   });
 
   return companies;
@@ -108,7 +110,7 @@ export async function findCompanyRecord(slugOrId: string, ownerEmail: string) {
 
   const company = await prisma.company.findUnique({
     where: { id },
-    include: companyInclude
+    include: companyInclude,
   });
 
   return company;
@@ -118,12 +120,9 @@ export async function findCompanyByName(name: string, ownerEmail: string) {
   const company = await prisma.company.findFirst({
     where: {
       ownerEmail,
-      OR: [
-        { name: { equals: name, mode: "insensitive" } },
-        { searchName: { equals: name.toLowerCase().trim() } }
-      ]
+      OR: [{ name: { equals: name, mode: "insensitive" } }, { searchName: { equals: name.toLowerCase().trim() } }],
     },
-    include: companyInclude
+    include: companyInclude,
   });
 
   return company;
@@ -135,7 +134,7 @@ export async function createCompanyRecord(input: CompanyInput, ownerEmail: strin
 
   const company = await prisma.company.create({
     data: { ...data, slug },
-    include: companyInclude
+    include: companyInclude,
   });
 
   return company;
@@ -148,9 +147,10 @@ export async function updateCompanyRecord(slugOrId: string, input: Partial<Compa
   const existing = await prisma.company.findUnique({ where: { id }, select: { name: true } });
   if (!existing) return null;
 
-  const slug = input.name && input.name !== existing.name
-    ? await createUniqueCompanySlug({ name: input.name }, ownerEmail, prisma, id)
-    : undefined;
+  const slug =
+    input.name && input.name !== existing.name
+      ? await createUniqueCompanySlug({ name: input.name }, ownerEmail, prisma, id)
+      : undefined;
 
   const { domainIds, employeesRangeId, companyStageId, ...rest } = input;
 
@@ -161,9 +161,9 @@ export async function updateCompanyRecord(slugOrId: string, input: Partial<Compa
       slug,
       searchName: input.searchName ?? (input.name ? input.name.toLowerCase().trim() : undefined),
       employeesRange: employeesRangeId ? { connect: { id: employeesRangeId } } : undefined,
-      companyStage: companyStageId ? { connect: { id: companyStageId } } : undefined
+      companyStage: companyStageId ? { connect: { id: companyStageId } } : undefined,
     },
-    include: companyInclude
+    include: companyInclude,
   });
 
   // Update domains if provided
@@ -172,7 +172,7 @@ export async function updateCompanyRecord(slugOrId: string, input: Partial<Compa
     if (domainIds.length > 0) {
       await prisma.companyDomain.createMany({
         data: domainIds.map((domainId: string) => ({ ownerEmail, companyId: id, domainId })),
-        skipDuplicates: true
+        skipDuplicates: true,
       });
     }
   }

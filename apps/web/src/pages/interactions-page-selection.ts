@@ -3,7 +3,7 @@ import type { Interaction, Opportunity } from "../lib/types";
 export function buildSelectedOpportunityForInteraction(
   interaction: Interaction,
   loadedInteractions: readonly Interaction[],
-  loadedOpportunities: readonly Opportunity[],
+  loadedOpportunities: readonly Opportunity[]
 ): Opportunity | null {
   // Get opportunity slug from nested object
   const opportunitySlug = interaction.jobOpportunity?.slug;
@@ -12,14 +12,10 @@ export function buildSelectedOpportunityForInteraction(
     return null;
   }
 
-  const opportunityInteractions = loadedInteractions.filter(
-    (item) => item.jobOpportunity?.slug === opportunitySlug,
-  );
+  const opportunityInteractions = loadedInteractions.filter((item) => item.jobOpportunity?.slug === opportunitySlug);
 
   const baseOpportunity =
-    interaction.jobOpportunity ??
-    loadedOpportunities.find((item) => item.slug === opportunitySlug) ??
-    null;
+    interaction.jobOpportunity ?? loadedOpportunities.find((item) => item.slug === opportunitySlug) ?? null;
 
   return baseOpportunity
     ? {
