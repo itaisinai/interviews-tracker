@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { api } from "../../lib/api";
-import { MaterialIcon, LoadingButton } from "@interviews-tracker/design-system";
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+
 import type { InteractionDraft } from "../../lib/types";
+import { api } from "../../lib/api";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 
 type TextParseFlowProps = {
   opportunitySlug: string;
@@ -23,7 +24,10 @@ export function TextParseFlow({
 
   const parseMutation = useMutation({
     mutationFn: async (text: string) => {
-      const result = await api.parseOpportunityInteractionText(opportunitySlug, { text });
+      const result = await api.parseOpportunityInteractionText(
+        opportunitySlug,
+        { text },
+      );
       return result.interaction;
     },
     onSuccess: (draft) => {
@@ -59,15 +63,18 @@ export function TextParseFlow({
       {/* Instructions */}
       <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
         <div className="flex gap-3">
-          <MaterialIcon name="info" className="text-[20px] text-blue-600 flex-shrink-0 mt-0.5" />
+          <MaterialIcon
+            name="info"
+            className="text-[20px] text-blue-600 flex-shrink-0 mt-0.5"
+          />
           <div className="text-sm">
             <p className="font-medium text-blue-900 mb-1">
               Paste a message about an interview or interaction
             </p>
             <p className="text-blue-700">
-              Copy and paste an email, calendar invite, WhatsApp message, or any text
-              containing interview details. We'll extract the date, time, stage, and other
-              information automatically.
+              Copy and paste an email, calendar invite, WhatsApp message, or any
+              text containing interview details. We'll extract the date, time,
+              stage, and other information automatically.
             </p>
           </div>
         </div>
@@ -75,7 +82,10 @@ export function TextParseFlow({
 
       {/* Text input */}
       <div>
-        <label htmlFor="interaction-text" className="block text-sm font-medium text-neutral-900 mb-2">
+        <label
+          htmlFor="interaction-text"
+          className="block text-sm font-medium text-neutral-900 mb-2"
+        >
           Message Text
         </label>
         <textarea

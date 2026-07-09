@@ -1,10 +1,15 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../lib/api";
-import type { InteractionDraft } from "../../lib/types";
-import { MaterialIcon, LoadingButton, DiffReviewRow } from "@interviews-tracker/design-system";
-import { formatDateTime } from "../../lib/format";
+import {
+  DiffReviewRow,
+  LoadingButton,
+  MaterialIcon,
+} from "@interviews-tracker/design-system";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { GmailEmailSelector } from "../shared/gmail-email-selector";
+import type { InteractionDraft } from "../../lib/types";
+import { api } from "../../lib/api";
+import { formatDateTime } from "../../lib/format";
 
 export type GmailImportFlowProps = {
   opportunitySlug: string;
@@ -14,7 +19,12 @@ export type GmailImportFlowProps = {
   onBack: () => void;
 };
 
-type FlowStep = "searching" | "select-candidate" | "review-changes" | "no-results" | "error";
+type FlowStep =
+  | "searching"
+  | "select-candidate"
+  | "review-changes"
+  | "no-results"
+  | "error";
 
 export function GmailImportFlow({
   opportunitySlug,
@@ -29,7 +39,14 @@ export function GmailImportFlow({
   const [allGmailMessageIds, setAllGmailMessageIds] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState(false);
 
-  const { data: searchResults, isLoading: isSearching, isError: searchFailed, error: searchError, refetch: refetchSearch, isRefetching } = useQuery({
+  const {
+    data: searchResults,
+    isLoading: isSearching,
+    isError: searchFailed,
+    error: searchError,
+    refetch: refetchSearch,
+    isRefetching,
+  } = useQuery({
     queryKey: ["gmail-search", opportunitySlug],
     queryFn: () => api.gmailSearch(opportunitySlug),
     enabled: step === "searching",
@@ -51,23 +68,35 @@ export function GmailImportFlow({
   });
 
   const unpickEmail = useMutation({
-    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunitySlug, messageId),
+    mutationFn: (messageId: string) =>
+      api.gmailUnpickEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
     },
   });
 
   const restoreEmail = useMutation({
-    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunitySlug, messageId),
+    mutationFn: (messageId: string) =>
+      api.gmailRestoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
     },
   });
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
+    queryClient.invalidateQueries({
+      queryKey: ["gmail-message-states", opportunitySlug],
+    });
     refetchSearch();
   };
 
@@ -81,9 +110,9 @@ export function GmailImportFlow({
       // Attach all Gmail messages to the InteractionEmail table
       if (allGmailMessageIds.length > 0) {
         await Promise.all(
-          allGmailMessageIds.map(messageId =>
-            api.attachEmailToInteraction(interaction.slug, messageId)
-          )
+          allGmailMessageIds.map((messageId) =>
+            api.attachEmailToInteraction(interaction.slug, messageId),
+          ),
         );
       }
 
@@ -91,7 +120,6 @@ export function GmailImportFlow({
     },
     onSuccess: onSaved,
   });
-
 
   useEffect(() => {
     if (searchFailed) {
@@ -127,9 +155,13 @@ export function GmailImportFlow({
           <MaterialIcon name="error" className="text-[24px]" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-neutral-900">Gmail search failed</h3>
+          <h3 className="text-lg font-semibold text-neutral-900">
+            Gmail search failed
+          </h3>
           <p className="mt-2 text-sm text-neutral-600">
-            {searchError instanceof Error ? searchError.message : "Unable to search Gmail. Check your connection and try again."}
+            {searchError instanceof Error
+              ? searchError.message
+              : "Unable to search Gmail. Check your connection and try again."}
           </p>
         </div>
         <div className="flex justify-center gap-2">
@@ -176,7 +208,7 @@ export function GmailImportFlow({
     try {
       // Send all message IDs at once - backend will merge them into a single interaction
       const result = await api.gmailParseEmail(opportunitySlug, {
-        messageIds
+        messageIds,
       });
 
       // Set the single merged draft
@@ -194,18 +226,20 @@ export function GmailImportFlow({
 
   if (step === "select-candidate" && searchResults?.candidates) {
     // Transform messageStates to the format expected by GmailEmailSelector
-    const transformedMessageStates = messageStates ? {
-      pickedEmails: messageStates.pickedEmails.map(e => ({
-        id: e.id,
-        subject: e.subject,
-        date: e.date
-      })),
-      removedEmails: messageStates.removedEmails.map(e => ({
-        id: e.id,
-        subject: e.subject,
-        date: e.date
-      }))
-    } : undefined;
+    const transformedMessageStates = messageStates
+      ? {
+          pickedEmails: messageStates.pickedEmails.map((e) => ({
+            id: e.id,
+            subject: e.subject,
+            date: e.date,
+          })),
+          removedEmails: messageStates.removedEmails.map((e) => ({
+            id: e.id,
+            subject: e.subject,
+            date: e.date,
+          })),
+        }
+      : undefined;
 
     return (
       <GmailEmailSelector
@@ -240,7 +274,8 @@ export function GmailImportFlow({
         <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-700">
             <MaterialIcon name="check_circle" className="text-[18px]" />
-            Interaction extracted from {wasMultipleEmails ? `${emailCount} emails` : "email"}
+            Interaction extracted from{" "}
+            {wasMultipleEmails ? `${emailCount} emails` : "email"}
           </div>
           <p className="text-sm text-emerald-900">
             {wasMultipleEmails
@@ -313,7 +348,9 @@ export function GmailImportFlow({
             <DiffReviewRow
               label="Agenda"
               currentValue=""
-              newValue={<span className="whitespace-pre-wrap">{draft.agenda}</span>}
+              newValue={
+                <span className="whitespace-pre-wrap">{draft.agenda}</span>
+              }
               isChanged={true}
             />
           )}
@@ -346,7 +383,10 @@ export function GmailImportFlow({
       <div className="space-y-6">
         <div className="py-12 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
-            <MaterialIcon name="inbox" className="text-[32px] text-neutral-400" />
+            <MaterialIcon
+              name="inbox"
+              className="text-[32px] text-neutral-400"
+            />
           </div>
           <h3 className="text-lg font-semibold text-neutral-900">
             No emails found

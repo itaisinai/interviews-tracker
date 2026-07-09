@@ -9,9 +9,9 @@ type EffectsHandlers = {
   isBusy: boolean;
   connected?: boolean;
   selectedEmail: GmailStructuredEmail | null;
-  attachToInteractionId: string | null;
+  attachToInteractionSlug: string | null;
   opportunitySlug: string;
-  interactions: Array<{ id: string; gmailMessageId?: string | null }>;
+  interactions: Array<{ slug: string; gmailMessageId?: string | null }>;
   setProgress: (value: number | ((prev: number) => number)) => void;
   setSearchResults: (value: any) => void;
   setSelectedCandidate: (value: any) => void;
@@ -36,7 +36,7 @@ export function useGmailEffects(handlers: EffectsHandlers) {
     isBusy,
     connected,
     selectedEmail,
-    attachToInteractionId,
+    attachToInteractionSlug,
     opportunitySlug,
     interactions,
     setProgress,
@@ -103,26 +103,26 @@ export function useGmailEffects(handlers: EffectsHandlers) {
     }
 
     setAttachTargetId((current) => {
-      if (current && interactions.some((interaction) => interaction.id === current)) {
+      if (current && interactions.some((interaction) => interaction.slug === current)) {
         return current;
       }
 
-      return interactions[interactions.length - 1]?.id ?? "";
+      return interactions[interactions.length - 1]?.slug ?? "";
     });
   }, [interactions, setAttachTargetId]);
 
   // Override attach target when prop changes
   useEffect(() => {
-    if (attachToInteractionId) {
-      setAttachTargetId(attachToInteractionId);
+    if (attachToInteractionSlug) {
+      setAttachTargetId(attachToInteractionSlug);
     }
-  }, [attachToInteractionId, setAttachTargetId]);
+  }, [attachToInteractionSlug, setAttachTargetId]);
 
   // Auto-parse email when re-parsing an existing interaction with gmailMessageId
   useEffect(() => {
-    const targetInteraction = interactions.find((i) => i.id === attachToInteractionId);
+    const targetInteraction = interactions.find((i) => i.slug === attachToInteractionSlug);
     if (
-      attachToInteractionId &&
+      attachToInteractionSlug &&
       targetInteraction?.gmailMessageId &&
       !selectedEmail &&
       connected &&
@@ -150,7 +150,7 @@ export function useGmailEffects(handlers: EffectsHandlers) {
       })();
     }
   }, [
-    attachToInteractionId,
+    attachToInteractionSlug,
     interactions,
     selectedEmail,
     connected,
