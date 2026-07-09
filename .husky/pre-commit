@@ -9,11 +9,20 @@ fi
 
 echo "🔧 Formatting staged files..."
 
-# Format and lint the staged files
+# Run ESLint and capture exit code
 yarn eslint --fix $STAGED_FILES
+ESLINT_EXIT=$?
+
+# Run Biome formatter
 yarn biome format --write $STAGED_FILES
 
 # Add the formatted files back to staging
 git add $STAGED_FILES
+
+# Check if ESLint had unfixable errors
+if [ $ESLINT_EXIT -ne 0 ]; then
+  echo "❌ ESLint found unfixable errors. Please fix them before committing."
+  exit 1
+fi
 
 echo "✅ Formatting complete"
