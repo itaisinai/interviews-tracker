@@ -1,4 +1,4 @@
-import { Check, Loader2, Search, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 
 type GmailAiSearchProps = {
   companyName: string;

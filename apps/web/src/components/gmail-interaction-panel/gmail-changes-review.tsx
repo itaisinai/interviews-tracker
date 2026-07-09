@@ -2,7 +2,6 @@ import { Calendar, CheckCircle2, Clock, MapPin, MessageSquare, Sparkles, User, V
 
 import { LoadingButton } from "@interviews-tracker/design-system";
 
-import { formatDateTimeRange } from "../../lib/format";
 import type {
   GmailEmailExtractionAnalysis,
   GmailInteractionDraft,

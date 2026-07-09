@@ -8,7 +8,6 @@ import { MaterialIcon } from "@interviews-tracker/design-system";
 import { api } from "../../lib/api";
 import {
   buildGlobalSearchResults,
-  countSearchResults,
   flattenSearchResults,
   type GlobalSearchResults,
   SEARCH_DEBOUNCE_MS,
