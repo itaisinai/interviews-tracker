@@ -12,9 +12,17 @@ export async function fetchInteractionWithEmails(interactionId: string) {
       },
       jobOpportunity: {
         select: {
+          slug: true,
           roleTitle: true,
+          pipelineType: true,
+          status: true,
+          priority: true,
+          updatedAt: true,
           company: {
-            select: { name: true }
+            select: {
+              slug: true,
+              name: true
+            }
           }
         }
       }

@@ -138,3 +138,18 @@ export function serializeInteractions<T extends Record<string, any>>(interaction
 export function serializePeople<T extends Record<string, any>>(people: T[]): any[] {
   return people.map(serializePerson);
 }
+
+/**
+ * Remove internal IDs from interaction email (attached email)
+ */
+export function serializeInteractionEmail<T extends Record<string, any>>(email: T): any {
+  const { id, interactionId, ...rest } = email;
+  return rest;
+}
+
+/**
+ * Serialize array of interaction emails
+ */
+export function serializeInteractionEmails<T extends Record<string, any>>(emails: T[]): any[] {
+  return emails.map(serializeInteractionEmail);
+}
