@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth0 } from "@auth0/auth0-react";
 
 import { MaterialIcon } from "@interviews-tracker/design-system";
 import type { Person } from "../../lib/types";
@@ -22,6 +23,7 @@ export function ParticipantsCard({
   opportunityCompanyName,
   columns = 2,
 }: ParticipantsCardProps) {
+  const { user } = useAuth0();
   const queryClient = useQueryClient();
   const [researchModalOpen, setResearchModalOpen] = useState(false);
   const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
@@ -80,6 +82,7 @@ export function ParticipantsCard({
         <div className={columns === 1 ? "space-y-2" : "grid grid-cols-2 gap-2"}>
           {personNames.map((name, index) => {
             const person = personRecords[index];
+            const isCurrentUser = person?.email && user?.email && person.email.toLowerCase() === user.email.toLowerCase();
 
             return (
               <div
@@ -95,6 +98,9 @@ export function ParticipantsCard({
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-neutral-900 truncate">
                       {name}
+                      {isCurrentUser && (
+                        <span className="ml-1.5 text-xs text-neutral-500 font-normal">(me)</span>
+                      )}
                     </div>
                     {person?.title && (
                       <div className="text-xs text-neutral-600 truncate mt-0.5">
