@@ -238,10 +238,12 @@ export async function listInteractionEmails(auth0Email: string, interactionSlugO
     throw new Error(`Unauthorized: interaction belongs to ${interaction.ownerEmail}`);
   }
 
-  return prisma.interactionEmail.findMany({
+  const emails = await prisma.interactionEmail.findMany({
     where: { interactionId },
     orderBy: { receivedDate: 'desc' }
   });
+
+  return serializeInteractionEmails(emails);
 }
 
 /**
