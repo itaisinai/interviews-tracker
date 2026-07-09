@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
-import { Badge } from "../badge";
+
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
+import { Badge } from "../badge";
 
 export type DiffStatus = "NEW" | "UPDATED" | null;
 
@@ -38,7 +40,7 @@ export function EditableDetail({
   multiline = false,
   onEdit,
   onDone,
-  onChange
+  onChange,
 }: {
   label: string;
   value: string | null;
@@ -75,11 +77,7 @@ export function EditableDetail({
               onChange={(event) => onChange(event.target.value || null)}
             />
           ) : (
-            <input
-              className="input"
-              value={value ?? ""}
-              onChange={(event) => onChange(event.target.value || null)}
-            />
+            <input className="input" value={value ?? ""} onChange={(event) => onChange(event.target.value || null)} />
           )}
           <button type="button" className="btn btn-secondary" onClick={onDone}>
             <MaterialIcon name="check" />

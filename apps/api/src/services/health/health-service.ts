@@ -3,8 +3,8 @@
  * Provides lightweight and deep health checks for monitoring
  */
 
-import { prisma } from "../../lib/prisma.js";
 import { logError } from "../../lib/logger.js";
+import { prisma } from "../../lib/prisma.js";
 
 const startTime = Date.now();
 
@@ -20,7 +20,7 @@ export function getBasicHealth() {
     version: "0.1.0",
     uptimeSeconds,
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "development"
+    environment: process.env.NODE_ENV || "development",
   };
 }
 
@@ -45,21 +45,21 @@ export async function getDeepHealth(): Promise<{
     return {
       ok: true,
       database: "up",
-      latencyMs
+      latencyMs,
     };
   } catch (error) {
     const latencyMs = Date.now() - startTime;
 
     logError("health", "Deep health check failed - database unavailable", {
       error: error instanceof Error ? error.message : "Unknown error",
-      latencyMs
+      latencyMs,
     });
 
     return {
       ok: false,
       database: "down",
       latencyMs,
-      error: "Database unavailable"
+      error: "Database unavailable",
     };
   }
 }
@@ -77,16 +77,16 @@ export async function checkReadiness(): Promise<{
 
     return {
       ready: true,
-      database: "up"
+      database: "up",
     };
   } catch (error) {
     logError("health", "Readiness check failed - database unavailable", {
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     });
 
     return {
       ready: false,
-      database: "down"
+      database: "down",
     };
   }
 }

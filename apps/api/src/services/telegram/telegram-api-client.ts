@@ -13,7 +13,7 @@ async function telegramApiRequest(method: string, body: unknown) {
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -23,7 +23,11 @@ async function telegramApiRequest(method: string, body: unknown) {
   return response.json();
 }
 
-export function sendTelegramMessage(chatId: string | number, text: string, parseMode?: "Markdown" | "MarkdownV2" | "HTML") {
+export function sendTelegramMessage(
+  chatId: string | number,
+  text: string,
+  parseMode?: "Markdown" | "MarkdownV2" | "HTML"
+) {
   const payload: Record<string, unknown> = { chat_id: chatId, text };
   if (parseMode) {
     payload.parse_mode = parseMode;
@@ -31,11 +35,16 @@ export function sendTelegramMessage(chatId: string | number, text: string, parse
   return telegramApiRequest("sendMessage", payload);
 }
 
-export async function editTelegramMessage(chatId: string | number, messageId: number, text: string, parseMode?: "Markdown" | "MarkdownV2" | "HTML") {
+export async function editTelegramMessage(
+  chatId: string | number,
+  messageId: number,
+  text: string,
+  parseMode?: "Markdown" | "MarkdownV2" | "HTML"
+) {
   const payload: Record<string, unknown> = {
     chat_id: chatId,
     message_id: messageId,
-    text
+    text,
   };
   if (parseMode) {
     payload.parse_mode = parseMode;
@@ -64,15 +73,15 @@ export async function forwardOpportunityTextToBackend(input: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-opportunity-webhook-secret": secret
+      "x-opportunity-webhook-secret": secret,
     },
     body: JSON.stringify({
       text: input.text,
       source: "telegram",
       telegramMessageId: input.telegramMessageId,
       fromUserId: input.fromUserId,
-      username: input.username
-    })
+      username: input.username,
+    }),
   });
 
   if (!response.ok) {

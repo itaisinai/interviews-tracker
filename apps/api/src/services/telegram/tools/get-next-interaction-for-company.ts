@@ -4,6 +4,7 @@
  */
 
 import { prisma } from "../../../lib/prisma.js";
+
 import type { NextInteraction } from "./get-next-interactions.js";
 
 export async function getNextInteractionForCompany(
@@ -17,14 +18,14 @@ export async function getNextInteractionForCompany(
         company: {
           name: {
             contains: companyName,
-            mode: "insensitive"
-          }
-        }
+            mode: "insensitive",
+          },
+        },
       },
       status: "SCHEDULED",
       date: {
-        gte: new Date()
-      }
+        gte: new Date(),
+      },
     },
     include: {
       jobOpportunity: {
@@ -34,15 +35,15 @@ export async function getNextInteractionForCompany(
           roleTitle: true,
           company: {
             select: {
-              name: true
-            }
-          }
-        }
-      }
+              name: true,
+            },
+          },
+        },
+      },
     },
     orderBy: {
-      date: "asc"
-    }
+      date: "asc",
+    },
   });
 
   if (!interaction) {
@@ -64,7 +65,7 @@ export async function getNextInteractionForCompany(
     companyName: interaction.jobOpportunity.company.name,
     roleTitle: interaction.jobOpportunity.roleTitle,
     opportunityId: interaction.jobOpportunity.id,
-    opportunitySlug: interaction.jobOpportunity.slug
+    opportunitySlug: interaction.jobOpportunity.slug,
   };
 }
 
@@ -72,16 +73,17 @@ export const getNextInteractionForCompanyTool = {
   type: "function" as const,
   function: {
     name: "getNextInteractionForCompany",
-    description: "Get the next scheduled interaction for a specific company. Use this when user asks about next interaction/meeting/interview with a specific company.",
+    description:
+      "Get the next scheduled interaction for a specific company. Use this when user asks about next interaction/meeting/interview with a specific company.",
     parameters: {
       type: "object",
       properties: {
         companyName: {
           type: "string",
-          description: "Company name to find next interaction for"
-        }
+          description: "Company name to find next interaction for",
+        },
       },
-      required: ["companyName"]
-    }
-  }
+      required: ["companyName"],
+    },
+  },
 };

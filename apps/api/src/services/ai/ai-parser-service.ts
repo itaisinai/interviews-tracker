@@ -1,16 +1,21 @@
+import { z } from "zod";
+
 import {
   aiParseResponseSchema,
   companyEnrichmentSchema,
   gmailEmailClassificationSchema,
   gmailInteractionDraftSchema,
-  interactionDraftSchema
+  interactionDraftSchema,
 } from "@interviews-tracker/ai";
-import { buildEmailInteractionParserSystemPrompt, buildInteractionTextParserSystemPrompt, buildJobParserSystemPrompt } from "@interviews-tracker/ai";
+import {
+  buildEmailInteractionParserSystemPrompt,
+  buildInteractionTextParserSystemPrompt,
+  buildJobParserSystemPrompt,
+} from "@interviews-tracker/ai";
+import { interactionStatusSchema, interactionTypeSchema } from "@interviews-tracker/core";
 
 import { createTimer } from "../../lib/logger.js";
-import { interactionStatusSchema, interactionTypeSchema } from "@interviews-tracker/core";
 import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
-import { z } from "zod";
 
 export type ParsedJobDescription = typeof aiParseResponseSchema._type;
 export type CompanyEnrichment = typeof companyEnrichmentSchema._type;
@@ -92,7 +97,17 @@ export interface AiParserService {
 const parsedJobDescriptionJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["companyName", "roleTitle", "pipelineType", "status", "prioritySuggestion", "company", "role", "process", "rawImportantNotes"],
+  required: [
+    "companyName",
+    "roleTitle",
+    "pipelineType",
+    "status",
+    "prioritySuggestion",
+    "company",
+    "role",
+    "process",
+    "rawImportantNotes",
+  ],
   properties: {
     companyName: { type: ["string", "null"] },
     roleTitle: { type: ["string", "null"] },
@@ -102,7 +117,17 @@ const parsedJobDescriptionJsonSchema = {
     company: {
       type: "object",
       additionalProperties: false,
-      required: ["employees", "stage", "domains", "workModel", "location", "funding", "customersTraction", "companyDescription", "productDescription"],
+      required: [
+        "employees",
+        "stage",
+        "domains",
+        "workModel",
+        "location",
+        "funding",
+        "customersTraction",
+        "companyDescription",
+        "productDescription",
+      ],
       properties: {
         employees: { type: ["string", "null"] },
         stage: { type: ["string", "null"] },
@@ -112,8 +137,8 @@ const parsedJobDescriptionJsonSchema = {
         funding: { type: ["string", "null"] },
         customersTraction: { type: ["string", "null"] },
         companyDescription: { type: ["string", "null"] },
-        productDescription: { type: ["string", "null"] }
-      }
+        productDescription: { type: ["string", "null"] },
+      },
     },
     role: {
       type: "object",
@@ -125,8 +150,8 @@ const parsedJobDescriptionJsonSchema = {
         responsibilities: { type: "array", items: { type: "string" } },
         requirements: { type: "array", items: { type: "string" } },
         niceToHave: { type: "array", items: { type: "string" } },
-        compensation: { type: ["string", "null"] }
-      }
+        compensation: { type: ["string", "null"] },
+      },
     },
     process: {
       type: "object",
@@ -135,17 +160,34 @@ const parsedJobDescriptionJsonSchema = {
       properties: {
         knownNextInteraction: { type: ["string", "null"] },
         knownContact: { type: ["string", "null"] },
-        suggestedNextStep: { type: ["string", "null"] }
-      }
+        suggestedNextStep: { type: ["string", "null"] },
+      },
     },
-    rawImportantNotes: { type: "array", items: { type: "string" } }
-  }
+    rawImportantNotes: { type: "array", items: { type: "string" } },
+  },
 } as const;
 
 const companyEnrichmentJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["companyName", "employees", "stage", "domains", "workModel", "location", "funding", "investmentRounds", "companyDescription", "productDescription", "customersTraction", "techStack", "backendFrontendSplit", "compensationNotes", "officeDaysPerWeek", "rawImportantNotes"],
+  required: [
+    "companyName",
+    "employees",
+    "stage",
+    "domains",
+    "workModel",
+    "location",
+    "funding",
+    "investmentRounds",
+    "companyDescription",
+    "productDescription",
+    "customersTraction",
+    "techStack",
+    "backendFrontendSplit",
+    "compensationNotes",
+    "officeDaysPerWeek",
+    "rawImportantNotes",
+  ],
   properties: {
     companyName: { type: ["string", "null"] },
     employees: { type: ["string", "null"] },
@@ -162,8 +204,8 @@ const companyEnrichmentJsonSchema = {
     backendFrontendSplit: { type: ["string", "null"] },
     compensationNotes: { type: ["string", "null"] },
     officeDaysPerWeek: { type: ["number", "null"] },
-    rawImportantNotes: { type: "array", items: { type: "string" } }
-  }
+    rawImportantNotes: { type: "array", items: { type: "string" } },
+  },
 } as const;
 
 const gmailEmailClassificationBatchJsonSchema = {
@@ -183,19 +225,32 @@ const gmailEmailClassificationBatchJsonSchema = {
           confidence: { type: "number", minimum: 0, maximum: 1 },
           emailType: {
             type: "string",
-            enum: ["INTERVIEW_INVITATION", "RECRUITER_MESSAGE", "FOLLOW_UP", "REJECTION", "OFFER", "UNRELATED"]
+            enum: ["INTERVIEW_INVITATION", "RECRUITER_MESSAGE", "FOLLOW_UP", "REJECTION", "OFFER", "UNRELATED"],
           },
-          reason: { type: "string" }
-        }
-      }
-    }
-  }
+          reason: { type: "string" },
+        },
+      },
+    },
+  },
 } as const;
 
 const interactionDraftJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["date", "endDate", "type", "stage", "status", "personName", "personRole", "agenda", "meetingLink", "notes", "outcome", "followUp"],
+  required: [
+    "date",
+    "endDate",
+    "type",
+    "stage",
+    "status",
+    "personName",
+    "personRole",
+    "agenda",
+    "meetingLink",
+    "notes",
+    "outcome",
+    "followUp",
+  ],
   properties: {
     date: { type: "string" },
     endDate: { type: ["string", "null"] },
@@ -208,8 +263,8 @@ const interactionDraftJsonSchema = {
     meetingLink: { type: ["string", "null"] },
     notes: { type: ["string", "null"] },
     outcome: { type: ["string", "null"] },
-    followUp: { type: ["string", "null"] }
-  }
+    followUp: { type: ["string", "null"] },
+  },
 } as const;
 
 export class OpenAiParserService implements AiParserService {
@@ -228,9 +283,9 @@ export class OpenAiParserService implements AiParserService {
         "Preserve every explicit fact that could help the user later, even if the result is verbose.",
         "Put any useful leftover details into rawImportantNotes or suggestedNextStep instead of discarding them.",
         "Return only data that matches the provided JSON schema.",
-        "Normalize prioritySuggestion based on seniority, fit signals, company quality, and urgency."
+        "Normalize prioritySuggestion based on seniority, fit signals, company quality, and urgency.",
       ].join("\n\n"),
-      text
+      text,
     });
 
     return aiParseResponseSchema.parse(JSON.parse(outputText));
@@ -244,9 +299,9 @@ export class OpenAiParserService implements AiParserService {
         "Extract structured company research for a job-search CRM from pasted notes, recruiter text, website snippets, or job descriptions.",
         "Focus on company size, stage, domain, work model, days from home or office, location, funding and investment rounds, product, traction, and tech stack.",
         "Use null for unknown scalar fields and [] for unknown lists.",
-        "Do not invent facts. Preserve uncertainty in rawImportantNotes when needed."
+        "Do not invent facts. Preserve uncertainty in rawImportantNotes when needed.",
       ].join(" "),
-      text
+      text,
     });
 
     return companyEnrichmentSchema.parse(JSON.parse(outputText));
@@ -274,9 +329,11 @@ export class OpenAiParserService implements AiParserService {
         "Return results in the same order as the input candidates array.",
         `Company: ${input.companyName}`,
         input.roleTitle ? `Role: ${input.roleTitle}` : null,
-        JSON.stringify(input.candidates)
-      ].filter(Boolean).join("\n\n"),
-      text: JSON.stringify(input.candidates)
+        JSON.stringify(input.candidates),
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+      text: JSON.stringify(input.candidates),
     });
 
     const parsed = JSON.parse(outputText) as { results?: Array<z.infer<typeof gmailEmailClassificationSchema>> };
@@ -305,7 +362,7 @@ export class OpenAiParserService implements AiParserService {
       date: input.derived.date,
       endDate: input.derived.endDate,
       dateSource: input.derived.dateSource,
-      notes: input.derived.notes
+      notes: input.derived.notes,
     };
 
     const outputText = await this.createStructuredOutput({
@@ -325,9 +382,11 @@ export class OpenAiParserService implements AiParserService {
         `Company: ${input.companyName}`,
         input.roleTitle ? `Role: ${input.roleTitle}` : null,
         `Derived date/context: ${JSON.stringify(derivedPrompt)}`,
-        `Email: ${JSON.stringify(input.email)}`
-      ].filter(Boolean).join("\n\n"),
-      text: JSON.stringify(input.email)
+        `Email: ${JSON.stringify(input.email)}`,
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+      text: JSON.stringify(input.email),
     });
 
     const aiInteraction = interactionDraftSchema.parse(JSON.parse(outputText));
@@ -335,7 +394,7 @@ export class OpenAiParserService implements AiParserService {
       ...aiInteraction,
       date: aiInteraction.date?.trim() ? aiInteraction.date : input.derived.date,
       endDate: aiInteraction.endDate?.trim() ? aiInteraction.endDate : input.derived.endDate,
-      notes: [input.derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null
+      notes: [input.derived.notes, aiInteraction.notes].filter(Boolean).join("\n\n") || null,
     });
   }
 
@@ -355,9 +414,9 @@ export class OpenAiParserService implements AiParserService {
       } | null;
     }>;
   }): Promise<z.infer<typeof interactionDraftSchema>> {
-    console.log('[AI PARSE] Starting parseMultipleEmailsToInteraction');
-    console.log('[AI PARSE] Company:', input.companyName, 'Role:', input.roleTitle);
-    console.log('[AI PARSE] Number of emails:', input.emails.length);
+    console.log("[AI PARSE] Starting parseMultipleEmailsToInteraction");
+    console.log("[AI PARSE] Company:", input.companyName, "Role:", input.roleTitle);
+    console.log("[AI PARSE] Number of emails:", input.emails.length);
 
     input.emails.forEach((email, i) => {
       console.log(`[AI PARSE] Email ${i + 1}:`, {
@@ -365,17 +424,17 @@ export class OpenAiParserService implements AiParserService {
         from: email.from,
         date: email.date,
         bodyLength: email.body.length,
-        bodyPreview: email.body.slice(0, 150) + '...',
+        bodyPreview: email.body.slice(0, 150) + "...",
         hasCalendar: !!email.calendar,
         calendarStart: email.calendar?.start,
-        calendarEnd: email.calendar?.end
+        calendarEnd: email.calendar?.end,
       });
     });
 
     const emailsText = JSON.stringify(input.emails, null, 2);
 
     const systemPrompt = [
-      `Parse multiple recruitment emails into a single interaction record for ${input.companyName}${input.roleTitle ? ` - ${input.roleTitle}` : ''}.`,
+      `Parse multiple recruitment emails into a single interaction record for ${input.companyName}${input.roleTitle ? ` - ${input.roleTitle}` : ""}.`,
       "",
       "Rules:",
       "- Use the LATEST calendar time if multiple exist",
@@ -385,24 +444,24 @@ export class OpenAiParserService implements AiParserService {
       "- For notes: write 2-4 sentence summary of key info (location, parking, what to bring, who you're meeting)",
       "- Do NOT include metadata like 'Subject:', 'From:', etc. in notes",
       "- For type/stage: prefer more specific over generic",
-      "- Return structured JSON matching the schema"
+      "- Return structured JSON matching the schema",
     ].join("\n");
 
-    console.log('[AI PARSE] System prompt:', systemPrompt);
-    console.log('[AI PARSE] Input text length:', emailsText.length);
+    console.log("[AI PARSE] System prompt:", systemPrompt);
+    console.log("[AI PARSE] Input text length:", emailsText.length);
 
     const outputText = await this.createStructuredOutput({
       name: "parse_multiple_emails",
       schema: interactionDraftJsonSchema,
       systemPrompt,
-      text: emailsText
+      text: emailsText,
     });
 
-    console.log('[AI PARSE] Raw AI output:', outputText);
+    console.log("[AI PARSE] Raw AI output:", outputText);
 
     const parsed = interactionDraftSchema.parse(JSON.parse(outputText));
 
-    console.log('[AI PARSE] Parsed result:', {
+    console.log("[AI PARSE] Parsed result:", {
       date: parsed.date,
       endDate: parsed.endDate,
       type: parsed.type,
@@ -410,7 +469,7 @@ export class OpenAiParserService implements AiParserService {
       status: parsed.status,
       personName: parsed.personName,
       notesLength: parsed.notes?.length,
-      notesPreview: parsed.notes?.slice(0, 200)
+      notesPreview: parsed.notes?.slice(0, 200),
     });
 
     return parsed;
@@ -431,13 +490,13 @@ export class OpenAiParserService implements AiParserService {
           companyName: input.companyName,
           roleTitle: input.roleTitle ?? null,
           opportunityContext: input.opportunityContext ?? null,
-          nowIso: input.nowIso
+          nowIso: input.nowIso,
         }),
         "You are given pasted text, not a structured email object.",
         "Do not change explicit facts into more advanced hiring stages.",
-        "If the date is not explicit, use the fallback date and note that it should be verified."
+        "If the date is not explicit, use the fallback date and note that it should be verified.",
       ].join("\n\n"),
-      text: input.text
+      text: input.text,
     });
 
     return promoteOverdueInteractionStatusForRead(interactionDraftSchema.parse(JSON.parse(outputText)));
@@ -449,29 +508,29 @@ export class OpenAiParserService implements AiParserService {
       method: "POST",
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: this.model,
         messages: [
           {
             role: "system",
-            content: input.systemPrompt
+            content: input.systemPrompt,
           },
           {
             role: "user",
-            content: input.text
-          }
+            content: input.text,
+          },
         ],
         response_format: {
           type: "json_schema",
           json_schema: {
             name: input.name,
             strict: true,
-            schema: input.schema
-          }
-        }
-      })
+            schema: input.schema,
+          },
+        },
+      }),
     });
 
     if (!response.ok) {
@@ -507,11 +566,11 @@ export class OpenAiParserService implements AiParserService {
       date: Date;
     }>;
   }): Promise<SmartMergeFeedbackResult> {
-    console.log('[AI SMART MERGE] Starting smart merge', {
+    console.log("[AI SMART MERGE] Starting smart merge", {
       companyName: input.companyName,
       roleTitle: input.roleTitle,
       existingNotesLength: input.existingNotes?.length ?? 0,
-      feedbackCount: input.feedbackItems.length
+      feedbackCount: input.feedbackItems.length,
     });
 
     const systemPrompt = `You are merging feedback into interview notes for ${input.companyName} - ${input.roleTitle}.
@@ -545,18 +604,22 @@ Return JSON with all three fields.`;
 
     const userPrompt = `
 EXISTING NOTES:
-${input.existingNotes || '(none)'}
+${input.existingNotes || "(none)"}
 
 NEW FEEDBACK:
-${input.feedbackItems.map((f, i) => `
+${input.feedbackItems
+  .map(
+    (f, i) => `
 [${i + 1}] Source: ${f.source}, Date: ${f.date.toISOString()}
 ${f.content}
-`).join('\n')}
+`
+  )
+  .join("\n")}
 
 Merge them into one concise note:`;
 
-    console.log('[AI SMART MERGE] System prompt length:', systemPrompt.length);
-    console.log('[AI SMART MERGE] User prompt length:', userPrompt.length);
+    console.log("[AI SMART MERGE] System prompt length:", systemPrompt.length);
+    console.log("[AI SMART MERGE] User prompt length:", userPrompt.length);
 
     const result = await this.createStructuredOutput({
       name: "smart_merge_feedback",
@@ -568,13 +631,13 @@ Merge them into one concise note:`;
           mergedNotes: { type: "string" },
           suggestedStatus: {
             type: ["string", "null"],
-            enum: ["SCHEDULED", "DONE", "REJECTED", "CANCELLED", "NEEDS_FOLLOW_UP", null]
+            enum: ["SCHEDULED", "DONE", "REJECTED", "CANCELLED", "NEEDS_FOLLOW_UP", null],
           },
-          suggestedOutcome: { type: ["string", "null"] }
-        }
+          suggestedOutcome: { type: ["string", "null"] },
+        },
       },
       systemPrompt,
-      text: userPrompt
+      text: userPrompt,
     });
 
     const parsed = JSON.parse(result) as {
@@ -583,16 +646,16 @@ Merge them into one concise note:`;
       suggestedOutcome?: string | null;
     };
 
-    console.log('[AI SMART MERGE] Result:', {
+    console.log("[AI SMART MERGE] Result:", {
       mergedNotesLength: parsed.mergedNotes?.length ?? 0,
       suggestedStatus: parsed.suggestedStatus,
-      suggestedOutcomeLength: parsed.suggestedOutcome?.length ?? 0
+      suggestedOutcomeLength: parsed.suggestedOutcome?.length ?? 0,
     });
 
     return {
       mergedNotes: parsed.mergedNotes ?? "",
       suggestedStatus: parsed.suggestedStatus ?? null,
-      suggestedOutcome: parsed.suggestedOutcome ?? null
+      suggestedOutcome: parsed.suggestedOutcome ?? null,
     };
   }
 }

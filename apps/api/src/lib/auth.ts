@@ -1,7 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
+import { createRemoteJWKSet, type JWTPayload, jwtVerify } from "jose";
+
+import { getDevModeUserEmail, isDevModeEnabled } from "./dev-mode.js";
 import { logger } from "./logger.js";
-import { isDevModeEnabled, getDevModeUserEmail } from "./dev-mode.js";
 
 declare module "express-serve-static-core" {
   interface Request {
@@ -15,7 +16,10 @@ const bearerPrefix = "Bearer ";
 let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
 
 function normalizeDomain(domain: string) {
-  return domain.trim().replace(/^https?:\/\//, "").replace(/\/$/, "");
+  return domain
+    .trim()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "");
 }
 
 function getAuthConfig() {
@@ -33,7 +37,7 @@ function getAuthConfig() {
     audience,
     allowedEmail,
     issuer: `https://${normalizedDomain}/`,
-    jwksUrl: new URL(`https://${normalizedDomain}/.well-known/jwks.json`)
+    jwksUrl: new URL(`https://${normalizedDomain}/.well-known/jwks.json`),
   };
 }
 
@@ -49,7 +53,9 @@ function getEmail(payload: JWTPayload) {
     return directEmail;
   }
 
-  const namespacedEmail = Object.entries(payload).find(([key, value]) => key.endsWith("/email") && typeof value === "string");
+  const namespacedEmail = Object.entries(payload).find(
+    ([key, value]) => key.endsWith("/email") && typeof value === "string"
+  );
   return typeof namespacedEmail?.[1] === "string" ? namespacedEmail[1] : undefined;
 }
 
@@ -60,7 +66,7 @@ export async function requireAuth(request: Request, response: Response, next: Ne
     logger.info("authentication_dev_mode", {
       devEmail,
       path: request.path,
-      method: request.method
+      method: request.method,
     });
     request.auth = { email: devEmail };
     next();
@@ -95,7 +101,7 @@ export async function requireAuth(request: Request, response: Response, next: Ne
     jwks ??= createRemoteJWKSet(config.jwksUrl);
     const { payload } = await jwtVerify(token, jwks, {
       audience: config.audience,
-      issuer: config.issuer
+      issuer: config.issuer,
     });
     const email = getEmail(payload)?.trim().toLowerCase();
 

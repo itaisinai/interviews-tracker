@@ -61,13 +61,20 @@ export const interactionTextParserSkill = `
 - The user should be able to trust that the draft preserves the important facts they pasted, including the hiring context and next action, without hallucinated polish.
 `.trim();
 
-export function buildInteractionTextParserSystemPrompt(input: { companyName: string; roleTitle?: string | null; opportunityContext?: string | null; nowIso: string }) {
+export function buildInteractionTextParserSystemPrompt(input: {
+  companyName: string;
+  roleTitle?: string | null;
+  opportunityContext?: string | null;
+  nowIso: string;
+}) {
   return [
     "Use the following interaction text parser skill as the primary extraction guide.",
     interactionTextParserSkill,
     `Company: ${input.companyName}`,
     input.roleTitle ? `Role: ${input.roleTitle}` : null,
     input.opportunityContext ? `Opportunity context: ${input.opportunityContext}` : null,
-    `Fallback date: ${input.nowIso}`
-  ].filter(Boolean).join("\n\n");
+    `Fallback date: ${input.nowIso}`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }

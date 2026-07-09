@@ -1,4 +1,5 @@
 import { CheckCircle2, ExternalLink, Search } from "lucide-react";
+
 import type { Interaction } from "../../lib/types";
 
 type GmailSuccessStateProps = {
@@ -7,11 +8,7 @@ type GmailSuccessStateProps = {
   onImportAnother: () => void;
 };
 
-export function GmailSuccessState({
-  interaction,
-  onViewInteraction,
-  onImportAnother
-}: GmailSuccessStateProps) {
+export function GmailSuccessState({ interaction, onViewInteraction, onImportAnother }: GmailSuccessStateProps) {
   return (
     <div className="flex items-center justify-center min-h-[500px]">
       <div className="max-w-md w-full text-center space-y-6">
@@ -24,9 +21,7 @@ export function GmailSuccessState({
 
         {/* Message */}
         <div>
-          <h2 className="text-2xl font-semibold text-neutral-900 mb-2">
-            You're all set!
-          </h2>
+          <h2 className="text-2xl font-semibold text-neutral-900 mb-2">You're all set!</h2>
           <p className="text-sm text-neutral-600">
             The email has been attached and the interaction was {interaction ? "updated" : "created"} successfully.
           </p>

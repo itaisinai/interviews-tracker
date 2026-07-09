@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { ColumnDef } from "@tanstack/react-table";
+
 import { DataTable } from "./data-table";
 
 type Row = { company: string; role: string; status: string };

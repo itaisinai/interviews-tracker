@@ -25,31 +25,24 @@ function isSameLocalDay(value: Date, reference = new Date()) {
   );
 }
 
-export function formatDate(
-  value?: string | null,
-  referenceDate: Date = new Date(),
-) {
+export function formatDate(value?: string | null, referenceDate: Date = new Date()) {
   if (!value) return "-";
   const date = new Date(value);
   const formatted = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   return isSameLocalDay(date, referenceDate) ? `Today · ${formatted}` : formatted;
 }
 
-export function formatDateTime(
-  value?: string | null,
-  referenceDate: Date = new Date(),
-) {
+export function formatDateTime(value?: string | null, referenceDate: Date = new Date()) {
   if (!value) return "-";
   const date = new Date(value);
   const formattedDate = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const formattedTime = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
-  return isSameLocalDay(date, referenceDate) ? `Today · ${formattedDate} · ${formattedTime}` : `${formattedDate} · ${formattedTime}`;
+  return isSameLocalDay(date, referenceDate)
+    ? `Today · ${formattedDate} · ${formattedTime}`
+    : `${formattedDate} · ${formattedTime}`;
 }
 
-export function formatDateTimeRange(
-  startValue?: string | null,
-  endValue?: string | null,
-) {
+export function formatDateTimeRange(startValue?: string | null, endValue?: string | null) {
   if (!startValue) return "-";
 
   const startDate = new Date(startValue);
@@ -90,7 +83,14 @@ export function statusTone(status: JobStatus | string) {
   if (status === "SCHEDULED") return "blue";
   if (status === "CANCELLED") return "muted";
   if (status === "NEEDS_FOLLOW_UP") return "warning";
-  if (status === "PHONE_SCHEDULED" || status === "PHONE_DONE" || status === "TECHNICAL_SCHEDULED" || status === "TECHNICAL_DONE" || status === "OFFER") return "green";
+  if (
+    status === "PHONE_SCHEDULED" ||
+    status === "PHONE_DONE" ||
+    status === "TECHNICAL_SCHEDULED" ||
+    status === "TECHNICAL_DONE" ||
+    status === "OFFER"
+  )
+    return "green";
   if (status === "NOT_RELEVANT") return "muted";
   if (status === "HOME_ASSIGNMENT" || status === "ASSIGNMENT_SUBMITTED" || status === "FINAL_STAGE") return "violet";
   return "blue";

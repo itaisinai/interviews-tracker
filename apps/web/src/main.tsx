@@ -1,12 +1,16 @@
-import { Suspense, lazy } from "react";
+import { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { AuthGate } from "./components/auth-gate";
-import { AppShell } from "./components/app-shell";
-import { NotificationsProvider } from "./components/notifications";
+
+import { QueryClientProvider } from "@tanstack/react-query";
+
 import { PageLoadingState } from "@interviews-tracker/design-system";
+
+import { AppShell } from "./components/app-shell";
+import { AuthGate } from "./components/auth-gate";
+import { NotificationsProvider } from "./components/notifications";
 import { queryClient } from "./lib/query-client";
+
 import "@interviews-tracker/design-system/styles/tokens.css";
 import "./styles.css";
 
@@ -16,57 +20,57 @@ document.documentElement.style.setProperty("--dev-banner-height", "0px");
 const DashboardPage = lazy(() =>
   import("./pages/dashboard-page").then((module) => ({
     default: module.DashboardPage,
-  })),
+  }))
 );
 const OpportunitiesPage = lazy(() =>
   import("./pages/opportunities-page").then((module) => ({
     default: module.OpportunitiesPage,
-  })),
+  }))
 );
 const CompaniesPage = lazy(() =>
   import("./pages/companies-page").then((module) => ({
     default: module.CompaniesPage,
-  })),
+  }))
 );
 const CompanyDetailPage = lazy(() =>
   import("./pages/company-detail-page").then((module) => ({
     default: module.CompanyDetailPage,
-  })),
+  }))
 );
 const OpportunityDetailPage = lazy(() =>
   import("./pages/opportunity-detail-page").then((module) => ({
     default: module.OpportunityDetailPage,
-  })),
+  }))
 );
 const OpportunityFormPage = lazy(() =>
   import("./pages/opportunity-form-page").then((module) => ({
     default: module.OpportunityFormPage,
-  })),
+  }))
 );
 const InteractionsPage = lazy(() =>
   import("./pages/interactions-page").then((module) => ({
     default: module.InteractionsPage,
-  })),
+  }))
 );
 const SettingsPage = lazy(() =>
   import("./pages/settings-page").then((module) => ({
     default: module.SettingsPage,
-  })),
+  }))
 );
 const NotificationsPage = lazy(() =>
   import("./pages/notifications-page").then((module) => ({
     default: module.NotificationsPage,
-  })),
+  }))
 );
 const ParseJobPage = lazy(() =>
   import("./pages/parse-job-page").then((module) => ({
     default: module.ParseJobPage,
-  })),
+  }))
 );
 const SearchPage = lazy(() =>
   import("./pages/search-page").then((module) => ({
     default: module.SearchPage,
-  })),
+  }))
 );
 
 function App() {
@@ -74,9 +78,7 @@ function App() {
     <AuthGate>
       <QueryClientProvider client={queryClient}>
         <NotificationsProvider>
-          <BrowserRouter
-            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-          >
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Suspense fallback={<PageLoadingState title="Loading" description="Loading page..." />}>
               <Routes>
                 <Route element={<AppShell />}>
@@ -86,7 +88,10 @@ function App() {
                   <Route path="/opportunities" element={<OpportunitiesPage />} />
                   <Route path="/opportunities/new" element={<OpportunityFormPage />} />
                   <Route path="/opportunities/:slugOrId" element={<OpportunityDetailPage />} />
-                  <Route path="/opportunities/:slugOrId/edit" element={<Navigate to="/opportunities/:slugOrId" replace />} />
+                  <Route
+                    path="/opportunities/:slugOrId/edit"
+                    element={<Navigate to="/opportunities/:slugOrId" replace />}
+                  />
                   <Route path="/interactions" element={<InteractionsPage />} />
                   <Route path="/search" element={<SearchPage />} />
                   <Route path="/parse" element={<ParseJobPage />} />

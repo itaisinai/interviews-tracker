@@ -3,7 +3,7 @@
  * Part of slug-first architecture - frontend should never see or use DB IDs.
  */
 
-import type { JobOpportunity, Interaction, Person, PersonResearch } from "@prisma/client";
+import type { Interaction, JobOpportunity, Person, PersonResearch } from "@prisma/client";
 
 /**
  * Remove internal ID from Opportunity response
@@ -24,9 +24,7 @@ export function toInteractionPublicDTO<T extends Interaction>(interaction: T) {
 /**
  * Remove internal ID from Person response
  */
-export function toPersonPublicDTO<T extends Person & { research?: PersonResearch | null }>(
-  person: T
-) {
+export function toPersonPublicDTO<T extends Person & { research?: PersonResearch | null }>(person: T) {
   const { id, companyId, research, ...rest } = person;
 
   // Also strip ID from nested research
@@ -34,7 +32,7 @@ export function toPersonPublicDTO<T extends Person & { research?: PersonResearch
 
   return {
     ...rest,
-    research: publicResearch
+    research: publicResearch,
   };
 }
 
@@ -52,7 +50,7 @@ export function toPersonResearchPublicDTO<T extends PersonResearch>(research: T)
 export type PublicDTO<T> = T extends JobOpportunity
   ? Omit<T, "id">
   : T extends Interaction
-  ? Omit<T, "id" | "jobOpportunityId">
-  : T extends Person
-  ? Omit<T, "id" | "jobOpportunityId">
-  : T;
+    ? Omit<T, "id" | "jobOpportunityId">
+    : T extends Person
+      ? Omit<T, "id" | "jobOpportunityId">
+      : T;

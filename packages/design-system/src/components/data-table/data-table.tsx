@@ -1,11 +1,5 @@
+import { type ColumnDef, flexRender, getCoreRowModel, type Table, useReactTable } from "@tanstack/react-table";
 import type { HTMLAttributes, ReactNode } from "react";
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef,
-  type Table,
-} from "@tanstack/react-table";
 
 type DataTableProps<TData> = {
   data: TData[];
@@ -32,15 +26,9 @@ export function DataTable<TData>({
 
   return (
     <div className={className}>
-      <table
-        className={tableClassName ?? "w-full border-collapse text-left text-body-md"}
-      >
+      <table className={tableClassName ?? "w-full border-collapse text-left text-body-md"}>
         <TableHead table={table} />
-        <TableBody
-          table={table}
-          emptyState={emptyState}
-          getRowProps={getRowProps}
-        />
+        <TableBody table={table} emptyState={emptyState} getRowProps={getRowProps} />
       </table>
     </div>
   );
@@ -57,9 +45,7 @@ function TableHead<TData>({ table }: { table: Table<TData> }) {
               className="overflow-hidden border-r border-outline-variant/40 px-6 py-5 text-left font-label-md text-label-md uppercase tracking-wider text-on-surface-variant last:border-r-0"
               style={{ width: header.getSize() }}
             >
-              {header.isPlaceholder
-                ? null
-                : flexRender(header.column.columnDef.header, header.getContext())}
+              {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
             </th>
           ))}
         </tr>
@@ -83,10 +69,7 @@ function TableBody<TData>({
     return (
       <tbody>
         <tr>
-          <td
-            className="px-8 py-10 text-body-md text-on-surface-variant"
-            colSpan={table.getAllLeafColumns().length}
-          >
+          <td className="px-8 py-10 text-body-md text-on-surface-variant" colSpan={table.getAllLeafColumns().length}>
             {emptyState ?? "No rows found."}
           </td>
         </tr>

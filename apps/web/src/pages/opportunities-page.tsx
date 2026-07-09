@@ -1,26 +1,19 @@
-import { DataTable, MaterialIcon } from "@interviews-tracker/design-system";
-import {
-  InlineLoadingState,
-  LoadingButton,
-  PageErrorState,
-  PageLoadingState,
-} from "@interviews-tracker/design-system";
-import { Link, useNavigate } from "react-router-dom";
-import { formatDate, titleize } from "../lib/format";
-import {
-  jobStatusOptions,
-  pipelineTypeOptions,
-  priorityOptions,
-} from "../lib/enum-labels";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-import { Badge } from "../components/badge";
-import type { ColumnDef } from "@tanstack/react-table";
-import type { Opportunity } from "../lib/types";
-import { PageIntro } from "../components/app-shell";
-import { api } from "../lib/api";
 import { createPortal } from "react-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
+
+import { DataTable, MaterialIcon } from "@interviews-tracker/design-system";
+import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+
+import { PageIntro } from "../components/app-shell";
+import { Badge } from "../components/badge";
+import { api } from "../lib/api";
+import { jobStatusOptions, pipelineTypeOptions, priorityOptions } from "../lib/enum-labels";
+import { formatDate, titleize } from "../lib/format";
+import type { Opportunity } from "../lib/types";
 
 function mobileOpportunityState(item: Opportunity) {
   if (item.pipelineType === "ACTIVE_PROCESS")
@@ -47,11 +40,7 @@ function mobileOpportunityState(item: Opportunity) {
       tone: "blue" as const,
       border: "border-outline-variant",
     };
-  if (
-    item.status.includes("PHONE") ||
-    item.status.includes("TECHNICAL") ||
-    item.status === "FINAL_STAGE"
-  ) {
+  if (item.status.includes("PHONE") || item.status.includes("TECHNICAL") || item.status === "FINAL_STAGE") {
     return {
       label: "INTERVIEWING",
       tone: "active" as const,
@@ -133,7 +122,7 @@ export function OpportunitiesPage() {
         setSortDirection("desc");
       }
     },
-    [sort, sortDirection],
+    [sort, sortDirection]
   );
 
   const columns = useMemo<ColumnDef<Opportunity>[]>(
@@ -151,11 +140,7 @@ export function OpportunitiesPage() {
         ),
         size: 220,
         cell: ({ row }) => {
-          return (
-            <span className="block truncate font-medium text-on-background">
-              {row.original.company.name}
-            </span>
-          );
+          return <span className="block truncate font-medium text-on-background">{row.original.company.name}</span>;
         },
       },
       {
@@ -172,9 +157,7 @@ export function OpportunitiesPage() {
         size: 240,
         cell: ({ row }) => (
           <div className="min-w-0">
-            <span className="block truncate font-medium text-on-surface-variant">
-              {row.original.roleTitle}
-            </span>
+            <span className="block truncate font-medium text-on-surface-variant">{row.original.roleTitle}</span>
           </div>
         ),
       },
@@ -233,9 +216,7 @@ export function OpportunitiesPage() {
         header: "Next Step",
         size: 220,
         cell: ({ row }) => (
-          <span className="block truncate text-body-md font-medium text-primary">
-            {row.original.nextStep ?? "-"}
-          </span>
+          <span className="block truncate text-body-md font-medium text-primary">{row.original.nextStep ?? "-"}</span>
         ),
       },
       {
@@ -284,43 +265,23 @@ export function OpportunitiesPage() {
             aria-label={`Delete ${row.original.company.name} / ${row.original.roleTitle}`}
             className="text-error"
             icon="delete"
-            loading={
-              deleteOpportunity.isPending &&
-              deleteOpportunity.variables === row.original.slug
-            }
+            loading={deleteOpportunity.isPending && deleteOpportunity.variables === row.original.slug}
             onClick={() => {
-              if (
-                window.confirm(
-                  `Delete ${row.original.company.name} / ${row.original.roleTitle}?`,
-                )
-              )
+              if (window.confirm(`Delete ${row.original.company.name} / ${row.original.roleTitle}?`))
                 deleteOpportunity.mutate(row.original.slug);
             }}
           />
         ),
       },
     ],
-    [
-      deleteOpportunity,
-      handleSort,
-      sort,
-      sortDirection,
-      status,
-      setStatus,
-      pipeline,
-      setPipeline,
-    ],
+    [deleteOpportunity, handleSort, sort, sortDirection, status, setStatus, pipeline, setPipeline]
   );
 
   if (optionsError) {
     return (
       <PageErrorState
         title="Opportunities"
-        description={
-          optionsErrorValue instanceof Error
-            ? optionsErrorValue.message
-            : "Unable to load filter options."
-        }
+        description={optionsErrorValue instanceof Error ? optionsErrorValue.message : "Unable to load filter options."}
         onRetry={() => void refetchOptions()}
       />
     );
@@ -330,11 +291,7 @@ export function OpportunitiesPage() {
     return (
       <PageErrorState
         title="Opportunities"
-        description={
-          error instanceof Error
-            ? error.message
-            : "Unable to load opportunities."
-        }
+        description={error instanceof Error ? error.message : "Unable to load opportunities."}
         onRetry={() => void refetch()}
       />
     );
@@ -345,10 +302,7 @@ export function OpportunitiesPage() {
       <div className="md:hidden">
         <section className="mb-5 space-y-4">
           <div className="relative">
-            <MaterialIcon
-              name="search"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
-            />
+            <MaterialIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
             <input
               className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-3 pl-10 pr-4 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20"
               placeholder="Search opportunities..."
@@ -368,24 +322,9 @@ export function OpportunitiesPage() {
             >
               All
             </button>
-            <FilterChip
-              label="Status"
-              value={status}
-              onChange={setStatus}
-              options={jobStatusOptions}
-            />
-            <FilterChip
-              label="Pipeline"
-              value={pipeline}
-              onChange={setPipeline}
-              options={pipelineTypeOptions}
-            />
-            <FilterChip
-              label="Priority"
-              value={priority}
-              onChange={setPriority}
-              options={priorityOptions}
-            />
+            <FilterChip label="Status" value={status} onChange={setStatus} options={jobStatusOptions} />
+            <FilterChip label="Pipeline" value={pipeline} onChange={setPipeline} options={pipelineTypeOptions} />
+            <FilterChip label="Priority" value={priority} onChange={setPriority} options={priorityOptions} />
           </div>
         </section>
 
@@ -394,9 +333,7 @@ export function OpportunitiesPage() {
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-xl">
               <div className="flex flex-col items-center gap-3">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary"></div>
-                <p className="font-body-md text-body-md text-on-surface-variant">
-                  Loading opportunities...
-                </p>
+                <p className="font-body-md text-body-md text-on-surface-variant">Loading opportunities...</p>
               </div>
             </div>
           ) : null}
@@ -413,9 +350,7 @@ export function OpportunitiesPage() {
                     <h3 className="truncate font-title-md text-title-md font-bold text-on-background">
                       {item.company.name}
                     </h3>
-                    <p className="truncate font-body-md text-body-md text-on-surface-variant">
-                      {item.roleTitle}
-                    </p>
+                    <p className="truncate font-body-md text-body-md text-on-surface-variant">{item.roleTitle}</p>
                   </div>
                   <span
                     className={`rounded-full px-3 py-1 font-label-md text-label-md ${state.tone === "active" ? "bg-primary/10 text-primary" : state.tone === "violet" ? "bg-tertiary-fixed text-on-tertiary-fixed-variant" : state.tone === "muted" ? "bg-surface-container-high text-on-surface-variant" : "bg-secondary/10 text-secondary"}`}
@@ -425,13 +360,8 @@ export function OpportunitiesPage() {
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-outline-variant/20 pt-4">
                   <div className="flex items-center gap-1 font-label-md text-label-md text-on-surface-variant">
-                    <MaterialIcon
-                      name={item.referrerOrConnection ? "account_tree" : "mail"}
-                      className="text-[18px]"
-                    />
-                    <span className="truncate">
-                      {item.referrerOrConnection ?? "Recent activity"}
-                    </span>
+                    <MaterialIcon name={item.referrerOrConnection ? "account_tree" : "mail"} className="text-[18px]" />
+                    <span className="truncate">{item.referrerOrConnection ?? "Recent activity"}</span>
                   </div>
                   <Badge value={item.priority} />
                   <div className="ml-auto font-label-md text-label-md font-semibold text-primary">
@@ -442,9 +372,7 @@ export function OpportunitiesPage() {
             );
           })}
           {data.length === 0 && !isLoading && !optionsLoading ? (
-            <p className="text-body-md text-on-surface-variant">
-              No opportunities found.
-            </p>
+            <p className="text-body-md text-on-surface-variant">No opportunities found.</p>
           ) : null}
         </section>
 
@@ -488,12 +416,7 @@ export function OpportunitiesPage() {
                 className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
                 onClick={() => setPipeline("")}
               >
-                <span>
-                  pipeline:{" "}
-                  {pipelineTypeOptions
-                    .find((opt) => opt.value === pipeline)
-                    ?.label.toLowerCase()}
-                </span>
+                <span>pipeline: {pipelineTypeOptions.find((opt) => opt.value === pipeline)?.label.toLowerCase()}</span>
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
             ) : null}
@@ -502,12 +425,7 @@ export function OpportunitiesPage() {
                 className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
                 onClick={() => setStatus("")}
               >
-                <span>
-                  stage:{" "}
-                  {jobStatusOptions
-                    .find((opt) => opt.value === status)
-                    ?.label.toLowerCase()}
-                </span>
+                <span>stage: {jobStatusOptions.find((opt) => opt.value === status)?.label.toLowerCase()}</span>
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
             ) : null}
@@ -516,12 +434,7 @@ export function OpportunitiesPage() {
                 className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
                 onClick={() => setPriority("")}
               >
-                <span>
-                  priority:{" "}
-                  {priorityOptions
-                    .find((opt) => opt.value === priority)
-                    ?.label.toLowerCase()}
-                </span>
+                <span>priority: {priorityOptions.find((opt) => opt.value === priority)?.label.toLowerCase()}</span>
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
             ) : null}
@@ -530,17 +443,12 @@ export function OpportunitiesPage() {
                 className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
                 onClick={() => setDomainId("")}
               >
-                <span>
-                  company:{" "}
-                  {options?.domains.find((opt) => opt.id === domainId)?.label}
-                </span>
+                <span>company: {options?.domains.find((opt) => opt.id === domainId)?.label}</span>
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
             ) : null}
             {!pipeline && !status && !priority && !domainId ? (
-              <span className="text-[13px] text-on-surface-variant">
-                No filters applied
-              </span>
+              <span className="text-[13px] text-on-surface-variant">No filters applied</span>
             ) : null}
           </div>
 
@@ -571,9 +479,7 @@ export function OpportunitiesPage() {
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm">
               <div className="flex flex-col items-center gap-3">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary"></div>
-                <p className="font-body-md text-body-md text-on-surface-variant">
-                  Loading opportunities...
-                </p>
+                <p className="font-body-md text-body-md text-on-surface-variant">Loading opportunities...</p>
               </div>
             </div>
           ) : null}
@@ -677,13 +583,7 @@ function ColumnHeader({
           title={`Sort by ${label}`}
         >
           <MaterialIcon
-            name={
-              isSorted
-                ? sortDirection === "asc"
-                  ? "arrow_upward"
-                  : "arrow_downward"
-                : "unfold_more"
-            }
+            name={isSorted ? (sortDirection === "asc" ? "arrow_upward" : "arrow_downward") : "unfold_more"}
             className={`text-[18px] ${isSorted ? "text-primary" : "text-on-surface-variant opacity-0 group-hover:opacity-100"}`}
           />
         </button>
@@ -725,17 +625,8 @@ function ColumnHeader({
                     setShowFilter(false);
                   }}
                 >
-                  <span
-                    className={!filterValue ? "font-medium text-primary" : ""}
-                  >
-                    All
-                  </span>
-                  {!filterValue && (
-                    <MaterialIcon
-                      name="check"
-                      className="text-[16px] text-primary"
-                    />
-                  )}
+                  <span className={!filterValue ? "font-medium text-primary" : ""}>All</span>
+                  {!filterValue && <MaterialIcon name="check" className="text-[16px] text-primary" />}
                 </button>
                 {filterOptions.map((option) => (
                   <button
@@ -746,32 +637,19 @@ function ColumnHeader({
                       setShowFilter(false);
                     }}
                   >
-                    <span
-                      className={
-                        filterValue === option.value
-                          ? "font-medium text-primary"
-                          : ""
-                      }
-                    >
+                    <span className={filterValue === option.value ? "font-medium text-primary" : ""}>
                       {option.label}
                     </span>
-                    {filterValue === option.value && (
-                      <MaterialIcon
-                        name="check"
-                        className="text-[16px] text-primary"
-                      />
-                    )}
+                    {filterValue === option.value && <MaterialIcon name="check" className="text-[16px] text-primary" />}
                   </button>
                 ))}
               </div>,
-              document.body,
+              document.body
             )}
         </>
       ) : null}
 
-      {hasFilter && !showFilter ? (
-        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
-      ) : null}
+      {hasFilter && !showFilter ? <div className="h-1.5 w-1.5 rounded-full bg-primary"></div> : null}
     </div>
   );
 }
@@ -787,9 +665,7 @@ function FilterChip({
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
 }) {
-  const displayValue = value
-    ? options.find((opt) => opt.value === value)?.label
-    : "All";
+  const displayValue = value ? options.find((opt) => opt.value === value)?.label : "All";
 
   return (
     <div className="relative min-w-[140px] flex-1 md:min-w-0">

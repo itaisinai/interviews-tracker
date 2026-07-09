@@ -8,13 +8,7 @@ export type CompactInfoRowProps = {
   className?: string;
 };
 
-export function CompactInfoRow({
-  label,
-  value,
-  icon,
-  href,
-  className = "",
-}: CompactInfoRowProps) {
+export function CompactInfoRow({ label, value, icon, href, className = "" }: CompactInfoRowProps) {
   const content = (
     <>
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-neutral-500">

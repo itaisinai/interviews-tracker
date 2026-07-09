@@ -1,7 +1,7 @@
-import type { GmailAttachmentResponse, GmailMessageResponse } from "../gmail/gmail-message-utils.js";
-import { deriveInteractionFromStructuredEmail, parseStructuredGmailEmail } from "../gmail/gmail-message-parser.js";
 import { fetchJson } from "../gmail/gmail-http.js";
 import type { GmailDerivedInteraction } from "../gmail/gmail-message-parser.js";
+import { deriveInteractionFromStructuredEmail, parseStructuredGmailEmail } from "../gmail/gmail-message-parser.js";
+import type { GmailAttachmentResponse, GmailMessageResponse } from "../gmail/gmail-message-utils.js";
 
 type GmailAccess = {
   accessToken: string;
@@ -35,7 +35,7 @@ export async function fetchAndParseGmailMessage(
         return "";
       }
       return Buffer.from(attachment.data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
-    }
+    },
   });
 
   const derived = deriveInteractionFromStructuredEmail(structuredEmail);
@@ -53,7 +53,7 @@ export function createExtractedData(parsed: ParsedEmailResult) {
       subject: parsed.structured.subject,
       from: parsed.structured.fromRaw,
       plainText: parsed.structured.plainText,
-      calendar: parsed.structured.calendar
-    }
+      calendar: parsed.structured.calendar,
+    },
   };
 }

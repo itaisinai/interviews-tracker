@@ -1,19 +1,20 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+
 import { useQueryClient } from "@tanstack/react-query";
+
+import { MaterialIcon } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
-import type {
-  CompanyResearchExistingData,
-  CompanyResearchResult,
-} from "../../lib/types";
 import {
   companyResearchRunMeta,
-  companyResearchStepMessages,
   type CompanyResearchRunState,
+  companyResearchStepMessages,
 } from "../../lib/company-research";
+import type { CompanyResearchExistingData, CompanyResearchResult } from "../../lib/types";
+
+import { Field, splitListInput } from "./company-research-fields";
 import { CompanyResearchProgress } from "./company-research-progress";
 import { CompanyResearchReview } from "./company-research-review";
-import { Field, splitListInput } from "./company-research-fields";
-import { MaterialIcon } from "@interviews-tracker/design-system";
 
 type CompanyResearchPanelProps = {
   companyName: string;
@@ -66,16 +67,12 @@ export function CompanyResearchPanel({
   const [editingField, setEditingField] = useState<string | null>(null);
   const activeRunIdRef = useRef(0);
 
-  const isRunning =
-    runState === "searching_web" ||
-    runState === "reading_sources" ||
-    runState === "extracting_facts";
+  const isRunning = runState === "searching_web" || runState === "reading_sources" || runState === "extracting_facts";
   const currentStep = useMemo(
     () =>
-      companyResearchStepMessages[
-        Math.min(stageIndex, companyResearchStepMessages.length - 1)
-      ] ?? companyResearchStepMessages[0],
-    [stageIndex],
+      companyResearchStepMessages[Math.min(stageIndex, companyResearchStepMessages.length - 1)] ??
+      companyResearchStepMessages[0],
+    [stageIndex]
   );
   const actionLabel = research ? "Research again" : "Research company";
 
@@ -162,11 +159,7 @@ export function CompanyResearchPanel({
       if (activeRunIdRef.current !== runId) {
         return;
       }
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Company research failed",
-      );
+      setError(caughtError instanceof Error ? caughtError.message : "Company research failed");
       setRunState("failed");
     }
   }
@@ -187,7 +180,7 @@ export function CompanyResearchPanel({
       });
 
       setSaveMessage(
-        `Saved to ${response.updatedOpportunities} opportunity${response.updatedOpportunities === 1 ? "" : " records"}.`,
+        `Saved to ${response.updatedOpportunities} opportunity${response.updatedOpportunities === 1 ? "" : " records"}.`
       );
       void queryClient.invalidateQueries({
         queryKey: ["company", companyName],
@@ -201,11 +194,7 @@ export function CompanyResearchPanel({
       }
       onSaved?.(research);
     } catch (caughtError) {
-      setSaveError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Unable to save research",
-      );
+      setSaveError(caughtError instanceof Error ? caughtError.message : "Unable to save research");
     } finally {
       setIsSaving(false);
     }
@@ -222,22 +211,12 @@ export function CompanyResearchPanel({
     setProgress(0);
   }
 
-  function updateResearchField(
-    field: EditableResearchField,
-    value: string | null,
-  ) {
-    setResearch((current) =>
-      current ? { ...current, [field]: value } : current,
-    );
+  function updateResearchField(field: EditableResearchField, value: string | null) {
+    setResearch((current) => (current ? { ...current, [field]: value } : current));
   }
 
-  function updateResearchListField(
-    field: EditableResearchListField,
-    value: string,
-  ) {
-    setResearch((current) =>
-      current ? { ...current, [field]: splitListInput(value) } : current,
-    );
+  function updateResearchListField(field: EditableResearchListField, value: string) {
+    setResearch((current) => (current ? { ...current, [field]: splitListInput(value) } : current));
   }
 
   function updateResearchRoundsCount(value: string | null) {
@@ -263,12 +242,8 @@ export function CompanyResearchPanel({
               <MaterialIcon name="travel_explore" />
             </div>
             <div>
-              <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-                Company research
-              </p>
-              <h3 className="font-title-md text-title-md font-bold">
-                {companyName}
-              </h3>
+              <p className="font-label-md text-label-md uppercase text-on-surface-variant">Company research</p>
+              <h3 className="font-title-md text-title-md font-bold">{companyName}</h3>
             </div>
           </div>
           <p className="mt-3 max-w-3xl text-body-md text-on-surface-variant">
@@ -288,20 +263,12 @@ export function CompanyResearchPanel({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            className="btn btn-primary"
-            onClick={() => void runResearch()}
-            disabled={isRunning || isSaving}
-          >
+          <button className="btn btn-primary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
             <MaterialIcon name="travel_explore" />
             {isRunning ? "Researching..." : actionLabel}
           </button>
           {research ? (
-            <button
-              className="btn btn-secondary"
-              onClick={() => void runResearch()}
-              disabled={isRunning || isSaving}
-            >
+            <button className="btn btn-secondary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
               <MaterialIcon name="refresh" />
               Research again
             </button>

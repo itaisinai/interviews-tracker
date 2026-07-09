@@ -1,4 +1,5 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
+
 import { interactionStatusOptions, interactionTypeOptions } from "../../lib/enum-labels";
 import type { InteractionDraft } from "../../lib/types";
 
@@ -17,7 +18,9 @@ export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFiel
             type="datetime-local"
             aria-label="Start date and time"
             value={toDatetimeLocalValue(draft.date)}
-            onChange={(event) => setDraft({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })}
+            onChange={(event) =>
+              setDraft({ ...draft, date: event.target.value ? new Date(event.target.value).toISOString() : draft.date })
+            }
           />
           <span className="text-body-md text-on-surface-variant">-</span>
           <input
@@ -26,12 +29,18 @@ export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFiel
             aria-label="End date and time"
             value={toDatetimeLocalValue(draft.endDate ?? "")}
             min={toDatetimeLocalValue(draft.date)}
-            onChange={(event) => setDraft({ ...draft, endDate: event.target.value ? new Date(event.target.value).toISOString() : null })}
+            onChange={(event) =>
+              setDraft({ ...draft, endDate: event.target.value ? new Date(event.target.value).toISOString() : null })
+            }
           />
         </div>
       </Field>
       <Field label="Type" help="What happened?">
-        <select className="input" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as InteractionDraft["type"] })}>
+        <select
+          className="input"
+          value={draft.type}
+          onChange={(event) => setDraft({ ...draft, type: event.target.value as InteractionDraft["type"] })}
+        >
           {interactionTypeOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -40,10 +49,18 @@ export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFiel
         </select>
       </Field>
       <Field label="Stage" help="Hiring stage, if relevant.">
-        <input className="input" value={draft.stage ?? ""} onChange={(event) => setDraft({ ...draft, stage: event.target.value || null })} />
+        <input
+          className="input"
+          value={draft.stage ?? ""}
+          onChange={(event) => setDraft({ ...draft, stage: event.target.value || null })}
+        />
       </Field>
       <Field label="Status" help="Scheduling or state of this interaction.">
-        <select className="input" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as InteractionDraft["status"] })}>
+        <select
+          className="input"
+          value={draft.status}
+          onChange={(event) => setDraft({ ...draft, status: event.target.value as InteractionDraft["status"] })}
+        >
           {interactionStatusOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -52,13 +69,25 @@ export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFiel
         </select>
       </Field>
       <Field label="Person name" help="Who this interaction is with.">
-        <input className="input" value={draft.personName ?? ""} onChange={(event) => setDraft({ ...draft, personName: event.target.value || null })} />
+        <input
+          className="input"
+          value={draft.personName ?? ""}
+          onChange={(event) => setDraft({ ...draft, personName: event.target.value || null })}
+        />
       </Field>
       <Field label="Person role" help="Their role or title, if known.">
-        <input className="input" value={draft.personRole ?? ""} onChange={(event) => setDraft({ ...draft, personRole: event.target.value || null })} />
+        <input
+          className="input"
+          value={draft.personRole ?? ""}
+          onChange={(event) => setDraft({ ...draft, personRole: event.target.value || null })}
+        />
       </Field>
       <Field label="Agenda" help="What was discussed or planned.">
-        <textarea className="input min-h-24" value={draft.agenda ?? ""} onChange={(event) => setDraft({ ...draft, agenda: event.target.value || null })} />
+        <textarea
+          className="input min-h-24"
+          value={draft.agenda ?? ""}
+          onChange={(event) => setDraft({ ...draft, agenda: event.target.value || null })}
+        />
       </Field>
       <Field label="Meeting link" help="Google Meet or Zoom link, if available.">
         <input
@@ -70,13 +99,25 @@ export function InteractionDraftFields({ draft, setDraft }: InteractionDraftFiel
         />
       </Field>
       <Field label="Notes" help="Extra context or raw details worth keeping.">
-        <textarea className="input min-h-24" value={draft.notes ?? ""} onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })} />
+        <textarea
+          className="input min-h-24"
+          value={draft.notes ?? ""}
+          onChange={(event) => setDraft({ ...draft, notes: event.target.value || null })}
+        />
       </Field>
       <Field label="Outcome" help="What came out of this interaction.">
-        <textarea className="input min-h-24" value={draft.outcome ?? ""} onChange={(event) => setDraft({ ...draft, outcome: event.target.value || null })} />
+        <textarea
+          className="input min-h-24"
+          value={draft.outcome ?? ""}
+          onChange={(event) => setDraft({ ...draft, outcome: event.target.value || null })}
+        />
       </Field>
       <Field label="Follow-up" help="What should happen next.">
-        <textarea className="input min-h-24" value={draft.followUp ?? ""} onChange={(event) => setDraft({ ...draft, followUp: event.target.value || null })} />
+        <textarea
+          className="input min-h-24"
+          value={draft.followUp ?? ""}
+          onChange={(event) => setDraft({ ...draft, followUp: event.target.value || null })}
+        />
       </Field>
     </div>
   );

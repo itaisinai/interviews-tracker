@@ -1,4 +1,5 @@
-import { Router, type Request } from "express";
+import { type Request, Router } from "express";
+
 import { asyncHandler } from "../lib/http.js";
 import { LinkedinJobImportService } from "../services/job-imports/linkedin-job-import-service.js";
 
@@ -18,7 +19,13 @@ export function resetLinkedinJobImportServiceFactoryForTests() {
 
 export const jobImportsRouter = Router();
 
-jobImportsRouter.post("/linkedin", asyncHandler(async (request, response) => {
-  const result = await linkedinJobImportServiceFactory().importFromLinkedin(request.body, (request as AuthenticatedRequest).auth.email);
-  response.status(result.created ? 201 : 200).json(result);
-}));
+jobImportsRouter.post(
+  "/linkedin",
+  asyncHandler(async (request, response) => {
+    const result = await linkedinJobImportServiceFactory().importFromLinkedin(
+      request.body,
+      (request as AuthenticatedRequest).auth.email
+    );
+    response.status(result.created ? 201 : 200).json(result);
+  })
+);

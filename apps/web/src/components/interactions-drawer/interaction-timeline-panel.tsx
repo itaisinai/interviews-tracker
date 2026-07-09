@@ -24,16 +24,11 @@ export function InteractionTimelinePanel({
     <section className="rounded-2xl border border-outline-variant bg-white p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-            Opportunity timeline
-          </p>
-          <h4 className="truncate font-title-md text-title-md font-bold">
-            {companyName}
-          </h4>
+          <p className="font-label-md text-label-md uppercase text-on-surface-variant">Opportunity timeline</p>
+          <h4 className="truncate font-title-md text-title-md font-bold">{companyName}</h4>
         </div>
         <span className="rounded-full bg-surface-container-low px-3 py-1 font-label-md text-label-md text-on-surface-variant">
-          {interactions.length}{" "}
-          {interactions.length === 1 ? "interaction" : "interactions"}
+          {interactions.length} {interactions.length === 1 ? "interaction" : "interactions"}
         </span>
       </div>
 

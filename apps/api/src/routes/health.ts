@@ -4,7 +4,8 @@
  */
 
 import { Router } from "express";
-import { getBasicHealth, getDeepHealth, checkReadiness } from "../services/health/health-service.js";
+
+import { checkReadiness, getBasicHealth, getDeepHealth } from "../services/health/health-service.js";
 
 export const healthRouter = Router();
 

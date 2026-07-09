@@ -1,5 +1,6 @@
-import { randomUUID } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
+import { randomUUID } from "node:crypto";
+
 import { logger } from "./logger.js";
 
 function requestIdFromHeaders(request: Request) {
@@ -20,13 +21,17 @@ export function apiRequestLogger(request: Request, response: Response, next: Nex
   response.on("finish", () => {
     const durationMs = Number((process.hrtime.bigint() - startedAt) / 1_000_000n);
 
-    logger.info("api_request_completed", {
-      method: request.method,
-      route: routeWithoutQuery(request),
-      statusCode: response.statusCode,
-      durationMs,
-      requestId
-    }, { requestId, route: routeWithoutQuery(request) });
+    logger.info(
+      "api_request_completed",
+      {
+        method: request.method,
+        route: routeWithoutQuery(request),
+        statusCode: response.statusCode,
+        durationMs,
+        requestId,
+      },
+      { requestId, route: routeWithoutQuery(request) }
+    );
   });
 
   next();

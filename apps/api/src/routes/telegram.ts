@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { asyncHandler } from "../lib/http.js";
+
 import { telegramMessageHandler } from "../controllers/telegram-controller.js";
+import { asyncHandler } from "../lib/http.js";
 import { logger } from "../lib/logger.js";
 
 export const telegramRouter = Router();
@@ -11,7 +12,7 @@ telegramRouter.use((req, _res, next) => {
     method: req.method,
     path: req.path,
     url: req.url,
-    originalUrl: req.originalUrl
+    originalUrl: req.originalUrl,
   });
   next();
 });

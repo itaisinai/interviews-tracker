@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { ExaProvider } from "./exa-provider.js";
 
 const linkedinUrl = "https://www.linkedin.com/in/idobenzaken/";
@@ -7,7 +8,8 @@ const linkedinUrl = "https://www.linkedin.com/in/idobenzaken/";
 test("parseLinkedInContent uses the present experience as the current company", () => {
   const provider = new ExaProvider("test-key");
 
-  const result = provider.parseLinkedInContent(`
+  const result = provider.parseLinkedInContent(
+    `
 # Ido Ben Zaken
 Team Lead at Element Security
 
@@ -23,7 +25,10 @@ Tel Aviv District, Israel
 #### Full-stack Developer
 Oct 2022 - Aug 2024 (1 yr 11 mos)
 Tel Aviv, Israel
-`, "Ido Ben Zaken", linkedinUrl);
+`,
+    "Ido Ben Zaken",
+    linkedinUrl
+  );
 
   assert.equal(result.person.company, "Unframe");
   assert.equal(result.person.title, "Software Engineering Team Lead");
@@ -32,7 +37,8 @@ Tel Aviv, Israel
 test("parseLinkedInContent handles plain LinkedIn experience text without markdown headings", () => {
   const provider = new ExaProvider("test-key");
 
-  const result = provider.parseLinkedInContent(`
+  const result = provider.parseLinkedInContent(
+    `
 Ido Ben Zaken
 Team Lead at Element Security
 
@@ -51,7 +57,10 @@ Tel Aviv District, Israel
 Full-stack Developer
 Oct 2022 - Aug 2024 · 1 yr 11 mos
 Tel Aviv, Israel
-`, "Ido Ben Zaken", linkedinUrl);
+`,
+    "Ido Ben Zaken",
+    linkedinUrl
+  );
 
   assert.equal(result.person.company, "Unframe");
   assert.equal(result.person.title, "Software Engineering Team Lead");

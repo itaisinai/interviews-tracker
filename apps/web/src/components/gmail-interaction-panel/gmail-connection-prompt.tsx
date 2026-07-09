@@ -18,7 +18,7 @@ export function GmailConnectionPrompt({
   shouldReconnect,
   error,
   needsReconnect,
-  onConnect
+  onConnect,
 }: GmailConnectionPromptProps) {
   return (
     <section className="rounded-xl border border-neutral-200 bg-white p-8">
@@ -28,9 +28,7 @@ export function GmailConnectionPrompt({
             <MaterialIcon name="mail" className="text-[24px]" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-1">
-              Connect Gmail
-            </h3>
+            <h3 className="text-lg font-semibold text-neutral-900 mb-1">Connect Gmail</h3>
             <p className="text-sm text-neutral-600">
               Import interactions directly from your Gmail calendar invites and emails.
             </p>

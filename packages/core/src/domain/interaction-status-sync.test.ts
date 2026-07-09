@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+
 import { deriveOpportunityStatusFromInteractions } from "./interaction-status-sync.js";
 
 test("derives rejected opportunity status from rejected interaction", () => {
@@ -9,8 +10,8 @@ test("derives rejected opportunity status from rejected interaction", () => {
       status: "REJECTED",
       date: "2026-06-08T08:30:00.000Z",
       stage: "Interview",
-      outcome: "Rejected after technical round"
-    }
+      outcome: "Rejected after technical round",
+    },
   ]);
 
   assert.equal(status, "REJECTED");
@@ -23,8 +24,8 @@ test("derives phone done opportunity status from waiting-for-response interview"
       status: "NEEDS_FOLLOW_UP",
       date: "2026-06-08T08:30:00.000Z",
       stage: "Interview",
-      followUp: "Waiting for response"
-    }
+      followUp: "Waiting for response",
+    },
   ]);
 
   assert.equal(status, "PHONE_DONE");
@@ -36,8 +37,8 @@ test("derives phone done opportunity status from legacy phone interview type", (
       type: "Phone Interview",
       status: "SCHEDULED",
       date: "2026-06-08T08:30:00.000Z",
-      stage: "Interview"
-    }
+      stage: "Interview",
+    },
   ]);
 
   assert.equal(status, "PHONE_SCHEDULED");

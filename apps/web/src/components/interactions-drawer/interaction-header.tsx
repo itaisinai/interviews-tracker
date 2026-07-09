@@ -1,4 +1,5 @@
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
 import { Badge } from "../badge";
 
 type InteractionHeaderProps = {
@@ -24,7 +25,7 @@ export function InteractionHeader({
   endDate,
   durationLabel,
   type,
-  statusBadge
+  statusBadge,
 }: InteractionHeaderProps) {
   return (
     <div className="flex items-start justify-between gap-6 mb-8">
@@ -34,9 +35,7 @@ export function InteractionHeader({
           <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-600">
             <MaterialIcon name="calendar_month" className="text-[20px]" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-            {stage || typeLabel}
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">{stage || typeLabel}</h1>
         </div>
 
         {/* Date and Time */}

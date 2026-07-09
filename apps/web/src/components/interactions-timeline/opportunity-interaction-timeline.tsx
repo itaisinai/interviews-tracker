@@ -1,20 +1,18 @@
-import { ArrowUpRight, ChevronDown, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
-
-import { Badge } from "../badge";
-import type { Interaction } from "../../lib/types";
 import { Link } from "react-router-dom";
-import { Timeline } from "../timeline";
+
+import { ArrowUpRight, ChevronDown, ChevronUp } from "lucide-react";
+
 import { getOpportunityProcessBadgeMeta } from "../../lib/interaction-status";
+import type { Interaction } from "../../lib/types";
+import { Badge } from "../badge";
+import { Timeline } from "../timeline";
 
 type OpportunityInteractionTimelineProps = {
   companyName: string;
   roleTitle: string;
   interactions: Interaction[];
-  opportunity?: Pick<
-    any,
-    "slug" | "roleTitle" | "status" | "priority" | "pipelineType"
-  > | null;
+  opportunity?: Pick<any, "slug" | "roleTitle" | "status" | "priority" | "pipelineType"> | null;
   selectedInteractionSlug: string | null;
   onSelectInteraction: (interactionSlug: string) => void;
   onDeleteInteraction?: (interactionSlug: string) => void;
@@ -54,9 +52,9 @@ export function OpportunityInteractionTimeline({
     () =>
       getOpportunityProcessBadgeMeta(
         opportunity ?? orderedInteractions[0]?.jobOpportunity ?? null,
-        orderedInteractions,
+        orderedInteractions
       ),
-    [opportunity, orderedInteractions],
+    [opportunity, orderedInteractions]
   );
   const latestInteraction = orderedInteractions.at(-1) ?? null;
   const nextStepText =
@@ -78,11 +76,7 @@ export function OpportunityInteractionTimeline({
           <div
             role={latestInteraction ? "button" : undefined}
             tabIndex={latestInteraction ? 0 : undefined}
-            aria-label={
-              latestInteraction
-                ? `Open ${companyName} ${roleTitle} interaction drawer`
-                : undefined
-            }
+            aria-label={latestInteraction ? `Open ${companyName} ${roleTitle} interaction drawer` : undefined}
             className={`min-w-0 flex-1 rounded-xl px-2 py-1 transition-colors ${
               latestInteraction ? "cursor-pointer" : ""
             }`}
@@ -99,18 +93,11 @@ export function OpportunityInteractionTimeline({
             }}
           >
             <div className="flex min-h-9 flex-wrap items-center gap-3">
-              <h3 className="truncate font-title-md text-title-md font-bold text-on-background">
-                {companyName}
-              </h3>
+              <h3 className="truncate font-title-md text-title-md font-bold text-on-background">{companyName}</h3>
               <span className="text-body-md text-on-surface-variant">·</span>
-              <p className="truncate text-body-md text-on-surface-variant">
-                {roleTitle}
-              </p>
+              <p className="truncate text-body-md text-on-surface-variant">{roleTitle}</p>
               {opportunityBadge ? (
-                <Badge
-                  value={opportunityBadge.label}
-                  tone={opportunityBadge.tone}
-                >
+                <Badge value={opportunityBadge.label} tone={opportunityBadge.tone}>
                   {opportunityBadge.label}
                 </Badge>
               ) : null}
@@ -120,14 +107,11 @@ export function OpportunityInteractionTimeline({
                 collapsed ? "" : "invisible"
               }`}
             >
-              {nextStepText
-                ? `Next step: ${nextStepText}`
-                : "Next step: Review"}
+              {nextStepText ? `Next step: ${nextStepText}` : "Next step: Review"}
             </p>
           </div>
           <div className="mt-1 self-start rounded-full bg-surface-container-low px-3 py-1 font-label-md text-label-md text-on-surface-variant">
-            {orderedInteractions.length}{" "}
-            {orderedInteractions.length === 1 ? "interaction" : "interactions"}
+            {orderedInteractions.length} {orderedInteractions.length === 1 ? "interaction" : "interactions"}
           </div>
           {opportunityHref ? (
             <Link
@@ -150,11 +134,7 @@ export function OpportunityInteractionTimeline({
               setCollapsed((value) => !value);
             }}
           >
-            {collapsed ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
+            {collapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
         </div>
       </div>

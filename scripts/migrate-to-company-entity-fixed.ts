@@ -112,7 +112,8 @@ async function main() {
       if (!existing.productDescription && opp.productDescription) existing.productDescription = opp.productDescription;
       if (!existing.customersTraction && opp.customersTraction) existing.customersTraction = opp.customersTraction;
       if (!existing.techStack && opp.techStack) existing.techStack = opp.techStack;
-      if (!existing.backendFrontendSplit && opp.backendFrontendSplit) existing.backendFrontendSplit = opp.backendFrontendSplit;
+      if (!existing.backendFrontendSplit && opp.backendFrontendSplit)
+        existing.backendFrontendSplit = opp.backendFrontendSplit;
     }
   }
 
@@ -221,8 +222,10 @@ async function main() {
   console.log("✅ Step 5: Verifying migration...");
 
   const companiesCount: any[] = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "Company"`;
-  const oppsWithCompany: any[] = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "JobOpportunity" WHERE "companyId" IS NOT NULL`;
-  const oppsWithoutCompany: any[] = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "JobOpportunity" WHERE "companyId" IS NULL`;
+  const oppsWithCompany: any[] =
+    await prisma.$queryRaw`SELECT COUNT(*) as count FROM "JobOpportunity" WHERE "companyId" IS NOT NULL`;
+  const oppsWithoutCompany: any[] =
+    await prisma.$queryRaw`SELECT COUNT(*) as count FROM "JobOpportunity" WHERE "companyId" IS NULL`;
 
   console.log(`   Companies created: ${companiesCount[0].count}`);
   console.log(`   Opportunities linked: ${oppsWithCompany[0].count}`);

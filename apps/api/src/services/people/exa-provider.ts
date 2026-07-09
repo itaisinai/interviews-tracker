@@ -25,7 +25,6 @@ type ExaContentsResponse = {
   }>;
 };
 
-
 function stripMarkdownLink(value: string): string {
   return value.match(/^\[([^\]]+)\]/)?.[1] || value;
 }
@@ -41,7 +40,9 @@ function positionIsCurrent(dates?: string): boolean {
 function parseExperienceDateLine(line: string): { dates: string; duration?: string } | null {
   // Updated regex to handle location suffix (e.g., "in Tel Aviv District, Israel")
   // Removed trailing $ and made duration capture more flexible
-  const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{4})\s*[-–—]\s*([A-Z][a-z]{2}\s+\d{4}|Present)(?:\s*[·•]?\s*\(([^)]+)\))?/);
+  const dateMatch = line.match(
+    /([A-Z][a-z]{2}\s+\d{4})\s*[-–—]\s*([A-Z][a-z]{2}\s+\d{4}|Present)(?:\s*[·•]?\s*\(([^)]+)\))?/
+  );
 
   if (!dateMatch) {
     return null;
@@ -49,7 +50,7 @@ function parseExperienceDateLine(line: string): { dates: string; duration?: stri
 
   return {
     dates: `${dateMatch[1]} - ${dateMatch[2]}`,
-    duration: dateMatch[3]?.trim()
+    duration: dateMatch[3]?.trim(),
   };
 }
 
@@ -57,14 +58,24 @@ function parseCompanyLine(line: string): string {
   return stripMarkdownLink(line).split(/[·•]/)[0]?.trim() || "";
 }
 
-function currentCompanyFromExperience(experience: NonNullable<PersonResearchResult["research"]["experience"]>): string | undefined {
-  const currentExperience = experience.find((exp) => exp.positions.some((position) => positionIsCurrent(position.dates)));
+function currentCompanyFromExperience(
+  experience: NonNullable<PersonResearchResult["research"]["experience"]>
+): string | undefined {
+  const currentExperience = experience.find((exp) =>
+    exp.positions.some((position) => positionIsCurrent(position.dates))
+  );
   return currentExperience?.company || experience[0]?.company;
 }
 
-function currentTitleFromExperience(experience: NonNullable<PersonResearchResult["research"]["experience"]>): string | undefined {
-  const currentExperience = experience.find((exp) => exp.positions.some((position) => positionIsCurrent(position.dates))) || experience[0];
-  return currentExperience?.positions.find((position) => positionIsCurrent(position.dates))?.title || currentExperience?.positions[0]?.title;
+function currentTitleFromExperience(
+  experience: NonNullable<PersonResearchResult["research"]["experience"]>
+): string | undefined {
+  const currentExperience =
+    experience.find((exp) => exp.positions.some((position) => positionIsCurrent(position.dates))) || experience[0];
+  return (
+    currentExperience?.positions.find((position) => positionIsCurrent(position.dates))?.title ||
+    currentExperience?.positions[0]?.title
+  );
 }
 
 export class PersonResearchProviderError extends Error {
@@ -87,18 +98,16 @@ export class ExaProvider {
 
   async searchLinkedInProfile(name: string, companyName?: string): Promise<{ url: string; text: string } | null> {
     // Use Exa's people category with text content in a single call
-    const query = companyName
-      ? `${name} from ${companyName}`
-      : name;
+    const query = companyName ? `${name} from ${companyName}` : name;
 
-    console.log('[EXA] Query:', query);
+    console.log("[EXA] Query:", query);
 
     try {
       const response = await fetch(`${this.baseUrl}/search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": this.apiKey
+          "x-api-key": this.apiKey,
         },
         body: JSON.stringify({
           query,
@@ -109,10 +118,10 @@ export class ExaProvider {
           contents: {
             text: {
               includeHtmlTags: false,
-              maxCharacters: 20000
-            }
-          }
-        })
+              maxCharacters: 20000,
+            },
+          },
+        }),
       });
 
       if (!response.ok) {
@@ -121,11 +130,11 @@ export class ExaProvider {
         throw new PersonResearchProviderError(`Exa LinkedIn profile search failed with status ${response.status}`);
       }
 
-      const data = await response.json() as ExaSearchResponse;
+      const data = (await response.json()) as ExaSearchResponse;
 
       // Filter for profile pages (not posts or other LinkedIn pages)
-      const linkedInResults = data.results.filter(r =>
-        r.url.includes("linkedin.com/in/") && !r.url.includes("/posts/")
+      const linkedInResults = data.results.filter(
+        (r) => r.url.includes("linkedin.com/in/") && !r.url.includes("/posts/")
       );
 
       if (linkedInResults.length === 0) {
@@ -143,7 +152,7 @@ export class ExaProvider {
 
       return {
         url: result.url,
-        text
+        text,
       };
     } catch (error) {
       if (error instanceof PersonResearchProviderError) {
@@ -156,37 +165,54 @@ export class ExaProvider {
   }
 
   parseLinkedInContent(content: string, name: string, linkedInUrl: string): PersonResearchResult {
-    console.log('[EXA PARSE] ======== START PARSING ========');
-    console.log('[EXA PARSE] LinkedIn URL:', linkedInUrl);
-    console.log('[EXA PARSE] Search name:', name);
-    console.log('[EXA PARSE] Content length:', content.length, 'chars');
-    console.log('[EXA PARSE] First 500 chars:', content.substring(0, 500));
-    console.log('[EXA PARSE] ======== FULL CONTENT ========');
+    console.log("[EXA PARSE] ======== START PARSING ========");
+    console.log("[EXA PARSE] LinkedIn URL:", linkedInUrl);
+    console.log("[EXA PARSE] Search name:", name);
+    console.log("[EXA PARSE] Content length:", content.length, "chars");
+    console.log("[EXA PARSE] First 500 chars:", content.substring(0, 500));
+    console.log("[EXA PARSE] ======== FULL CONTENT ========");
     console.log(content);
-    console.log('[EXA PARSE] ======== END FULL CONTENT ========');
+    console.log("[EXA PARSE] ======== END FULL CONTENT ========");
 
-    const lines = content.split("\n").map(l => l.trim()).filter(Boolean);
-    console.log('[EXA PARSE] Total lines after trim:', lines.length);
+    const lines = content
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    console.log("[EXA PARSE] Total lines after trim:", lines.length);
 
     // Extract actual name from first line (LinkedIn profiles start with the person's name)
     let actualName = name; // fallback to search name
     if (lines.length > 0) {
       const firstLine = lines[0];
       // First line is usually the person's name, unless it's a heading marker
-      if (!firstLine.startsWith('#') && !firstLine.match(/^(About|Experience|Education|Contact)/i)) {
+      if (!firstLine.startsWith("#") && !firstLine.match(/^(About|Experience|Education|Contact)/i)) {
         actualName = firstLine;
       }
     }
-    console.log('[EXA PARSE] Extracted name:', actualName);
+    console.log("[EXA PARSE] Extracted name:", actualName);
 
     let title = "";
     let company = "";
-    const rawExperience: Array<{ company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string }> = [];
+    const rawExperience: Array<{
+      company: string;
+      companyUrl?: string;
+      title: string;
+      dates?: string;
+      duration?: string;
+      description?: string;
+    }> = [];
     const education: Array<{ institution: string; degree?: string; dates?: string }> = [];
 
     let inExperienceSection = false;
     let inEducationSection = false;
-    let currentExperience: { company?: string; companyUrl?: string; title?: string; dates?: string; duration?: string; description?: string } | null = null;
+    let currentExperience: {
+      company?: string;
+      companyUrl?: string;
+      title?: string;
+      dates?: string;
+      duration?: string;
+      description?: string;
+    } | null = null;
     let currentEducation: { institution?: string; degree?: string; dates?: string } | null = null;
 
     for (let i = 0; i < lines.length; i++) {
@@ -207,7 +233,11 @@ export class ExaProvider {
       }
 
       // Exit both sections if we hit any other major section
-      if (line.match(/^(?:#+\s*)?(About|Skills|Licenses|Certifications|Volunteer|Projects|Publications|Honors|Languages)$/i)) {
+      if (
+        line.match(
+          /^(?:#+\s*)?(About|Skills|Licenses|Certifications|Volunteer|Projects|Publications|Honors|Languages)$/i
+        )
+      ) {
         inExperienceSection = false;
         inEducationSection = false;
         continue;
@@ -222,15 +252,24 @@ export class ExaProvider {
 
       // Parse Experience section
       if (inExperienceSection) {
-        console.log('[EXA PARSE] Processing experience line:', line);
+        console.log("[EXA PARSE] Processing experience line:", line);
 
         // IMPORTANT: Check for #### BEFORE ### because startsWith("###") matches both!
         if (line.startsWith("####")) {
-          console.log('[EXA PARSE] Found sub-position (####)');
+          console.log("[EXA PARSE] Found sub-position (####)");
           // Sub-position under a company - save previous position first
           if (currentExperience?.company && currentExperience?.title) {
-            console.log('[EXA PARSE] Saving previous sub-position:', currentExperience);
-            rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
+            console.log("[EXA PARSE] Saving previous sub-position:", currentExperience);
+            rawExperience.push(
+              currentExperience as {
+                company: string;
+                companyUrl?: string;
+                title: string;
+                dates?: string;
+                duration?: string;
+                description?: string;
+              }
+            );
           }
 
           // Start new position under the same company
@@ -240,14 +279,23 @@ export class ExaProvider {
             company: currentExperience?.company || "",
             // @ts-ignore
             companyUrl: currentExperience?.companyUrl,
-            title: positionTitle
+            title: positionTitle,
           };
-          console.log('[EXA PARSE] Started new sub-position:', currentExperience);
+          console.log("[EXA PARSE] Started new sub-position:", currentExperience);
         } else if (line.startsWith("###")) {
-          console.log('[EXA PARSE] Found company/position header (###)');
+          console.log("[EXA PARSE] Found company/position header (###)");
           // Save previous experience
           if (currentExperience?.company && currentExperience?.title) {
-            rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
+            rawExperience.push(
+              currentExperience as {
+                company: string;
+                companyUrl?: string;
+                title: string;
+                dates?: string;
+                duration?: string;
+                description?: string;
+              }
+            );
           }
 
           const rawLine = line.replace(/^###\s*/, "").trim();
@@ -260,14 +308,14 @@ export class ExaProvider {
               currentExperience = {
                 title: atMatch[1].trim(),
                 company: atMatch[2],
-                companyUrl: atMatch[3]
+                companyUrl: atMatch[3],
               };
             } else {
               // Fallback for plain text without markdown link
               const parts = rawLine.split(" at ");
               currentExperience = {
                 title: parts[0]?.trim() || "",
-                company: parts[1]?.trim() || ""
+                company: parts[1]?.trim() || "",
               };
             }
           } else {
@@ -277,13 +325,13 @@ export class ExaProvider {
               currentExperience = {
                 company: companyMatch[1],
                 companyUrl: companyMatch[2],
-                title: "" // Will be filled by #### lines
+                title: "", // Will be filled by #### lines
               };
             } else {
               // Just company name without link
               currentExperience = {
                 company: rawLine,
-                title: ""
+                title: "",
               };
             }
           }
@@ -308,10 +356,10 @@ export class ExaProvider {
 
             if (isLikelyTitle) {
               // Start new experience with title, company will come next
-              console.log('[EXA PARSE] Found plain title line:', line);
+              console.log("[EXA PARSE] Found plain title line:", line);
               currentExperience = {
                 title: line.trim(),
-                company: ""
+                company: "",
               };
               continue;
             }
@@ -322,7 +370,7 @@ export class ExaProvider {
           if (currentExperience.title && !currentExperience.company && line.includes(" · ")) {
             const companyParts = line.split(" · ");
             currentExperience.company = companyParts[0]?.trim() || "";
-            console.log('[EXA PARSE] Found plain company line:', currentExperience.company);
+            console.log("[EXA PARSE] Found plain company line:", currentExperience.company);
             continue;
           }
 
@@ -330,11 +378,11 @@ export class ExaProvider {
           if (!currentExperience.dates) {
             const dateLine = parseExperienceDateLine(line);
             if (dateLine) {
-              console.log('[EXA PARSE] Found date line:', line, '→ parsed:', dateLine);
+              console.log("[EXA PARSE] Found date line:", line, "→ parsed:", dateLine);
               currentExperience.dates = dateLine.dates;
               currentExperience.duration = dateLine.duration;
             } else {
-              console.log('[EXA PARSE] Line did not match date pattern:', line);
+              console.log("[EXA PARSE] Line did not match date pattern:", line);
             }
           }
           // Description text (after we have dates, skip metadata and short lines)
@@ -364,21 +412,21 @@ export class ExaProvider {
             if (atMatch) {
               currentEducation = {
                 institution: atMatch[2],
-                degree: atMatch[1].trim()
+                degree: atMatch[1].trim(),
               };
             } else {
               // Fallback for plain text without markdown link
               const parts = rawLine.split(" at ");
               currentEducation = {
                 institution: parts[1]?.trim() || "",
-                degree: parts[0]?.trim() || ""
+                degree: parts[0]?.trim() || "",
               };
             }
           } else {
             // Old format or just institution name
             const institutionMatch = rawLine.match(/^\[([^\]]+)\]/);
             currentEducation = {
-              institution: institutionMatch ? institutionMatch[1] : rawLine
+              institution: institutionMatch ? institutionMatch[1] : rawLine,
             };
           }
         } else if (currentEducation && !currentEducation.dates && !line.startsWith("#")) {
@@ -394,24 +442,33 @@ export class ExaProvider {
 
     // Save last experience/education if any
     if (currentExperience?.company && currentExperience?.title) {
-      console.log('[EXA PARSE] Saving final experience:', currentExperience);
-      rawExperience.push(currentExperience as { company: string; companyUrl?: string; title: string; dates?: string; duration?: string; description?: string });
+      console.log("[EXA PARSE] Saving final experience:", currentExperience);
+      rawExperience.push(
+        currentExperience as {
+          company: string;
+          companyUrl?: string;
+          title: string;
+          dates?: string;
+          duration?: string;
+          description?: string;
+        }
+      );
     }
     if (currentEducation?.institution && currentEducation?.degree) {
       education.push(currentEducation as { institution: string; degree?: string; dates?: string });
     }
 
-    console.log('[EXA PARSE] ======== RAW EXPERIENCE ========');
-    console.log('[EXA PARSE] Total experiences:', rawExperience.length);
+    console.log("[EXA PARSE] ======== RAW EXPERIENCE ========");
+    console.log("[EXA PARSE] Total experiences:", rawExperience.length);
     rawExperience.forEach((exp, idx) => {
       console.log(`[EXA PARSE] [${idx}] Company: ${exp.company}`);
       console.log(`[EXA PARSE] [${idx}] Title: ${exp.title}`);
-      console.log(`[EXA PARSE] [${idx}] Dates: ${exp.dates || 'NO DATES'}`);
-      console.log(`[EXA PARSE] [${idx}] Duration: ${exp.duration || 'NO DURATION'}`);
+      console.log(`[EXA PARSE] [${idx}] Dates: ${exp.dates || "NO DATES"}`);
+      console.log(`[EXA PARSE] [${idx}] Duration: ${exp.duration || "NO DURATION"}`);
     });
 
     // Clean up markdown artifacts from company names and titles
-    const cleanedExperience = rawExperience.map(exp => {
+    const cleanedExperience = rawExperience.map((exp) => {
       // Remove markdown syntax from company names: "### Title at [Company](url)" or "[Company](url)"
       let cleanCompany = exp.company;
       let cleanCompanyUrl = exp.companyUrl;
@@ -424,7 +481,7 @@ export class ExaProvider {
       }
 
       // Remove ### prefix if it somehow got through
-      cleanCompany = cleanCompany.replace(/^###\s*/, '').trim();
+      cleanCompany = cleanCompany.replace(/^###\s*/, "").trim();
 
       // Remove "Title at " prefix if the full line got captured as company name
       const atMatch = cleanCompany.match(/^(.+?)\s+at\s+(.+)$/);
@@ -434,66 +491,71 @@ export class ExaProvider {
           ...exp,
           title: atMatch[1].trim(),
           company: atMatch[2].trim(),
-          companyUrl: cleanCompanyUrl
+          companyUrl: cleanCompanyUrl,
         };
       }
 
       return {
         ...exp,
         company: cleanCompany,
-        companyUrl: cleanCompanyUrl
+        companyUrl: cleanCompanyUrl,
       };
     });
 
     // Group experiences by company
-    const groupedExperience = cleanedExperience.reduce((acc, exp) => {
-      const existing = acc.find((g) => g.company === exp.company);
-      if (existing) {
-        existing.positions.push({
-          title: exp.title,
-          dates: exp.dates,
-          duration: exp.duration,
-          description: exp.description
-        });
-      } else {
-        acc.push({
-          company: exp.company,
-          companyUrl: exp.companyUrl,
-          totalDuration: exp.duration, // First position's duration (will be updated if multiple)
-          positions: [{
+    const groupedExperience = cleanedExperience.reduce(
+      (acc, exp) => {
+        const existing = acc.find((g) => g.company === exp.company);
+        if (existing) {
+          existing.positions.push({
             title: exp.title,
             dates: exp.dates,
             duration: exp.duration,
-            description: exp.description
-          }]
-        });
-      }
-      return acc;
-    }, [] as Array<{
-      company: string;
-      companyUrl?: string;
-      totalDuration?: string;
-      positions: Array<{
-        title: string;
-        dates?: string;
-        duration?: string;
-        description?: string;
-      }>;
-    }>);
+            description: exp.description,
+          });
+        } else {
+          acc.push({
+            company: exp.company,
+            companyUrl: exp.companyUrl,
+            totalDuration: exp.duration, // First position's duration (will be updated if multiple)
+            positions: [
+              {
+                title: exp.title,
+                dates: exp.dates,
+                duration: exp.duration,
+                description: exp.description,
+              },
+            ],
+          });
+        }
+        return acc;
+      },
+      [] as Array<{
+        company: string;
+        companyUrl?: string;
+        totalDuration?: string;
+        positions: Array<{
+          title: string;
+          dates?: string;
+          duration?: string;
+          description?: string;
+        }>;
+      }>
+    );
 
     const currentCompany = groupedExperience.length > 0 ? currentCompanyFromExperience(groupedExperience) : undefined;
     const currentTitle = groupedExperience.length > 0 ? currentTitleFromExperience(groupedExperience) : undefined;
 
-    console.log('[EXA PARSE] ======== GROUPED EXPERIENCE ========');
+    console.log("[EXA PARSE] ======== GROUPED EXPERIENCE ========");
     groupedExperience.forEach((group, idx) => {
       console.log(`[EXA PARSE] Company [${idx}]: ${group.company}`);
       group.positions.forEach((pos, posIdx) => {
         console.log(`[EXA PARSE]   Position [${posIdx}]: ${pos.title}`);
-        console.log(`[EXA PARSE]   Dates: ${pos.dates || 'NO DATES'}`);
-        console.log(`[EXA PARSE]   Duration: ${pos.duration || 'NO DURATION'}`);
+        console.log(`[EXA PARSE]   Dates: ${pos.dates || "NO DATES"}`);
+        console.log(`[EXA PARSE]   Duration: ${pos.duration || "NO DURATION"}`);
       });
     });
-    console.log('[EXA PARSE] ======== END PARSING ========');
+    console.log("[EXA PARSE] ======== END PARSING ========");
 
     return {
       person: {
@@ -501,7 +563,7 @@ export class ExaProvider {
         title: currentTitle || title || undefined,
         company: currentCompany || company || undefined,
         linkedinUrl: linkedInUrl,
-        avatarUrl: undefined
+        avatarUrl: undefined,
       },
       research: {
         experience: groupedExperience.length > 0 ? groupedExperience : undefined,
@@ -509,10 +571,10 @@ export class ExaProvider {
         sources: [
           {
             label: "LinkedIn Profile",
-            url: linkedInUrl
-          }
-        ]
-      }
+            url: linkedInUrl,
+          },
+        ],
+      },
     };
   }
 
@@ -527,24 +589,26 @@ export class ExaProvider {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-api-key": this.apiKey
+            "x-api-key": this.apiKey,
           },
           body: JSON.stringify({
             ids: [linkedinUrl],
             text: {
               includeHtmlTags: false,
-              maxCharacters: 20000
-            }
-          })
+              maxCharacters: 20000,
+            },
+          }),
         });
 
         if (!response.ok) {
           const errorBody = await response.text();
           console.error("Exa contents failed:", response.status, errorBody);
-          throw new PersonResearchProviderError(`Exa LinkedIn profile content fetch failed with status ${response.status}`);
+          throw new PersonResearchProviderError(
+            `Exa LinkedIn profile content fetch failed with status ${response.status}`
+          );
         }
 
-        const data = await response.json() as ExaContentsResponse;
+        const data = (await response.json()) as ExaContentsResponse;
         const result = data.results[0];
         if (result?.text) {
           profileData = { url: linkedinUrl, text: result.text };

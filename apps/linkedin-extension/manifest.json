@@ -8,12 +8,7 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": [
-    "activeTab",
-    "scripting",
-    "storage",
-    "identity"
-  ],
+  "permissions": ["activeTab", "scripting", "storage", "identity"],
   "host_permissions": [
     "https://www.linkedin.com/jobs/view/*",
     "https://www.linkedin.com/jobs/search/*",
@@ -37,19 +32,13 @@
         "https://www.linkedin.com/jobs/search/*",
         "https://www.linkedin.com/jobs/search-results/*"
       ],
-      "js": [
-        "src/content.js"
-      ]
+      "js": ["src/content.js"]
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": [
-        "src/extractor.js"
-      ],
-      "matches": [
-        "https://www.linkedin.com/*"
-      ]
+      "resources": ["src/extractor.js"],
+      "matches": ["https://www.linkedin.com/*"]
     }
   ]
 }

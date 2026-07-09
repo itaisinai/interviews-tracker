@@ -1,10 +1,13 @@
-import { Button, MaterialIcon } from "@interviews-tracker/design-system";
+import { useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { AttachEmailModal } from "./attach-email-modal";
-import type { GmailSearchCandidate } from "../../lib/types";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
-import { useState } from "react";
+import type { GmailSearchCandidate } from "../../lib/types";
+
+import { AttachEmailModal } from "./attach-email-modal";
 
 type AttachedEmailsCardProps = {
   interactionId: string;
@@ -12,11 +15,7 @@ type AttachedEmailsCardProps = {
   onEmailsAttached?: (aiSuggestion?: any) => void;
 };
 
-export function AttachedEmailsCard({
-  interactionId,
-  opportunitySlug,
-  onEmailsAttached,
-}: AttachedEmailsCardProps) {
+export function AttachedEmailsCard({ interactionId, opportunitySlug, onEmailsAttached }: AttachedEmailsCardProps) {
   const interactionSlug = interactionId;
   const queryClient = useQueryClient();
   const [showAttachModal, setShowAttachModal] = useState(false);
@@ -37,9 +36,7 @@ export function AttachedEmailsCard({
 
   // Map attached emails to their full Gmail data
   const enrichedEmails = emails.map((email) => {
-    const gmailData = searchResults?.candidates.find(
-      (c: GmailSearchCandidate) => c.id === email.gmailMessageId,
-    );
+    const gmailData = searchResults?.candidates.find((c: GmailSearchCandidate) => c.id === email.gmailMessageId);
     return {
       ...email,
       gmailData,
@@ -47,8 +44,7 @@ export function AttachedEmailsCard({
   });
 
   const detachMutation = useMutation({
-    mutationFn: (emailId: string) =>
-      api.removeEmailFromInteraction(interactionSlug, emailId),
+    mutationFn: (emailId: string) => api.removeEmailFromInteraction(interactionSlug, emailId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["interaction-emails", interactionId],
@@ -73,9 +69,7 @@ export function AttachedEmailsCard({
         if (!old) return old;
         return {
           ...old,
-          interactions: old.interactions.map((int: any) =>
-            int.id === interactionId ? result : int,
-          ),
+          interactions: old.interactions.map((int: any) => (int.id === interactionId ? result : int)),
         };
       });
 
@@ -92,9 +86,7 @@ export function AttachedEmailsCard({
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg border border-neutral-200 p-4">
-        <div className="flex items-center justify-center py-4 text-neutral-400 text-sm">
-          Loading...
-        </div>
+        <div className="flex items-center justify-center py-4 text-neutral-400 text-sm">Loading...</div>
       </div>
     );
   }
@@ -104,10 +96,7 @@ export function AttachedEmailsCard({
       <div className="bg-white rounded-lg border border-neutral-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <MaterialIcon
-              name="mail"
-              className="text-[18px] text-neutral-600"
-            />
+            <MaterialIcon name="mail" className="text-[18px] text-neutral-600" />
             <h3 className="text-sm font-semibold text-neutral-900">Attached</h3>
           </div>
           <div className="flex items-center gap-2">
@@ -124,12 +113,7 @@ export function AttachedEmailsCard({
                 Re-parse
               </Button>
             )}
-            <Button
-              onClick={() => setShowAttachModal(true)}
-              variant="outlined"
-              size="sm"
-              leadingIcon="add"
-            >
+            <Button onClick={() => setShowAttachModal(true)} variant="outlined" size="sm" leadingIcon="add">
               Attach
             </Button>
           </div>
@@ -164,35 +148,25 @@ export function AttachedEmailsCard({
                       </div>
                       {isRelevant && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex-shrink-0">
-                          <MaterialIcon
-                            name="check_circle"
-                            className="text-[12px]"
-                          />
+                          <MaterialIcon name="check_circle" className="text-[12px]" />
                           Relevant
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-neutral-500 mb-1">
-                      From: {email.from || "Unknown sender"}
-                    </div>
+                    <div className="text-xs text-neutral-500 mb-1">From: {email.from || "Unknown sender"}</div>
                     <div className="text-xs text-neutral-400">
                       {email.receivedDate
-                        ? new Date(email.receivedDate).toLocaleDateString(
-                            undefined,
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            },
-                          )
+                        ? new Date(email.receivedDate).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
                         : "No date"}
                     </div>
                     {gmailData?.snippet && (
-                      <div className="text-xs text-neutral-500 mt-2 line-clamp-2">
-                        {gmailData.snippet}
-                      </div>
+                      <div className="text-xs text-neutral-500 mt-2 line-clamp-2">{gmailData.snippet}</div>
                     )}
                   </div>
 

@@ -1,7 +1,9 @@
+import type { UseQueryResult } from "@tanstack/react-query";
+
 import { ApiError } from "@interviews-tracker/api-client";
+
 import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
-import type { UseQueryResult } from "@tanstack/react-query";
 import type { GmailStatus } from "../../lib/types";
 
 type GmailConnectionHandlers = {
@@ -29,13 +31,17 @@ export function useGmailConnection(handlers: GmailConnectionHandlers) {
     setSaveMessage,
     setLastAction,
     activeRunIdRef,
-    invalidateGmailStatus
+    invalidateGmailStatus,
   } = handlers;
 
   function handleGmailActionError(caughtError: unknown, fallbackMessage: string) {
     const reconnectRequired = caughtError instanceof ApiError && caughtError.code === "GMAIL_RECONNECT_REQUIRED";
     setNeedsReconnect(reconnectRequired);
-    setError(reconnectRequired ? "Your Gmail connection expired or was revoked. Please reconnect Gmail." : getErrorMessage(caughtError));
+    setError(
+      reconnectRequired
+        ? "Your Gmail connection expired or was revoked. Please reconnect Gmail."
+        : getErrorMessage(caughtError)
+    );
     setFlowState("failed");
     setMessage(reconnectRequired ? "Gmail reconnect required." : fallbackMessage);
     if (reconnectRequired) {
@@ -72,6 +78,6 @@ export function useGmailConnection(handlers: GmailConnectionHandlers) {
 
   return {
     handleGmailActionError,
-    connectGmail
+    connectGmail,
   };
 }

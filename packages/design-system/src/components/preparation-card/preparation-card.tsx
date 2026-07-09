@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import { MaterialIcon } from "../material-icon";
 
 export type PreparationCardProps = {
@@ -24,9 +25,7 @@ export function PreparationCard({
   className = "",
 }: PreparationCardProps) {
   return (
-    <div
-      className={`rounded-xl border border-neutral-200 bg-white p-6 transition-shadow hover:shadow-md ${className}`}
-    >
+    <div className={`rounded-xl border border-neutral-200 bg-white p-6 transition-shadow hover:shadow-md ${className}`}>
       <div className="mb-4 flex items-start gap-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
           <MaterialIcon name={icon} className="text-[20px]" />
@@ -42,9 +41,7 @@ export function PreparationCard({
           Loading insights...
         </div>
       )}
-      {!isLoading && content && (
-        <div className="text-sm text-neutral-700">{content}</div>
-      )}
+      {!isLoading && content && <div className="text-sm text-neutral-700">{content}</div>}
       {!isLoading && action && (
         <button
           onClick={action.onClick}

@@ -1,5 +1,7 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
 import { setAccessTokenGetter } from "../../lib/api";
 
 interface DevModeBannerProps {
@@ -32,9 +34,7 @@ function AuthPanel({ title, description, children }: AuthPanelProps) {
           <MaterialIcon name="lock" filled />
         </div>
         <h1 className="font-headline-md text-headline-md font-bold">{title}</h1>
-        <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
-          {description}
-        </p>
+        <p className="mt-2 font-body-md text-body-md text-on-surface-variant">{description}</p>
         {children ? <div className="mt-6">{children}</div> : null}
       </section>
     </main>
@@ -60,18 +60,12 @@ export function DevModeAuthBypass({ userEmail, children }: DevModeAuthBypassProp
       "%c⚠️ DEV MODE AUTHENTICATION BYPASS ENABLED",
       "color: orange; font-size: 20px; font-weight: bold; padding: 10px;"
     );
-    console.log(
-      "%cUsing test user: " + userEmail,
-      "color: orange; font-size: 14px; font-weight: bold;"
-    );
+    console.log("%cUsing test user: " + userEmail, "color: orange; font-size: 14px; font-weight: bold;");
     console.log(
       "%cAuth0 is BYPASSED. This should NEVER happen in production.",
       "color: orange; font-size: 14px; font-weight: bold;"
     );
-    console.log(
-      "%cAll data is isolated to this test user email.",
-      "color: orange; font-size: 12px;"
-    );
+    console.log("%cAll data is isolated to this test user email.", "color: orange; font-size: 12px;");
 
     return () => {
       setAccessTokenGetter(undefined);
@@ -88,9 +82,7 @@ export function DevModeAuthBypass({ userEmail, children }: DevModeAuthBypassProp
   }, []);
 
   if (!isReady) {
-    return (
-      <AuthPanel title="Dev Mode" description="Initializing dev mode session..." />
-    );
+    return <AuthPanel title="Dev Mode" description="Initializing dev mode session..." />;
   }
 
   return (

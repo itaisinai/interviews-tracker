@@ -1,7 +1,17 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+
 import { useQuery } from "@tanstack/react-query";
+
 import { api } from "../../lib/api";
-import { activeNotifications, buildUnlinkedInteractionNotifications, NOTIFICATIONS_STORAGE_KEY, syncNotifications, unreadNotificationsCount, type AppNotification } from "../../lib/notifications";
+import {
+  activeNotifications,
+  type AppNotification,
+  buildUnlinkedInteractionNotifications,
+  NOTIFICATIONS_STORAGE_KEY,
+  syncNotifications,
+  unreadNotificationsCount,
+} from "../../lib/notifications";
+
 import { NotificationsContext, type NotificationsContextValue } from "./notifications-context";
 
 function readStoredNotifications() {
@@ -30,10 +40,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!interactionsQuery.data) return;
     setNotifications((current) => {
-      const next = syncNotifications(
-        current,
-        buildUnlinkedInteractionNotifications(interactionsQuery.data),
-      );
+      const next = syncNotifications(current, buildUnlinkedInteractionNotifications(interactionsQuery.data));
       writeStoredNotifications(next);
       return next;
     });
@@ -47,13 +54,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       unreadCount: unreadNotificationsCount(notifications),
       markAllAsRead: () =>
         setNotifications((current) => {
-          const next = current.map((item) => item.status === "unread" ? { ...item, status: "read" as const, updatedAt: new Date().toISOString() } : item);
+          const next = current.map((item) =>
+            item.status === "unread" ? { ...item, status: "read" as const, updatedAt: new Date().toISOString() } : item
+          );
           writeStoredNotifications(next);
           return next;
         }),
       markAsRead: (key) =>
         setNotifications((current) => {
-          const next = current.map((item) => item.key === key && item.status === "unread" ? { ...item, status: "read" as const, updatedAt: new Date().toISOString() } : item);
+          const next = current.map((item) =>
+            item.key === key && item.status === "unread"
+              ? { ...item, status: "read" as const, updatedAt: new Date().toISOString() }
+              : item
+          );
           writeStoredNotifications(next);
           return next;
         }),

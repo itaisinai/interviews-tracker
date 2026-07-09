@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 
 import { createTimer, logError, logInfo } from "../../lib/logger.js";
 import { prisma } from "../../lib/prisma.js";
-import { fetchJson, GmailApiRequestError } from "./gmail-http.js";
+
 import {
   clientIdFingerprint,
   decryptText,
@@ -11,8 +11,9 @@ import {
   signState,
   verifyState,
 } from "./gmail-crypto.js";
-import { getSettings, requireSettings, type GmailSettings } from "./gmail-settings.js";
+import { fetchJson, GmailApiRequestError } from "./gmail-http.js";
 import type { GmailAttachmentResponse, GmailProfileResponse } from "./gmail-message-utils.js";
+import { getSettings, type GmailSettings, requireSettings } from "./gmail-settings.js";
 
 export type GmailStatus = {
   configured: boolean;
@@ -62,14 +63,17 @@ type GmailConnectionForReconnect = {
 
 export async function fetchGmailProfile(accessToken: string) {
   return fetchJson<GmailProfileResponse>("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
-    headers: { Authorization: `Bearer ${accessToken}` }
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
 
 export async function fetchGmailAttachment(messageId: string, attachmentId: string, accessToken: string) {
-  return fetchJson<GmailAttachmentResponse>(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/attachments/${attachmentId}`, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
+  return fetchJson<GmailAttachmentResponse>(
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/attachments/${attachmentId}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
 }
 
 async function exchangeCodeForTokens(code: string, settings: GmailSettings): Promise<GmailOAuthTokenBundle> {
@@ -81,8 +85,8 @@ async function exchangeCodeForTokens(code: string, settings: GmailSettings): Pro
       client_id: settings.clientId,
       client_secret: settings.clientSecret,
       redirect_uri: settings.redirectUri,
-      grant_type: "authorization_code"
-    })
+      grant_type: "authorization_code",
+    }),
   });
 
   if (!response.access_token) {
@@ -92,18 +96,23 @@ async function exchangeCodeForTokens(code: string, settings: GmailSettings): Pro
   return {
     access_token: response.access_token,
     refresh_token: response.refresh_token,
-    scope: response.scope
+    scope: response.scope,
   };
 }
 
-async function refreshAccessToken(input: { auth0Email: string; googleEmail?: string | null; refreshToken: string; settings: GmailSettings }): Promise<string> {
+async function refreshAccessToken(input: {
+  auth0Email: string;
+  googleEmail?: string | null;
+  refreshToken: string;
+  settings: GmailSettings;
+}): Promise<string> {
   const { auth0Email, googleEmail, refreshToken, settings } = input;
   logInfo("gmail", "refreshing access token", {
     auth0Email,
     googleEmail: googleEmail ?? null,
     hasRefreshToken: Boolean(refreshToken),
     refreshTokenLength: refreshToken.length,
-    ...clientIdFingerprint(settings.clientId)
+    ...clientIdFingerprint(settings.clientId),
   });
 
   try {
@@ -114,8 +123,8 @@ async function refreshAccessToken(input: { auth0Email: string; googleEmail?: str
         refresh_token: refreshToken,
         client_id: settings.clientId,
         client_secret: settings.clientSecret,
-        grant_type: "refresh_token"
-      })
+        grant_type: "refresh_token",
+      }),
     });
 
     const accessToken = response.access_token;
@@ -135,7 +144,7 @@ async function refreshAccessToken(input: { auth0Email: string; googleEmail?: str
         ...clientIdFingerprint(settings.clientId),
         status: error.status,
         errorCode: error.googleError ?? null,
-        errorDescription: error.googleErrorDescription ?? null
+        errorDescription: error.googleErrorDescription ?? null,
       });
     }
 
@@ -157,7 +166,7 @@ export async function getAccessTokenForEmail(auth0Email: string, settings = requ
       auth0Email,
       googleEmail: connection.googleEmail,
       refreshToken,
-      settings
+      settings,
     });
 
     const reconnectState = connection as typeof connection & { needsReconnect?: boolean; lastError?: string | null };
@@ -165,7 +174,7 @@ export async function getAccessTokenForEmail(auth0Email: string, settings = requ
     if (reconnectState.needsReconnect || reconnectState.lastError) {
       await prisma.gmailConnection.update({
         where: { auth0Email },
-        data: { needsReconnect: false, lastError: null }
+        data: { needsReconnect: false, lastError: null },
       });
     }
 
@@ -174,7 +183,7 @@ export async function getAccessTokenForEmail(auth0Email: string, settings = requ
     if (error instanceof GmailApiRequestError && error.googleError === "invalid_grant") {
       await prisma.gmailConnection.update({
         where: { auth0Email },
-        data: { needsReconnect: true, lastError: GMAIL_RECONNECT_REQUIRED_MESSAGE }
+        data: { needsReconnect: true, lastError: GMAIL_RECONNECT_REQUIRED_MESSAGE },
       });
       throw new GmailReconnectRequiredError();
     }
@@ -190,7 +199,7 @@ export function createGmailAuthUrl(auth0Email: string, returnTo?: string) {
       auth0Email,
       returnTo: normalizeReturnTo(returnTo),
       expiresAt: Date.now() + STATE_TTL_MS,
-      nonce: crypto.randomBytes(16).toString("base64url")
+      nonce: crypto.randomBytes(16).toString("base64url"),
     },
     settings.encryptionSecret
   );
@@ -204,7 +213,7 @@ export function createGmailAuthUrl(auth0Email: string, returnTo?: string) {
     prompt: "consent",
     include_granted_scopes: "true",
     login_hint: auth0Email,
-    state
+    state,
   });
 
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
@@ -221,7 +230,7 @@ export async function getGmailStatus(auth0Email: string) {
       lastError: null,
       lastConnectedAt: null,
       updatedAt: null,
-      scopes: []
+      scopes: [],
     };
   }
 
@@ -230,12 +239,12 @@ export async function getGmailStatus(auth0Email: string) {
   return {
     configured: true,
     connected: Boolean(connection && !(connection as typeof connection & { needsReconnect?: boolean }).needsReconnect),
-    needsReconnect: Boolean((connection as typeof connection & { needsReconnect?: boolean } | null)?.needsReconnect),
+    needsReconnect: Boolean((connection as (typeof connection & { needsReconnect?: boolean }) | null)?.needsReconnect),
     googleEmail: connection?.googleEmail ?? null,
-    lastError: (connection as typeof connection & { lastError?: string | null } | null)?.lastError ?? null,
+    lastError: (connection as (typeof connection & { lastError?: string | null }) | null)?.lastError ?? null,
     lastConnectedAt: connection?.connectedAt?.toISOString() ?? null,
     updatedAt: connection?.updatedAt?.toISOString() ?? null,
-    scopes: connection?.scope?.split(/\s+/).filter(Boolean) ?? []
+    scopes: connection?.scope?.split(/\s+/).filter(Boolean) ?? [],
   };
 }
 
@@ -257,11 +266,15 @@ export async function resolveRefreshTokenForOAuthCallback(input: {
   }
 
   if (existingConnection.needsReconnect) {
-    throw new Error("Gmail reconnect did not return a new refresh token. Please retry Gmail reconnect and approve the Google consent screen.");
+    throw new Error(
+      "Gmail reconnect did not return a new refresh token. Please retry Gmail reconnect and approve the Google consent screen."
+    );
   }
 
   if (existingConnection.googleEmail && nextGoogleEmail && existingConnection.googleEmail !== nextGoogleEmail) {
-    throw new Error("Gmail OAuth did not return a refresh token for the selected Google account. Please retry Gmail reconnect and approve the Google consent screen.");
+    throw new Error(
+      "Gmail OAuth did not return a refresh token for the selected Google account. Please retry Gmail reconnect and approve the Google consent screen."
+    );
   }
 
   const existingRefreshToken = decryptText(existingConnection.refreshTokenEncrypted, settings.encryptionSecret);
@@ -271,13 +284,13 @@ export async function resolveRefreshTokenForOAuthCallback(input: {
       auth0Email,
       googleEmail: existingConnection.googleEmail,
       refreshToken: existingRefreshToken,
-      settings
+      settings,
     });
   } catch (error) {
     if (error instanceof GmailApiRequestError && error.googleError === "invalid_grant") {
       await prisma.gmailConnection.update({
         where: { auth0Email },
-        data: { needsReconnect: true, lastError: GMAIL_RECONNECT_REQUIRED_MESSAGE }
+        data: { needsReconnect: true, lastError: GMAIL_RECONNECT_REQUIRED_MESSAGE },
       });
       throw new GmailReconnectRequiredError();
     }
@@ -305,11 +318,15 @@ export function getRefreshTokenForOAuthCallback(input: {
   }
 
   if (existingConnection.needsReconnect) {
-    throw new Error("Gmail reconnect did not return a new refresh token. Please retry Gmail reconnect and approve the Google consent screen.");
+    throw new Error(
+      "Gmail reconnect did not return a new refresh token. Please retry Gmail reconnect and approve the Google consent screen."
+    );
   }
 
   if (existingConnection.googleEmail && nextGoogleEmail && existingConnection.googleEmail !== nextGoogleEmail) {
-    throw new Error("Gmail OAuth did not return a refresh token for the selected Google account. Please retry Gmail reconnect and approve the Google consent screen.");
+    throw new Error(
+      "Gmail OAuth did not return a refresh token for the selected Google account. Please retry Gmail reconnect and approve the Google consent screen."
+    );
   }
 
   return decryptText(existingConnection.refreshTokenEncrypted, settings.encryptionSecret);
@@ -322,7 +339,7 @@ export async function completeGmailOAuth(code: string, state: string) {
     const parsedState = verifyState(state, settings.encryptionSecret);
     const tokens = await exchangeCodeForTokens(code, settings);
     const existingConnection = await prisma.gmailConnection.findUnique({
-      where: { auth0Email: parsedState.auth0Email }
+      where: { auth0Email: parsedState.auth0Email },
     });
     const profile = await fetchGmailProfile(tokens.access_token);
     const refreshToken = await resolveRefreshTokenForOAuthCallback({
@@ -330,7 +347,7 @@ export async function completeGmailOAuth(code: string, state: string) {
       tokens,
       existingConnection: existingConnection as GmailConnectionForReconnect | null,
       nextGoogleEmail: profile.emailAddress ?? null,
-      settings
+      settings,
     });
 
     await prisma.gmailConnection.upsert({
@@ -341,7 +358,7 @@ export async function completeGmailOAuth(code: string, state: string) {
         refreshTokenEncrypted: encryptText(refreshToken, settings.encryptionSecret),
         scope: tokens.scope ?? GMAIL_SCOPE,
         lastError: null,
-        needsReconnect: false
+        needsReconnect: false,
       },
       update: {
         googleEmail: profile.emailAddress ?? null,
@@ -349,8 +366,8 @@ export async function completeGmailOAuth(code: string, state: string) {
         scope: tokens.scope ?? GMAIL_SCOPE,
         lastError: null,
         needsReconnect: false,
-        connectedAt: new Date()
-      }
+        connectedAt: new Date(),
+      },
     });
 
     const redirectTo = new URL(parsedState.returnTo, settings.frontendOrigin).toString();
@@ -388,8 +405,4 @@ export function getGmailConnectionConfigured() {
   return Boolean(getSettings());
 }
 
-export type {
-  GmailConnectionForReconnect,
-  GmailOAuthTokenBundle,
-  GmailTokenResponse
-};
+export type { GmailConnectionForReconnect, GmailOAuthTokenBundle, GmailTokenResponse };

@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { MaterialIcon, LoadingButton } from "@interviews-tracker/design-system";
+
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+
 import type { GmailSearchCandidate } from "../../lib/types";
 
 type TrackedGmailEmail = {
@@ -59,12 +61,10 @@ export function GmailEmailSelector({
   const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(new Set());
 
   // Filter out excluded emails
-  const availableCandidates = candidates.filter(
-    candidate => !filterOutIds.has(candidate.id)
-  );
+  const availableCandidates = candidates.filter((candidate) => !filterOutIds.has(candidate.id));
 
   const handleToggleEmail = (emailId: string) => {
-    setSelectedEmailIds(prev => {
+    setSelectedEmailIds((prev) => {
       const next = new Set(prev);
       if (next.has(emailId)) {
         next.delete(emailId);
@@ -127,9 +127,7 @@ export function GmailEmailSelector({
         <div className="text-center py-12">
           <MaterialIcon name="mail_outline" className="text-[48px] text-neutral-300 mb-3" />
           <p className="text-sm text-neutral-500">{emptyMessage}</p>
-          {emptySubMessage && (
-            <p className="text-xs text-neutral-400 mt-1">{emptySubMessage}</p>
-          )}
+          {emptySubMessage && <p className="text-xs text-neutral-400 mt-1">{emptySubMessage}</p>}
         </div>
       )}
 
@@ -146,28 +144,22 @@ export function GmailEmailSelector({
                 onClick={() => handleToggleEmail(candidate.id)}
                 disabled={isSubmitting}
                 className={`w-full flex items-start gap-3 p-3 rounded-lg border transition-colors text-left ${
-                  isSelected
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-neutral-200 hover:bg-neutral-50"
+                  isSelected ? "border-blue-500 bg-blue-50" : "border-neutral-200 hover:bg-neutral-50"
                 } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {/* Checkbox */}
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
-                  isSelected
-                    ? "border-blue-500 bg-blue-500"
-                    : "border-neutral-300"
-                }`}>
-                  {isSelected && (
-                    <MaterialIcon name="check" className="text-[14px] text-white" />
-                  )}
+                <div
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
+                    isSelected ? "border-blue-500 bg-blue-500" : "border-neutral-300"
+                  }`}
+                >
+                  {isSelected && <MaterialIcon name="check" className="text-[14px] text-white" />}
                 </div>
 
                 {/* Email info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <div className="font-medium text-sm text-neutral-900 truncate">
-                      {candidate.subject}
-                    </div>
+                    <div className="font-medium text-sm text-neutral-900 truncate">{candidate.subject}</div>
                     {isRelevant && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex-shrink-0">
                         <MaterialIcon name="check_circle" className="text-[12px]" />
@@ -175,22 +167,18 @@ export function GmailEmailSelector({
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-neutral-500 mb-1">
-                    From: {candidate.from}
-                  </div>
+                  <div className="text-xs text-neutral-500 mb-1">From: {candidate.from}</div>
                   <div className="text-xs text-neutral-400">
                     {new Date(candidate.date).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
                       hour: "2-digit",
-                      minute: "2-digit"
+                      minute: "2-digit",
                     })}
                   </div>
                   {candidate.snippet && (
-                    <div className="text-xs text-neutral-500 mt-2 line-clamp-2">
-                      {candidate.snippet}
-                    </div>
+                    <div className="text-xs text-neutral-500 mt-2 line-clamp-2">{candidate.snippet}</div>
                   )}
                 </div>
               </button>
@@ -203,7 +191,9 @@ export function GmailEmailSelector({
       <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
         <div className="text-sm text-neutral-600">
           {selectedEmailIds.size > 0 ? (
-            <span className="font-medium">{selectedEmailIds.size} email{selectedEmailIds.size === 1 ? "" : "s"} selected</span>
+            <span className="font-medium">
+              {selectedEmailIds.size} email{selectedEmailIds.size === 1 ? "" : "s"} selected
+            </span>
           ) : (
             <span>Select emails to continue</span>
           )}
@@ -232,38 +222,40 @@ export function GmailEmailSelector({
       </div>
 
       {/* Debug Section */}
-      {showDebugSection && messageStates && (messageStates.pickedEmails.length > 0 || messageStates.removedEmails.length > 0) && (
-        <div className="border-t border-neutral-200 pt-4 mt-4">
-          <details className="group">
-            <summary className="cursor-pointer text-sm font-medium text-neutral-600 hover:text-neutral-900 flex items-center gap-2">
-              <MaterialIcon name="expand_more" className="text-[18px] group-open:rotate-180 transition-transform" />
-              Debug: Picked/Cleared emails ({messageStates.pickedEmails.length + messageStates.removedEmails.length})
-            </summary>
-            <div className="mt-3 space-y-3">
-              {messageStates.pickedEmails.length > 0 && (
-                <EmailStateList
-                  emails={messageStates.pickedEmails}
-                  title="Picked"
-                  tone="picked"
-                  pending={isUnpickPending}
-                  actionLabel="Undo"
-                  onAction={onUnpick}
-                />
-              )}
-              {messageStates.removedEmails.length > 0 && (
-                <EmailStateList
-                  emails={messageStates.removedEmails}
-                  title="Cleared"
-                  tone="removed"
-                  pending={isRestorePending}
-                  actionLabel="Restore"
-                  onAction={onRestore}
-                />
-              )}
-            </div>
-          </details>
-        </div>
-      )}
+      {showDebugSection &&
+        messageStates &&
+        (messageStates.pickedEmails.length > 0 || messageStates.removedEmails.length > 0) && (
+          <div className="border-t border-neutral-200 pt-4 mt-4">
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-medium text-neutral-600 hover:text-neutral-900 flex items-center gap-2">
+                <MaterialIcon name="expand_more" className="text-[18px] group-open:rotate-180 transition-transform" />
+                Debug: Picked/Cleared emails ({messageStates.pickedEmails.length + messageStates.removedEmails.length})
+              </summary>
+              <div className="mt-3 space-y-3">
+                {messageStates.pickedEmails.length > 0 && (
+                  <EmailStateList
+                    emails={messageStates.pickedEmails}
+                    title="Picked"
+                    tone="picked"
+                    pending={isUnpickPending}
+                    actionLabel="Undo"
+                    onAction={onUnpick}
+                  />
+                )}
+                {messageStates.removedEmails.length > 0 && (
+                  <EmailStateList
+                    emails={messageStates.removedEmails}
+                    title="Cleared"
+                    tone="removed"
+                    pending={isRestorePending}
+                    actionLabel="Restore"
+                    onAction={onRestore}
+                  />
+                )}
+              </div>
+            </details>
+          </div>
+        )}
     </div>
   );
 }
@@ -296,7 +288,7 @@ function EmailStateList({ emails, title, tone, pending, actionLabel, onAction }:
         day: "numeric",
         year: "numeric",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
       });
     } catch {
       return dateString;
@@ -316,11 +308,7 @@ function EmailStateList({ emails, title, tone, pending, actionLabel, onAction }:
               <div className={dateClass}>{formatDate(email.date)}</div>
             </div>
             {onAction && (
-              <button
-                onClick={() => onAction(email.id)}
-                disabled={pending}
-                className={buttonClass}
-              >
+              <button onClick={() => onAction(email.id)} disabled={pending} className={buttonClass}>
                 {pending ? "..." : actionLabel}
               </button>
             )}

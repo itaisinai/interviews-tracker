@@ -1,8 +1,16 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { buildGmailSearchQueries, buildRelatedSenderDomainSearchQueries, classifySearchCandidateFallback, deriveInteractionFromStructuredEmail, parseStructuredGmailEmail, sortGmailSearchCandidatesByDate } from "./gmail-message-parser.js";
+
 import type { GmailRawMessageResponse, GmailStructuredEmail } from "./gmail-message-parser.js";
+import {
+  buildGmailSearchQueries,
+  buildRelatedSenderDomainSearchQueries,
+  classifySearchCandidateFallback,
+  deriveInteractionFromStructuredEmail,
+  parseStructuredGmailEmail,
+  sortGmailSearchCandidatesByDate,
+} from "./gmail-message-parser.js";
 
 const fixturePath = new URL("./__fixtures__/gmail-unframe-interview.json", import.meta.url);
 const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as GmailRawMessageResponse;
@@ -30,8 +38,8 @@ test("builds greedy Gmail queries for .ai company names", () => {
 
   assert.ok(queries.some((query) => query.includes("Unframe.ai newer_than:365d")));
   assert.ok(queries.some((query) => query.includes("Unframe newer_than:365d")));
-  assert.ok(queries.some((query) => query.includes("\"Unframe.ai\" \"Software Engineer\" newer_than:365d")));
-  assert.ok(queries.some((query) => query.includes("\"Unframe\" \"Software Engineer\" newer_than:365d")));
+  assert.ok(queries.some((query) => query.includes('"Unframe.ai" "Software Engineer" newer_than:365d')));
+  assert.ok(queries.some((query) => query.includes('"Unframe" "Software Engineer" newer_than:365d')));
 });
 
 test("builds Gmail queries with an English search alias for Hebrew company names", () => {
@@ -39,23 +47,26 @@ test("builds Gmail queries with an English search alias for Hebrew company names
 
   assert.ok(queries.some((query) => query.includes("טוקו newer_than:365d")));
   assert.ok(queries.some((query) => query.includes("Toko newer_than:365d")));
-  assert.ok(queries.some((query) => query.includes("\"Toko\" \"Software Engineer\" newer_than:365d")));
+  assert.ok(queries.some((query) => query.includes('"Toko" "Software Engineer" newer_than:365d')));
 });
 
 test("builds extra searches for sender domains that include the company token", () => {
   const queries = buildRelatedSenderDomainSearchQueries("Alta", ["altahq.com", "dialog.co.il", "gmail.com", null]);
 
   assert.ok(queries.includes("altahq newer_than:365d"));
-  assert.ok(queries.includes("\"altahq.com\" newer_than:365d"));
+  assert.ok(queries.includes('"altahq.com" newer_than:365d'));
   assert.ok(queries.includes("from:altahq.com newer_than:365d"));
-  assert.equal(queries.some((query) => query.includes("dialog")), false);
+  assert.equal(
+    queries.some((query) => query.includes("dialog")),
+    false
+  );
 });
 
 test("builds initial Gmail searches from known company domains", () => {
   const queries = buildGmailSearchQueries("Alta", "Senior Software Engineer", [], ["altahq.com"]);
 
   assert.ok(queries.includes("altahq newer_than:365d"));
-  assert.ok(queries.includes("\"altahq.com\" newer_than:365d"));
+  assert.ok(queries.includes('"altahq.com" newer_than:365d'));
   assert.ok(queries.includes("from:altahq.com newer_than:365d"));
 });
 
@@ -63,7 +74,7 @@ test("builds extra sender-domain searches from English aliases", () => {
   const queries = buildRelatedSenderDomainSearchQueries("טוקו", ["toku.com"], ["Toku"]);
 
   assert.ok(queries.includes("toku newer_than:365d"));
-  assert.ok(queries.includes("\"toku.com\" newer_than:365d"));
+  assert.ok(queries.includes('"toku.com" newer_than:365d'));
   assert.ok(queries.includes("from:toku.com newer_than:365d"));
 });
 
@@ -77,7 +88,7 @@ test("fallback classification treats matching sender domains as company-related"
     snippet: "Tue 16 Jun 12:00 - 12:30 meeting invitation",
     date: "2026-06-16T09:00:00.000Z",
     senderDomain: "google.com",
-    searchQuery: "\"altahq.com\" newer_than:365d"
+    searchQuery: '"altahq.com" newer_than:365d',
   });
 
   assert.equal(classification.isRelevant, true);
@@ -96,7 +107,7 @@ test("fallback classification uses English aliases for Hebrew company names", ()
     snippet: "We would like to schedule an interview.",
     date: "2026-06-16T09:00:00.000Z",
     senderDomain: "toku.com",
-    searchQuery: "\"Toku\" interview newer_than:365d"
+    searchQuery: '"Toku" interview newer_than:365d',
   });
 
   assert.equal(classification.isRelevant, true);
@@ -107,10 +118,13 @@ test("sorts Gmail search candidates newest first", () => {
   const sorted = sortGmailSearchCandidatesByDate([
     { id: "older", date: "2026-06-10T09:00:00.000Z" },
     { id: "newest", date: "2026-06-16T09:00:00.000Z" },
-    { id: "middle", date: "2026-06-12T09:00:00.000Z" }
+    { id: "middle", date: "2026-06-12T09:00:00.000Z" },
   ]);
 
-  assert.deepEqual(sorted.map((candidate) => candidate.id), ["newest", "middle", "older"]);
+  assert.deepEqual(
+    sorted.map((candidate) => candidate.id),
+    ["newest", "middle", "older"]
+  );
 });
 
 test("adds Google Meet link from calendar location to derived notes", () => {
@@ -136,8 +150,8 @@ test("adds Google Meet link from calendar location to derived notes", () => {
       start: "2026-06-16T09:00:00.000Z",
       end: "2026-06-16T09:30:00.000Z",
       timezone: null,
-      attendees: []
-    }
+      attendees: [],
+    },
   };
 
   const derived = deriveInteractionFromStructuredEmail(email);
@@ -162,7 +176,7 @@ test("adds Zoom link from email body to derived notes", () => {
     plainText: "Join Zoom Meeting: https://us02web.zoom.us/j/123456789?pwd=secret.",
     htmlText: "",
     calendarText: "",
-    calendar: null
+    calendar: null,
   };
 
   const derived = deriveInteractionFromStructuredEmail(email);
@@ -187,7 +201,7 @@ test("marks explicit rejection emails as rejected", () => {
     plainText: "Thank you for your time. Unfortunately, we will not be moving forward at this time.",
     htmlText: "",
     calendarText: "",
-    calendar: null
+    calendar: null,
   };
 
   const derived = deriveInteractionFromStructuredEmail(email);

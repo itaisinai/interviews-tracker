@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { timingSafeEqualString } from "./webhook-auth.js";
 
 test("timingSafeEqualString requires both values", () => {

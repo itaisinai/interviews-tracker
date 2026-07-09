@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { DiffReviewRow, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
-import type { InteractionDraft } from "../../lib/types";
-import { MaterialIcon, LoadingButton, DiffReviewRow } from "@interviews-tracker/design-system";
 import { formatDateTime } from "../../lib/format";
+import type { InteractionDraft } from "../../lib/types";
 import { GmailEmailSelector } from "../shared/gmail-email-selector";
 
 export type GmailImportFlowProps = {
@@ -16,20 +19,21 @@ export type GmailImportFlowProps = {
 
 type FlowStep = "searching" | "select-candidate" | "review-changes" | "no-results" | "error";
 
-export function GmailImportFlow({
-  opportunitySlug,
-  companyName,
-  roleTitle,
-  onSaved,
-  onBack,
-}: GmailImportFlowProps) {
+export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSaved, onBack }: GmailImportFlowProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("searching");
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
   const [allGmailMessageIds, setAllGmailMessageIds] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState(false);
 
-  const { data: searchResults, isLoading: isSearching, isError: searchFailed, error: searchError, refetch: refetchSearch, isRefetching } = useQuery({
+  const {
+    data: searchResults,
+    isLoading: isSearching,
+    isError: searchFailed,
+    error: searchError,
+    refetch: refetchSearch,
+    isRefetching,
+  } = useQuery({
     queryKey: ["gmail-search", opportunitySlug],
     queryFn: () => api.gmailSearch(opportunitySlug),
     enabled: step === "searching",
@@ -42,8 +46,7 @@ export function GmailImportFlow({
   });
 
   const parseEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailParseEmail(opportunitySlug, { messageId }),
+    mutationFn: (messageId: string) => api.gmailParseEmail(opportunitySlug, { messageId }),
     onSuccess: (result) => {
       setDraft(result.interaction);
       setStep("review-changes");
@@ -81,9 +84,7 @@ export function GmailImportFlow({
       // Attach all Gmail messages to the InteractionEmail table
       if (allGmailMessageIds.length > 0) {
         await Promise.all(
-          allGmailMessageIds.map(messageId =>
-            api.attachEmailToInteraction(interaction.slug, messageId)
-          )
+          allGmailMessageIds.map((messageId) => api.attachEmailToInteraction(interaction.slug, messageId))
         );
       }
 
@@ -91,7 +92,6 @@ export function GmailImportFlow({
     },
     onSuccess: onSaved,
   });
-
 
   useEffect(() => {
     if (searchFailed) {
@@ -129,7 +129,9 @@ export function GmailImportFlow({
         <div>
           <h3 className="text-lg font-semibold text-neutral-900">Gmail search failed</h3>
           <p className="mt-2 text-sm text-neutral-600">
-            {searchError instanceof Error ? searchError.message : "Unable to search Gmail. Check your connection and try again."}
+            {searchError instanceof Error
+              ? searchError.message
+              : "Unable to search Gmail. Check your connection and try again."}
           </p>
         </div>
         <div className="flex justify-center gap-2">
@@ -158,12 +160,8 @@ export function GmailImportFlow({
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-emerald-600"></div>
         </div>
-        <h3 className="text-lg font-semibold text-neutral-900">
-          Searching Gmail...
-        </h3>
-        <p className="mt-2 text-sm text-neutral-600">
-          Looking for emails related to {companyName}
-        </p>
+        <h3 className="text-lg font-semibold text-neutral-900">Searching Gmail...</h3>
+        <p className="mt-2 text-sm text-neutral-600">Looking for emails related to {companyName}</p>
       </div>
     );
   }
@@ -176,7 +174,7 @@ export function GmailImportFlow({
     try {
       // Send all message IDs at once - backend will merge them into a single interaction
       const result = await api.gmailParseEmail(opportunitySlug, {
-        messageIds
+        messageIds,
       });
 
       // Set the single merged draft
@@ -194,18 +192,20 @@ export function GmailImportFlow({
 
   if (step === "select-candidate" && searchResults?.candidates) {
     // Transform messageStates to the format expected by GmailEmailSelector
-    const transformedMessageStates = messageStates ? {
-      pickedEmails: messageStates.pickedEmails.map(e => ({
-        id: e.id,
-        subject: e.subject,
-        date: e.date
-      })),
-      removedEmails: messageStates.removedEmails.map(e => ({
-        id: e.id,
-        subject: e.subject,
-        date: e.date
-      }))
-    } : undefined;
+    const transformedMessageStates = messageStates
+      ? {
+          pickedEmails: messageStates.pickedEmails.map((e) => ({
+            id: e.id,
+            subject: e.subject,
+            date: e.date,
+          })),
+          removedEmails: messageStates.removedEmails.map((e) => ({
+            id: e.id,
+            subject: e.subject,
+            date: e.date,
+          })),
+        }
+      : undefined;
 
     return (
       <GmailEmailSelector
@@ -250,45 +250,18 @@ export function GmailImportFlow({
         </div>
 
         <div className="space-y-3">
-          <DiffReviewRow
-            label="Date"
-            currentValue=""
-            newValue={formatDateTime(draft.date)}
-            isChanged={true}
-          />
+          <DiffReviewRow label="Date" currentValue="" newValue={formatDateTime(draft.date)} isChanged={true} />
 
           {draft.endDate && (
-            <DiffReviewRow
-              label="End Date"
-              currentValue=""
-              newValue={formatDateTime(draft.endDate)}
-              isChanged={true}
-            />
+            <DiffReviewRow label="End Date" currentValue="" newValue={formatDateTime(draft.endDate)} isChanged={true} />
           )}
 
-          <DiffReviewRow
-            label="Type"
-            currentValue=""
-            newValue={draft.type}
-            isChanged={true}
-          />
+          <DiffReviewRow label="Type" currentValue="" newValue={draft.type} isChanged={true} />
 
-          {draft.stage && (
-            <DiffReviewRow
-              label="Stage"
-              currentValue=""
-              newValue={draft.stage}
-              isChanged={true}
-            />
-          )}
+          {draft.stage && <DiffReviewRow label="Stage" currentValue="" newValue={draft.stage} isChanged={true} />}
 
           {draft.personName && (
-            <DiffReviewRow
-              label="Participants"
-              currentValue=""
-              newValue={draft.personName}
-              isChanged={true}
-            />
+            <DiffReviewRow label="Participants" currentValue="" newValue={draft.personName} isChanged={true} />
           )}
 
           {draft.meetingLink && (
@@ -348,12 +321,8 @@ export function GmailImportFlow({
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
             <MaterialIcon name="inbox" className="text-[32px] text-neutral-400" />
           </div>
-          <h3 className="text-lg font-semibold text-neutral-900">
-            No emails found
-          </h3>
-          <p className="mt-2 text-sm text-neutral-600">
-            We couldn't find any recent emails for {companyName}.
-          </p>
+          <h3 className="text-lg font-semibold text-neutral-900">No emails found</h3>
+          <p className="mt-2 text-sm text-neutral-600">We couldn't find any recent emails for {companyName}.</p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <button
               onClick={() => {

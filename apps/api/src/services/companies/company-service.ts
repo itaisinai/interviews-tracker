@@ -1,16 +1,16 @@
+import { prisma } from "../../lib/prisma.js";
 import type { CompanyInput } from "../../repositories/company-repository.js";
 import {
+  companyInclude,
   createCompanyRecord,
   deleteCompanyRecord,
   findCompanyByName,
   findCompanyRecord,
   findOrCreateCompanyByName,
   listCompanyRecords,
-  updateCompanyRecord,
   resolveCompanyId,
-  companyInclude
+  updateCompanyRecord,
 } from "../../repositories/company-repository.js";
-import { prisma } from "../../lib/prisma.js";
 
 export class CompanyService {
   async list(query: Record<string, string | undefined>, ownerEmail: string) {
@@ -57,7 +57,7 @@ export class CompanyService {
     return prisma.company.update({
       where: { id },
       data: { lastResearchedAt: new Date() },
-      include: companyInclude
+      include: companyInclude,
     });
   }
 }

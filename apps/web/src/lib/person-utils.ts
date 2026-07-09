@@ -16,10 +16,7 @@ function normalizeCompanyName(name: string): string {
 /**
  * Detect if person's researched current company doesn't match the opportunity company
  */
-export function detectCompanyMismatch(
-  person: Person,
-  opportunityCompanyName: string
-): boolean {
+export function detectCompanyMismatch(person: Person, opportunityCompanyName: string): boolean {
   // No mismatch if no research data
   if (!person.research || !person.company) {
     return false;
@@ -54,9 +51,7 @@ export function getCurrentCompanyFromResearch(person: Person): string | null {
   }>;
 
   // Find the experience with a "Present" position
-  const currentExperience = experience.find((exp) =>
-    exp.positions.some((pos) => pos.dates?.includes("Present"))
-  );
+  const currentExperience = experience.find((exp) => exp.positions.some((pos) => pos.dates?.includes("Present")));
 
   return currentExperience?.company || experience[0]?.company || null;
 }

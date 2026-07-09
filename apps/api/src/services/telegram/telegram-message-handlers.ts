@@ -4,13 +4,14 @@
  */
 
 import { logError } from "../../lib/logger.js";
-import { sendTelegramMessage, editTelegramMessage, forwardOpportunityTextToBackend } from "./telegram-api-client.js";
+
+import { editTelegramMessage, forwardOpportunityTextToBackend, sendTelegramMessage } from "./telegram-api-client.js";
 import { isAuthorizedTelegramUser } from "./telegram-auth.js";
 import { answerOpportunityQuery } from "./telegram-query-answerer.js";
 import {
-  formatQueryResponseForTelegram,
+  formatErrorMessage,
   formatOpportunityCreatedMessage,
-  formatErrorMessage
+  formatQueryResponseForTelegram,
 } from "./telegram-response-formatter.js";
 
 export interface TelegramMessage {
@@ -34,11 +35,12 @@ export async function handleOpportunityCreation(message: TelegramMessage) {
       text: message.text,
       telegramMessageId: message.messageId,
       fromUserId: message.fromUserId,
-      username: message.username
+      username: message.username,
     });
 
     const opportunity = result.opportunity;
-    const webAppBaseUrl = process.env.WEB_APP_BASE_URL || process.env.FRONTEND_ORIGIN?.split(",")[0]?.trim() || "http://localhost:3000";
+    const webAppBaseUrl =
+      process.env.WEB_APP_BASE_URL || process.env.FRONTEND_ORIGIN?.split(",")[0]?.trim() || "http://localhost:3000";
     const successMessage = formatOpportunityCreatedMessage(opportunity || {}, webAppBaseUrl);
 
     // Update the loading message with success
@@ -52,7 +54,7 @@ export async function handleOpportunityCreation(message: TelegramMessage) {
   } catch (error) {
     logError("telegram", "Failed to create opportunity", {
       messageId: message.messageId,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     });
 
     const errorMessage = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");
@@ -70,10 +72,7 @@ export async function handleOpportunityCreation(message: TelegramMessage) {
 
 export async function handleOpportunityQuery(message: TelegramMessage) {
   // Send loading message
-  const loadingResponse = await sendTelegramMessage(
-    message.chatId,
-    "🔍 Looking up your opportunities..."
-  );
+  const loadingResponse = await sendTelegramMessage(message.chatId, "🔍 Looking up your opportunities...");
   const loadingMessageId = (loadingResponse as { result?: { message_id?: number } }).result?.message_id;
 
   try {
@@ -90,13 +89,14 @@ export async function handleOpportunityQuery(message: TelegramMessage) {
     }
 
     // Get web app base URL for links
-    const webAppBaseUrl = process.env.WEB_APP_BASE_URL || process.env.FRONTEND_ORIGIN?.split(",")[0]?.trim() || "http://localhost:3000";
+    const webAppBaseUrl =
+      process.env.WEB_APP_BASE_URL || process.env.FRONTEND_ORIGIN?.split(",")[0]?.trim() || "http://localhost:3000";
 
     // Use AI to answer the query with function calling
     const queryResponse = await answerOpportunityQuery({
       query: message.text,
       ownerEmail,
-      webAppBaseUrl
+      webAppBaseUrl,
     });
 
     // Format response with markdown and links
@@ -113,7 +113,7 @@ export async function handleOpportunityQuery(message: TelegramMessage) {
   } catch (error) {
     logError("telegram", "Failed to answer query", {
       messageId: message.messageId,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     });
 
     const errorMessage = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");

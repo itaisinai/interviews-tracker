@@ -49,7 +49,7 @@ function getDevModeConfig(): DevModeConfig {
   return {
     enabled,
     userEmail,
-    warnings
+    warnings,
   };
 }
 
@@ -76,7 +76,7 @@ export function validateDevModeOnStartup(): void {
   const dbUrl = process.env.DATABASE_URL || "";
   if (!isLocalDatabase(dbUrl)) {
     logger.error("dev_mode_production_database_detected", {
-      dbUrlPrefix: dbUrl.substring(0, 30) + "..."
+      dbUrlPrefix: dbUrl.substring(0, 30) + "...",
     });
     console.error("\n" + "=".repeat(60));
     console.error("❌ CRITICAL ERROR: DEV MODE WITH PRODUCTION DATABASE");

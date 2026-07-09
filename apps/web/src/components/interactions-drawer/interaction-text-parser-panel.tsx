@@ -1,14 +1,14 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { type ReactNode, useMemo, useState } from "react";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
 import type { Interaction, InteractionDraft } from "../../lib/types";
+
 import { InteractionDraftFields } from "./interaction-draft-fields";
-import {
-  LoadingButton,
-  MaterialIcon,
-  ProcessStateCard,
-} from "@interviews-tracker/design-system";
 
 type InteractionTextParserPanelProps = {
   opportunitySlug: string;
@@ -29,13 +29,9 @@ export function InteractionTextParserPanel({
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [runState, setRunState] = useState<
-    "idle" | "parsing" | "ready" | "failed"
-  >("idle");
+  const [runState, setRunState] = useState<"idle" | "parsing" | "ready" | "failed">("idle");
   const [progress, setProgress] = useState(0);
-  const [runMessage, setRunMessage] = useState(
-    "Paste any recruiter message, interview note, or calendar text.",
-  );
+  const [runMessage, setRunMessage] = useState("Paste any recruiter message, interview note, or calendar text.");
 
   const isParsing = runState === "parsing";
   const actionLabel = draft ? "Parse again" : "Parse text";
@@ -83,10 +79,7 @@ export function InteractionTextParserPanel({
     setRunMessage("Sending pasted text to the AI parser.");
 
     try {
-      const response = await api.parseOpportunityInteractionText(
-        opportunitySlug,
-        { text },
-      );
+      const response = await api.parseOpportunityInteractionText(opportunitySlug, { text });
       setDraft(response.interaction);
       setRunState("ready");
       setProgress(100);
@@ -106,9 +99,7 @@ export function InteractionTextParserPanel({
     setError(null);
     setSaveError(null);
     setSaveMessage(null);
-    setRunMessage(
-      "Paste any recruiter message, interview note, or calendar text.",
-    );
+    setRunMessage("Paste any recruiter message, interview note, or calendar text.");
     setProgress(0);
   };
 
@@ -116,12 +107,8 @@ export function InteractionTextParserPanel({
     <section className="rounded-2xl border border-outline-variant bg-surface-container-low p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-            Free text parser
-          </p>
-          <h4 className="font-title-md text-title-md font-bold">
-            Paste message or notes
-          </h4>
+          <p className="font-label-md text-label-md uppercase text-on-surface-variant">Free text parser</p>
+          <h4 className="font-title-md text-title-md font-bold">Paste message or notes</h4>
           <p className="mt-1 text-body-md text-on-surface-variant">
             {companyName} · {roleTitle}
           </p>
@@ -177,9 +164,7 @@ export function InteractionTextParserPanel({
 
       {error && runState === "failed" ? (
         <div className="mt-4 rounded-lg border border-error/30 bg-error-container px-4 py-3 text-on-error-container">
-          <p className="font-body-md text-body-md font-semibold">
-            Parsing failed
-          </p>
+          <p className="font-body-md text-body-md font-semibold">Parsing failed</p>
           <p className="mt-1 font-body-md text-body-md">{error}</p>
         </div>
       ) : null}
@@ -199,14 +184,10 @@ export function InteractionTextParserPanel({
 
       {draft ? (
         <div className="mt-5 rounded-2xl border border-outline-variant bg-white p-5">
-          <p className="font-label-md text-label-md uppercase text-on-surface-variant">
-            Review interaction
-          </p>
+          <p className="font-label-md text-label-md uppercase text-on-surface-variant">Review interaction</p>
           {draft.meetingLink ? (
             <p className="mt-2 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md text-on-background">
-              <span className="font-semibold text-on-surface-variant">
-                Meeting link:{" "}
-              </span>
+              <span className="font-semibold text-on-surface-variant">Meeting link: </span>
               <a
                 className="text-primary hover:underline"
                 href={draft.meetingLink}

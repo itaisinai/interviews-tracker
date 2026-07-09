@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
+
 import { invalidateOptionsCache } from "./option-catalog-cache.js";
 
 export async function createDomainOption(label: string) {

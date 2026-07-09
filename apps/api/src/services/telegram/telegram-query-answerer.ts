@@ -4,27 +4,33 @@
  */
 
 import { z } from "zod";
+
 import { createTimer, logInfo } from "../../lib/logger.js";
+
 import {
   allTools as telegramQueryTools,
-  type ToolCall,
+  getInteractionDetails,
+  getNextInteractionForCompany,
   getNextInteractions,
   getOpportunitiesByStatus,
-  getInteractionDetails,
   searchOpportunities,
-  getNextInteractionForCompany
+  type ToolCall,
 } from "./tools/index.js";
 
 export const queryResponseSchema = z.object({
   answer: z.string(),
   needsClarification: z.boolean(),
   clarificationQuestion: z.string().nullable(),
-  relevantOpportunities: z.array(z.object({
-    id: z.string(),
-    companyName: z.string(),
-    roleTitle: z.string(),
-    slug: z.string().nullable()
-  })).optional()
+  relevantOpportunities: z
+    .array(
+      z.object({
+        id: z.string(),
+        companyName: z.string(),
+        roleTitle: z.string(),
+        slug: z.string().nullable(),
+      })
+    )
+    .optional(),
 });
 
 export type QueryResponse = z.infer<typeof queryResponseSchema>;
@@ -35,13 +41,13 @@ const queryResponseJsonSchema = {
   required: ["answer", "needsClarification", "clarificationQuestion", "relevantOpportunities"],
   properties: {
     answer: {
-      type: "string"
+      type: "string",
     },
     needsClarification: {
-      type: "boolean"
+      type: "boolean",
     },
     clarificationQuestion: {
-      type: ["string", "null"]
+      type: ["string", "null"],
     },
     relevantOpportunities: {
       type: "array",
@@ -53,11 +59,11 @@ const queryResponseJsonSchema = {
           id: { type: "string" },
           companyName: { type: "string" },
           roleTitle: { type: "string" },
-          slug: { type: ["string", "null"] }
-        }
-      }
-    }
-  }
+          slug: { type: ["string", "null"] },
+        },
+      },
+    },
+  },
 } as const;
 
 const QUERY_ANSWERING_SYSTEM_PROMPT = `You are a helpful assistant for a job opportunity tracking system.
@@ -105,10 +111,7 @@ async function executeToolCall(toolCall: ToolCall, ownerEmail: string): Promise<
 
   switch (toolCall.name) {
     case "getNextInteractions":
-      return getNextInteractions(
-        ownerEmail,
-        (args.limit as number | undefined) ?? 10
-      );
+      return getNextInteractions(ownerEmail, (args.limit as number | undefined) ?? 10);
 
     case "getOpportunitiesByStatus":
       return getOpportunitiesByStatus(
@@ -170,12 +173,12 @@ export async function answerOpportunityQuery(input: {
   }> = [
     {
       role: "system",
-      content: systemPrompt
+      content: systemPrompt,
     },
     {
       role: "user",
-      content: `User query: ${input.query}`
-    }
+      content: `User query: ${input.query}`,
+    },
   ];
 
   let iterationCount = 0;
@@ -190,14 +193,14 @@ export async function answerOpportunityQuery(input: {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
         messages,
         tools: telegramQueryTools,
-        tool_choice: iterationCount === 1 ? "auto" : "none" // First call can use tools, subsequent calls should respond
-      })
+        tool_choice: iterationCount === 1 ? "auto" : "none", // First call can use tools, subsequent calls should respond
+      }),
     });
 
     if (!response.ok) {
@@ -205,7 +208,7 @@ export async function answerOpportunityQuery(input: {
       throw new Error(`Query answering failed: ${response.status} ${await response.text()}`);
     }
 
-    const payload = await response.json() as {
+    const payload = (await response.json()) as {
       choices?: Array<{
         message?: {
           role?: string;
@@ -236,7 +239,7 @@ export async function answerOpportunityQuery(input: {
       messages.push({
         role: "assistant",
         content: message.content ?? "",
-        tool_calls: message.tool_calls
+        tool_calls: message.tool_calls,
       });
 
       // Execute all tool calls
@@ -245,7 +248,7 @@ export async function answerOpportunityQuery(input: {
           const toolCallParsed: ToolCall = {
             id: toolCall.id,
             name: toolCall.function.name as ToolCall["name"],
-            arguments: JSON.parse(toolCall.function.arguments)
+            arguments: JSON.parse(toolCall.function.arguments),
           };
 
           const result = await executeToolCall(toolCallParsed, input.ownerEmail);
@@ -254,11 +257,11 @@ export async function answerOpportunityQuery(input: {
           messages.push({
             role: "tool",
             tool_call_id: toolCall.id,
-            content: JSON.stringify(result)
+            content: JSON.stringify(result),
           });
         } catch (error) {
           logInfo("telegram", `Tool call failed: ${toolCall.function.name}`, {
-            error: error instanceof Error ? error.message : "Unknown error"
+            error: error instanceof Error ? error.message : "Unknown error",
           });
 
           // Add error result
@@ -266,8 +269,8 @@ export async function answerOpportunityQuery(input: {
             role: "tool",
             tool_call_id: toolCall.id,
             content: JSON.stringify({
-              error: error instanceof Error ? error.message : "Tool execution failed"
-            })
+              error: error instanceof Error ? error.message : "Tool execution failed",
+            }),
           });
         }
       }
@@ -283,7 +286,7 @@ export async function answerOpportunityQuery(input: {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
@@ -291,22 +294,22 @@ export async function answerOpportunityQuery(input: {
             ...messages,
             {
               role: "assistant",
-              content: message.content
+              content: message.content,
             },
             {
               role: "user",
-              content: "Format your answer as JSON according to the schema."
-            }
+              content: "Format your answer as JSON according to the schema.",
+            },
           ],
           response_format: {
             type: "json_schema",
             json_schema: {
               name: "answer_opportunity_query",
               strict: true,
-              schema: queryResponseJsonSchema
-            }
-          }
-        })
+              schema: queryResponseJsonSchema,
+            },
+          },
+        }),
       });
 
       if (!finalResponse.ok) {
@@ -314,7 +317,7 @@ export async function answerOpportunityQuery(input: {
         throw new Error(`Final formatting failed: ${finalResponse.status} ${await finalResponse.text()}`);
       }
 
-      const finalPayload = await finalResponse.json() as {
+      const finalPayload = (await finalResponse.json()) as {
         choices?: Array<{
           message?: {
             content?: string;

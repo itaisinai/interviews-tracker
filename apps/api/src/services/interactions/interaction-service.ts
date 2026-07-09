@@ -1,14 +1,15 @@
-import type { interactionInputSchema } from "../../lib/schemas.js";
 import type { z } from "zod";
+
 import { logger } from "../../lib/logger.js";
+import type { interactionInputSchema } from "../../lib/schemas.js";
+import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
 import {
   createInteractionRecord,
   deleteInteractionRecord,
   listInteractionRecords,
-  updateInteractionRecord
+  updateInteractionRecord,
 } from "../../repositories/interaction-repository.js";
 import { syncOpportunityStatusRecord } from "../../repositories/opportunity-repository.js";
-import { promoteOverdueInteractionStatusForRead } from "../../repositories/interaction-read-normalizer.js";
 import { unmarkUsedGmailMessageState } from "../gmail/gmail-service.js";
 
 type InteractionInput = z.infer<typeof interactionInputSchema>;
@@ -36,10 +37,13 @@ export async function deleteInteraction(id: string, ownerEmail: string, input?: 
     await unmarkUsedGmailMessageState({
       auth0Email: input.auth0Email,
       messageId: interaction.gmailMessageId,
-      jobOpportunityId: interaction.jobOpportunityId
+      jobOpportunityId: interaction.jobOpportunityId,
     });
   }
-  logger.operational("interaction_deleted", { opportunityId: interaction.jobOpportunityId, interactionId: interaction.id });
+  logger.operational("interaction_deleted", {
+    opportunityId: interaction.jobOpportunityId,
+    interactionId: interaction.id,
+  });
   await syncOpportunityStatusRecord(interaction.jobOpportunityId, ownerEmail);
   return interaction;
 }

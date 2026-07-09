@@ -68,6 +68,6 @@ export const emailInteractionParserSkill = `
 export function buildEmailInteractionParserSystemPrompt() {
   return [
     "Use the following email interaction parser skill as the primary extraction guide.",
-    emailInteractionParserSkill
+    emailInteractionParserSkill,
   ].join("\n\n");
 }

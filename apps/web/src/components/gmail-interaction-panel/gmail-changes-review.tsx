@@ -1,10 +1,18 @@
 import { Calendar, CheckCircle2, Clock, MapPin, MessageSquare, Sparkles, User, Video } from "lucide-react";
-import type { GmailEmailExtractionAnalysis, GmailInteractionDraft, GmailStructuredEmail, Interaction } from "../../lib/types";
-import { ChangeRow } from "./gmail-change-row";
-import { GmailReviewSidebar } from "./gmail-review-sidebar";
+
 import { LoadingButton } from "@interviews-tracker/design-system";
-import type { InteractionDiffField } from "./gmail-interaction-panel-helpers";
+
 import { formatDateTimeRange } from "../../lib/format";
+import type {
+  GmailEmailExtractionAnalysis,
+  GmailInteractionDraft,
+  GmailStructuredEmail,
+  Interaction,
+} from "../../lib/types";
+
+import { ChangeRow } from "./gmail-change-row";
+import type { InteractionDiffField } from "./gmail-interaction-panel-helpers";
+import { GmailReviewSidebar } from "./gmail-review-sidebar";
 
 type GmailChangesReviewProps = {
   draft: GmailInteractionDraft;
@@ -33,17 +41,11 @@ export function GmailChangesReview({
   saveInteractionPending,
   onAcceptChanges,
   onEditManually,
-  onCancel
+  onCancel,
 }: GmailChangesReviewProps) {
   const current = attachTargetInteraction;
   const changesCount = changedInteractionFields.size;
-  const confidencePercent = analysis
-    ? analysis.hasCalendar
-      ? 95
-      : analysis.dateSource === "text"
-        ? 85
-        : 75
-    : 95;
+  const confidencePercent = analysis ? (analysis.hasCalendar ? 95 : analysis.dateSource === "text" ? 85 : 75) : 95;
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 min-h-[600px]">
@@ -66,8 +68,7 @@ export function GmailChangesReview({
               ? hasParsedInteractionChanges
                 ? "We detected changes from the email. Review and accept to update the interaction."
                 : "The email matches the existing interaction. Accept to attach the email reference."
-              : "Review the extracted details and accept to create the interaction."
-            }
+              : "Review the extracted details and accept to create the interaction."}
           </p>
         </div>
 
@@ -84,7 +85,7 @@ export function GmailChangesReview({
               return date.toLocaleDateString("en-GB", {
                 day: "2-digit",
                 month: "short",
-                year: "numeric"
+                year: "numeric",
               });
             }}
           />
@@ -102,7 +103,7 @@ export function GmailChangesReview({
               const startTime = startDate.toLocaleTimeString(undefined, {
                 hour: "2-digit",
                 minute: "2-digit",
-                hour12: false
+                hour12: false,
               });
 
               if (!end) return startTime;
@@ -111,7 +112,7 @@ export function GmailChangesReview({
               const endTime = endDate.toLocaleTimeString(undefined, {
                 hour: "2-digit",
                 minute: "2-digit",
-                hour12: false
+                hour12: false,
               });
 
               const totalMinutes = Math.round((endDate.getTime() - startDate.getTime()) / 60_000);
@@ -161,7 +162,7 @@ export function GmailChangesReview({
             before={current?.meetingLink}
             after={draft.meetingLink}
             changed={changedInteractionFields.has("meetingLink")}
-            formatValue={(val) => val ? "Available" : "—"}
+            formatValue={(val) => (val ? "Available" : "—")}
           />
 
           {selectedEmail.calendar?.location && (
@@ -180,7 +181,7 @@ export function GmailChangesReview({
             before={current?.notes}
             after={draft.notes}
             changed={changedInteractionFields.has("notes")}
-            formatValue={(val) => val ? `${val.slice(0, 50)}${val.length > 50 ? "..." : ""}` : "—"}
+            formatValue={(val) => (val ? `${val.slice(0, 50)}${val.length > 50 ? "..." : ""}` : "—")}
           />
         </div>
 

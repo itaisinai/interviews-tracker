@@ -1,4 +1,5 @@
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
 import { Badge } from "../badge";
 
 type PersonWithResearch = {
@@ -65,7 +66,10 @@ export function PersonProfileView({ person, onUpdateResearch }: PersonProfileVie
                 </p>
               ) : null}
               {person.email ? (
-                <a href={`mailto:${person.email}`} className="mt-2 flex items-center gap-1 text-body-md text-primary hover:underline">
+                <a
+                  href={`mailto:${person.email}`}
+                  className="mt-2 flex items-center gap-1 text-body-md text-primary hover:underline"
+                >
                   <MaterialIcon name="email" className="text-[18px]" />
                   {person.email}
                 </a>

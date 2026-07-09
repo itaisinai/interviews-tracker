@@ -1,5 +1,5 @@
-import type { Interaction, InteractionDraft } from "../../lib/types";
 import { normalizeInteractionType } from "../../lib/enum-labels";
+import type { Interaction, InteractionDraft } from "../../lib/types";
 
 export function interactionToDraft(interaction: Interaction): InteractionDraft {
   return {

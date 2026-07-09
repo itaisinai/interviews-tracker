@@ -24,7 +24,7 @@ export const jobStatusOrder: Record<JobStatus, number> = {
   OFFER: 11,
   REJECTED: 12,
   PAUSED: 13,
-  NOT_RELEVANT: 14
+  NOT_RELEVANT: 14,
 };
 
 export function compareJobStatuses(left: JobStatus, right: JobStatus) {
@@ -41,7 +41,9 @@ function hasAny(text: string, patterns: RegExp[]) {
 
 function deriveStatusFromInteraction(interaction: InteractionLike): JobStatus | null {
   const normalizedType = normalizeText(interaction.type);
-  const text = normalizeText([normalizedType, interaction.stage, interaction.outcome, interaction.followUp].filter(Boolean).join(" "));
+  const text = normalizeText(
+    [normalizedType, interaction.stage, interaction.outcome, interaction.followUp].filter(Boolean).join(" ")
+  );
   const isDone = interaction.status === "DONE" || interaction.status === "NEEDS_FOLLOW_UP";
   const isScheduled = interaction.status === "SCHEDULED";
 
@@ -57,16 +59,22 @@ function deriveStatusFromInteraction(interaction: InteractionLike): JobStatus | 
     return "OFFER";
   }
 
-  if (hasAny(text, [/reject/, /declin/, /not.*moving forward/, /moving on/, /not a fit/, /דחייה/, /נדחה/, /לא מתקדמים/])) {
+  if (
+    hasAny(text, [/reject/, /declin/, /not.*moving forward/, /moving on/, /not a fit/, /דחייה/, /נדחה/, /לא מתקדמים/])
+  ) {
     return "REJECTED";
   }
 
   if (hasAny(text, [/home assignment/, /take[- ]home/, /assignment/, /home task/, /task/, /project/, /משימה/])) {
-    return isDone || hasAny(text, [/submitted/, /sent/, /completed/, /done/, /הוגש/, /נשלח/, /הושלם/]) ? "ASSIGNMENT_SUBMITTED" : "HOME_ASSIGNMENT";
+    return isDone || hasAny(text, [/submitted/, /sent/, /completed/, /done/, /הוגש/, /נשלח/, /הושלם/])
+      ? "ASSIGNMENT_SUBMITTED"
+      : "HOME_ASSIGNMENT";
   }
 
   if (hasAny(text, [/technical/, /\btech\b/, /coding/, /pair programming/, /system design/, /מבחן טכני/, /טכני/])) {
-    return isDone || hasAny(text, [/completed/, /done/, /finished/, /passed/, /עבר/]) ? "TECHNICAL_DONE" : "TECHNICAL_SCHEDULED";
+    return isDone || hasAny(text, [/completed/, /done/, /finished/, /passed/, /עבר/])
+      ? "TECHNICAL_DONE"
+      : "TECHNICAL_SCHEDULED";
   }
 
   if (hasAny(text, [/final/, /onsite/, /on site/, /panel/, /last round/, /round 3/, /שלב סופי/, /סופי/])) {
@@ -88,8 +96,22 @@ function deriveStatusFromInteraction(interaction: InteractionLike): JobStatus | 
     return "RECRUITER_REACHED_OUT";
   }
 
-  if (hasAny(text, [/phone interview/, /phone screen/, /phone/, /screening/, /intro call/, /call/, /שיחה/, /טלפוני/, /סינון/])) {
-    return isDone || hasAny(text, [/completed/, /done/, /finished/, /went well/, /good conversation/, /מוצלח/]) ? "PHONE_DONE" : "PHONE_SCHEDULED";
+  if (
+    hasAny(text, [
+      /phone interview/,
+      /phone screen/,
+      /phone/,
+      /screening/,
+      /intro call/,
+      /call/,
+      /שיחה/,
+      /טלפוני/,
+      /סינון/,
+    ])
+  ) {
+    return isDone || hasAny(text, [/completed/, /done/, /finished/, /went well/, /good conversation/, /מוצלח/])
+      ? "PHONE_DONE"
+      : "PHONE_SCHEDULED";
   }
 
   if (isScheduled && hasAny(text, [/interview/, /ראיון/])) {

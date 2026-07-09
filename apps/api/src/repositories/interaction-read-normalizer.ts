@@ -1,5 +1,6 @@
-import { prisma } from "../lib/prisma.js";
 import type { InteractionStatus } from "@interviews-tracker/core";
+
+import { prisma } from "../lib/prisma.js";
 
 const overdueInteractionTypes = [
   "Interview",
@@ -8,7 +9,7 @@ const overdueInteractionTypes = [
   "Technical Interview",
   "HR Screen",
   "Recruiter Screen",
-  "Onsite"
+  "Onsite",
 ] as const;
 
 type OverdueInteractionCandidate = {
@@ -30,7 +31,10 @@ function normalizeDateValue(value: string | Date) {
   return new Date(value).getTime();
 }
 
-function hasLaterInteraction<T extends InteractionStatusLike & { id: string }>(interaction: T, interactions: readonly T[]) {
+function hasLaterInteraction<T extends InteractionStatusLike & { id: string }>(
+  interaction: T,
+  interactions: readonly T[]
+) {
   const ordered = [...interactions].sort((left, right) => {
     const leftTime = normalizeDateValue(left.date);
     const rightTime = normalizeDateValue(right.date);
@@ -49,7 +53,10 @@ function hasLaterInteraction<T extends InteractionStatusLike & { id: string }>(i
   return ordered.slice(currentIndex + 1).length > 0;
 }
 
-export function promoteOverdueInteractionStatusForRead<T extends InteractionStatusLike>(interaction: T, now = new Date()) {
+export function promoteOverdueInteractionStatusForRead<T extends InteractionStatusLike>(
+  interaction: T,
+  now = new Date()
+) {
   if (
     interaction.status !== "SCHEDULED" ||
     !overdueInteractionTypes.includes(interaction.type as (typeof overdueInteractionTypes)[number])
@@ -58,7 +65,9 @@ export function promoteOverdueInteractionStatusForRead<T extends InteractionStat
   }
 
   // Use endDate if present, otherwise use date
-  const effectiveEndTime = interaction.endDate ? new Date(interaction.endDate).getTime() : new Date(interaction.date).getTime();
+  const effectiveEndTime = interaction.endDate
+    ? new Date(interaction.endDate).getTime()
+    : new Date(interaction.date).getTime();
 
   if (effectiveEndTime >= now.getTime()) {
     return interaction;
@@ -66,11 +75,14 @@ export function promoteOverdueInteractionStatusForRead<T extends InteractionStat
 
   return {
     ...interaction,
-    status: "NEEDS_FOLLOW_UP" as const
+    status: "NEEDS_FOLLOW_UP" as const,
   };
 }
 
-export function promoteOverdueInteractionsForRead<T extends InteractionStatusLike & { id: string }>(interactions: readonly T[], now = new Date()) {
+export function promoteOverdueInteractionsForRead<T extends InteractionStatusLike & { id: string }>(
+  interactions: readonly T[],
+  now = new Date()
+) {
   const ordered = [...interactions].sort((left, right) => {
     const leftTime = normalizeDateValue(left.date);
     const rightTime = normalizeDateValue(right.date);
@@ -90,10 +102,12 @@ export function promoteOverdueInteractionsForRead<T extends InteractionStatusLik
   });
 }
 
-export function promoteOpportunityInteractionsForRead<T extends { interactions: readonly (InteractionStatusLike & { id: string })[] }>(opportunity: T, now = new Date()) {
+export function promoteOpportunityInteractionsForRead<
+  T extends { interactions: readonly (InteractionStatusLike & { id: string })[] },
+>(opportunity: T, now = new Date()) {
   return {
     ...opportunity,
-    interactions: promoteOverdueInteractionsForRead(opportunity.interactions, now)
+    interactions: promoteOverdueInteractionsForRead(opportunity.interactions, now),
   };
 }
 
@@ -103,10 +117,7 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
       ownerEmail,
       status: "SCHEDULED",
       type: { in: [...overdueInteractionTypes] },
-      OR: [
-        { endDate: null, date: { lt: now } },
-        { endDate: { lt: now } }
-      ]
+      OR: [{ endDate: null, date: { lt: now } }, { endDate: { lt: now } }],
     },
     select: {
       id: true,
@@ -117,8 +128,8 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
       status: true,
       stage: true,
       outcome: true,
-      followUp: true
-    }
+      followUp: true,
+    },
   });
 
   const opportunityIds = [...new Set(candidates.map((item: OverdueInteractionCandidate) => item.jobOpportunityId))];
@@ -130,7 +141,7 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
   const opportunityInteractions = await prisma.interaction.findMany({
     where: {
       ownerEmail,
-      jobOpportunityId: { in: opportunityIds }
+      jobOpportunityId: { in: opportunityIds },
     },
     select: {
       id: true,
@@ -141,8 +152,8 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
       status: true,
       stage: true,
       outcome: true,
-      followUp: true
-    }
+      followUp: true,
+    },
   });
 
   const interactionsByOpportunity = new Map<string, typeof opportunityInteractions>();
@@ -157,7 +168,9 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
   const candidateIds = new Set(candidates.map((item) => item.id));
 
   for (const interactionList of interactionsByOpportunity.values()) {
-    const ordered = [...interactionList].sort((left, right) => normalizeDateValue(left.date) - normalizeDateValue(right.date) || left.id.localeCompare(right.id));
+    const ordered = [...interactionList].sort(
+      (left, right) => normalizeDateValue(left.date) - normalizeDateValue(right.date) || left.id.localeCompare(right.id)
+    );
     ordered.forEach((interaction, index) => {
       const isCandidate = candidateIds.has(interaction.id);
       const laterInteractionExists = ordered.slice(index + 1).length > 0;
@@ -171,9 +184,9 @@ export async function normalizeOverdueScheduledInteractionsForRead(ownerEmail: s
     await prisma.interaction.updateMany({
       where: {
         ownerEmail,
-        id: { in: [...interactionIdsToPromote] }
+        id: { in: [...interactionIdsToPromote] },
       },
-      data: { status: "NEEDS_FOLLOW_UP" }
+      data: { status: "NEEDS_FOLLOW_UP" },
     });
   }
 

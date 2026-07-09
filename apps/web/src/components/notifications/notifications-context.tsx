@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+
 import type { AppNotification } from "../../lib/notifications";
 
 export type NotificationsContextValue = {

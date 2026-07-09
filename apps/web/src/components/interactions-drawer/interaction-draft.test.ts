@@ -1,7 +1,9 @@
-import type { Interaction } from "../../lib/types";
 import assert from "node:assert/strict";
-import { interactionToDraft } from "./interaction-draft.js";
 import test from "node:test";
+
+import type { Interaction } from "../../lib/types";
+
+import { interactionToDraft } from "./interaction-draft.js";
 
 test("initializes every editable field from the current interaction", () => {
   const interaction: Interaction = {

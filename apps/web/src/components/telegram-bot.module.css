@@ -15,7 +15,9 @@
   justify-content: center;
   box-shadow: var(--shadow-md);
   z-index: 1000;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .floatingIcon {
@@ -193,7 +195,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .iconButton:hover {
@@ -375,7 +379,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s ease, background-color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
   flex-shrink: 0;
 }
 

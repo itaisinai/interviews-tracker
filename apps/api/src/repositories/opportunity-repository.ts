@@ -1,20 +1,31 @@
-import type { Prisma, PipelineType } from "@prisma/client";
-import { appendSlugCollisionSuffix, compareJobStatuses, createOpportunitySlug, deriveOpportunityStatusFromInteractions } from "@interviews-tracker/core";
+import type { PipelineType, Prisma } from "@prisma/client";
+import type { z } from "zod";
+
+import {
+  appendSlugCollisionSuffix,
+  compareJobStatuses,
+  createOpportunitySlug,
+  deriveOpportunityStatusFromInteractions,
+} from "@interviews-tracker/core";
+
 import { prisma } from "../lib/prisma.js";
 import { opportunityInputSchema } from "../lib/schemas.js";
-import type { z } from "zod";
+
 import {
   normalizeOverdueScheduledInteractionsForRead,
-  promoteOpportunityInteractionsForRead
+  promoteOpportunityInteractionsForRead,
 } from "./interaction-read-normalizer.js";
 
 export type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
-export function preserveLinkedinMetadataForUpdate(input: OpportunityInput, existing: { linkedinJobId?: string | null; sourceUrl?: string | null }): OpportunityInput {
+export function preserveLinkedinMetadataForUpdate(
+  input: OpportunityInput,
+  existing: { linkedinJobId?: string | null; sourceUrl?: string | null }
+): OpportunityInput {
   return {
     ...input,
-    linkedinJobId: input.linkedinJobId === undefined ? existing.linkedinJobId ?? undefined : input.linkedinJobId,
-    sourceUrl: input.sourceUrl === undefined ? existing.sourceUrl ?? undefined : input.sourceUrl
+    linkedinJobId: input.linkedinJobId === undefined ? (existing.linkedinJobId ?? undefined) : input.linkedinJobId,
+    sourceUrl: input.sourceUrl === undefined ? (existing.sourceUrl ?? undefined) : input.sourceUrl,
   };
 }
 
@@ -23,18 +34,21 @@ export const opportunityInclude = {
     include: {
       employeesRange: true,
       companyStage: true,
-      domains: { include: { domain: true } }
-    }
+      domains: { include: { domain: true } },
+    },
   },
   workModel: true,
   domains: { include: { domain: true } },
   interactions: { orderBy: { date: "asc" as const } },
   notesList: { orderBy: { createdAt: "desc" as const } },
   tasks: { orderBy: { dueDate: "asc" as const } },
-  compensation: true
+  compensation: true,
 } satisfies Prisma.JobOpportunityInclude;
 
-function toWrite(input: OpportunityInput & { companyId: string }, ownerEmail: string): Omit<Prisma.JobOpportunityCreateInput, "slug"> {
+function toWrite(
+  input: OpportunityInput & { companyId: string },
+  ownerEmail: string
+): Omit<Prisma.JobOpportunityCreateInput, "slug"> {
   const { domainIds, workModelId, companyId, companyName, ...rest } = input;
   return {
     ...rest,
@@ -50,19 +64,25 @@ function toWrite(input: OpportunityInput & { companyId: string }, ownerEmail: st
     notes: rest.notes ?? null,
     compensationNotes: rest.compensationNotes ?? null,
     workModel: workModelId ? { connect: { id: workModelId } } : undefined,
-    domains: { create: domainIds.map((domainId) => ({ ownerEmail, domain: { connect: { id: domainId } } })) }
+    domains: { create: domainIds.map((domainId) => ({ ownerEmail, domain: { connect: { id: domainId } } })) },
   };
 }
 
-async function createUniqueOpportunitySlug(companyName: string, roleTitle: string, ownerEmail: string, tx: Prisma.TransactionClient = prisma, excludeId?: string) {
+async function createUniqueOpportunitySlug(
+  companyName: string,
+  roleTitle: string,
+  ownerEmail: string,
+  tx: Prisma.TransactionClient = prisma,
+  excludeId?: string
+) {
   const baseSlug = createOpportunitySlug(companyName, roleTitle);
   const existing = await tx.jobOpportunity.findMany({
     where: {
       ownerEmail,
       slug: { startsWith: baseSlug },
-      id: excludeId ? { not: excludeId } : undefined
+      id: excludeId ? { not: excludeId } : undefined,
     },
-    select: { slug: true }
+    select: { slug: true },
   });
   const usedSlugs = new Set(existing.map((item) => item.slug));
 
@@ -90,15 +110,19 @@ export async function listOpportunityRecords(query: Record<string, string | unde
 
   const where: Prisma.JobOpportunityWhereInput = {
     ownerEmail,
-    status: query.status ? { equals: query.status as Prisma.EnumJobStatusFilter<"JobOpportunity">["equals"] } : undefined,
-    priority: query.priority ? { equals: query.priority as Prisma.EnumPriorityFilter<"JobOpportunity">["equals"] } : undefined,
+    status: query.status
+      ? { equals: query.status as Prisma.EnumJobStatusFilter<"JobOpportunity">["equals"] }
+      : undefined,
+    priority: query.priority
+      ? { equals: query.priority as Prisma.EnumPriorityFilter<"JobOpportunity">["equals"] }
+      : undefined,
     OR: query.search
       ? [
           { company: { name: { contains: query.search, mode: "insensitive" } } },
-          { roleTitle: { contains: query.search, mode: "insensitive" } }
+          { roleTitle: { contains: query.search, mode: "insensitive" } },
         ]
       : undefined,
-    domains: query.domainId ? { some: { domainId: query.domainId } } : undefined
+    domains: query.domainId ? { some: { domainId: query.domainId } } : undefined,
   };
 
   // Custom pipeline filtering logic
@@ -125,7 +149,7 @@ export async function listOpportunityRecords(query: Record<string, string | unde
   const opportunities = await prisma.jobOpportunity.findMany({
     where,
     include: opportunityInclude,
-    orderBy: query.sort === "nextInteraction" ? { interactions: { _count: "desc" } } : { updatedAt: "desc" }
+    orderBy: query.sort === "nextInteraction" ? { interactions: { _count: "desc" } } : { updatedAt: "desc" },
   });
 
   return opportunities.map((opportunity) => promoteOpportunityInteractionsForRead(opportunity));
@@ -142,7 +166,10 @@ export async function getOpportunityRecord(slugOrId: string, ownerEmail: string)
     await syncOpportunityStatusRecord(id, ownerEmail);
   }
 
-  const opportunity = await prisma.jobOpportunity.findFirstOrThrow({ where: { id, ownerEmail }, include: opportunityInclude });
+  const opportunity = await prisma.jobOpportunity.findFirstOrThrow({
+    where: { id, ownerEmail },
+    include: opportunityInclude,
+  });
   return promoteOpportunityInteractionsForRead(opportunity);
 }
 
@@ -158,8 +185,8 @@ export async function getOpportunitySummaryRecord(slugOrId: string, ownerEmail: 
       id: true,
       company: { select: { id: true, name: true, searchName: true } },
       roleTitle: true,
-      domains: { select: { domain: { select: { label: true } } } }
-    }
+      domains: { select: { domain: { select: { label: true } } } },
+    },
   });
 }
 
@@ -171,19 +198,24 @@ export async function createOpportunityRecord(input: OpportunityInput, ownerEmai
   const slug = await createUniqueOpportunitySlug(company.name, input.roleTitle, ownerEmail);
   const opportunity = await prisma.jobOpportunity.create({
     data: { ...toWrite({ ...input, companyId }, ownerEmail), slug },
-    include: opportunityInclude
+    include: opportunityInclude,
   });
   return promoteOpportunityInteractionsForRead(opportunity);
 }
 
-export async function updateOpportunityRecord(slugOrId: string, input: OpportunityInput, ownerEmail: string, companyId?: string) {
+export async function updateOpportunityRecord(
+  slugOrId: string,
+  input: OpportunityInput,
+  ownerEmail: string,
+  companyId?: string
+) {
   const id = await resolveOpportunityId(slugOrId, ownerEmail);
   if (!id) throw new Error("Opportunity not found");
 
   const opportunity = await prisma.$transaction(async (tx) => {
     const existing = await tx.jobOpportunity.findFirst({
       where: { id, ownerEmail },
-      include: { company: { select: { name: true } } }
+      include: { company: { select: { name: true } } },
     });
 
     if (!existing) throw new Error("Opportunity not found");
@@ -199,7 +231,9 @@ export async function updateOpportunityRecord(slugOrId: string, input: Opportuni
       companyName = company.name;
     }
 
-    const slug = existing.slug || await createUniqueOpportunitySlug(companyName, inputWithPreservedMetadata.roleTitle, ownerEmail, tx, id);
+    const slug =
+      existing.slug ||
+      (await createUniqueOpportunitySlug(companyName, inputWithPreservedMetadata.roleTitle, ownerEmail, tx, id));
     const data = toWrite({ ...inputWithPreservedMetadata, companyId: finalCompanyId }, ownerEmail);
 
     await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
@@ -229,11 +263,11 @@ export async function syncOpportunityStatusRecord(id: string, ownerEmail: string
           status: true,
           outcome: true,
           followUp: true,
-          date: true
+          date: true,
         },
-        orderBy: { date: "asc" }
-      }
-    }
+        orderBy: { date: "asc" },
+      },
+    },
   });
 
   if (!opportunity) {
@@ -259,8 +293,8 @@ export async function syncOpportunityStatusRecord(id: string, ownerEmail: string
     where: { id: opportunity.id },
     data: {
       status: nextStatus,
-      ...(shouldArchive && { pipelineType: nextPipelineType })
-    }
+      ...(shouldArchive && { pipelineType: nextPipelineType }),
+    },
   });
 
   return nextStatus;
@@ -271,7 +305,7 @@ export async function listOpportunityInteractionsRecord(slugOrId: string, ownerE
   if (!opportunityId) return [];
   const interactions = await prisma.interaction.findMany({
     where: { jobOpportunityId: opportunityId, ownerEmail },
-    orderBy: { date: "asc" }
+    orderBy: { date: "asc" },
   });
 
   return promoteOpportunityInteractionsForRead({ interactions }).interactions;

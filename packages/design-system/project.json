@@ -6,9 +6,7 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "options": {
         "command": "cd packages/design-system && tsup"
       }
