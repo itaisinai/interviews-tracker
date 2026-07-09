@@ -9,7 +9,7 @@ import { api } from "../../lib/api";
 import { useState } from "react";
 
 type ParticipantsCardProps = {
-  personNames: string[];
+  personNames: string[]; // Can contain names or emails
   personRecords: Array<Person | undefined>;
   opportunitySlug?: string;
   opportunityCompanyName?: string;
@@ -59,7 +59,22 @@ export function ParticipantsCard({
     },
   });
 
-  if (personNames.length === 0) {
+  // Filter out current user from participants list
+  const participantsToShow = personNames
+    .map((name, index) => ({ name, person: personRecords[index], index }))
+    .filter(({ name, person }) => {
+      // Check if this is the current user
+      const nameIsEmail = name.includes("@");
+      const namesMatch = user?.name && name.toLowerCase() === user.name.toLowerCase();
+      const isCurrentUser = user?.email && (
+        (person?.email && person.email.toLowerCase() === user.email.toLowerCase()) ||
+        (nameIsEmail && name.toLowerCase() === user.email.toLowerCase()) ||
+        namesMatch
+      );
+      return !isCurrentUser; // Exclude current user
+    });
+
+  if (participantsToShow.length === 0) {
     return null;
   }
 
@@ -80,10 +95,7 @@ export function ParticipantsCard({
 
         {/* Participants List */}
         <div className={columns === 1 ? "space-y-2" : "grid grid-cols-2 gap-2"}>
-          {personNames.map((name, index) => {
-            const person = personRecords[index];
-            const isCurrentUser = person?.email && user?.email && person.email.toLowerCase() === user.email.toLowerCase();
-
+          {participantsToShow.map(({ name, person, index }) => {
             return (
               <div
                 key={name}
@@ -98,13 +110,10 @@ export function ParticipantsCard({
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-neutral-900 truncate">
                       {name}
-                      {isCurrentUser && (
-                        <span className="ml-1.5 text-xs text-neutral-500 font-normal">(me)</span>
-                      )}
                     </div>
                     {person?.title && (
                       <div className="text-xs text-neutral-600 truncate mt-0.5">
-                        {person.title}
+                        {person.title.replace(/\s*\(Current\)\s*$/i, '')}
                       </div>
                     )}
                   </div>
@@ -171,7 +180,7 @@ export function ParticipantsCard({
                 `Mark ${selectedPerson.name} as the wrong person? This will help future searches exclude this candidate.`,
               )
             ) {
-              markAsWrong.mutate(selectedPerson.id);
+              markAsWrong.mutate(selectedPerson.slug);
               setPersonDetailModalOpen(false);
               setSelectedPerson(null);
             }

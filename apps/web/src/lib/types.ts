@@ -51,8 +51,8 @@ export type {
 } from "@interviews-tracker/api-client";
 
 export type Person = {
-  id: string;
-  slug: string;           // Added for slug-first architecture
+  slug: string;
+  ownerEmail: string;     // Email of user who owns this contact
   name: string;
   email: string | null;
   linkedinUrl: string | null;

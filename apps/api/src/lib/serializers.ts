@@ -58,10 +58,9 @@ export function serializeInteraction<T extends Record<string, any>>(interaction:
 
 /**
  * Remove internal IDs from person response
- * Note: Keeps `id` for backward compatibility with contact actions (delete, select, etc.)
  */
 export function serializePerson<T extends Record<string, any>>(person: T): any {
-  const { companyId, ...rest } = person;
+  const { id, companyId, ...rest } = person;
 
   // Clean nested research
   if ('research' in person && (person as any).research) {

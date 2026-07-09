@@ -75,7 +75,7 @@ export function ContactsList({
       return await api.parseCurrentJob(personId, jobDescriptionText);
     },
     onSuccess: (data, variables) => {
-      const person = typedContacts.find((c) => c.id === variables.personId);
+      const person = typedContacts.find((c) => c.slug === variables.personId);
       if (person) {
         setReviewTimeline({
           person,
@@ -121,7 +121,7 @@ export function ContactsList({
 
   // Derive selectedPerson from the latest contacts data
   const selectedPerson = selectedPersonId
-    ? typedContacts.find((c) => c.id === selectedPersonId) || null
+    ? typedContacts.find((c) => c.slug === selectedPersonId) || null
     : null;
 
   if (isLoading) {
@@ -163,14 +163,14 @@ export function ContactsList({
             <div className="space-y-2">
               {typedContacts.map((contact) => (
                 <div
-                  key={contact.id}
+                  key={contact.slug}
                   className="group flex w-full items-start gap-3 rounded-lg border border-outline-variant bg-surface p-3 transition-colors hover:bg-surface-container"
                 >
                   <button
                     onClick={() =>
                       detectCompanyMismatch(contact, companyName)
                         ? setFixMismatchPerson(contact)
-                        : setSelectedPersonId(contact.id)
+                        : setSelectedPersonId(contact.slug)
                     }
                     className="flex min-w-0 flex-1 items-start gap-3 text-left"
                   >
@@ -231,7 +231,7 @@ export function ContactsList({
                     onClick={(e) => {
                       e.stopPropagation();
                       if (window.confirm(`Delete ${contact.name}?`)) {
-                        deletePerson.mutate(contact.id);
+                        deletePerson.mutate(contact.slug);
                       }
                     }}
                     className="flex-shrink-0 rounded-lg p-2 text-error opacity-0 transition-opacity hover:bg-error/10 group-hover:opacity-100"
@@ -259,7 +259,7 @@ export function ContactsList({
               linkedinUrl: selectedPerson.linkedinUrl || undefined,
               email: selectedPerson.email || undefined,
             });
-            setResearchPersonId(selectedPerson.id);
+            setResearchPersonId(selectedPerson.slug);
             setSelectedPersonId(null);
           }}
           onMarkAsWrong={() => {
@@ -272,7 +272,7 @@ export function ContactsList({
                 `Delete ${selectedPerson.name}? This will remove all their research data.`,
               )
             ) {
-              deletePerson.mutate(selectedPerson.id);
+              deletePerson.mutate(selectedPerson.slug);
               setSelectedPersonId(null);
             }
           }}
@@ -307,9 +307,9 @@ export function ContactsList({
             // Trigger auto-refresh by re-running person research WITH existing person ID
             console.log(
               "[AUTO REFRESH] Setting personId:",
-              fixMismatchPerson.id,
+              fixMismatchPerson.slug,
             );
-            setResearchPersonId(fixMismatchPerson.id); // Set ID separately for clarity
+            setResearchPersonId(fixMismatchPerson.slug); // Set ID separately for clarity
             setResearchPerson({
               name: fixMismatchPerson.name,
               title: fixMismatchPerson.title || undefined,
@@ -334,7 +334,7 @@ export function ContactsList({
           opportunityCompanyName={companyName}
           onSubmit={(jobDescription) => {
             parseJob.mutate({
-              personId: manualUpdatePerson.id,
+              personId: manualUpdatePerson.slug,
               jobDescriptionText: jobDescription,
             });
           }}
@@ -351,7 +351,7 @@ export function ContactsList({
           updatedTimeline={reviewTimeline.updatedTimeline}
           onApply={() => {
             applyJobUpdate.mutate({
-              personId: reviewTimeline.person.id,
+              personId: reviewTimeline.person.slug,
               updatedTimeline: reviewTimeline.updatedTimeline,
             });
           }}
