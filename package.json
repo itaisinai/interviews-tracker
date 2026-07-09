@@ -9,7 +9,8 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && husky install",
+    "prepare": "husky install",
     "dev": "node scripts/dev-with-ssm.js",
     "dev:local": "concurrently \"yarn nx dev api\" \"yarn nx dev web\"",
     "dev:packages": "nx run-many -t dev --projects=core,ai,integrations,logger,design-system,api-client",
@@ -36,7 +37,8 @@
     "db:studio": "prisma studio",
     "start:api": "node scripts/start-api.mjs",
     "start:web": "vite preview --config apps/web/vite.config.ts --host 0.0.0.0",
-    "secrets:verify": "aws ssm get-parameters-by-path --path /interviews-tracker/prod --region eu-central-1 --output table"
+    "secrets:verify": "aws ssm get-parameters-by-path --path /interviews-tracker/prod --region eu-central-1 --output table",
+    "prepare": "husky"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.17.0",
@@ -76,6 +78,7 @@
     "concurrently": "^9.2.1",
     "eslint": "^10.6.0",
     "eslint-plugin-simple-import-sort": "^13.0.0",
+    "husky": "^9.1.7",
     "nx": "workspace:*",
     "playwright": "^1.61.1",
     "postcss": "^8.5.6",

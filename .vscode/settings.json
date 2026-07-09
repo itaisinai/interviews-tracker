@@ -1,10 +1,7 @@
 {
   "editor.defaultFormatter": "biomejs.biome",
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "quickfix.biome": "explicit",
-    "source.fixAll.eslint": "explicit"
-  },
+  "editor.formatOnSave": false,
+  "editor.codeActionsOnSave": {},
   "[javascript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
@@ -12,6 +9,9 @@
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[json]": {
@@ -22,5 +22,7 @@
   },
   "typescript.tsdk": "node_modules/typescript/lib",
   "eslint.enable": true,
-  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"]
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "eslint.format.enable": false,
+  "files.autoSave": "onFocusChange"
 }

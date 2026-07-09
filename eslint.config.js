@@ -37,13 +37,13 @@ export default [
             ["^\\u0000"],
             // React and React-related packages first
             ["^react$", "^react-dom$", "^react-"],
-            // Other external packages
+            // Other external packages (including lucide-react, etc.)
             ["^@?\\w"],
             // @interviews-tracker packages
             ["^@interviews-tracker/"],
-            // Parent imports (../)
+            // Parent imports (../) - both regular and type imports
             ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
-            // Sibling imports (./)
+            // Sibling imports (./) - both regular and type imports
             ["^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
             // Style imports
             ["^.+\\.s?css$"],
@@ -51,6 +51,7 @@ export default [
         },
       ],
       "simple-import-sort/exports": "error",
+      "@typescript-eslint/consistent-type-imports": "off",
     },
   },
 ];
