@@ -1,23 +1,24 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { createTimer, logInfo, logError } from "../lib/logger.js";
-import { classifyMessageIntent } from "../services/telegram/telegram-intent-classifier.js";
+
+import { createTimer, logError, logInfo } from "../lib/logger.js";
 import { createOpportunityFromText } from "../services/opportunities/opportunity-text-ingestion-service.js";
+import { classifyMessageIntent } from "../services/telegram/telegram-intent-classifier.js";
 import { answerOpportunityQuery } from "../services/telegram/telegram-query-answerer.js";
 import {
-  formatQueryResponseForTelegram,
+  formatErrorMessage,
   formatOpportunityCreatedMessage,
-  formatErrorMessage
+  formatQueryResponseForTelegram,
 } from "../services/telegram/telegram-response-formatter.js";
 
 const telegramMessageSchema = z.object({
-  text: z.string().trim().min(1)
+  text: z.string().trim().min(1),
 });
 
 export async function telegramMessageHandler(request: Request, response: Response) {
   const input = telegramMessageSchema.parse(request.body);
   const timer = createTimer("telegram", "process message", {
-    text: input.text.substring(0, 50)
+    text: input.text.substring(0, 50),
   });
 
   const messages: Array<{ role: "user" | "bot"; text: string; timestamp: Date }> = [];
@@ -26,7 +27,7 @@ export async function telegramMessageHandler(request: Request, response: Respons
   messages.push({
     role: "user",
     text: input.text,
-    timestamp: new Date()
+    timestamp: new Date(),
   });
 
   try {
@@ -38,16 +39,17 @@ export async function telegramMessageHandler(request: Request, response: Respons
     logInfo("telegram", "Intent classified", {
       intent: intent.intent,
       confidence: intent.confidence,
-      reasoning: intent.reasoning
+      reasoning: intent.reasoning,
     });
 
     // Add loading message
     messages.push({
       role: "bot",
-      text: intent.intent === "CREATE_OPPORTUNITY"
-        ? "🔄 Processing your opportunity...\nExtracting details with AI..."
-        : "🔍 Looking up your opportunities...",
-      timestamp: new Date()
+      text:
+        intent.intent === "CREATE_OPPORTUNITY"
+          ? "🔄 Processing your opportunity...\nExtracting details with AI..."
+          : "🔍 Looking up your opportunities...",
+      timestamp: new Date(),
     });
 
     // Step 2: Handle based on intent
@@ -58,9 +60,7 @@ export async function telegramMessageHandler(request: Request, response: Respons
 
     // Get web app base URL - use WEB_APP_BASE_URL, fall back to first FRONTEND_ORIGIN, then localhost
     const webAppBaseUrl =
-      process.env.WEB_APP_BASE_URL ||
-      process.env.FRONTEND_ORIGIN?.split(",")[0]?.trim() ||
-      "http://localhost:3000";
+      process.env.WEB_APP_BASE_URL || process.env.FRONTEND_ORIGIN?.split(",")[0]?.trim() || "http://localhost:3000";
 
     if (intent.intent === "CREATE_OPPORTUNITY") {
       try {
@@ -69,7 +69,7 @@ export async function telegramMessageHandler(request: Request, response: Respons
         opportunityData = opportunity;
       } catch (error) {
         logError("telegram", "Failed to create opportunity", {
-          error: error instanceof Error ? error.message : "Unknown error"
+          error: error instanceof Error ? error.message : "Unknown error",
         });
         botResponse = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");
         success = false;
@@ -85,14 +85,14 @@ export async function telegramMessageHandler(request: Request, response: Respons
         const queryResponse = await answerOpportunityQuery({
           query: input.text,
           ownerEmail,
-          webAppBaseUrl
+          webAppBaseUrl,
         });
 
         botResponse = formatQueryResponseForTelegram(queryResponse, webAppBaseUrl);
         queryResponseData = queryResponse;
       } catch (error) {
         logError("telegram", "Failed to answer query", {
-          error: error instanceof Error ? error.message : "Unknown error"
+          error: error instanceof Error ? error.message : "Unknown error",
         });
         botResponse = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");
         success = false;
@@ -103,7 +103,7 @@ export async function telegramMessageHandler(request: Request, response: Respons
     messages[messages.length - 1] = {
       role: "bot",
       text: botResponse,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     timer.end({ intent: intent.intent, success });
@@ -114,10 +114,10 @@ export async function telegramMessageHandler(request: Request, response: Respons
       intent: {
         type: intent.intent,
         confidence: intent.confidence,
-        reasoning: intent.reasoning
+        reasoning: intent.reasoning,
       },
       messages,
-      data: opportunityData || queryResponseData
+      data: opportunityData || queryResponseData,
     });
   } catch (error) {
     timer.fail(error, {});
@@ -127,13 +127,13 @@ export async function telegramMessageHandler(request: Request, response: Respons
     messages.push({
       role: "bot",
       text: errorText,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     response.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",
-      messages
+      messages,
     });
   }
 }

@@ -5,7 +5,7 @@ const levelWeights: Record<LogLevel, number> = {
   info: 20,
   operational: 25,
   warn: 30,
-  error: 40
+  error: 40,
 };
 
 function normalizeError(error: unknown): LogEntry["error"] | undefined {
@@ -17,7 +17,7 @@ function normalizeError(error: unknown): LogEntry["error"] | undefined {
     return {
       name: error.name,
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
     };
   }
 
@@ -75,8 +75,12 @@ export class AdapterLogger implements Logger {
       timestamp: new Date().toISOString(),
       service: this.serviceName,
       metadata,
-      context: { ...this.baseContext, ...context, service: context?.service ?? this.baseContext?.service ?? this.serviceName },
-      error: normalizeError(error)
+      context: {
+        ...this.baseContext,
+        ...context,
+        service: context?.service ?? this.baseContext?.service ?? this.serviceName,
+      },
+      error: normalizeError(error),
     });
   }
 }

@@ -12,7 +12,7 @@ async function loadOptions() {
     prisma.domainOption.findMany({ orderBy: { label: "asc" } }),
     prisma.workModelOption.findMany({ orderBy: { label: "asc" } }),
     prisma.interactionTypeOption.findMany({ orderBy: { label: "asc" } }),
-    prisma.interviewStageOption.findMany({ orderBy: { label: "asc" } })
+    prisma.interviewStageOption.findMany({ orderBy: { label: "asc" } }),
   ]);
 
   return { companySizes, companyStages, domains, workModels, interactionTypes, interviewStages };

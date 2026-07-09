@@ -30,6 +30,9 @@ jobs:
       - name: Generate Prisma client
         run: yarn prisma:generate
 
+      - name: Check formatting and linting
+        run: yarn check
+
       - name: Typecheck
         run: yarn typecheck
 

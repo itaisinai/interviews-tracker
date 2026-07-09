@@ -16,6 +16,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
+
 import { createOpportunitySlug } from "@interviews-tracker/core/domain/slugs";
 
 const prisma = new PrismaClient();
@@ -91,7 +92,7 @@ async function main() {
         techStack: opp.techStack,
         backendFrontendSplit: opp.backendFrontendSplit,
         companyNotes: opp.notes,
-        domainIds: new Set(opp.domains.map(d => d.domainId)),
+        domainIds: new Set(opp.domains.map((d) => d.domainId)),
       });
     } else {
       // Consolidate data from multiple opportunities
@@ -107,7 +108,8 @@ async function main() {
       if (opp.productDescription && !existing.productDescription) existing.productDescription = opp.productDescription;
       if (opp.customersTraction && !existing.customersTraction) existing.customersTraction = opp.customersTraction;
       if (opp.techStack && !existing.techStack) existing.techStack = opp.techStack;
-      if (opp.backendFrontendSplit && !existing.backendFrontendSplit) existing.backendFrontendSplit = opp.backendFrontendSplit;
+      if (opp.backendFrontendSplit && !existing.backendFrontendSplit)
+        existing.backendFrontendSplit = opp.backendFrontendSplit;
 
       // Merge domains
       for (const domain of opp.domains) {

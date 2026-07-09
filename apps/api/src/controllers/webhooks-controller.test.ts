@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { queueTelegramUpdateProcessing } from "./webhooks-controller.js";
+
 import { telegramUpdateSchema } from "../services/telegram/telegram-service.js";
+
+import { queueTelegramUpdateProcessing } from "./webhooks-controller.js";
 
 test("queueTelegramUpdateProcessing acknowledges before background processing starts", async () => {
   const update = telegramUpdateSchema.parse({
@@ -9,8 +11,8 @@ test("queueTelegramUpdateProcessing acknowledges before background processing st
     message: {
       message_id: 7,
       chat: { id: 123 },
-      text: "Senior backend role at ExampleCo with TypeScript and Node"
-    }
+      text: "Senior backend role at ExampleCo with TypeScript and Node",
+    },
   });
   let processingStarted = false;
   let finishProcessing: (() => void) | undefined;

@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { OpenAiParserService } from "./ai-parser-service.js";
+import { fileURLToPath } from "node:url";
+
 import { buildJobParserSystemPrompt } from "@interviews-tracker/ai";
+
+import { OpenAiParserService } from "./ai-parser-service.js";
 
 const fixtureDir = fileURLToPath(new URL("./__fixtures__", import.meta.url));
 const altaMessage = readFileSync(`${fixtureDir}/alta-recruiter-message.txt`, "utf8");
@@ -30,7 +32,10 @@ test("job parser prompt includes the reusable Alta guidance", () => {
   const prompt = buildJobParserSystemPrompt();
 
   assert.match(prompt, /AI ingestion engine for a personal Job Search CRM, not a summarizer/);
-  assert.match(prompt, /Highest priority: company name, role title, process stage, recruiter or company reached out, next expected action/);
+  assert.match(
+    prompt,
+    /Highest priority: company name, role title, process stage, recruiter or company reached out, next expected action/
+  );
   assert.match(prompt, /Never invent salary, funding, dates, team size, customers, or technologies/);
   assert.match(prompt, /"חברת Alta" => companyName: Alta/);
   assert.match(prompt, /"התעניינה בקורות החיים שלך" => status: RECRUITER_REACHED_OUT/);
@@ -46,7 +51,7 @@ test("openai parser regression for the Alta recruiter message", async () => {
 
     return new Response(JSON.stringify({ output_text: JSON.stringify(expected) }), {
       status: 200,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
   }) as typeof fetch;
 
@@ -83,24 +88,27 @@ test("openai interaction parser schema includes meetingLink", async () => {
   globalThis.fetch = (async (_input, init) => {
     requestBodies.push(String(init?.body ?? ""));
 
-    return new Response(JSON.stringify({
-      output_text: JSON.stringify({
-        date: "2026-06-14T10:00:00.000Z",
-        type: "Interview",
-        stage: "Interview",
-        status: "SCHEDULED",
-        personName: null,
-        personRole: null,
-        agenda: null,
-        meetingLink: "https://meet.google.com/abc-defg-hij",
-        notes: null,
-        outcome: null,
-        followUp: null
-      })
-    }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" }
-    });
+    return new Response(
+      JSON.stringify({
+        output_text: JSON.stringify({
+          date: "2026-06-14T10:00:00.000Z",
+          type: "Interview",
+          stage: "Interview",
+          status: "SCHEDULED",
+          personName: null,
+          personRole: null,
+          agenda: null,
+          meetingLink: "https://meet.google.com/abc-defg-hij",
+          notes: null,
+          outcome: null,
+          followUp: null,
+        }),
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }) as typeof fetch;
 
   try {
@@ -108,7 +116,7 @@ test("openai interaction parser schema includes meetingLink", async () => {
     const parsed = await parser.parseInteractionText({
       companyName: "Toku",
       text: "Interview invite",
-      nowIso: "2026-06-14T10:00:00.000Z"
+      nowIso: "2026-06-14T10:00:00.000Z",
     });
 
     assert.equal(parsed.meetingLink, "https://meet.google.com/abc-defg-hij");

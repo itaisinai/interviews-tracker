@@ -1,9 +1,11 @@
+import { useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { GmailEmailSelector } from "../shared/gmail-email-selector";
 import { Modal } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
-import { useState } from "react";
+import { GmailEmailSelector } from "../shared/gmail-email-selector";
 
 type AttachEmailModalProps = {
   isOpen: boolean;
@@ -58,8 +60,7 @@ export function AttachEmailModal({
   });
 
   const unpickEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailUnpickEmail(opportunitySlug, messageId),
+    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunitySlug, messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["gmail-message-states", opportunitySlug],
@@ -71,8 +72,7 @@ export function AttachEmailModal({
   });
 
   const restoreEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailRestoreEmail(opportunitySlug, messageId),
+    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["gmail-message-states", opportunitySlug],
@@ -91,10 +91,7 @@ export function AttachEmailModal({
     setIsAttaching(true);
     try {
       // Attach all selected emails in a single batch request to avoid race conditions
-      const result = await api.attachMultipleEmailsToInteraction(
-        interactionId,
-        selectedEmailIds,
-      );
+      const result = await api.attachMultipleEmailsToInteraction(interactionId, selectedEmailIds);
 
       // Invalidate and refetch queries - wait for them to complete
       await Promise.all([
@@ -143,20 +140,13 @@ export function AttachEmailModal({
     : undefined;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Attach Gmail Emails"
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Attach Gmail Emails" size="lg">
       <GmailEmailSelector
         candidates={searchResults?.candidates || []}
         isLoading={isLoading}
         emptyMessage="No available emails found"
         emptySubMessage={
-          attachedEmails.length > 0
-            ? "All found emails are already attached"
-            : "Try searching for emails in Gmail"
+          attachedEmails.length > 0 ? "All found emails are already attached" : "Try searching for emails in Gmail"
         }
         onSubmit={handleAttach}
         onCancel={onClose}

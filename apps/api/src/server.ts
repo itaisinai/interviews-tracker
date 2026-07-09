@@ -4,16 +4,22 @@ await loadEnvironment();
 
 // Import instrumentation to enable Sentry auto-instrumentation
 import "./instrument.js";
-import { Sentry } from "./lib/sentry.js";
 
 // Validate environment after loading
 import { validateEnvironment } from "./config/env-validation.js";
+import { Sentry } from "./lib/sentry.js";
 validateEnvironment();
 
 import cors from "cors";
 import express from "express";
-import { aiRouter } from "./routes/ai.js";
+
+import { requireAuth } from "./lib/auth.js";
+import { validateDevModeOnStartup } from "./lib/dev-mode.js";
+import { errorHandler } from "./lib/http.js";
+import { logger } from "./lib/logger.js";
+import { apiRequestLogger } from "./lib/request-logging.js";
 import { adminRouter } from "./routes/admin.js";
+import { aiRouter } from "./routes/ai.js";
 import { companiesRouter } from "./routes/companies.js";
 import { dashboardRouter } from "./routes/dashboard.js";
 import { gmailRouter } from "./routes/gmail.js";
@@ -23,20 +29,22 @@ import { jobImportsRouter } from "./routes/job-imports.js";
 import { opportunitiesRouter } from "./routes/opportunities.js";
 import { optionsRouter } from "./routes/options.js";
 import { peopleRouter } from "./routes/people.js";
-import { webhooksRouter } from "./routes/webhooks.js";
 import { telegramRouter } from "./routes/telegram.js";
-import { requireAuth } from "./lib/auth.js";
-import { errorHandler } from "./lib/http.js";
-import { apiRequestLogger } from "./lib/request-logging.js";
-import { logger } from "./lib/logger.js";
+import { webhooksRouter } from "./routes/webhooks.js";
 import { completeGmailOAuth } from "./services/gmail/gmail-service.js";
-import { validateDevModeOnStartup } from "./lib/dev-mode.js";
 
 // Store start time for diagnostics
 process.env.START_TIME = new Date().toISOString();
 
 const app = express();
-const localOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5176", "http://127.0.0.1:5176"];
+const localOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  "http://localhost:5176",
+  "http://127.0.0.1:5176",
+];
 const productionOrigins = ["https://interviews-tracker.vercel.app"];
 const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? "")
   .split(",")
@@ -60,7 +68,7 @@ const corsOptions: cors.CorsOptions = {
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Opportunity-Webhook-Secret", "X-Telegram-Bot-Api-Secret-Token"],
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions));
@@ -97,7 +105,8 @@ app.get("/api/gmail/callback", async (request, response, next) => {
     const code = typeof request.query.code === "string" ? request.query.code : undefined;
     const state = typeof request.query.state === "string" ? request.query.state : undefined;
     const error = typeof request.query.error === "string" ? request.query.error : undefined;
-    const frontendOrigin = (process.env.FRONTEND_ORIGIN ?? "http://localhost:5173").split(",")[0] ?? "http://localhost:5173";
+    const frontendOrigin =
+      (process.env.FRONTEND_ORIGIN ?? "http://localhost:5173").split(",")[0] ?? "http://localhost:5173";
 
     if (error) {
       const redirect = new URL(frontendOrigin);
@@ -117,9 +126,13 @@ app.get("/api/gmail/callback", async (request, response, next) => {
     response.redirect(redirectTo);
   } catch (caughtError) {
     logger.error("gmail_oauth_callback_failed", caughtError);
-    const frontendOrigin = (process.env.FRONTEND_ORIGIN ?? "http://localhost:5173").split(",")[0] ?? "http://localhost:5173";
+    const frontendOrigin =
+      (process.env.FRONTEND_ORIGIN ?? "http://localhost:5173").split(",")[0] ?? "http://localhost:5173";
     const redirect = new URL(frontendOrigin);
-    redirect.searchParams.set("gmailError", caughtError instanceof Error ? caughtError.message : "Gmail connection failed");
+    redirect.searchParams.set(
+      "gmailError",
+      caughtError instanceof Error ? caughtError.message : "Gmail connection failed"
+    );
     response.redirect(redirect.toString());
   }
 });

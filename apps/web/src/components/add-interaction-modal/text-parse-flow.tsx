@@ -1,7 +1,10 @@
 import { useState } from "react";
+
 import { useMutation } from "@tanstack/react-query";
+
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
-import { MaterialIcon, LoadingButton } from "@interviews-tracker/design-system";
 import type { InteractionDraft } from "../../lib/types";
 
 type TextParseFlowProps = {
@@ -12,13 +15,7 @@ type TextParseFlowProps = {
   onBack: () => void;
 };
 
-export function TextParseFlow({
-  opportunitySlug,
-  companyName,
-  roleTitle,
-  onParsed,
-  onBack,
-}: TextParseFlowProps) {
+export function TextParseFlow({ opportunitySlug, companyName, roleTitle, onParsed, onBack }: TextParseFlowProps) {
   const [text, setText] = useState("");
 
   const parseMutation = useMutation({
@@ -61,13 +58,10 @@ export function TextParseFlow({
         <div className="flex gap-3">
           <MaterialIcon name="info" className="text-[20px] text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium text-blue-900 mb-1">
-              Paste a message about an interview or interaction
-            </p>
+            <p className="font-medium text-blue-900 mb-1">Paste a message about an interview or interaction</p>
             <p className="text-blue-700">
-              Copy and paste an email, calendar invite, WhatsApp message, or any text
-              containing interview details. We'll extract the date, time, stage, and other
-              information automatically.
+              Copy and paste an email, calendar invite, WhatsApp message, or any text containing interview details.
+              We'll extract the date, time, stage, and other information automatically.
             </p>
           </div>
         </div>

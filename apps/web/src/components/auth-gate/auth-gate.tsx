@@ -1,30 +1,22 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
+
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
 import { setAccessTokenGetter } from "../../lib/api";
+
 import { DevModeAuthBypass } from "./dev-mode-bypass";
 
 const devModeBypassAuth = import.meta.env.VITE_DEV_MODE_BYPASS_AUTH === "true";
 const devModeUserEmail = (import.meta.env.VITE_DEV_MODE_USER_EMAIL as string | undefined)?.trim() || "dev@local.test";
 
 const auth0Domain = import.meta.env.VITE_AUTH0_DOMAIN as string | undefined;
-const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID as
-  | string
-  | undefined;
+const auth0ClientId = import.meta.env.VITE_AUTH0_CLIENT_ID as string | undefined;
 const auth0Audience = import.meta.env.VITE_AUTH0_AUDIENCE as string | undefined;
-const allowedEmail = (import.meta.env.VITE_ALLOWED_EMAIL as string | undefined)
-  ?.trim()
-  .toLowerCase();
+const allowedEmail = (import.meta.env.VITE_ALLOWED_EMAIL as string | undefined)?.trim().toLowerCase();
 
-function AuthPanel({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children?: ReactNode;
-}) {
+function AuthPanel({ title, description, children }: { title: string; description: string; children?: ReactNode }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12 text-on-background">
       <section className="panel w-full max-w-md p-8">
@@ -32,9 +24,7 @@ function AuthPanel({
           <MaterialIcon name="lock" filled />
         </div>
         <h1 className="font-headline-md text-headline-md font-bold">{title}</h1>
-        <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
-          {description}
-        </p>
+        <p className="mt-2 font-body-md text-body-md text-on-surface-variant">{description}</p>
         {children ? <div className="mt-6">{children}</div> : null}
       </section>
     </main>
@@ -42,20 +32,11 @@ function AuthPanel({
 }
 
 function AuthenticatedOnly({ children }: { children: ReactNode }) {
-  const {
-    error,
-    getAccessTokenSilently,
-    isAuthenticated,
-    isLoading,
-    loginWithRedirect,
-    user,
-  } = useAuth0();
+  const { error, getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect, user } = useAuth0();
   const [isTokenGetterReady, setIsTokenGetterReady] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const email = user?.email?.trim().toLowerCase();
-  const hasAllowedEmail = Boolean(
-    allowedEmail && email && email === allowedEmail,
-  );
+  const hasAllowedEmail = Boolean(allowedEmail && email && email === allowedEmail);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,7 +72,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
               audience: auth0Audience,
               scope: "openid profile email",
             },
-          }),
+          })
         );
 
         setIsTokenGetterReady(true);
@@ -101,16 +82,10 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
         setAccessTokenGetter(undefined);
         setIsTokenGetterReady(false);
 
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to get Auth0 access token";
+        const message = error instanceof Error ? error.message : "Failed to get Auth0 access token";
         setTokenError(message);
 
-        if (
-          message.includes("login_required") ||
-          message.includes("consent_required")
-        ) {
+        if (message.includes("login_required") || message.includes("consent_required")) {
           void loginWithRedirect({
             authorizationParams: {
               audience: auth0Audience,
@@ -129,12 +104,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
       setAccessTokenGetter(undefined);
       setIsTokenGetterReady(false);
     };
-  }, [
-    getAccessTokenSilently,
-    hasAllowedEmail,
-    isAuthenticated,
-    loginWithRedirect,
-  ]);
+  }, [getAccessTokenSilently, hasAllowedEmail, isAuthenticated, loginWithRedirect]);
 
   if (isLoading) {
     return <AuthPanel title="Loading" description="Checking your session." />;
@@ -160,10 +130,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
 
   if (!isAuthenticated) {
     return (
-      <AuthPanel
-        title="Sign in"
-        description="Use your authorized Google account to access CareerFlow."
-      >
+      <AuthPanel title="Sign in" description="Use your authorized Google account to access CareerFlow.">
         <button
           className="btn btn-primary w-full"
           onClick={() =>
@@ -181,10 +148,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
 
   if (!hasAllowedEmail) {
     return (
-      <AuthPanel
-        title="Access Denied"
-        description="This Google account is not allowed to access this workspace."
-      >
+      <AuthPanel title="Access Denied" description="This Google account is not allowed to access this workspace.">
         <p className="rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 font-body-md text-body-md text-on-surface-variant">
           {user?.email ?? "No email returned by Auth0"}
         </p>
@@ -215,9 +179,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
   }
 
   if (!isTokenGetterReady) {
-    return (
-      <AuthPanel title="Loading" description="Preparing your API session." />
-    );
+    return <AuthPanel title="Loading" description="Preparing your API session." />;
   }
 
   return <>{children}</>;
@@ -250,11 +212,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
         scope: "openid profile email",
       }}
       onRedirectCallback={(appState) => {
-        window.history.replaceState(
-          {},
-          document.title,
-          appState?.returnTo ?? window.location.pathname,
-        );
+        window.history.replaceState({}, document.title, appState?.returnTo ?? window.location.pathname);
       }}
     >
       <AuthenticatedOnly>{children}</AuthenticatedOnly>

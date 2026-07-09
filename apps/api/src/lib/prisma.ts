@@ -21,10 +21,10 @@ export const prisma = new Proxy({} as PrismaClient, {
     const value = client[prop as keyof PrismaClient];
 
     // Bind methods to the client instance
-    if (typeof value === 'function') {
+    if (typeof value === "function") {
       return value.bind(client);
     }
 
     return value;
-  }
+  },
 });

@@ -1,8 +1,9 @@
-import type { Interaction } from "../../lib/types";
 import { MaterialIcon } from "@interviews-tracker/design-system";
-import { formatDateTime, formatDurationBetween } from "../../lib/format";
+
 import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
+import { formatDateTime, formatDurationBetween } from "../../lib/format";
 import { getInteractionTimelineBadgeMeta } from "../../lib/interaction-status";
+import type { Interaction } from "../../lib/types";
 
 export type FocusedInteractionProps = {
   interaction: Interaction;
@@ -10,17 +11,16 @@ export type FocusedInteractionProps = {
   className?: string;
 };
 
-export function FocusedInteraction({
-  interaction,
-  allInteractions,
-  className = "",
-}: FocusedInteractionProps) {
+export function FocusedInteraction({ interaction, allInteractions, className = "" }: FocusedInteractionProps) {
   const typeLabel = displayLabelForEnumValue(normalizeInteractionType(interaction.type)) ?? interaction.type;
   const durationLabel = formatDurationBetween(interaction.date, interaction.endDate);
   const headerBadge = getInteractionTimelineBadgeMeta(interaction, allInteractions);
 
   const personNames = interaction.personName
-    ? interaction.personName.split(/\s+and\s+|,\s*/).map(name => name.trim()).filter(Boolean)
+    ? interaction.personName
+        .split(/\s+and\s+|,\s*/)
+        .map((name) => name.trim())
+        .filter(Boolean)
     : [];
 
   return (
@@ -85,12 +85,14 @@ export function FocusedInteraction({
               <h3 className="text-sm font-semibold text-neutral-900 mb-3">Participants</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {personNames.map((name, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50"
-                  >
+                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50">
                     <div className="w-10 h-10 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-600 text-sm font-medium">
-                      {name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      {name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-neutral-900">{name}</div>

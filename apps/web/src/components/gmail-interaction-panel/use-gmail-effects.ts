@@ -1,5 +1,7 @@
 import { useEffect } from "react";
+
 import { useQueryClient } from "@tanstack/react-query";
+
 import { api } from "../../lib/api";
 import { gmailFlowMeta, type GmailFlowState } from "../../lib/gmail";
 import type { GmailStructuredEmail } from "../../lib/types";
@@ -49,7 +51,7 @@ export function useGmailEffects(handlers: EffectsHandlers) {
     setFlowState,
     setMessage,
     setError,
-    handleGmailActionError
+    handleGmailActionError,
   } = handlers;
 
   // Progress bar animation
@@ -136,7 +138,7 @@ export function useGmailEffects(handlers: EffectsHandlers) {
 
         try {
           const result = await api.gmailParseEmail(opportunitySlug, {
-            messageId: targetInteraction.gmailMessageId!
+            messageId: targetInteraction.gmailMessageId!,
           });
 
           setSelectedEmail(result.email);
@@ -162,6 +164,6 @@ export function useGmailEffects(handlers: EffectsHandlers) {
     setSelectedEmail,
     setAnalysis,
     setDraft,
-    handleGmailActionError
+    handleGmailActionError,
   ]);
 }

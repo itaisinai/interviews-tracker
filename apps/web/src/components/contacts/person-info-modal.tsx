@@ -1,13 +1,11 @@
-import {
-  JobHistoryTimeline,
-  MaterialIcon,
-  Modal,
-} from "@interviews-tracker/design-system";
+import { useState } from "react";
 
 import { ChevronDown, Linkedin } from "lucide-react";
+
 import type { CompanyExperience } from "@interviews-tracker/design-system";
+import { JobHistoryTimeline, MaterialIcon, Modal } from "@interviews-tracker/design-system";
+
 import type { Person } from "../../lib/types";
-import { useState } from "react";
 
 type PersonInfoModalProps = {
   person: Person;
@@ -48,9 +46,7 @@ export function PersonInfoModal({
     .slice(0, 2);
 
   // Transform experience data to match JobHistoryTimeline format
-  const experienceData: CompanyExperience[] = (
-    (person.research?.experience || []) as any[]
-  ).map((exp: any) => {
+  const experienceData: CompanyExperience[] = ((person.research?.experience || []) as any[]).map((exp: any) => {
     const positions = (exp.positions || []).map((pos: any) => {
       const [startDate = "", endDate = ""] = (pos.dates || "").split(" - ");
       return {
@@ -77,12 +73,9 @@ export function PersonInfoModal({
           (exp.positions || []).map((pos: any) => {
             const rawDates = pos.dates || "";
             const isPresentOrCurrent =
-              rawDates.toLowerCase().includes("present") ||
-              rawDates.toLowerCase().includes("current");
-            return isPresentOrCurrent
-              ? { title: pos.title, company: exp.company }
-              : null;
-          }),
+              rawDates.toLowerCase().includes("present") || rawDates.toLowerCase().includes("current");
+            return isPresentOrCurrent ? { title: pos.title, company: exp.company } : null;
+          })
         )
         .find(Boolean)
     : undefined;
@@ -91,9 +84,7 @@ export function PersonInfoModal({
     ? `${currentPosition.title} at ${currentPosition.company}`
     : person.title || "Interview Research";
 
-  const visibleExperiences = showAllExperience
-    ? experienceData
-    : experienceData.slice(0, 3);
+  const visibleExperiences = showAllExperience ? experienceData : experienceData.slice(0, 3);
 
   return (
     <>
@@ -116,20 +107,14 @@ export function PersonInfoModal({
                 {/* Compact Avatar with gradient */}
                 <div className="flex-shrink-0">
                   <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-md flex items-center justify-center">
-                    <span className="text-lg font-bold text-white">
-                      {initials}
-                    </span>
+                    <span className="text-lg font-bold text-white">{initials}</span>
                   </div>
                 </div>
 
                 {/* Name and context */}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-bold text-gray-900">
-                    {person.name}
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-0.5">
-                    {subtitle}
-                  </p>
+                  <h2 className="text-lg font-bold text-gray-900">{person.name}</h2>
+                  <p className="text-sm text-gray-600 mt-0.5">{subtitle}</p>
                 </div>
               </div>
 
@@ -187,16 +172,10 @@ export function PersonInfoModal({
           <div className="max-h-[70vh] overflow-y-auto bg-surface-container-lowest p-6">
             {!hasResearch ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <MaterialIcon
-                  name="search"
-                  className="mb-4 text-[48px] text-on-surface-variant"
-                />
-                <p className="mb-2 text-body-lg font-medium text-on-surface">
-                  No research yet
-                </p>
+                <MaterialIcon name="search" className="mb-4 text-[48px] text-on-surface-variant" />
+                <p className="mb-2 text-body-lg font-medium text-on-surface">No research yet</p>
                 <p className="text-center text-body-sm text-on-surface-variant">
-                  Click "Research Again" to research this person's professional
-                  background
+                  Click "Research Again" to research this person's professional background
                 </p>
               </div>
             ) : (
@@ -207,9 +186,7 @@ export function PersonInfoModal({
                     <h3 className="mb-3 font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">
                       Overview
                     </h3>
-                    <p className="text-body-md leading-relaxed text-on-surface">
-                      {person.research.about}
-                    </p>
+                    <p className="text-body-md leading-relaxed text-on-surface">{person.research.about}</p>
                     {person.linkedinUrl && (
                       <a
                         href={person.linkedinUrl}
@@ -219,10 +196,7 @@ export function PersonInfoModal({
                       >
                         <MaterialIcon name="link" className="text-[18px]" />
                         View LinkedIn Profile
-                        <MaterialIcon
-                          name="open_in_new"
-                          className="text-[16px]"
-                        />
+                        <MaterialIcon name="open_in_new" className="text-[16px]" />
                       </a>
                     )}
                   </div>
@@ -237,14 +211,10 @@ export function PersonInfoModal({
                       </h3>
                       {experienceData.length > 3 && (
                         <button
-                          onClick={() =>
-                            setShowAllExperience(!showAllExperience)
-                          }
+                          onClick={() => setShowAllExperience(!showAllExperience)}
                           className="text-body-md font-medium text-primary transition-colors hover:text-primary/80"
                         >
-                          {showAllExperience
-                            ? "Show less"
-                            : `Show all (${experienceData.length})`}
+                          {showAllExperience ? "Show less" : `Show all (${experienceData.length})`}
                         </button>
                       )}
                     </div>
@@ -263,9 +233,7 @@ export function PersonInfoModal({
                         >
                           <ChevronDown className="h-4 w-4" />
                         </span>
-                        {showAllExperience
-                          ? "Show less"
-                          : `Show ${experienceData.length - 3} more`}
+                        {showAllExperience ? "Show less" : `Show ${experienceData.length - 3} more`}
                       </button>
                     )}
                   </div>

@@ -11,7 +11,7 @@ const levelToConsoleMethod: Record<LogLevel, "debug" | "info" | "warn" | "error"
   info: "info",
   operational: "info",
   warn: "warn",
-  error: "error"
+  error: "error",
 };
 
 function removeUndefined(value: unknown): unknown {
@@ -55,8 +55,12 @@ export class ConsoleLogAdapter implements LogAdapter {
     if (this.format === "pretty") {
       const context = formatKeyValue(entry.context);
       const metadata = formatKeyValue(entry.metadata);
-      const error = entry.error ? ` error=${entry.error.message}${entry.error.stack ? ` stack=${JSON.stringify(entry.error.stack)}` : ""}` : "";
-      console[method](`[${entry.timestamp}] ${entry.level.toUpperCase()} ${entry.service} ${entry.message}${context ? ` ${context}` : ""}${metadata ? ` ${metadata}` : ""}${error}`);
+      const error = entry.error
+        ? ` error=${entry.error.message}${entry.error.stack ? ` stack=${JSON.stringify(entry.error.stack)}` : ""}`
+        : "";
+      console[method](
+        `[${entry.timestamp}] ${entry.level.toUpperCase()} ${entry.service} ${entry.message}${context ? ` ${context}` : ""}${metadata ? ` ${metadata}` : ""}${error}`
+      );
       return;
     }
 

@@ -1,5 +1,6 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
+
 import { messageIntentSchema } from "./telegram-intent-classifier.js";
 import { queryResponseSchema } from "./telegram-query-answerer.js";
 
@@ -7,7 +8,7 @@ test("messageIntentSchema validates QUERY intent", () => {
   const intent = {
     intent: "QUERY" as const,
     confidence: 0.9,
-    reasoning: "Message asks about existing opportunities"
+    reasoning: "Message asks about existing opportunities",
   };
 
   const result = messageIntentSchema.parse(intent);
@@ -19,7 +20,7 @@ test("messageIntentSchema validates CREATE_OPPORTUNITY intent", () => {
   const intent = {
     intent: "CREATE_OPPORTUNITY" as const,
     confidence: 0.95,
-    reasoning: "Message contains job description"
+    reasoning: "Message contains job description",
   };
 
   const result = messageIntentSchema.parse(intent);
@@ -31,7 +32,7 @@ test("messageIntentSchema rejects invalid confidence values", () => {
   const intent = {
     intent: "QUERY" as const,
     confidence: 1.5, // > 1
-    reasoning: "test"
+    reasoning: "test",
   };
 
   assert.throws(() => messageIntentSchema.parse(intent));
@@ -47,9 +48,9 @@ test("queryResponseSchema validates query response with opportunities", () => {
         id: "123",
         companyName: "Google",
         roleTitle: "Senior Engineer",
-        slug: "google-senior-engineer"
-      }
-    ]
+        slug: "google-senior-engineer",
+      },
+    ],
   };
 
   const result = queryResponseSchema.parse(response);
@@ -69,9 +70,9 @@ test("queryResponseSchema validates query response with null slug", () => {
         id: "123",
         companyName: "Google",
         roleTitle: "Senior Engineer",
-        slug: null
-      }
-    ]
+        slug: null,
+      },
+    ],
   };
 
   const result = queryResponseSchema.parse(response);
@@ -83,7 +84,7 @@ test("queryResponseSchema validates clarification response", () => {
     answer: "I couldn't find any company called 'Alta'.",
     needsClarification: true,
     clarificationQuestion: "Did you mean a different company name?",
-    relevantOpportunities: []
+    relevantOpportunities: [],
   };
 
   const result = queryResponseSchema.parse(response);

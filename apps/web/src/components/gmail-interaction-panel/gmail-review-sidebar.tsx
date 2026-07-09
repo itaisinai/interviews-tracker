@@ -1,4 +1,5 @@
 import { Mail, Sparkles } from "lucide-react";
+
 import type { GmailEmailExtractionAnalysis, GmailStructuredEmail } from "../../lib/types";
 
 type GmailReviewSidebarProps = {
@@ -16,12 +17,8 @@ export function GmailReviewSidebar({ selectedEmail, analysis, confidencePercent 
             <Mail className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">
-              Source Email
-            </div>
-            <h3 className="text-sm font-semibold text-neutral-900 leading-snug">
-              {selectedEmail.subject}
-            </h3>
+            <div className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">Source Email</div>
+            <h3 className="text-sm font-semibold text-neutral-900 leading-snug">{selectedEmail.subject}</h3>
           </div>
         </div>
 
@@ -37,17 +34,22 @@ export function GmailReviewSidebar({ selectedEmail, analysis, confidencePercent 
                 month: "short",
                 day: "numeric",
                 hour: "2-digit",
-                minute: "2-digit"
+                minute: "2-digit",
               })}
             </p>
           </div>
           <div>
             <span className="text-neutral-500">Confidence:</span>
             <p className="text-neutral-900 font-medium mt-0.5">
-              <span className={`inline-flex items-center gap-1 ${
-                confidencePercent >= 90 ? "text-emerald-600" :
-                confidencePercent >= 70 ? "text-yellow-600" : "text-neutral-600"
-              }`}>
+              <span
+                className={`inline-flex items-center gap-1 ${
+                  confidencePercent >= 90
+                    ? "text-emerald-600"
+                    : confidencePercent >= 70
+                      ? "text-yellow-600"
+                      : "text-neutral-600"
+                }`}
+              >
                 {confidencePercent}%
               </span>
             </p>
@@ -56,9 +58,7 @@ export function GmailReviewSidebar({ selectedEmail, analysis, confidencePercent 
 
         {selectedEmail.snippet && (
           <div className="mt-3 pt-3 border-t border-neutral-100">
-            <p className="text-xs text-neutral-600 line-clamp-3">
-              {selectedEmail.snippet}
-            </p>
+            <p className="text-xs text-neutral-600 line-clamp-3">{selectedEmail.snippet}</p>
           </div>
         )}
       </div>

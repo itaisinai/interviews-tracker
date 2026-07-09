@@ -1,5 +1,5 @@
+import { getAuthData, getRedirectUri, getValidToken, signIn, signOut } from "./auth.js";
 import { buildAuthHeaders, getDetectedJobRows, hasUsefulJobContent } from "./popup-utils.js";
-import { signIn, signOut, getAuthData, getValidToken, getRedirectUri } from "./auth.js";
 
 const DEFAULT_API_BASE_URL = "http://localhost:4000";
 const LINKEDIN_JOB_URL_PATTERN = /^https:\/\/www\.linkedin\.com\/jobs\/(view\/|search\/|search-results\/)/;
@@ -24,7 +24,7 @@ const elements = {
   apiBaseUrlInput: document.getElementById("api-base-url"),
   tokenInput: document.getElementById("token"),
   saveSettings: document.getElementById("save-settings"),
-  clearToken: document.getElementById("clear-token")
+  clearToken: document.getElementById("clear-token"),
 };
 
 let extractedPayload = null;
@@ -128,7 +128,10 @@ function renderDetectedJob(payload) {
   const useful = hasUsefulJobContent(payload);
   elements.importButton.disabled = !useful;
   if (!useful) {
-    showMessage("No useful job content was detected on this page. Open a LinkedIn job page with visible title, company, description, or raw job text.", "warning");
+    showMessage(
+      "No useful job content was detected on this page. Open a LinkedIn job page with visible title, company, description, or raw job text.",
+      "warning"
+    );
   }
 }
 
@@ -144,7 +147,6 @@ function toggleSettings(force) {
   const shouldShow = typeof force === "boolean" ? force : !elements.settings.classList.contains("show");
   elements.settings.classList.toggle("show", shouldShow);
 }
-
 
 async function getApiErrorMessage(response) {
   try {
@@ -176,7 +178,10 @@ async function detectCurrentJob() {
     elements.importButton.disabled = true;
     clearDetectedCard();
     appendDetectedRow({ value: null, missingText: "Not on a supported LinkedIn job page" });
-    showMessage("Open a LinkedIn /jobs/view page or a jobs search page with currentJobId, then reopen the extension.", "warning");
+    showMessage(
+      "Open a LinkedIn /jobs/view page or a jobs search page with currentJobId, then reopen the extension.",
+      "warning"
+    );
     return;
   }
 
@@ -269,21 +274,29 @@ elements.importButton.addEventListener("click", async () => {
   try {
     const { apiBaseUrl, authToken } = await getSettings();
     if (!authToken) {
-      showMessage("No auth token saved. Trying request anyway for local/dev auth; production will return 401 without a bearer token.", "warning");
+      showMessage(
+        "No auth token saved. Trying request anyway for local/dev auth; production will return 401 without a bearer token.",
+        "warning"
+      );
     }
     const apiResponse = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/job-imports/linkedin`, {
       method: "POST",
       credentials: "include",
       headers: buildAuthHeaders(authToken),
-      body: JSON.stringify(extractedPayload)
+      body: JSON.stringify(extractedPayload),
     });
     if (apiResponse.status === 401 || apiResponse.status === 403) {
-      throw new Error("Authentication failed. Paste and save a valid Auth0 API bearer token in Settings, then try again.");
+      throw new Error(
+        "Authentication failed. Paste and save a valid Auth0 API bearer token in Settings, then try again."
+      );
     }
     if (!apiResponse.ok) throw new Error(await getApiErrorMessage(apiResponse));
     const result = await apiResponse.json();
     elements.importButton.textContent = result.duplicate ? "Already imported" : "Imported successfully";
-    showMessage(result.duplicate ? "Duplicate opportunity found. No new opportunity was created." : "Imported successfully.", "success");
+    showMessage(
+      result.duplicate ? "Duplicate opportunity found. No new opportunity was created." : "Imported successfully.",
+      "success"
+    );
   } catch (error) {
     elements.importButton.textContent = "Import job";
     showMessage(error instanceof Error ? error.message : "Import failed.", "error");

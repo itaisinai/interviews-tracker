@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
 import { readFileSync } from "node:fs";
+import { test } from "node:test";
+
+import type { Interaction, Opportunity } from "../lib/types.js";
 
 import { buildSelectedOpportunityForInteraction } from "./interactions-page-selection.js";
-import type { Interaction, Opportunity } from "../lib/types.js";
 
 const baseOpportunity = {
   slug: "acme-engineer",
@@ -58,13 +59,13 @@ test("opening an interaction drawer builds selected opportunity from already-loa
   const selectedOpportunity = buildSelectedOpportunityForInteraction(
     interactionA,
     [interactionA, interactionB, otherInteraction],
-    [],
+    []
   );
 
   assert.equal(selectedOpportunity?.slug, "acme-engineer");
   assert.deepEqual(
     selectedOpportunity?.interactions.map((interaction) => interaction.slug),
-    ["interaction-a", "interaction-b"],
+    ["interaction-a", "interaction-b"]
   );
 });
 
@@ -77,22 +78,16 @@ test("rebuilding selected opportunity reflects updated loaded interactions after
   const selectedOpportunity = buildSelectedOpportunityForInteraction(
     updatedInteraction,
     [updatedInteraction, interactionB],
-    [],
+    []
   );
 
-  assert.equal(
-    selectedOpportunity?.interactions[0]?.outcome,
-    "Advanced after onsite",
-  );
+  assert.equal(selectedOpportunity?.interactions[0]?.outcome, "Advanced after onsite");
 });
 
 test("interactions drawer does not fetch opportunity data just because it opened", () => {
   const source = readFileSync(
-    new URL(
-      "../components/interactions-drawer/interactions-drawer.tsx",
-      import.meta.url,
-    ),
-    "utf8",
+    new URL("../components/interactions-drawer/interactions-drawer.tsx", import.meta.url),
+    "utf8"
   );
 
   assert.equal(/\buseQuery\s*\(/.test(source), false);

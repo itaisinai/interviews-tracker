@@ -130,8 +130,5 @@ Expected highlights:
 `.trim();
 
 export function buildJobParserSystemPrompt() {
-  return [
-    "Use the following job parser skill as the primary extraction guide.",
-    jobParserSkill
-  ].join("\n\n");
+  return ["Use the following job parser skill as the primary extraction guide.", jobParserSkill].join("\n\n");
 }

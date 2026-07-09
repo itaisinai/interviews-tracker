@@ -1,17 +1,25 @@
-import type { ParsedJobDescription } from "@interviews-tracker/ai";
 import type { z } from "zod";
+
+import type { ParsedJobDescription } from "@interviews-tracker/ai";
+
 import { opportunityInputSchema } from "../../lib/schemas.js";
-import { createDomainOption } from "../options/option-catalog-service.js";
 import { getAiParserService } from "../ai/ai-parser-service.js";
+import { createDomainOption } from "../options/option-catalog-service.js";
+
 import { createOpportunity } from "./opportunity-service.js";
 
 export type OpportunityTextInput = z.infer<typeof opportunityInputSchema>;
 
 function joinLines(lines: string[]) {
-  return lines.map((line) => line.trim()).filter(Boolean).join("\n");
+  return lines
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join("\n");
 }
 
-export async function buildOpportunityInputFromParsedJobDescription(parsed: ParsedJobDescription): Promise<OpportunityTextInput> {
+export async function buildOpportunityInputFromParsedJobDescription(
+  parsed: ParsedJobDescription
+): Promise<OpportunityTextInput> {
   const domainIds = await Promise.all(
     parsed.company.domains
       .map((label) => label.trim())
@@ -37,7 +45,7 @@ export async function buildOpportunityInputFromParsedJobDescription(parsed: Pars
     techStack: parsed.role.techStack.join(", "),
     backendFrontendSplit: parsed.role.backendFrontendSplit,
     compensationNotes: parsed.role.compensation,
-    domainIds
+    domainIds,
   });
 }
 

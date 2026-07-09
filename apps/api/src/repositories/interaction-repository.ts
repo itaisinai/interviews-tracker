@@ -1,27 +1,39 @@
 import type { Prisma } from "@prisma/client";
+import type { z } from "zod";
+
 import { appendSlugCollisionSuffix, createInteractionSlug, createInteractionTitle } from "@interviews-tracker/core";
+
 import { prisma } from "../lib/prisma.js";
 import { interactionInputSchema } from "../lib/schemas.js";
-import type { z } from "zod";
+
 import {
   normalizeOverdueScheduledInteractionsForRead,
+  promoteOverdueInteractionsForRead,
   promoteOverdueInteractionStatusForRead,
-  promoteOverdueInteractionsForRead
 } from "./interaction-read-normalizer.js";
 import { syncOpportunityStatusRecord } from "./opportunity-repository.js";
 
 export type InteractionInput = z.infer<typeof interactionInputSchema>;
 
-async function createUniqueInteractionSlug(input: Pick<InteractionInput, "type" | "stage">, jobOpportunityId: string, ownerEmail: string, tx: Prisma.TransactionClient = prisma, excludeId?: string) {
-  const opportunity = await tx.jobOpportunity.findFirstOrThrow({ where: { id: jobOpportunityId, ownerEmail }, include: { company: { select: { name: true } } } });
+async function createUniqueInteractionSlug(
+  input: Pick<InteractionInput, "type" | "stage">,
+  jobOpportunityId: string,
+  ownerEmail: string,
+  tx: Prisma.TransactionClient = prisma,
+  excludeId?: string
+) {
+  const opportunity = await tx.jobOpportunity.findFirstOrThrow({
+    where: { id: jobOpportunityId, ownerEmail },
+    include: { company: { select: { name: true } } },
+  });
   const baseSlug = createInteractionSlug(opportunity.company.name, createInteractionTitle(input.type, input.stage));
   const existing = await tx.interaction.findMany({
     where: {
       ownerEmail,
       slug: { startsWith: baseSlug },
-      id: excludeId ? { not: excludeId } : undefined
+      id: excludeId ? { not: excludeId } : undefined,
     },
-    select: { slug: true }
+    select: { slug: true },
   });
   const usedSlugs = new Set(existing.map((item) => item.slug));
 
@@ -41,7 +53,6 @@ export async function resolveInteractionId(slugOrId: string, ownerEmail: string)
   return bySlug?.id ?? null;
 }
 
-
 export async function listInteractionRecords(ownerEmail: string) {
   const opportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
   await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
@@ -51,17 +62,20 @@ export async function listInteractionRecords(ownerEmail: string) {
     include: {
       jobOpportunity: {
         include: {
-          company: true
-        }
-      }
+          company: true,
+        },
+      },
     },
-    orderBy: { date: "asc" }
+    orderBy: { date: "asc" },
   });
 
   return promoteOverdueInteractionsForRead(interactions);
 }
 
-export async function createInteractionRecord(input: InteractionInput & { jobOpportunityId: string }, ownerEmail: string) {
+export async function createInteractionRecord(
+  input: InteractionInput & { jobOpportunityId: string },
+  ownerEmail: string
+) {
   const { jobOpportunityId, ...rest } = input;
   const slug = await createUniqueInteractionSlug(rest, jobOpportunityId, ownerEmail);
   const interaction = await prisma.interaction.create({
@@ -71,13 +85,13 @@ export async function createInteractionRecord(input: InteractionInput & { jobOpp
       ownerEmail,
       date: new Date(rest.date),
       endDate: rest.endDate ? new Date(rest.endDate) : null,
-      jobOpportunityId
+      jobOpportunityId,
     },
     include: {
       jobOpportunity: {
-        include: { company: true }
-      }
-    }
+        include: { company: true },
+      },
+    },
   });
 
   return promoteOverdueInteractionStatusForRead(interaction);
@@ -88,9 +102,16 @@ export async function updateInteractionRecord(slugOrId: string, input: Interacti
   if (!id) throw new Error("Interaction not found");
 
   const interaction = await prisma.$transaction(async (tx) => {
-    const existing = await tx.interaction.findFirstOrThrow({ where: { id, ownerEmail }, select: { jobOpportunityId: true } });
+    const existing = await tx.interaction.findFirstOrThrow({
+      where: { id, ownerEmail },
+      select: { jobOpportunityId: true },
+    });
     const slug = await createUniqueInteractionSlug(input, existing.jobOpportunityId, ownerEmail, tx, id);
-    return tx.interaction.update({ where: { id }, data: { ...input, slug, date: new Date(input.date), endDate: input.endDate ? new Date(input.endDate) : null }, include: { jobOpportunity: { include: { company: true } } } });
+    return tx.interaction.update({
+      where: { id },
+      data: { ...input, slug, date: new Date(input.date), endDate: input.endDate ? new Date(input.endDate) : null },
+      include: { jobOpportunity: { include: { company: true } } },
+    });
   });
   return promoteOverdueInteractionStatusForRead(interaction);
 }
@@ -102,9 +123,9 @@ export async function deleteInteractionRecord(slugOrId: string, ownerEmail: stri
     where: { id },
     include: {
       jobOpportunity: {
-        include: { company: true }
-      }
-    }
+        include: { company: true },
+      },
+    },
   });
 }
 
@@ -116,16 +137,27 @@ export async function listOpportunityInteractionRecords(opportunityId: string, o
 
   const interactions = await prisma.interaction.findMany({
     where: { jobOpportunityId: opportunityId, ownerEmail },
-    orderBy: { date: "asc" }
+    orderBy: { date: "asc" },
   });
 
   return promoteOverdueInteractionsForRead(interactions);
 }
 
-export async function createOpportunityInteractionRecord(opportunityId: string, input: InteractionInput, ownerEmail: string) {
+export async function createOpportunityInteractionRecord(
+  opportunityId: string,
+  input: InteractionInput,
+  ownerEmail: string
+) {
   const slug = await createUniqueInteractionSlug(input, opportunityId, ownerEmail);
   return prisma.interaction.create({
-    data: { ...input, slug, ownerEmail, date: new Date(input.date), endDate: input.endDate ? new Date(input.endDate) : null, jobOpportunityId: opportunityId }
+    data: {
+      ...input,
+      slug,
+      ownerEmail,
+      date: new Date(input.date),
+      endDate: input.endDate ? new Date(input.endDate) : null,
+      jobOpportunityId: opportunityId,
+    },
   });
 }
 
@@ -139,11 +171,11 @@ export async function findUpcomingInteractionRecords(ownerEmail: string, limit =
     where: { ownerEmail, date: { gte: today } },
     include: {
       jobOpportunity: {
-        include: { company: true }
-      }
+        include: { company: true },
+      },
     },
     orderBy: { date: "asc" },
-    take: limit
+    take: limit,
   });
 
   return promoteOverdueInteractionsForRead(interactions);

@@ -26,5 +26,5 @@ export const researchSourceSchema = z.object({
   title: z.string().nullable(),
   publishedDate: z.string().nullable(),
   author: z.string().nullable(),
-  excerpt: z.string().nullable()
+  excerpt: z.string().nullable(),
 });

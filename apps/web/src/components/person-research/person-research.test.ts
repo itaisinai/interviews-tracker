@@ -105,7 +105,7 @@ test("research request payload: builds correctly with all fields", () => {
     name: "John Doe",
     companyName: "Acme Corp",
     roleTitle: "Engineering Manager",
-    linkedinUrl: "https://linkedin.com/in/johndoe"
+    linkedinUrl: "https://linkedin.com/in/johndoe",
   };
 
   assert.equal(input.name, "John Doe");
@@ -121,7 +121,7 @@ test("research request payload: builds correctly with minimal fields", () => {
     roleTitle?: string;
     linkedinUrl?: string;
   } = {
-    name: "John Doe"
+    name: "John Doe",
   };
 
   assert.equal(input.name, "John Doe");

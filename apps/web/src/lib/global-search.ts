@@ -33,7 +33,9 @@ function includesQuery(values: Array<string | null | undefined>, query: string) 
 function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(
+    date
+  );
 }
 
 export function buildGlobalSearchResults({
@@ -52,7 +54,9 @@ export function buildGlobalSearchResults({
 
   return {
     companies: companies
-      .filter((company) => includesQuery([company.name, company.location, company.funding, company.stage, ...company.domains], normalized))
+      .filter((company) =>
+        includesQuery([company.name, company.location, company.funding, company.stage, ...company.domains], normalized)
+      )
       .map((company) => ({
         id: company.name,
         type: "companies",
@@ -62,7 +66,12 @@ export function buildGlobalSearchResults({
         icon: "business",
       })),
     opportunities: opportunities
-      .filter((opportunity) => includesQuery([opportunity.roleTitle, opportunity.company.name, opportunity.status, opportunity.notes], normalized))
+      .filter((opportunity) =>
+        includesQuery(
+          [opportunity.roleTitle, opportunity.company.name, opportunity.status, opportunity.notes],
+          normalized
+        )
+      )
       .map((opportunity) => ({
         id: opportunity.slug,
         type: "opportunities",
@@ -72,11 +81,31 @@ export function buildGlobalSearchResults({
         icon: "work",
       })),
     interactions: interactions
-      .filter((interaction) => includesQuery([interaction.type, interaction.stage, interaction.status, interaction.personName, interaction.personRole, interaction.agenda, interaction.notes, interaction.outcome, interaction.followUp, interaction.jobOpportunity?.company.name, interaction.jobOpportunity?.roleTitle], normalized))
+      .filter((interaction) =>
+        includesQuery(
+          [
+            interaction.type,
+            interaction.stage,
+            interaction.status,
+            interaction.personName,
+            interaction.personRole,
+            interaction.agenda,
+            interaction.notes,
+            interaction.outcome,
+            interaction.followUp,
+            interaction.jobOpportunity?.company.name,
+            interaction.jobOpportunity?.roleTitle,
+          ],
+          normalized
+        )
+      )
       .map((interaction) => ({
         id: interaction.slug,
         type: "interactions",
-        title: interaction.type.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase()),
+        title: interaction.type
+          .replaceAll("_", " ")
+          .toLowerCase()
+          .replace(/\b\w/g, (letter) => letter.toUpperCase()),
         subtitle: `${interaction.jobOpportunity?.company.name ?? "Interaction"} · ${formatDate(interaction.date)}`,
         href: interaction.jobOpportunity ? `/opportunities/${interaction.jobOpportunity.slug}` : "/interactions",
         icon: interaction.type.toLowerCase().includes("phone") ? "call" : "event_note",

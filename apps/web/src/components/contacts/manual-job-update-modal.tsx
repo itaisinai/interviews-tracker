@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Modal, MaterialIcon } from "@interviews-tracker/design-system";
+
+import { MaterialIcon, Modal } from "@interviews-tracker/design-system";
+
 import type { Person } from "../../lib/types";
 
 type ManualJobUpdateModalProps = {
@@ -17,7 +19,7 @@ export function ManualJobUpdateModal({
   person,
   opportunityCompanyName,
   onSubmit,
-  isLoading
+  isLoading,
 }: ManualJobUpdateModalProps) {
   const [jobDescription, setJobDescription] = useState("");
 
@@ -33,19 +35,15 @@ export function ManualJobUpdateModal({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      size="lg"
-      title="Update Current Job"
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} size="lg" title="Update Current Job">
       <div className="flex flex-col">
         {/* Content */}
         <div className="max-h-[60vh] overflow-y-auto p-6">
           <div className="mb-6 space-y-4">
             <div>
               <p className="text-body-md text-on-surface-variant">
-                Paste the current job description from their LinkedIn profile. This will be parsed to extract the current position details.
+                Paste the current job description from their LinkedIn profile. This will be parsed to extract the
+                current position details.
               </p>
             </div>
 
@@ -70,7 +68,8 @@ export function ManualJobUpdateModal({
                 <div className="flex-1 text-body-sm text-on-surface-variant">
                   <p className="font-medium">Tip:</p>
                   <p className="mt-1">
-                    Copy the current position section from their LinkedIn profile. Include the company name, job title, start date, and any description.
+                    Copy the current position section from their LinkedIn profile. Include the company name, job title,
+                    start date, and any description.
                   </p>
                 </div>
               </div>

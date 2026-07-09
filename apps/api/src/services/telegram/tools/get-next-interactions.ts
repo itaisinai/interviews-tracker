@@ -33,12 +33,12 @@ export async function getNextInteractions(
   const interactions = await prisma.interaction.findMany({
     where: {
       jobOpportunity: {
-        ownerEmail
+        ownerEmail,
       },
       status: "SCHEDULED",
       date: {
-        gte: startDate
-      }
+        gte: startDate,
+      },
     },
     include: {
       jobOpportunity: {
@@ -48,19 +48,19 @@ export async function getNextInteractions(
           roleTitle: true,
           company: {
             select: {
-              name: true
-            }
-          }
-        }
-      }
+              name: true,
+            },
+          },
+        },
+      },
     },
     orderBy: {
-      date: "asc"
+      date: "asc",
     },
-    take: limit
+    take: limit,
   });
 
-  return interactions.map(interaction => ({
+  return interactions.map((interaction) => ({
     id: interaction.id,
     date: interaction.date.toISOString(),
     endDate: interaction.endDate?.toISOString() ?? null,
@@ -75,7 +75,7 @@ export async function getNextInteractions(
     companyName: interaction.jobOpportunity.company.name,
     roleTitle: interaction.jobOpportunity.roleTitle,
     opportunityId: interaction.jobOpportunity.id,
-    opportunitySlug: interaction.jobOpportunity.slug
+    opportunitySlug: interaction.jobOpportunity.slug,
   }));
 }
 
@@ -83,17 +83,18 @@ export const getNextInteractionsTool = {
   type: "function" as const,
   function: {
     name: "getNextInteractions",
-    description: "Get upcoming scheduled interactions (interviews, calls, meetings) sorted by date. Use this when the user asks about next/upcoming interactions, meetings, or interviews.",
+    description:
+      "Get upcoming scheduled interactions (interviews, calls, meetings) sorted by date. Use this when the user asks about next/upcoming interactions, meetings, or interviews.",
     parameters: {
       type: "object",
       properties: {
         limit: {
           type: "number",
           description: "Maximum number of interactions to return (default: 10)",
-          default: 10
-        }
+          default: 10,
+        },
       },
-      required: []
-    }
-  }
+      required: [],
+    },
+  },
 };

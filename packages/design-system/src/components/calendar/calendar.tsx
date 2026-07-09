@@ -1,10 +1,8 @@
 import type { ReactNode } from "react";
-import {
-  createMonthCalendar,
-  type CalendarEvent,
-  type CalendarEventTone,
-} from "./calendar-utils.js";
+
 import { MaterialIcon } from "../material-icon/index.js";
+
+import { type CalendarEvent, type CalendarEventTone, createMonthCalendar } from "./calendar-utils.js";
 
 export type CalendarProps<Event extends CalendarEvent = CalendarEvent> = {
   events: readonly Event[];
@@ -49,8 +47,7 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
   emptyLabel = "Empty",
   singleEventLabel = "1 meeting",
   multipleEventsLabel = "Multiple",
-  eventCountLabel = (count) =>
-    `${count} ${count === 1 ? "meeting" : "meetings"}`,
+  eventCountLabel = (count) => `${count} ${count === 1 ? "meeting" : "meetings"}`,
   renderEvent,
   onEventClick,
   onPreviousMonth,
@@ -61,17 +58,10 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
   const calendar = createMonthCalendar({ events, month });
 
   return (
-    <section
-      className={[
-        "rounded-xl border border-outline-variant bg-white p-6 shadow-sm",
-        className,
-      ].join(" ")}
-    >
+    <section className={["rounded-xl border border-outline-variant bg-white p-6 shadow-sm", className].join(" ")}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="font-label-md text-label-md uppercase tracking-[0.18em] text-primary">
-            {eyebrow}
-          </p>
+          <p className="font-label-md text-label-md uppercase tracking-[0.18em] text-primary">{eyebrow}</p>
           <h3 className="mt-1 font-title-md text-title-md font-bold text-on-background">
             {title ?? calendar.monthLabel}
           </h3>
@@ -120,18 +110,12 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
       <div className="mb-3 flex flex-wrap gap-3 text-label-sm font-medium text-on-surface-variant">
         <CalendarLegendDot className="bg-outline-variant" label={emptyLabel} />
         <CalendarLegendDot className="bg-primary" label={singleEventLabel} />
-        <CalendarLegendDot
-          className="bg-amber-400"
-          label={multipleEventsLabel}
-        />
+        <CalendarLegendDot className="bg-amber-400" label={multipleEventsLabel} />
       </div>
 
       <div className="grid grid-cols-7 gap-1.5 text-center">
         {weekdayLabels.map((day) => (
-          <div
-            key={day}
-            className="py-1 font-label-sm text-label-sm text-on-surface-variant"
-          >
+          <div key={day} className="py-1 font-label-sm text-label-sm text-on-surface-variant">
             {day}
           </div>
         ))}
@@ -141,18 +125,15 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
         {calendar.days.map((day) => (
           <div key={day.key} className="group relative">
             <div
-              className={`flex min-h-12 flex-col items-center justify-center rounded-xl border transition-all ${
-                getDayTileClassName(day.isCurrentMonth, day.events.length)
-              } ${day.isToday ? "ring-2 ring-primary ring-offset-2 ring-offset-white" : ""}`}
+              className={`flex min-h-12 flex-col items-center justify-center rounded-xl border transition-all ${getDayTileClassName(
+                day.isCurrentMonth,
+                day.events.length
+              )} ${day.isToday ? "ring-2 ring-primary ring-offset-2 ring-offset-white" : ""}`}
               aria-label={getAccessibleLabel(day.date, day.events)}
               tabIndex={0}
             >
-              <span className="font-label-md text-label-md">
-                {dayFormatter.format(day.date)}
-              </span>
-              <span
-                className={`mt-1 h-2 w-2 rounded-full ${dotClassNames[day.tone]}`}
-              />
+              <span className="font-label-md text-label-md">{dayFormatter.format(day.date)}</span>
+              <span className={`mt-1 h-2 w-2 rounded-full ${dotClassNames[day.tone]}`} />
               {day.isToday ? (
                 <span className="mt-1 rounded-full bg-primary px-2 py-0.5 font-label-sm text-label-sm text-on-primary">
                   Today
@@ -174,11 +155,7 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
                           className="w-full text-left transition-colors hover:opacity-70"
                           onClick={() => onEventClick(event)}
                         >
-                          {renderEvent ? (
-                            renderEvent(event)
-                          ) : (
-                            <DefaultCalendarEvent event={event} />
-                          )}
+                          {renderEvent ? renderEvent(event) : <DefaultCalendarEvent event={event} />}
                         </button>
                       ) : renderEvent ? (
                         renderEvent(event)
@@ -189,9 +166,7 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
                   ))}
                 </ul>
               ) : (
-                <p className="text-body-sm text-on-surface-variant">
-                  No meetings scheduled.
-                </p>
+                <p className="text-body-sm text-on-surface-variant">No meetings scheduled.</p>
               )}
             </div>
           </div>
@@ -213,13 +188,7 @@ function getDayTileClassName(isCurrentMonth: boolean, eventCount: number) {
     : "border-transparent bg-surface-container-low/60 text-on-surface-variant hover:bg-surface-container-low";
 }
 
-function CalendarLegendDot({
-  className,
-  label,
-}: {
-  className: string;
-  label: string;
-}) {
+function CalendarLegendDot({ className, label }: { className: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className={`h-2.5 w-2.5 rounded-full ${className}`} />
@@ -231,11 +200,7 @@ function CalendarLegendDot({
 function DefaultCalendarEvent({ event }: { event: CalendarEvent }) {
   return (
     <div className="flex gap-2 text-body-sm text-on-surface-variant">
-      {event.time ? (
-        <span className="font-label-sm text-label-sm text-primary">
-          {event.time}
-        </span>
-      ) : null}
+      {event.time ? <span className="font-label-sm text-label-sm text-primary">{event.time}</span> : null}
       <span className="min-w-0 flex-1">{event.title}</span>
     </div>
   );

@@ -1,17 +1,21 @@
 import { type Dispatch, type SetStateAction, useState } from "react";
-import type { Interaction, InteractionDraft, Person } from "../../lib/types";
-import { InteractionDraftFields } from "./interaction-draft-fields";
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
-import { Save } from "lucide-react";
+
 import { useQuery } from "@tanstack/react-query";
+import { Save } from "lucide-react";
+
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
-import { InteractionSummaryCompact } from "./interaction-summary-compact";
-import { ParticipantsCard } from "./participants-card";
-import { AttachedEmailsCard } from "./attached-emails-card";
-import { QuickInfoCard } from "./quick-info-card";
-import { NotesCard } from "./notes-card";
-import { GmailEmailStatesSection } from "./gmail-email-states-section";
+import type { Interaction, InteractionDraft, Person } from "../../lib/types";
+
 import { AddFeedbackModal } from "./add-feedback-modal";
+import { AttachedEmailsCard } from "./attached-emails-card";
+import { GmailEmailStatesSection } from "./gmail-email-states-section";
+import { InteractionDraftFields } from "./interaction-draft-fields";
+import { InteractionSummaryCompact } from "./interaction-summary-compact";
+import { NotesCard } from "./notes-card";
+import { ParticipantsCard } from "./participants-card";
+import { QuickInfoCard } from "./quick-info-card";
 
 type InteractionSummaryPanelProps = {
   interaction: Interaction;
@@ -58,10 +62,7 @@ export function InteractionSummaryPanel({
     : [];
 
   // Get opportunity slug - prefer prop, then nested object's slug, then FK ID for backward compatibility
-  const opportunitySlug =
-    opportunitySlugProp ??
-    interaction.jobOpportunity?.slug ??
-    interaction.jobOpportunityId;
+  const opportunitySlug = opportunitySlugProp ?? interaction.jobOpportunity?.slug ?? interaction.jobOpportunityId;
 
   // Fetch contacts for this opportunity
   const { data: contacts = [] } = useQuery({
@@ -83,9 +84,7 @@ export function InteractionSummaryPanel({
     if (exactMatch) return exactMatch;
 
     // 2. Case-insensitive match
-    const caseInsensitiveMatch = (contacts as Person[]).find(
-      (c) => c.name.toLowerCase() === name.toLowerCase(),
-    );
+    const caseInsensitiveMatch = (contacts as Person[]).find((c) => c.name.toLowerCase() === name.toLowerCase());
     if (caseInsensitiveMatch) return caseInsensitiveMatch;
 
     // 3. First name match (e.g., "Rotem Zikorel" matches "Rotem")
@@ -100,10 +99,7 @@ export function InteractionSummaryPanel({
     const containsMatch = (contacts as Person[]).find((c) => {
       const nameLower = name.toLowerCase();
       const contactNameLower = c.name.toLowerCase();
-      return (
-        nameLower.includes(contactNameLower) ||
-        contactNameLower.includes(nameLower)
-      );
+      return nameLower.includes(contactNameLower) || contactNameLower.includes(nameLower);
     });
 
     return containsMatch;
@@ -117,11 +113,7 @@ export function InteractionSummaryPanel({
     });
 
     // Call API to add feedback and get AI suggestion
-    const result = await api.addFeedbackToInteraction(
-      interaction.slug,
-      content,
-      source,
-    );
+    const result = await api.addFeedbackToInteraction(interaction.slug, content, source);
 
     console.log("[FEEDBACK] Got AI suggestion from API", {
       hasAiSuggestion: !!(result as any).aiSuggestion,
@@ -205,24 +197,16 @@ export function InteractionSummaryPanel({
       {/* Outcome */}
       {!isEditing && interaction.outcome && (
         <div className="bg-white rounded-lg border border-neutral-200 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
-            Outcome
-          </h3>
-          <p className="text-sm text-neutral-700 whitespace-pre-wrap">
-            {interaction.outcome}
-          </p>
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">Outcome</h3>
+          <p className="text-sm text-neutral-700 whitespace-pre-wrap">{interaction.outcome}</p>
         </div>
       )}
 
       {/* Follow-up */}
       {!isEditing && interaction.followUp && (
         <div className="bg-white rounded-lg border border-neutral-200 p-4">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-2">
-            Follow-up
-          </h3>
-          <p className="text-sm text-neutral-700 whitespace-pre-wrap">
-            {interaction.followUp}
-          </p>
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">Follow-up</h3>
+          <p className="text-sm text-neutral-700 whitespace-pre-wrap">{interaction.followUp}</p>
         </div>
       )}
 
@@ -234,9 +218,7 @@ export function InteractionSummaryPanel({
       />
 
       {/* Gmail Email States */}
-      {opportunitySlug && (
-        <GmailEmailStatesSection opportunitySlug={opportunitySlug} />
-      )}
+      {opportunitySlug && <GmailEmailStatesSection opportunitySlug={opportunitySlug} />}
     </div>
   );
 }

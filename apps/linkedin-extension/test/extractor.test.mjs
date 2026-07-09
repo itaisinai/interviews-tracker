@@ -5,16 +5,29 @@ import { extractLinkedinJobData, getJobIdFromUrl } from "../src/extractor.js";
 
 function makeDocument(html) {
   const bySelector = new Map();
-  const text = (selector, value) => bySelector.set(selector, { innerText: value, textContent: value, outerHTML: `<div>${value}</div>` });
+  const text = (selector, value) =>
+    bySelector.set(selector, { innerText: value, textContent: value, outerHTML: `<div>${value}</div>` });
   text(".job-details-jobs-unified-top-card__job-title h1", html.match(/job-title\">([^<]+)/)?.[1] || "");
   text(".job-details-jobs-unified-top-card__company-name a", html.match(/<a>([^<]+)<\/a>/)?.[1] || "");
-  text(".job-details-jobs-unified-top-card__primary-description-container", html.match(/primary-description-container\">([^<]+)/)?.[1] || "");
+  text(
+    ".job-details-jobs-unified-top-card__primary-description-container",
+    html.match(/primary-description-container\">([^<]+)/)?.[1] || ""
+  );
   text("#job-details", "About the job Build React and Node.js products. Requirements: TypeScript.");
-  const body = { innerText: "Senior Full Stack Engineer Example Company Tel Aviv District Hybrid Full-time About the job Build React and Node.js products.", textContent: "", outerHTML: html };
+  const body = {
+    innerText:
+      "Senior Full Stack Engineer Example Company Tel Aviv District Hybrid Full-time About the job Build React and Node.js products.",
+    textContent: "",
+    outerHTML: html,
+  };
   return {
     body,
-    querySelector(selector) { return bySelector.get(selector) || (selector === "main" ? body : null); },
-    querySelectorAll(selector) { return selector.includes("artdeco-pill") ? [{ innerText: "Hybrid" }, { innerText: "Full-time" }] : []; }
+    querySelector(selector) {
+      return bySelector.get(selector) || (selector === "main" ? body : null);
+    },
+    querySelectorAll(selector) {
+      return selector.includes("artdeco-pill") ? [{ innerText: "Hybrid" }, { innerText: "Full-time" }] : [];
+    },
   };
 }
 
@@ -31,7 +44,10 @@ test("extracts expected LinkedIn job payload fields", async () => {
 });
 
 test("handles missing fields gracefully", () => {
-  const payload = extractLinkedinJobData({ body: { innerText: "", textContent: "" }, querySelector: () => null, querySelectorAll: () => [] }, "https://www.linkedin.com/jobs/search/?currentJobId=123");
+  const payload = extractLinkedinJobData(
+    { body: { innerText: "", textContent: "" }, querySelector: () => null, querySelectorAll: () => [] },
+    "https://www.linkedin.com/jobs/search/?currentJobId=123"
+  );
   assert.equal(payload.title, null);
   assert.equal(payload.companyName, null);
   assert.equal(payload.linkedinJobId, "123");

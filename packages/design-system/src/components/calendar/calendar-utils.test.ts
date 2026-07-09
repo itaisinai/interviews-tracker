@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { createMonthCalendar, getCalendarEventTone } from "./calendar-utils.js";
 
 test("calendar groups events into the requested month and sorts by time", () => {
@@ -18,7 +19,7 @@ test("calendar groups events into the requested month and sorts by time", () => 
   assert.equal(calendar.totalEvents, 2);
   assert.deepEqual(
     fourth?.events.map((event) => event.id),
-    ["early", "late"],
+    ["early", "late"]
   );
   assert.equal(fourth?.tone, "multiple");
 });

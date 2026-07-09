@@ -1,16 +1,15 @@
-import type { Opportunity } from "../../lib/types";
-import { CompactInfoRow, SectionHeader, MaterialIcon } from "@interviews-tracker/design-system";
 import { useState } from "react";
+
+import { CompactInfoRow, MaterialIcon, SectionHeader } from "@interviews-tracker/design-system";
+
+import type { Opportunity } from "../../lib/types";
 
 type CompanyDetailsModernProps = {
   opportunity: Opportunity;
   className?: string;
 };
 
-export function CompanyDetailsModern({
-  opportunity,
-  className = "",
-}: CompanyDetailsModernProps) {
+export function CompanyDetailsModern({ opportunity, className = "" }: CompanyDetailsModernProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(["overview"]));
 
   const toggleSection = (section: string) => {
@@ -27,10 +26,7 @@ export function CompanyDetailsModern({
 
   return (
     <section className={className}>
-      <SectionHeader
-        title="Company Details"
-        subtitle={`${opportunity.company.name} • ${opportunity.roleTitle}`}
-      />
+      <SectionHeader title="Company Details" subtitle={`${opportunity.company.name} • ${opportunity.roleTitle}`} />
 
       <div className="mt-6 space-y-6">
         <CollapsibleSection
@@ -56,58 +52,31 @@ export function CompanyDetailsModern({
                 }
               />
             )}
-            <CompactInfoRow
-              label="Stage"
-              value={opportunity.company.companyStage?.label || "Not specified"}
-            />
-            <CompactInfoRow
-              label="Size"
-              value={opportunity.company.employeesRange?.label || "Not specified"}
-            />
-            <CompactInfoRow
-              label="Location"
-              value={opportunity.company.location || "Not specified"}
-            />
-            <CompactInfoRow
-              label="Work Model"
-              value={opportunity.workModel?.label || "Not specified"}
-            />
-            <CompactInfoRow
-              label="Funding"
-              value={opportunity.company.funding || "Not specified"}
-            />
+            <CompactInfoRow label="Stage" value={opportunity.company.companyStage?.label || "Not specified"} />
+            <CompactInfoRow label="Size" value={opportunity.company.employeesRange?.label || "Not specified"} />
+            <CompactInfoRow label="Location" value={opportunity.company.location || "Not specified"} />
+            <CompactInfoRow label="Work Model" value={opportunity.workModel?.label || "Not specified"} />
+            <CompactInfoRow label="Funding" value={opportunity.company.funding || "Not specified"} />
           </div>
 
           {opportunity.company.description && (
             <div className="mt-4 rounded-lg bg-neutral-50 p-4">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                About Company
-              </div>
-              <p className="text-sm leading-relaxed text-neutral-700">
-                {opportunity.company.description}
-              </p>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">About Company</div>
+              <p className="text-sm leading-relaxed text-neutral-700">{opportunity.company.description}</p>
             </div>
           )}
 
           {opportunity.company.productDescription && (
             <div className="mt-3 rounded-lg bg-neutral-50 p-4">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                Product
-              </div>
-              <p className="text-sm leading-relaxed text-neutral-700">
-                {opportunity.company.productDescription}
-              </p>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Product</div>
+              <p className="text-sm leading-relaxed text-neutral-700">{opportunity.company.productDescription}</p>
             </div>
           )}
 
           {opportunity.company.customersTraction && (
             <div className="mt-3 rounded-lg bg-neutral-50 p-4">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                Traction
-              </div>
-              <p className="text-sm leading-relaxed text-neutral-700">
-                {opportunity.company.customersTraction}
-              </p>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Traction</div>
+              <p className="text-sm leading-relaxed text-neutral-700">{opportunity.company.customersTraction}</p>
             </div>
           )}
         </CollapsibleSection>
@@ -119,10 +88,7 @@ export function CompanyDetailsModern({
           onToggle={() => toggleSection("tech")}
         >
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <CompactInfoRow
-              label="Technologies"
-              value={opportunity.company.techStack || "Not specified"}
-            />
+            <CompactInfoRow label="Technologies" value={opportunity.company.techStack || "Not specified"} />
             <CompactInfoRow
               label="Backend / Frontend"
               value={opportunity.company.backendFrontendSplit || "Not specified"}
@@ -177,20 +143,14 @@ export function CompanyDetailsModern({
               <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
                 Compensation Notes
               </div>
-              <p className="text-sm leading-relaxed text-neutral-700">
-                {opportunity.compensationNotes}
-              </p>
+              <p className="text-sm leading-relaxed text-neutral-700">{opportunity.compensationNotes}</p>
             </div>
           )}
 
           {opportunity.notes && (
             <div className="mt-3 rounded-lg bg-neutral-50 p-4">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-                General Notes
-              </div>
-              <p className="text-sm leading-relaxed text-neutral-700">
-                {opportunity.notes}
-              </p>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">General Notes</div>
+              <p className="text-sm leading-relaxed text-neutral-700">{opportunity.notes}</p>
             </div>
           )}
         </CollapsibleSection>
@@ -201,9 +161,7 @@ export function CompanyDetailsModern({
               <MaterialIcon name="flag" className="text-[16px]" />
               Next Step
             </div>
-            <p className="text-sm font-medium leading-relaxed text-neutral-900">
-              {opportunity.nextStep}
-            </p>
+            <p className="text-sm font-medium leading-relaxed text-neutral-900">{opportunity.nextStep}</p>
           </div>
         )}
       </div>
@@ -219,13 +177,7 @@ type CollapsibleSectionProps = {
   children: React.ReactNode;
 };
 
-function CollapsibleSection({
-  title,
-  icon,
-  isExpanded,
-  onToggle,
-  children,
-}: CollapsibleSectionProps) {
+function CollapsibleSection({ title, icon, isExpanded, onToggle, children }: CollapsibleSectionProps) {
   return (
     <div className="rounded-xl border border-neutral-200 bg-white transition-shadow hover:shadow-sm">
       <button
@@ -238,14 +190,9 @@ function CollapsibleSection({
           </div>
           <span className="font-semibold text-neutral-900">{title}</span>
         </div>
-        <MaterialIcon
-          name={isExpanded ? "expand_less" : "expand_more"}
-          className="text-[20px] text-neutral-400"
-        />
+        <MaterialIcon name={isExpanded ? "expand_less" : "expand_more"} className="text-[20px] text-neutral-400" />
       </button>
-      {isExpanded && (
-        <div className="border-t border-neutral-100 p-4">{children}</div>
-      )}
+      {isExpanded && <div className="border-t border-neutral-100 p-4">{children}</div>}
     </div>
   );
 }

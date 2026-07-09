@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Modal, MaterialIcon, LoadingButton } from "@interviews-tracker/design-system";
+
+import { LoadingButton, MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
 type AddFeedbackModalProps = {
   isOpen: boolean;
@@ -7,11 +8,7 @@ type AddFeedbackModalProps = {
   onSubmit: (content: string, source?: string) => Promise<void>;
 };
 
-export function AddFeedbackModal({
-  isOpen,
-  onClose,
-  onSubmit
-}: AddFeedbackModalProps) {
+export function AddFeedbackModal({ isOpen, onClose, onSubmit }: AddFeedbackModalProps) {
   const [content, setContent] = useState("");
   const [source, setSource] = useState("WhatsApp");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,12 +35,7 @@ export function AddFeedbackModal({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Add Feedback"
-      size="md"
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} title="Add Feedback" size="md">
       <div className="space-y-4">
         {/* Info */}
         <p className="text-sm text-neutral-600">
@@ -52,9 +44,7 @@ export function AddFeedbackModal({
 
         {/* Source dropdown */}
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Source
-          </label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Source</label>
           <select
             value={source}
             onChange={(e) => setSource(e.target.value)}
@@ -69,9 +59,7 @@ export function AddFeedbackModal({
 
         {/* Content textarea */}
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Feedback Content
-          </label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Feedback Content</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -83,9 +71,7 @@ export function AddFeedbackModal({
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
-          <div className="text-sm text-neutral-500">
-            {content.length} characters
-          </div>
+          <div className="text-sm text-neutral-500">{content.length} characters</div>
           <div className="flex gap-3">
             <button
               onClick={handleClose}

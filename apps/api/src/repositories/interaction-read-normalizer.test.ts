@@ -10,15 +10,15 @@ test("overdue interactions before a later interaction keep their historical stat
       jobOpportunityId: "opportunity-1",
       date: "2026-06-08T11:00:00.000Z",
       type: "Phone Call",
-      status: "SCHEDULED" as const
+      status: "SCHEDULED" as const,
     },
     {
       id: "interaction-b",
       jobOpportunityId: "opportunity-1",
       date: "2026-06-09T11:00:00.000Z",
       type: "Rejection",
-      status: "REJECTED" as const
-    }
+      status: "REJECTED" as const,
+    },
   ];
 
   const promoted = promoteOverdueInteractionsForRead(interactions, new Date("2026-06-10T00:00:00.000Z"));
@@ -34,15 +34,15 @@ test("only the latest overdue scheduled interaction becomes needs follow-up", ()
       jobOpportunityId: "opportunity-1",
       date: "2026-06-08T11:00:00.000Z",
       type: "Phone Call",
-      status: "SCHEDULED" as const
+      status: "SCHEDULED" as const,
     },
     {
       id: "interaction-b",
       jobOpportunityId: "opportunity-1",
       date: "2026-06-09T11:00:00.000Z",
       type: "Interview",
-      status: "SCHEDULED" as const
-    }
+      status: "SCHEDULED" as const,
+    },
   ];
 
   const promoted = promoteOverdueInteractionsForRead(interactions, new Date("2026-06-10T00:00:00.000Z"));
@@ -58,8 +58,8 @@ test("overdue interactions without later activity become needs follow-up", () =>
       jobOpportunityId: "opportunity-1",
       date: "2026-06-08T11:00:00.000Z",
       type: "Phone Call",
-      status: "SCHEDULED" as const
-    }
+      status: "SCHEDULED" as const,
+    },
   ];
 
   const promoted = promoteOverdueInteractionsForRead(interactions, new Date("2026-06-10T00:00:00.000Z"));

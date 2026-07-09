@@ -1,8 +1,6 @@
 import type { z } from "zod";
 
-import {
-  gmailMessageCandidateSchema
-} from "../../lib/schemas.js";
+import { gmailMessageCandidateSchema } from "../../lib/schemas.js";
 
 export type GmailMessageHeader = {
   name?: string;
@@ -155,7 +153,7 @@ export function monthIndexFromName(value: string) {
     sep: 8,
     oct: 9,
     nov: 10,
-    dec: 11
+    dec: 11,
   };
 
   return months[normalized] ?? -1;
@@ -179,7 +177,10 @@ export function parseTimezoneOffset(value: string) {
   return null;
 }
 
-export function localTimeToIso(parts: { year: number; month: number; day: number; hour: number; minute: number }, offsetHours: number) {
+export function localTimeToIso(
+  parts: { year: number; month: number; day: number; hour: number; minute: number },
+  offsetHours: number
+) {
   const utcMillis = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour - offsetHours, parts.minute);
   return new Date(utcMillis).toISOString();
 }
@@ -188,7 +189,7 @@ export function extractDateComponents(text: string) {
   const normalized = text.replace(/\s+/g, " ").trim();
   const patterns = [
     /(?:\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b,?\s+)?(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}\s*(?:AM|PM))(?:\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM))?(?:\s*\(([^)]+)\))?/i,
-    /(?:on\s+)?([A-Za-z]{3,9})\s+(\d{1,2}),\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}\s*(?:AM|PM))(?:\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM))?(?:\s*\(([^)]+)\))?/i
+    /(?:on\s+)?([A-Za-z]{3,9})\s+(\d{1,2}),\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}\s*(?:AM|PM))(?:\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM))?(?:\s*\(([^)]+)\))?/i,
   ];
 
   for (const pattern of patterns) {
@@ -222,7 +223,15 @@ export function extractDateComponents(text: string) {
       year = Number(dateMatch[2]);
     }
 
-    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+    if (
+      !Number.isFinite(year) ||
+      !Number.isFinite(month) ||
+      !Number.isFinite(day) ||
+      month < 1 ||
+      month > 12 ||
+      day < 1 ||
+      day > 31
+    ) {
       continue;
     }
 
@@ -238,7 +247,7 @@ export function extractDateComponents(text: string) {
         month,
         day,
         hour: timeMatch.hour,
-        minute: timeMatch.minute
+        minute: timeMatch.minute,
       },
       offsetHours
     );
@@ -256,6 +265,6 @@ export function mapMessageCandidate(message: GmailMessageResponse): GmailMessage
     subject: headerValue(headers, "Subject") || "(No subject)",
     from: headerValue(headers, "From") || "Unknown sender",
     date: parseInternalDate(message.internalDate),
-    snippet: message.snippet?.trim() || "(No snippet available)"
+    snippet: message.snippet?.trim() || "(No snippet available)",
   });
 }

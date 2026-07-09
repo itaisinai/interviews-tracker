@@ -1,5 +1,5 @@
-import type { Interaction } from "./types";
 import { normalizeInteractionType } from "./enum-labels";
+import type { Interaction } from "./types";
 
 export type InteractionBadgeTone = "blue" | "green" | "red" | "muted" | "warning";
 export type OpportunityProcessBadgeTone = InteractionBadgeTone | "violet";
@@ -11,7 +11,7 @@ const overdueInteractionTypes = [
   "Technical Interview",
   "HR Screen",
   "Recruiter Screen",
-  "Onsite"
+  "Onsite",
 ] as const;
 
 const rejectionPatterns = [
@@ -23,15 +23,20 @@ const rejectionPatterns = [
   /no longer/,
   /דחייה/,
   /נדחה/,
-  /לא מתקדמים/
+  /לא מתקדמים/,
 ];
 
 function hasAny(text: string, patterns: RegExp[]) {
   return patterns.some((pattern) => pattern.test(text));
 }
 
-function interactionContextText(interaction: Pick<Interaction, "type" | "outcome" | "followUp"> & { stage?: string | null }) {
-  return [interaction.type, interaction.stage, interaction.outcome, interaction.followUp].filter(Boolean).join(" ").toLowerCase();
+function interactionContextText(
+  interaction: Pick<Interaction, "type" | "outcome" | "followUp"> & { stage?: string | null }
+) {
+  return [interaction.type, interaction.stage, interaction.outcome, interaction.followUp]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 }
 
 function isTerminalInteraction(interaction: Pick<Interaction, "type" | "status" | "outcome" | "followUp">) {
@@ -58,7 +63,7 @@ function isTerminalInteraction(interaction: Pick<Interaction, "type" | "status" 
     /דחייה/,
     /נדחה/,
     /offer/,
-    /הצעה/
+    /הצעה/,
   ]);
 }
 
@@ -83,7 +88,9 @@ function hasLaterInteraction(
   return orderedInteractions.slice(currentIndex + 1).length > 0;
 }
 
-export function promoteOverdueInteractionStatusForRead<T extends Pick<Interaction, "date" | "type" | "status" | "endDate">>(interaction: T, now = new Date()) {
+export function promoteOverdueInteractionStatusForRead<
+  T extends Pick<Interaction, "date" | "type" | "status" | "endDate">,
+>(interaction: T, now = new Date()) {
   const normalizedType = normalizeInteractionType(interaction.type);
   if (
     interaction.status !== "SCHEDULED" ||
@@ -93,7 +100,9 @@ export function promoteOverdueInteractionStatusForRead<T extends Pick<Interactio
   }
 
   // Use endDate if present, otherwise use date
-  const effectiveEndTime = interaction.endDate ? new Date(interaction.endDate).getTime() : new Date(interaction.date).getTime();
+  const effectiveEndTime = interaction.endDate
+    ? new Date(interaction.endDate).getTime()
+    : new Date(interaction.date).getTime();
 
   if (effectiveEndTime >= now.getTime()) {
     return interaction;
@@ -101,11 +110,13 @@ export function promoteOverdueInteractionStatusForRead<T extends Pick<Interactio
 
   return {
     ...interaction,
-    status: "NEEDS_FOLLOW_UP" as const
+    status: "NEEDS_FOLLOW_UP" as const,
   };
 }
 
-export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "slug" | "date" | "endDate" | "type" | "status" | "stage" | "outcome" | "followUp">>(interactions: readonly T[], now = new Date()) {
+export function promoteOverdueInteractionsForRead<
+  T extends Pick<Interaction, "slug" | "date" | "endDate" | "type" | "status" | "stage" | "outcome" | "followUp">,
+>(interactions: readonly T[], now = new Date()) {
   const orderedInteractions = [...interactions].sort((left, right) => {
     const leftTime = new Date(left.date).getTime();
     const rightTime = new Date(right.date).getTime();
@@ -124,7 +135,9 @@ export function promoteOverdueInteractionsForRead<T extends Pick<Interaction, "s
   });
 }
 
-export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | "endDate" | "status" | "type" | "stage" | "outcome" | "followUp">) {
+export function getInteractionBadgeMeta(
+  interaction: Pick<Interaction, "date" | "endDate" | "status" | "type" | "stage" | "outcome" | "followUp">
+) {
   const promoted = promoteOverdueInteractionStatusForRead(interaction);
 
   if (promoted.status === "SCHEDULED") {
@@ -153,7 +166,7 @@ export function getInteractionBadgeMeta(interaction: Pick<Interaction, "date" | 
 
 export function getInteractionTimelineBadgeMeta(
   interaction: Pick<Interaction, "slug" | "date" | "status" | "type" | "stage" | "outcome" | "followUp">,
-  interactions: readonly Pick<Interaction, "slug" | "date" | "status" | "type" | "stage" | "outcome" | "followUp">[],
+  interactions: readonly Pick<Interaction, "slug" | "date" | "status" | "type" | "stage" | "outcome" | "followUp">[]
 ) {
   const normalizedType = normalizeInteractionType(interaction.type);
 
@@ -183,15 +196,28 @@ export function getOpportunityProcessBadgeMeta(
 
   const hasRejectedInteraction =
     opportunity?.status === "REJECTED" ||
-    interactions.some((interaction) => interaction.status === "REJECTED" || normalizeInteractionType(interaction.type) === "Rejection");
+    interactions.some(
+      (interaction) => interaction.status === "REJECTED" || normalizeInteractionType(interaction.type) === "Rejection"
+    );
 
-  if (hasRejectedInteraction || /reject|declin|not.*moving forward|moving on|not a fit|no longer|withdrawn?|לא מתקדמים|דחייה|נדחה/.test(interactionText)) {
+  if (
+    hasRejectedInteraction ||
+    /reject|declin|not.*moving forward|moving on|not a fit|no longer|withdrawn?|לא מתקדמים|דחייה|נדחה/.test(
+      interactionText
+    )
+  ) {
     return { label: "rejected", tone: "red" as const };
   }
 
   const hasOfferSignal =
     opportunity?.status === "OFFER" ||
-    interactions.some((interaction) => normalizeInteractionType(interaction.type) === "Offer" || /offer|contract|agreement|חתימה|הצעה/.test(`${interaction.type} ${interaction.outcome ?? ""} ${interaction.followUp ?? ""}`.toLowerCase()));
+    interactions.some(
+      (interaction) =>
+        normalizeInteractionType(interaction.type) === "Offer" ||
+        /offer|contract|agreement|חתימה|הצעה/.test(
+          `${interaction.type} ${interaction.outcome ?? ""} ${interaction.followUp ?? ""}`.toLowerCase()
+        )
+    );
 
   if (hasOfferSignal) {
     return { label: "contract", tone: "violet" as const };

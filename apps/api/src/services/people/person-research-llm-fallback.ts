@@ -14,13 +14,15 @@ const llmPersonResultSchema = z.object({
     currentCompany: z.string().nullable().optional(),
     linkedinUrl: z.string().nullable().optional(),
     location: z.string().nullable().optional(),
-    summary: z.string().nullable().optional()
+    summary: z.string().nullable().optional(),
   }),
-  sources: z.array(z.object({
-    title: z.string(),
-    url: z.string(),
-    snippet: z.string().nullable().optional()
-  }))
+  sources: z.array(
+    z.object({
+      title: z.string(),
+      url: z.string(),
+      snippet: z.string().nullable().optional(),
+    })
+  ),
 });
 
 type LLMPersonResult = z.infer<typeof llmPersonResultSchema>;
@@ -32,11 +34,11 @@ export async function llmPersonResearch(params: {
 }): Promise<LLMPersonResult | null> {
   const { name, company, linkedinUrl } = params;
 
-  console.log('[LLM FALLBACK] Query:', { name, company, linkedinUrl });
+  console.log("[LLM FALLBACK] Query:", { name, company, linkedinUrl });
 
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
-    console.error('[LLM FALLBACK] No Perplexity API key configured');
+    console.error("[LLM FALLBACK] No Perplexity API key configured");
     return null;
   }
 
@@ -55,9 +57,9 @@ Rules:
   if (linkedinUrl) {
     searchPrompt += `. Check this LinkedIn: ${linkedinUrl}`;
   }
-  searchPrompt += ' on LinkedIn';
+  searchPrompt += " on LinkedIn";
 
-  console.log('[PERPLEXITY] Query:', searchPrompt);
+  console.log("[PERPLEXITY] Query:", searchPrompt);
 
   const userPrompt = `${searchPrompt}
 
@@ -81,25 +83,25 @@ Return JSON:
 }`;
 
   try {
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
+    const response = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'sonar',
+        model: "sonar",
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
         ],
-        temperature: 0
-      })
+        temperature: 0,
+      }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[LLM FALLBACK] API error:', response.status, errorText);
+      console.error("[LLM FALLBACK] API error:", response.status, errorText);
       return null;
     }
 
@@ -107,25 +109,25 @@ Return JSON:
     const content = data.choices[0]?.message?.content;
 
     if (!content) {
-      console.error('[LLM FALLBACK] No content in response');
+      console.error("[LLM FALLBACK] No content in response");
       return null;
     }
 
     // Perplexity may wrap JSON in markdown code blocks
     let jsonText = content.trim();
-    if (jsonText.startsWith('```json')) {
+    if (jsonText.startsWith("```json")) {
       jsonText = jsonText.slice(7, -3).trim();
-    } else if (jsonText.startsWith('```')) {
+    } else if (jsonText.startsWith("```")) {
       jsonText = jsonText.slice(3, -3).trim();
     }
 
     const parsed = JSON.parse(jsonText);
     const validated = llmPersonResultSchema.parse(parsed);
 
-    console.log('[LLM FALLBACK] Result:', validated.status);
+    console.log("[LLM FALLBACK] Result:", validated.status);
     return validated;
   } catch (error) {
-    console.error('[LLM FALLBACK] Error:', error);
+    console.error("[LLM FALLBACK] Error:", error);
     return null;
   }
 }

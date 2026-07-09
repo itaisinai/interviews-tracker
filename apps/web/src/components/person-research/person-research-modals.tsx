@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
-import { Modal, LoadingButton, MaterialIcon, JobHistoryTimeline } from "@interviews-tracker/design-system";
-import type { CompanyExperience } from "@interviews-tracker/design-system";
-import type { PersonResearchResult } from "../../lib/types";
+import { useEffect, useState } from "react";
+
 import { ChevronDown, ChevronUp } from "lucide-react";
+
+import type { CompanyExperience } from "@interviews-tracker/design-system";
+import { JobHistoryTimeline, LoadingButton, MaterialIcon, Modal } from "@interviews-tracker/design-system";
+
+import type { PersonResearchResult } from "../../lib/types";
 
 type PersonInfo = {
   name: string;
@@ -117,9 +120,7 @@ export function ConfirmResearchModal({ isOpen, onClose, person, onStartResearch 
             {urlError ? (
               <p className="mt-1 text-body-sm text-error">{urlError}</p>
             ) : (
-              <p className="mt-1 text-body-sm text-on-surface-variant">
-                Adding a LinkedIn URL can improve accuracy.
-              </p>
+              <p className="mt-1 text-body-sm text-on-surface-variant">Adding a LinkedIn URL can improve accuracy.</p>
             )}
           </label>
         </div>
@@ -165,9 +166,7 @@ export function LoadingResearchModal({ isOpen }: LoadingModalProps) {
         <div className="flex justify-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
-        <p className="mt-4 text-body-md text-on-surface-variant">
-          This may take a few seconds.
-        </p>
+        <p className="mt-4 text-body-md text-on-surface-variant">This may take a few seconds.</p>
       </div>
     </Modal>
   );
@@ -184,7 +183,16 @@ type ReviewModalProps = {
   isSaving: boolean;
 };
 
-export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onDiscard, onSave, onMarkWrong, isSaving }: ReviewModalProps) {
+export function ReviewResearchModal({
+  isOpen,
+  onClose,
+  result,
+  saveForLater,
+  onDiscard,
+  onSave,
+  onMarkWrong,
+  isSaving,
+}: ReviewModalProps) {
   const { person, research } = result;
   const [showAllExperience, setShowAllExperience] = useState(false);
   const [showAllEducation, setShowAllEducation] = useState(false);
@@ -253,10 +261,10 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
 
         {experienceData.length > 0 ? (
           <div>
-            <h3 className="mb-4 font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Experience</h3>
-            <JobHistoryTimeline
-              companies={showAllExperience ? experienceData : experienceData.slice(0, 2)}
-            />
+            <h3 className="mb-4 font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">
+              Experience
+            </h3>
+            <JobHistoryTimeline companies={showAllExperience ? experienceData : experienceData.slice(0, 2)} />
             {experienceData.length > 2 ? (
               <button
                 type="button"
@@ -274,18 +282,22 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
 
         {research.education && research.education.length > 0 ? (
           <div>
-            <h3 className="mb-4 font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Education</h3>
+            <h3 className="mb-4 font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">
+              Education
+            </h3>
             <div className="space-y-6">
-              {research.education.slice(0, showAllEducation ? undefined : 2).map((edu: { institution: string; degree?: string; dates?: string }, index: number) => (
-                <div key={index} className="flex gap-3">
-                  <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-surface-container" />
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-body-lg font-bold text-on-surface">{edu.institution}</h4>
-                    {edu.degree ? <p className="mt-0.5 text-body-sm text-on-surface-variant">{edu.degree}</p> : null}
-                    {edu.dates ? <p className="mt-0.5 text-body-sm text-on-surface-variant">{edu.dates}</p> : null}
+              {research.education
+                .slice(0, showAllEducation ? undefined : 2)
+                .map((edu: { institution: string; degree?: string; dates?: string }, index: number) => (
+                  <div key={index} className="flex gap-3">
+                    <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-surface-container" />
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-body-lg font-bold text-on-surface">{edu.institution}</h4>
+                      {edu.degree ? <p className="mt-0.5 text-body-sm text-on-surface-variant">{edu.degree}</p> : null}
+                      {edu.dates ? <p className="mt-0.5 text-body-sm text-on-surface-variant">{edu.dates}</p> : null}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
             {research.education.length > 2 ? (
               <button
@@ -350,17 +362,14 @@ export function ReviewResearchModal({ isOpen, onClose, result, saveForLater, onD
             <MaterialIcon name="person_remove" />
             Wrong person
           </button>
-        ) : <div />}
+        ) : (
+          <div />
+        )}
         <div className="flex items-center gap-3">
           <button type="button" className="btn btn-secondary" onClick={onDiscard}>
             Discard
           </button>
-          <LoadingButton
-            className="btn btn-primary"
-            loading={isSaving}
-            loadingLabel="Saving..."
-            onClick={onSave}
-          >
+          <LoadingButton className="btn btn-primary" loading={isSaving} loadingLabel="Saving..." onClick={onSave}>
             <MaterialIcon name="save" />
             {saveForLater ? "Save research" : "Done"}
           </LoadingButton>

@@ -6,7 +6,7 @@ import type { QueryResponse } from "./telegram-query-answerer.js";
  * Reference: https://core.telegram.org/bots/api#markdownv2-style
  */
 function escapeMarkdownV2(text: string): string {
-  return text.replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, '\\$1');
+  return text.replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
 }
 
 /**
@@ -24,7 +24,7 @@ function formatDateForDisplay(isoDate: string): string {
   const timeStr = date.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
-    hour12: true
+    hour12: true,
   });
 
   if (isToday) {
@@ -41,10 +41,7 @@ function formatDateForDisplay(isoDate: string): string {
 /**
  * Formats a query response into a Telegram message with markdown and links
  */
-export function formatQueryResponseForTelegram(
-  response: QueryResponse,
-  webAppBaseUrl: string
-): string {
+export function formatQueryResponseForTelegram(response: QueryResponse, webAppBaseUrl: string): string {
   // Use answer as-is (AI already formatted it nicely)
   let message = response.answer;
 
@@ -72,12 +69,15 @@ export function formatQueryResponseForTelegram(
 /**
  * Formats an opportunity creation success message
  */
-export function formatOpportunityCreatedMessage(opportunity: {
-  id?: string;
-  slug?: string;
-  companyName?: string;
-  roleTitle?: string;
-}, webAppBaseUrl: string): string {
+export function formatOpportunityCreatedMessage(
+  opportunity: {
+    id?: string;
+    slug?: string;
+    companyName?: string;
+    roleTitle?: string;
+  },
+  webAppBaseUrl: string
+): string {
   const companyName = escapeMarkdownV2(opportunity.companyName || "Unknown Company");
   const roleTitle = escapeMarkdownV2(opportunity.roleTitle || "Position");
   const slug = opportunity.slug || opportunity.id;

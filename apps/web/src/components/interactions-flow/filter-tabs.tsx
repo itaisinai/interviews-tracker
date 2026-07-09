@@ -15,9 +15,7 @@ const filters: Array<[InteractionFilter, string]> = [
 
 export function FilterTabs({ filter, onChange, variant }: FilterTabsProps) {
   const wrapperClassName =
-    variant === "mobile"
-      ? "mb-3 flex overflow-x-auto gap-3 pb-1 hide-scrollbar"
-      : "mb-8 flex flex-wrap gap-2";
+    variant === "mobile" ? "mb-3 flex overflow-x-auto gap-3 pb-1 hide-scrollbar" : "mb-8 flex flex-wrap gap-2";
 
   return (
     <div className={wrapperClassName}>
@@ -38,9 +36,7 @@ export function FilterTabs({ filter, onChange, variant }: FilterTabsProps) {
 function getButtonClassName(selected: boolean, variant: "mobile" | "desktop") {
   if (variant === "mobile") {
     return `whitespace-nowrap rounded-full px-4 py-2 font-label-md text-label-md transition-all ${
-      selected
-        ? "bg-primary text-on-primary"
-        : "border border-outline-variant bg-white text-on-surface-variant"
+      selected ? "bg-primary text-on-primary" : "border border-outline-variant bg-white text-on-surface-variant"
     }`;
   }
 

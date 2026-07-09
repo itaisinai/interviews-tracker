@@ -18,13 +18,11 @@ export type AppNotification = {
 };
 
 export const NOTIFICATIONS_STORAGE_KEY = "careerflow.notifications";
-export const UNLINKED_INTERACTIONS_MESSAGE =
-  "Update interactions to keep your timeline in sync";
+export const UNLINKED_INTERACTIONS_MESSAGE = "Update interactions to keep your timeline in sync";
 
-export type InteractionNotificationSource = Pick<
-  Interaction,
-  "slug" | "jobOpportunityId" | "gmailMessageId"
-> & { jobOpportunity?: Pick<Opportunity, "company"> | null };
+export type InteractionNotificationSource = Pick<Interaction, "slug" | "jobOpportunityId" | "gmailMessageId"> & {
+  jobOpportunity?: Pick<Opportunity, "company"> | null;
+};
 
 export function getNotificationKey(opportunityId: string) {
   return `unlinked-interactions:${opportunityId}`;
@@ -36,7 +34,7 @@ function titleFor(opportunityName: string, count: number) {
 
 export function buildUnlinkedInteractionNotifications(
   interactions: readonly InteractionNotificationSource[],
-  now = new Date(),
+  now = new Date()
 ): AppNotification[] {
   const grouped = new Map<string, { name: string; count: number }>();
 
@@ -44,8 +42,7 @@ export function buildUnlinkedInteractionNotifications(
     if (interaction.gmailMessageId) continue;
     const opportunityId = interaction.jobOpportunityId;
     if (!opportunityId) continue;
-    const opportunityName =
-      interaction.jobOpportunity?.company?.name?.trim() || "Opportunity";
+    const opportunityName = interaction.jobOpportunity?.company?.name?.trim() || "Opportunity";
     const current = grouped.get(opportunityId) ?? { name: opportunityName, count: 0 };
     current.count += 1;
     if (opportunityName !== "Opportunity") current.name = opportunityName;
@@ -70,14 +67,14 @@ export function buildUnlinkedInteractionNotifications(
 
 export function buildUnlinkedInteractionNotificationsFromOpportunities(
   opportunities: readonly Pick<Opportunity, "slug" | "company" | "interactions">[],
-  now = new Date(),
+  now = new Date()
 ): AppNotification[] {
   const interactions = opportunities.flatMap((opportunity) =>
     opportunity.interactions.map((interaction) => ({
       ...interaction,
       jobOpportunityId: interaction.jobOpportunityId || opportunity.slug,
       jobOpportunity: interaction.jobOpportunity ?? (opportunity as Opportunity),
-    })),
+    }))
   );
   return buildUnlinkedInteractionNotifications(interactions, now);
 }
@@ -85,7 +82,7 @@ export function buildUnlinkedInteractionNotificationsFromOpportunities(
 export function syncNotifications(
   existing: readonly AppNotification[],
   generated: readonly AppNotification[],
-  now = new Date(),
+  now = new Date()
 ): AppNotification[] {
   const timestamp = now.toISOString();
   const generatedByKey = new Map(generated.map((item) => [item.key, item]));

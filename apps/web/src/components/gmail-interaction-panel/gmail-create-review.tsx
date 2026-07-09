@@ -1,10 +1,14 @@
-import { CheckCircle2 } from "lucide-react";
-import type { GmailEmailExtractionAnalysis, GmailInteractionDraft, GmailStructuredEmail } from "../../lib/types";
-import { GmailReviewSidebar } from "./gmail-review-sidebar";
-import { LoadingButton } from "@interviews-tracker/design-system";
 import { useState } from "react";
-import { toDateValue, toTimeValue } from "./gmail-interaction-panel-helpers";
+
+import { CheckCircle2 } from "lucide-react";
+
+import { LoadingButton } from "@interviews-tracker/design-system";
+
 import { interactionStatusOptions, interactionTypeOptions } from "../../lib/enum-labels";
+import type { GmailEmailExtractionAnalysis, GmailInteractionDraft, GmailStructuredEmail } from "../../lib/types";
+
+import { toDateValue, toTimeValue } from "./gmail-interaction-panel-helpers";
+import { GmailReviewSidebar } from "./gmail-review-sidebar";
 
 type GmailCreateReviewProps = {
   draft: GmailInteractionDraft;
@@ -25,17 +29,11 @@ export function GmailCreateReview({
   saveInteractionPending,
   onAcceptChanges,
   onEditManually,
-  onCancel
+  onCancel,
 }: GmailCreateReviewProps) {
   const [localDraft, setLocalDraft] = useState<GmailInteractionDraft>(draft);
 
-  const confidencePercent = analysis
-    ? analysis.hasCalendar
-      ? 95
-      : analysis.dateSource === "text"
-        ? 85
-        : 75
-    : 95;
+  const confidencePercent = analysis ? (analysis.hasCalendar ? 95 : analysis.dateSource === "text" ? 85 : 75) : 95;
 
   const handleAccept = () => {
     onAcceptChanges(localDraft);
@@ -71,7 +69,7 @@ export function GmailCreateReview({
                 onChange={(event) => {
                   if (!event.target.value) return;
                   const startDate = new Date(localDraft.date);
-                  const [year, month, day] = event.target.value.split('-').map(Number);
+                  const [year, month, day] = event.target.value.split("-").map(Number);
                   startDate.setFullYear(year, month - 1, day);
 
                   const updates: Partial<typeof localDraft> = { date: startDate.toISOString() };
@@ -92,7 +90,7 @@ export function GmailCreateReview({
                 onChange={(event) => {
                   if (!event.target.value) return;
                   const date = new Date(localDraft.date);
-                  const [hours, minutes] = event.target.value.split(':').map(Number);
+                  const [hours, minutes] = event.target.value.split(":").map(Number);
                   date.setHours(hours, minutes);
                   setLocalDraft({ ...localDraft, date: date.toISOString() });
                 }}
@@ -110,7 +108,7 @@ export function GmailCreateReview({
                   }
 
                   const date = new Date(localDraft.date);
-                  const [hours, minutes] = event.target.value.split(':').map(Number);
+                  const [hours, minutes] = event.target.value.split(":").map(Number);
                   date.setHours(hours, minutes);
                   setLocalDraft({ ...localDraft, endDate: date.toISOString() });
                 }}

@@ -31,11 +31,7 @@ function ExpandableDescription({ text }: DescriptionProps) {
 
   return (
     <div className="mt-2">
-      <p
-        className={`text-body-sm text-on-surface-variant leading-relaxed ${
-          isExpanded ? "" : "line-clamp-2"
-        }`}
-      >
+      <p className={`text-body-sm text-on-surface-variant leading-relaxed ${isExpanded ? "" : "line-clamp-2"}`}>
         {text}
       </p>
       {text.length > 150 && (
@@ -71,9 +67,7 @@ export function JobHistoryTimeline({ companies }: JobHistoryTimelineProps) {
               /* Single position - show job title as main, company as subtitle */
               <>
                 {/* Job Title as main heading */}
-                <h3 className="text-body-lg font-bold text-on-surface">
-                  {company.positions[0].title}
-                </h3>
+                <h3 className="text-body-lg font-bold text-on-surface">{company.positions[0].title}</h3>
 
                 {/* Company name as subtitle */}
                 {company.companyUrl ? (
@@ -86,9 +80,7 @@ export function JobHistoryTimeline({ companies }: JobHistoryTimelineProps) {
                     {company.companyName}
                   </a>
                 ) : (
-                  <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                    {company.companyName}
-                  </p>
+                  <p className="mt-0.5 text-body-sm text-on-surface-variant">{company.companyName}</p>
                 )}
 
                 {/* Dates and Duration */}
@@ -98,22 +90,16 @@ export function JobHistoryTimeline({ companies }: JobHistoryTimelineProps) {
 
                 {/* Employment Type */}
                 {company.positions[0].employmentType && (
-                  <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                    {company.positions[0].employmentType}
-                  </p>
+                  <p className="mt-0.5 text-body-sm text-on-surface-variant">{company.positions[0].employmentType}</p>
                 )}
 
                 {/* Location */}
                 {company.positions[0].location && (
-                  <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                    {company.positions[0].location}
-                  </p>
+                  <p className="mt-0.5 text-body-sm text-on-surface-variant">{company.positions[0].location}</p>
                 )}
 
                 {/* Description */}
-                {company.positions[0].description && (
-                  <ExpandableDescription text={company.positions[0].description} />
-                )}
+                {company.positions[0].description && <ExpandableDescription text={company.positions[0].description} />}
               </>
             ) : (
               /* Multiple positions - show company as main, then timeline */
@@ -129,58 +115,46 @@ export function JobHistoryTimeline({ companies }: JobHistoryTimelineProps) {
                     {company.companyName}
                   </a>
                 ) : (
-                  <h3 className="text-body-lg font-bold text-on-surface">
-                    {company.companyName}
-                  </h3>
+                  <h3 className="text-body-lg font-bold text-on-surface">{company.companyName}</h3>
                 )}
-                <p className="text-body-sm text-on-surface-variant">
-                  {company.totalDuration}
-                </p>
+                <p className="text-body-sm text-on-surface-variant">{company.totalDuration}</p>
 
                 <div className="relative mt-4">
-                {/* Vertical line connecting positions */}
-                <div className="absolute left-1.5 top-2 bottom-0 w-px bg-outline-variant" />
+                  {/* Vertical line connecting positions */}
+                  <div className="absolute left-1.5 top-2 bottom-0 w-px bg-outline-variant" />
 
-                <div className="space-y-4">
-                  {company.positions.map((position, positionIndex) => (
-                    <div key={positionIndex} className="relative flex gap-3">
-                      {/* Timeline dot */}
-                      <div className="relative z-10 mt-0.5 h-3 w-3 flex-shrink-0 rounded-full border-2 border-outline-variant bg-surface" />
+                  <div className="space-y-4">
+                    {company.positions.map((position, positionIndex) => (
+                      <div key={positionIndex} className="relative flex gap-3">
+                        {/* Timeline dot */}
+                        <div className="relative z-10 mt-0.5 h-3 w-3 flex-shrink-0 rounded-full border-2 border-outline-variant bg-surface" />
 
-                      <div className="min-w-0 flex-1 -mt-1 pb-2">
-                        {/* Position Title */}
-                        <h4 className="text-body-md font-bold text-on-surface">
-                          {position.title}
-                        </h4>
+                        <div className="min-w-0 flex-1 -mt-1 pb-2">
+                          {/* Position Title */}
+                          <h4 className="text-body-md font-bold text-on-surface">{position.title}</h4>
 
-                        {/* Employment Type */}
-                        {position.employmentType && (
+                          {/* Employment Type */}
+                          {position.employmentType && (
+                            <p className="mt-0.5 text-body-sm text-on-surface-variant">{position.employmentType}</p>
+                          )}
+
+                          {/* Dates and Duration */}
                           <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                            {position.employmentType}
+                            {position.startDate} - {position.endDate} · {position.duration}
                           </p>
-                        )}
 
-                        {/* Dates and Duration */}
-                        <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                          {position.startDate} - {position.endDate} · {position.duration}
-                        </p>
+                          {/* Location */}
+                          {position.location && (
+                            <p className="mt-0.5 text-body-sm text-on-surface-variant">{position.location}</p>
+                          )}
 
-                        {/* Location */}
-                        {position.location && (
-                          <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                            {position.location}
-                          </p>
-                        )}
-
-                        {/* Description */}
-                        {position.description && (
-                          <ExpandableDescription text={position.description} />
-                        )}
+                          {/* Description */}
+                          {position.description && <ExpandableDescription text={position.description} />}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
               </>
             )}
           </div>

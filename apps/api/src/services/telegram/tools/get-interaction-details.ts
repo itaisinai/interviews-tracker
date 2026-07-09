@@ -29,9 +29,7 @@ export interface InteractionDetails {
   }>;
 }
 
-export async function getInteractionDetails(
-  interactionId: string
-): Promise<InteractionDetails | null> {
+export async function getInteractionDetails(interactionId: string): Promise<InteractionDetails | null> {
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
     include: {
@@ -46,14 +44,14 @@ export async function getInteractionDetails(
                 select: {
                   name: true,
                   title: true,
-                  email: true
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!interaction) {
@@ -68,18 +66,18 @@ export async function getInteractionDetails(
     participants.push({
       name: interaction.personName,
       title: interaction.personRole,
-      email: null
+      email: null,
     });
   }
 
   // Add company contacts (avoiding duplicates by name)
-  const existingNames = new Set(participants.map(p => p.name.toLowerCase()));
+  const existingNames = new Set(participants.map((p) => p.name.toLowerCase()));
   for (const contact of interaction.jobOpportunity.company.contacts) {
     if (!existingNames.has(contact.name.toLowerCase())) {
       participants.push({
         name: contact.name,
         title: contact.title,
-        email: contact.email
+        email: contact.email,
       });
     }
   }
@@ -101,7 +99,7 @@ export async function getInteractionDetails(
     companyName: interaction.jobOpportunity.company.name,
     roleTitle: interaction.jobOpportunity.roleTitle,
     opportunityId: interaction.jobOpportunity.id,
-    participants
+    participants,
   };
 }
 
@@ -109,16 +107,17 @@ export const getInteractionDetailsTool = {
   type: "function" as const,
   function: {
     name: "getInteractionDetails",
-    description: "Get full details of a specific interaction including participants, agenda, notes, and outcome. Use this when user asks about participants, details, or specifics of an interaction.",
+    description:
+      "Get full details of a specific interaction including participants, agenda, notes, and outcome. Use this when user asks about participants, details, or specifics of an interaction.",
     parameters: {
       type: "object",
       properties: {
         interactionId: {
           type: "string",
-          description: "The ID of the interaction to get details for"
-        }
+          description: "The ID of the interaction to get details for",
+        },
       },
-      required: ["interactionId"]
-    }
-  }
+      required: ["interactionId"],
+    },
+  },
 };

@@ -1,5 +1,22 @@
 import { z } from "zod";
-import { interactionStatusSchema, interactionTypeSchema, jobStatusSchema, offerStatusSchema, pipelineTypeSchema, prioritySchema, taskStatusSchema, type InteractionStatus, type InteractionType, type JobStatus, type OfferStatus, type PipelineType, type Priority, type TaskStatus, type Option } from "./enums.js";
+
+import {
+  type InteractionStatus,
+  interactionStatusSchema,
+  type InteractionType,
+  interactionTypeSchema,
+  type JobStatus,
+  jobStatusSchema,
+  type OfferStatus,
+  offerStatusSchema,
+  type Option,
+  type PipelineType,
+  pipelineTypeSchema,
+  type Priority,
+  prioritySchema,
+  type TaskStatus,
+  taskStatusSchema,
+} from "./enums.js";
 
 export const companyInputSchema = z.object({
   name: z.string().min(1),
@@ -18,50 +35,57 @@ export const companyInputSchema = z.object({
   notes: z.string().nullish(),
   isWatchlisted: z.boolean().default(false),
   watchlistReason: z.string().nullish(),
-  domainIds: z.array(z.string()).default([])
+  domainIds: z.array(z.string()).default([]),
 });
 
-export const opportunityInputSchema = z.object({
-  companyId: z.string().min(1).optional(),  // Optional: can provide companyId OR companyName
-  companyName: z.string().min(1).optional(),  // Optional: for backward compatibility, auto-creates company
-  roleTitle: z.string().min(1),
-  pipelineType: pipelineTypeSchema,
-  status: jobStatusSchema,
-  priority: prioritySchema,
-  referrerOrConnection: z.string().nullish(),
-  source: z.string().nullish(),
-  jobUrl: z.string().nullish(),
-  linkedinUrl: z.string().url().nullish(),
-  linkedinJobId: z.string().nullish(),
-  sourceUrl: z.string().url().nullish(),
-  nextStep: z.string().nullish(),
-  notes: z.string().nullish(),
-  workModelId: z.string().nullish(),
-  compensationNotes: z.string().nullish(),
-  domainIds: z.array(z.string()).default([])
-}).refine((data) => data.companyId || data.companyName, {
-  message: "Either companyId or companyName must be provided",
-  path: ["companyId"]
-});
+export const opportunityInputSchema = z
+  .object({
+    companyId: z.string().min(1).optional(), // Optional: can provide companyId OR companyName
+    companyName: z.string().min(1).optional(), // Optional: for backward compatibility, auto-creates company
+    roleTitle: z.string().min(1),
+    pipelineType: pipelineTypeSchema,
+    status: jobStatusSchema,
+    priority: prioritySchema,
+    referrerOrConnection: z.string().nullish(),
+    source: z.string().nullish(),
+    jobUrl: z.string().nullish(),
+    linkedinUrl: z.string().url().nullish(),
+    linkedinJobId: z.string().nullish(),
+    sourceUrl: z.string().url().nullish(),
+    nextStep: z.string().nullish(),
+    notes: z.string().nullish(),
+    workModelId: z.string().nullish(),
+    compensationNotes: z.string().nullish(),
+    domainIds: z.array(z.string()).default([]),
+  })
+  .refine((data) => data.companyId || data.companyName, {
+    message: "Either companyId or companyName must be provided",
+    path: ["companyId"],
+  });
 
-export const interactionInputSchema = z.object({
-  date: z.string().datetime().or(z.string().min(1)),
-  endDate: z.string().datetime().or(z.string().min(1)).nullish(),
-  type: interactionTypeSchema,
-  stage: z.string().nullish(),
-  status: interactionStatusSchema,
-  personName: z.string().nullish(),
-  personRole: z.string().nullish(),
-  agenda: z.string().nullish(),
-  meetingLink: z.string().url().nullish(),
-  gmailMessageId: z.string().min(1).nullish(),
-  notes: z.string().nullish(),
-  outcome: z.string().nullish(),
-  followUp: z.string().nullish()
-}).refine((data) => {
-  if (!data.endDate) return true;
-  return new Date(data.endDate).getTime() >= new Date(data.date).getTime();
-}, { message: "End date must be at or after start date", path: ["endDate"] });
+export const interactionInputSchema = z
+  .object({
+    date: z.string().datetime().or(z.string().min(1)),
+    endDate: z.string().datetime().or(z.string().min(1)).nullish(),
+    type: interactionTypeSchema,
+    stage: z.string().nullish(),
+    status: interactionStatusSchema,
+    personName: z.string().nullish(),
+    personRole: z.string().nullish(),
+    agenda: z.string().nullish(),
+    meetingLink: z.string().url().nullish(),
+    gmailMessageId: z.string().min(1).nullish(),
+    notes: z.string().nullish(),
+    outcome: z.string().nullish(),
+    followUp: z.string().nullish(),
+  })
+  .refine(
+    (data) => {
+      if (!data.endDate) return true;
+      return new Date(data.endDate).getTime() >= new Date(data.date).getTime();
+    },
+    { message: "End date must be at or after start date", path: ["endDate"] }
+  );
 
 export const noteInputSchema = z.object({
   companyId: z.string().nullish(),
@@ -69,7 +93,7 @@ export const noteInputSchema = z.object({
   interactionId: z.string().nullish(),
   title: z.string().min(1),
   content: z.string().min(1),
-  category: z.string().min(1)
+  category: z.string().min(1),
 });
 
 export const taskInputSchema = z.object({
@@ -80,7 +104,7 @@ export const taskInputSchema = z.object({
   status: taskStatusSchema,
   priority: prioritySchema,
   dueDate: z.string().nullish(),
-  notes: z.string().nullish()
+  notes: z.string().nullish(),
 });
 
 export const compensationInputSchema = z.object({
@@ -93,7 +117,7 @@ export const compensationInputSchema = z.object({
   vacationDays: z.string().nullish(),
   workModelNotes: z.string().nullish(),
   negotiationNotes: z.string().nullish(),
-  offerStatus: offerStatusSchema
+  offerStatus: offerStatusSchema,
 });
 
 export type Company = {
@@ -112,7 +136,7 @@ export type Company = {
   customersTraction?: string | null;
   techStack?: string | null;
   backendFrontendSplit?: string | null;
-  companyNotes?: string | null;  // Renamed from 'notes' to avoid conflict with notesList
+  companyNotes?: string | null; // Renamed from 'notes' to avoid conflict with notesList
   isWatchlisted: boolean;
   watchlistReason?: string | null;
   lastResearchedAt?: string | null;
@@ -152,7 +176,7 @@ export type Opportunity = {
 export type Interaction = {
   slug: string;
   ownerEmail: string;
-  jobOpportunityId?: string;  // Deprecated: Use jobOpportunity.slug instead. No longer returned in API responses.
+  jobOpportunityId?: string; // Deprecated: Use jobOpportunity.slug instead. No longer returned in API responses.
   date: string;
   endDate?: string | null;
   type: InteractionType;
@@ -220,7 +244,7 @@ export type CompanyDetail = {
   customersTraction?: string | null;
   techStack?: string | null;
   backendFrontendSplit?: string | null;
-  companyNotes?: string | null;  // Renamed from 'notes' to avoid conflict with notesList
+  companyNotes?: string | null; // Renamed from 'notes' to avoid conflict with notesList
   isWatchlisted: boolean;
   watchlistReason?: string | null;
   lastResearchedAt?: string | null;
@@ -229,7 +253,7 @@ export type CompanyDetail = {
   domains: Array<{ domain: Option }>;
   opportunities: Opportunity[];
   interactions: Interaction[];
-  notesList: Note[];  // Renamed from 'notes' for clarity
+  notesList: Note[]; // Renamed from 'notes' for clarity
   tasks: Task[];
   contacts: Person[];
   compensation: Compensation[];

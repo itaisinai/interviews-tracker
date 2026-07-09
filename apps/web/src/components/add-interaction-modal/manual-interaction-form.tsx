@@ -1,9 +1,12 @@
 import { useState } from "react";
+
 import { useMutation } from "@tanstack/react-query";
+
+import { LoadingButton } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
 import type { InteractionDraft } from "../../lib/types";
 import { InteractionDraftFields } from "../interactions-drawer/interaction-draft-fields";
-import { LoadingButton } from "@interviews-tracker/design-system";
 
 export type ManualInteractionFormProps = {
   opportunitySlug: string;
@@ -22,21 +25,23 @@ export function ManualInteractionForm({
   onSaved,
   onCancel,
 }: ManualInteractionFormProps) {
-  const [draft, setDraft] = useState<InteractionDraft>(initialDraft ?? {
-    date: new Date().toISOString(),
-    endDate: null,
-    type: "Interview",
-    stage: null,
-    status: "SCHEDULED",
-    personName: null,
-    personRole: null,
-    agenda: null,
-    meetingLink: null,
-    gmailMessageId: null,
-    notes: null,
-    outcome: null,
-    followUp: null,
-  });
+  const [draft, setDraft] = useState<InteractionDraft>(
+    initialDraft ?? {
+      date: new Date().toISOString(),
+      endDate: null,
+      type: "Interview",
+      stage: null,
+      status: "SCHEDULED",
+      personName: null,
+      personRole: null,
+      agenda: null,
+      meetingLink: null,
+      gmailMessageId: null,
+      notes: null,
+      outcome: null,
+      followUp: null,
+    }
+  );
 
   const createInteraction = useMutation({
     mutationFn: () => api.createInteraction(opportunitySlug, draft),
@@ -57,9 +62,7 @@ export function ManualInteractionForm({
       )}
 
       <div className="rounded-lg border border-neutral-200 bg-neutral-50/50 p-4">
-        <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">
-          Adding to
-        </div>
+        <div className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">Adding to</div>
         <div className="font-medium text-neutral-900">{companyName}</div>
         <div className="text-sm text-neutral-600">{roleTitle}</div>
       </div>

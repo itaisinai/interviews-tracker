@@ -8,20 +8,20 @@ import type {
   GmailSearchCandidateMetadata,
   GmailSearchQuery,
   GmailStructuredEmail,
-  GmailStructuredEmailCalendar
+  GmailStructuredEmailCalendar,
 } from "@interviews-tracker/integrations";
 
 export type {
+  GmailDerivedInteraction,
+  GmailMeetingDateSource,
   GmailRawMessageHeader,
   GmailRawMessagePayload,
   GmailRawMessageResponse,
-  GmailStructuredEmailCalendar,
-  GmailStructuredEmail,
-  GmailMeetingDateSource,
-  GmailDerivedInteraction,
-  GmailSearchQuery,
+  GmailSearchCandidateClassification,
   GmailSearchCandidateMetadata,
-  GmailSearchCandidateClassification
+  GmailSearchQuery,
+  GmailStructuredEmail,
+  GmailStructuredEmailCalendar,
 } from "@interviews-tracker/integrations";
 
 function decodeBase64Url(value: string) {
@@ -47,7 +47,7 @@ function parseMailbox(value: string) {
   return {
     raw: value.trim(),
     name: name || null,
-    email: email || (value.includes("@") ? value.replace(/^.*<|>.*$/g, "").trim() : null)
+    email: email || (value.includes("@") ? value.replace(/^.*<|>.*$/g, "").trim() : null),
   };
 }
 
@@ -120,7 +120,7 @@ function monthIndexFromName(value: string) {
     sep: 8,
     oct: 9,
     nov: 10,
-    dec: 11
+    dec: 11,
   };
 
   return months[normalized] ?? -1;
@@ -144,12 +144,18 @@ function parseTimezoneOffset(value: string) {
   return null;
 }
 
-function localTimeToIso(parts: { year: number; month: number; day: number; hour: number; minute: number }, offsetHours: number) {
+function localTimeToIso(
+  parts: { year: number; month: number; day: number; hour: number; minute: number },
+  offsetHours: number
+) {
   const utcMillis = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour - offsetHours, parts.minute);
   return new Date(utcMillis).toISOString();
 }
 
-function convertZonedLocalToIso(parts: { year: number; month: number; day: number; hour: number; minute: number }, timeZone: string) {
+function convertZonedLocalToIso(
+  parts: { year: number; month: number; day: number; hour: number; minute: number },
+  timeZone: string
+) {
   const utcGuess = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
   const zonedParts = new Intl.DateTimeFormat("en-US", {
     timeZone,
@@ -159,11 +165,18 @@ function convertZonedLocalToIso(parts: { year: number; month: number; day: numbe
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit"
+    second: "2-digit",
   }).formatToParts(new Date(utcGuess));
 
   const getPart = (type: string) => Number(zonedParts.find((part) => part.type === type)?.value ?? "0");
-  const zonedAsUtc = Date.UTC(getPart("year"), getPart("month") - 1, getPart("day"), getPart("hour"), getPart("minute"), getPart("second"));
+  const zonedAsUtc = Date.UTC(
+    getPart("year"),
+    getPart("month") - 1,
+    getPart("day"),
+    getPart("hour"),
+    getPart("minute"),
+    getPart("second")
+  );
   const offsetMs = zonedAsUtc - utcGuess;
   return new Date(utcGuess - offsetMs).toISOString();
 }
@@ -172,17 +185,21 @@ function parseDateTimeValue(value: string, timezone: string | null) {
   const utcMatch = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/i);
 
   if (utcMatch) {
-    return new Date(Date.UTC(
-      Number(utcMatch[1]),
-      Number(utcMatch[2]) - 1,
-      Number(utcMatch[3]),
-      Number(utcMatch[4]),
-      Number(utcMatch[5]),
-      Number(utcMatch[6])
-    )).toISOString();
+    return new Date(
+      Date.UTC(
+        Number(utcMatch[1]),
+        Number(utcMatch[2]) - 1,
+        Number(utcMatch[3]),
+        Number(utcMatch[4]),
+        Number(utcMatch[5]),
+        Number(utcMatch[6])
+      )
+    ).toISOString();
   }
 
-  const localMatch = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/i) ?? value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/i);
+  const localMatch =
+    value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/i) ??
+    value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/i);
 
   if (!localMatch) {
     return null;
@@ -227,7 +244,7 @@ function parseIcsPropertyLine(line: string) {
   return {
     name: name.toUpperCase(),
     value,
-    params: paramMap
+    params: paramMap,
   };
 }
 
@@ -237,7 +254,10 @@ function unfoldIcsLines(value: string) {
 
 export function parseIcsCalendar(value: string): GmailStructuredEmailCalendar | null {
   const unfolded = unfoldIcsLines(value);
-  const lines = unfolded.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const lines = unfolded
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const eventLines: string[] = [];
   let insideEvent = false;
 
@@ -267,7 +287,7 @@ export function parseIcsCalendar(value: string): GmailStructuredEmailCalendar | 
     start: null,
     end: null,
     timezone: null,
-    attendees: []
+    attendees: [],
   };
 
   for (const line of eventLines) {
@@ -322,7 +342,7 @@ function collectTextFromPayload(payload: GmailRawMessagePayload | undefined) {
     plainText: "",
     htmlText: "",
     calendarText: "",
-    calendar: null as GmailStructuredEmailCalendar | null
+    calendar: null as GmailStructuredEmailCalendar | null,
   };
 
   if (!payload) {
@@ -386,7 +406,7 @@ function parseMeetingTimeFromText(text: string) {
   const normalized = text.replace(/\s+/g, " ").trim();
   const patterns = [
     /(?:\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b,?\s+)?(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)(?:\s*-\s*\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)?(?:\s*\(([^)]+)\))?/i,
-    /(?:on\s+)?([A-Za-z]{3,9})\s+(\d{1,2}),\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)(?:\s*-\s*\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)?(?:\s*\(([^)]+)\))?/i
+    /(?:on\s+)?([A-Za-z]{3,9})\s+(\d{1,2}),\s+(\d{4})(?:[^\d]+)?(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)(?:\s*-\s*\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)?(?:\s*\(([^)]+)\))?/i,
   ];
 
   for (const pattern of patterns) {
@@ -418,7 +438,15 @@ function parseMeetingTimeFromText(text: string) {
       year = Number(match[3]);
     }
 
-    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+    if (
+      !Number.isFinite(year) ||
+      !Number.isFinite(month) ||
+      !Number.isFinite(day) ||
+      month < 1 ||
+      month > 12 ||
+      day < 1 ||
+      day > 31
+    ) {
       continue;
     }
 
@@ -528,7 +556,7 @@ export async function parseStructuredGmailEmail(input: {
   // If no plainText but we have HTML, strip HTML to get text
   if (!plainText && htmlText) {
     plainText = stripHtml(htmlText);
-    console.log('[PARSE] No plain text found, stripped HTML. Length:', plainText.length);
+    console.log("[PARSE] No plain text found, stripped HTML. Length:", plainText.length);
   }
 
   const messageParts = collectAllParts(input.message.payload);
@@ -573,10 +601,9 @@ export async function parseStructuredGmailEmail(input: {
     plainText,
     htmlText,
     calendarText,
-    calendar
+    calendar,
   };
 }
-
 
 function parseGmailInternalDate(value: string | undefined) {
   const timestamp = Number(value);
@@ -608,7 +635,10 @@ function buildCompanySearchVariants(companyName: string, aliases: Array<string |
     variants.add(normalized);
 
     if (/\.ai\b/i.test(normalized)) {
-      const withoutAiSuffix = normalized.replace(/\.ai\b/gi, "").replace(/\s+/g, " ").trim();
+      const withoutAiSuffix = normalized
+        .replace(/\.ai\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim();
       if (withoutAiSuffix) {
         variants.add(withoutAiSuffix);
       }
@@ -629,7 +659,7 @@ export function buildGmailSearchQueries(
   companyName: string,
   roleTitle?: string | null,
   aliases: Array<string | null | undefined> = [],
-  senderDomains: Array<string | null | undefined> = [],
+  senderDomains: Array<string | null | undefined> = []
 ) {
   const companyVariants = buildCompanySearchVariants(companyName, aliases);
   const queries = new Set<string>();
@@ -651,7 +681,11 @@ export function buildGmailSearchQueries(
   return [...queries];
 }
 
-export function buildRelatedSenderDomainSearchQueries(companyName: string, senderDomains: Array<string | null | undefined>, aliases: Array<string | null | undefined> = []) {
+export function buildRelatedSenderDomainSearchQueries(
+  companyName: string,
+  senderDomains: Array<string | null | undefined>,
+  aliases: Array<string | null | undefined> = []
+) {
   const companyTokens = buildCompanySearchTokens(companyName, aliases);
   const queries = new Set<string>();
 
@@ -660,7 +694,10 @@ export function buildRelatedSenderDomainSearchQueries(companyName: string, sende
   }
 
   for (const senderDomain of senderDomains) {
-    const domain = senderDomain?.toLowerCase().replace(/[>,;]+$/g, "").trim();
+    const domain = senderDomain
+      ?.toLowerCase()
+      .replace(/[>,;]+$/g, "")
+      .trim();
 
     if (!domain || !companyTokens.some((token) => domain.includes(token))) {
       continue;
@@ -697,8 +734,10 @@ export function extractMeetingUrlFromStructuredEmail(email: GmailStructuredEmail
     email.calendar?.description,
     email.plainText,
     email.htmlText,
-    email.calendarText
-  ].filter(Boolean).join("\n");
+    email.calendarText,
+  ]
+    .filter(Boolean)
+    .join("\n");
   const urlMatches = sources.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
   const meetingUrl = urlMatches
     .map(cleanMeetingUrl)
@@ -709,9 +748,7 @@ export function extractMeetingUrlFromStructuredEmail(email: GmailStructuredEmail
 
 function parseEndTimeFromText(startDate: string, text: string): string | null {
   // Try to find time range patterns like "12:00 - 14:00" or "12:00 PM - 2:00 PM"
-  const patterns = [
-    /(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)\s*[-–—]\s*(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)(?:\s*\(([^)]+)\))?/gi,
-  ];
+  const patterns = [/(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)\s*[-–—]\s*(\d{1,2}:\d{2}(?:\s*(?:AM|PM))?)(?:\s*\(([^)]+)\))?/gi];
 
   for (const pattern of patterns) {
     const matches = text.matchAll(pattern);
@@ -730,16 +767,19 @@ function parseEndTimeFromText(startDate: string, text: string): string | null {
         endDate = new Date(startDateObj);
         endDate.setUTCHours(endClock.hour, endClock.minute, 0, 0);
       } else {
-        const localStartDate = new Date(
-          startDateObj.getTime() + offsetHours * 60 * 60 * 1000,
+        const localStartDate = new Date(startDateObj.getTime() + offsetHours * 60 * 60 * 1000);
+        endDate = new Date(
+          localTimeToIso(
+            {
+              year: localStartDate.getUTCFullYear(),
+              month: localStartDate.getUTCMonth() + 1,
+              day: localStartDate.getUTCDate(),
+              hour: endClock.hour,
+              minute: endClock.minute,
+            },
+            offsetHours
+          )
         );
-        endDate = new Date(localTimeToIso({
-          year: localStartDate.getUTCFullYear(),
-          month: localStartDate.getUTCMonth() + 1,
-          day: localStartDate.getUTCDate(),
-          hour: endClock.hour,
-          minute: endClock.minute,
-        }, offsetHours));
       }
 
       // If end time is before start time, assume it's the next day
@@ -759,11 +799,9 @@ export function extractStructuredEmailMeetingDate(email: GmailStructuredEmail) {
     return { date: email.calendar.start, dateSource: "calendar" as const };
   }
 
-  const textSource = parseMeetingTimeFromText([
-    email.subject,
-    email.plainText,
-    email.calendarText
-  ].filter(Boolean).join("\n"));
+  const textSource = parseMeetingTimeFromText(
+    [email.subject, email.plainText, email.calendarText].filter(Boolean).join("\n")
+  );
 
   if (textSource) {
     return { date: textSource, dateSource: "text" as const };
@@ -782,7 +820,9 @@ export function extractStructuredEmailMeetingDate(email: GmailStructuredEmail) {
 
 export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail): GmailDerivedInteraction {
   const meeting = extractStructuredEmailMeetingDate(email);
-  const text = [email.subject, email.plainText, email.calendar?.summary ?? "", email.calendar?.description ?? ""].filter(Boolean).join("\n");
+  const text = [email.subject, email.plainText, email.calendar?.summary ?? "", email.calendar?.description ?? ""]
+    .filter(Boolean)
+    .join("\n");
   const type = inferTypeFromEmail(email);
   const stage = inferStageFromEmailText(text);
   const status = inferStatusFromEmail(email, meeting.date);
@@ -801,15 +841,15 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
   if (email.calendar?.attendees && email.calendar.attendees.length > 0) {
     // Parse email addresses to extract names
     const attendeeNames = email.calendar.attendees
-      .map(attendee => {
+      .map((attendee) => {
         // Try to extract name from "Name <email>" or just use email
         const mailbox = parseMailbox(attendee);
-        return mailbox.name || mailbox.email?.split('@')[0];
+        return mailbox.name || mailbox.email?.split("@")[0];
       })
       .filter(Boolean);
 
     if (attendeeNames.length > 0) {
-      participantNames = attendeeNames.join(', ');
+      participantNames = attendeeNames.join(", ");
     }
   }
 
@@ -824,7 +864,7 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
     email.calendar?.start ? `Calendar start: ${email.calendar.start}` : null,
     email.calendar?.end ? `Calendar end: ${email.calendar.end}` : null,
     email.dateHeader ? `Date header: ${email.dateHeader}` : null,
-    email.plainText.trim() ? `Body: ${email.plainText.trim().slice(0, 1200)}` : null
+    email.plainText.trim() ? `Body: ${email.plainText.trim().slice(0, 1200)}` : null,
   ].filter(Boolean) as string[];
 
   return {
@@ -840,7 +880,7 @@ export function deriveInteractionFromStructuredEmail(email: GmailStructuredEmail
     meetingLink: meetingUrl,
     notes: notesParts.join("\n"),
     outcome: null,
-    followUp: /follow[- ]up|reply|confirm|let me know/i.test(text) ? "Follow up with the sender." : null
+    followUp: /follow[- ]up|reply|confirm|let me know/i.test(text) ? "Follow up with the sender." : null,
   };
 }
 
@@ -873,8 +913,15 @@ export function classifySearchCandidateFallback(input: {
   const companyTokens = buildCompanySearchTokens(input.companyName, input.companyAliases);
   const domainRelated = companyTokens.some((token) => senderDomain.includes(token));
   const queryRelated = companyTokens.some((token) => searchQuery.includes(token));
-  const related = companyNames.some((name) => text.includes(name)) || (role ? text.includes(role) : false) || domainRelated || queryRelated;
-  const interview = /interview|screening|onsite|phone screen|recruiter|assignment|offer|rejection|follow[- ]up|invitation|meeting|calendar/.test(text);
+  const related =
+    companyNames.some((name) => text.includes(name)) ||
+    (role ? text.includes(role) : false) ||
+    domainRelated ||
+    queryRelated;
+  const interview =
+    /interview|screening|onsite|phone screen|recruiter|assignment|offer|rejection|follow[- ]up|invitation|meeting|calendar/.test(
+      text
+    );
   const relevant = related || interview;
   const confidence = relevant ? (related && interview ? 0.88 : 0.72) : 0.22;
 
@@ -882,7 +929,8 @@ export function classifySearchCandidateFallback(input: {
   if (/offer/.test(text)) emailType = "OFFER";
   else if (/rejection|sorry|not.*moving forward/.test(text)) emailType = "REJECTION";
   else if (/assignment|take-home|take home/.test(text)) emailType = "FOLLOW_UP";
-  else if (/interview|screening|onsite|phone screen|invitation|meeting|calendar/.test(text)) emailType = "INTERVIEW_INVITATION";
+  else if (/interview|screening|onsite|phone screen|invitation|meeting|calendar/.test(text))
+    emailType = "INTERVIEW_INVITATION";
   else if (/follow[- ]up|checking in|next steps|reschedule|schedule/.test(text)) emailType = "FOLLOW_UP";
   else if (/recruiter|talent acquisition|hiring manager|human resources|hr/.test(text)) emailType = "RECRUITER_MESSAGE";
 
@@ -911,6 +959,6 @@ export function classifySearchCandidateFallback(input: {
     isRelevant: relevant,
     confidence,
     emailType,
-    reason
+    reason,
   };
 }

@@ -1,7 +1,10 @@
-import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
-import { Drawer } from "./drawer";
+
+import type { Meta, StoryObj } from "@storybook/react";
+
 import { Button } from "../button";
+
+import { Drawer } from "./drawer";
 
 const meta: Meta<typeof Drawer> = {
   title: "UI/Drawer",
@@ -18,15 +21,8 @@ export const Default: Story = {
     return (
       <div className="min-h-[400px]">
         <Button onClick={() => setOpen(true)}>Open drawer</Button>
-        <Drawer
-          open={open}
-          title="Drawer title"
-          description="Reusable side panel"
-          onClose={() => setOpen(false)}
-        >
-          <p className="text-body-md text-on-surface-variant">
-            Drawer content goes here.
-          </p>
+        <Drawer open={open} title="Drawer title" description="Reusable side panel" onClose={() => setOpen(false)}>
+          <p className="text-body-md text-on-surface-variant">Drawer content goes here.</p>
         </Drawer>
       </div>
     );

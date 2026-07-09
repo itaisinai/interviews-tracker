@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { pipelineTypeSchema, prioritySchema } from "@interviews-tracker/core";
 
 export const aiParseResponseSchema = z.object({
@@ -16,7 +17,7 @@ export const aiParseResponseSchema = z.object({
     funding: z.string().nullable(),
     customersTraction: z.string().nullable(),
     companyDescription: z.string().nullable(),
-    productDescription: z.string().nullable()
+    productDescription: z.string().nullable(),
   }),
   role: z.object({
     techStack: z.array(z.string()),
@@ -24,14 +25,14 @@ export const aiParseResponseSchema = z.object({
     responsibilities: z.array(z.string()),
     requirements: z.array(z.string()),
     niceToHave: z.array(z.string()),
-    compensation: z.string().nullable()
+    compensation: z.string().nullable(),
   }),
   process: z.object({
     knownNextInteraction: z.string().nullable(),
     knownContact: z.string().nullable(),
-    suggestedNextStep: z.string().nullable()
+    suggestedNextStep: z.string().nullable(),
   }),
-  rawImportantNotes: z.array(z.string())
+  rawImportantNotes: z.array(z.string()),
 });
 
 export type ParsedJobDescription = z.infer<typeof aiParseResponseSchema>;

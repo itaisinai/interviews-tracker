@@ -1,4 +1,10 @@
-import type { GmailEmailExtractionAnalysis, GmailInteractionDraft, GmailSearchCandidate, GmailStructuredEmail, Interaction } from "../../lib/types";
+import type {
+  GmailEmailExtractionAnalysis,
+  GmailInteractionDraft,
+  GmailSearchCandidate,
+  GmailStructuredEmail,
+  Interaction,
+} from "../../lib/types";
 
 export type TrackedGmailEmail = {
   id: string;
@@ -36,7 +42,7 @@ export const interactionFieldLabels = {
   meetingLink: "Meeting link",
   notes: "Notes",
   outcome: "Outcome",
-  followUp: "Follow-up"
+  followUp: "Follow-up",
 } satisfies Record<InteractionDiffField, string>;
 
 export const interactionDiffFields = Object.keys(interactionFieldLabels) as InteractionDiffField[];
@@ -50,7 +56,10 @@ export function normalizeComparableValue(field: InteractionDiffField, value: str
   return (value ?? "").trim();
 }
 
-export function getChangedInteractionFields(existingInteraction: Interaction | null | undefined, draft: GmailInteractionDraft | null) {
+export function getChangedInteractionFields(
+  existingInteraction: Interaction | null | undefined,
+  draft: GmailInteractionDraft | null
+) {
   if (!existingInteraction || !draft) {
     return new Set<InteractionDiffField>();
   }
@@ -58,8 +67,7 @@ export function getChangedInteractionFields(existingInteraction: Interaction | n
   return new Set(
     interactionDiffFields.filter(
       (field) =>
-        normalizeComparableValue(field, existingInteraction[field]) !==
-        normalizeComparableValue(field, draft[field])
+        normalizeComparableValue(field, existingInteraction[field]) !== normalizeComparableValue(field, draft[field])
     )
   );
 }
@@ -67,11 +75,8 @@ export function getChangedInteractionFields(existingInteraction: Interaction | n
 export function addPickedEmail(current: GmailMessageStates | undefined, email: TrackedGmailEmail): GmailMessageStates {
   return {
     removedEmails: current?.removedEmails ?? [],
-    pickedEmails: [
-      email,
-      ...(current?.pickedEmails.filter((pickedEmail) => pickedEmail.id !== email.id) ?? [])
-    ],
-    ignoredEmails: current?.ignoredEmails ?? []
+    pickedEmails: [email, ...(current?.pickedEmails.filter((pickedEmail) => pickedEmail.id !== email.id) ?? [])],
+    ignoredEmails: current?.ignoredEmails ?? [],
   };
 }
 
@@ -126,5 +131,5 @@ export type {
   GmailInteractionDraft,
   GmailSearchCandidate,
   GmailStructuredEmail,
-  Interaction
+  Interaction,
 } from "../../lib/types";

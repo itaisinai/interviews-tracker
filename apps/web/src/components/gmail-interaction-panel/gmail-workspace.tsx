@@ -1,7 +1,9 @@
-import { LoadingButton, InlineLoadingState, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
-import { Badge } from "../badge";
+import { InlineLoadingState, LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
+
 import type { GmailFlowState } from "../../lib/gmail";
 import { type GmailSearchCandidate } from "../../lib/types";
+import { Badge } from "../badge";
+
 import type { TrackedGmailEmail } from "./gmail-interaction-panel-helpers";
 
 type GmailWorkspaceProps = {
@@ -81,7 +83,7 @@ export function GmailWorkspace({
   onUnignoreEmail,
   onUnpickEmail,
   onRemovedEmailsExpandedChange,
-  onIgnoredEmailsExpandedChange
+  onIgnoredEmailsExpandedChange,
 }: GmailWorkspaceProps) {
   return (
     <>
@@ -97,7 +99,8 @@ export function GmailWorkspace({
             </div>
           </div>
           <p className="mt-3 max-w-3xl text-body-md text-on-surface-variant">
-            Search recent Gmail threads for this company, parse one email with AI, and review it before saving as an interaction.
+            Search recent Gmail threads for this company, parse one email with AI, and review it before saving as an
+            interaction.
           </p>
           <p className="mt-2 text-body-md text-on-surface-variant">{roleTitle}</p>
         </div>
@@ -105,13 +108,27 @@ export function GmailWorkspace({
           {statusFetching ? <InlineLoadingState label="Refreshing" /> : null}
           {connected ? (
             <>
-              <span className="rounded-full bg-primary-container px-3 py-1 text-label-md text-on-primary-container">Gmail connected</span>
-              <LoadingButton className="btn btn-primary" loading={flowState === "searching_emails"} loadingLabel="Searching..." icon="search" onClick={onSearch}>
+              <span className="rounded-full bg-primary-container px-3 py-1 text-label-md text-on-primary-container">
+                Gmail connected
+              </span>
+              <LoadingButton
+                className="btn btn-primary"
+                loading={flowState === "searching_emails"}
+                loadingLabel="Searching..."
+                icon="search"
+                onClick={onSearch}
+              >
                 Add interaction from Gmail
               </LoadingButton>
             </>
           ) : configured ? (
-            <LoadingButton className="btn btn-primary" loading={flowState === "connecting_gmail"} loadingLabel="Connecting..." icon="link" onClick={onConnect}>
+            <LoadingButton
+              className="btn btn-primary"
+              loading={flowState === "connecting_gmail"}
+              loadingLabel="Connecting..."
+              icon="link"
+              onClick={onConnect}
+            >
               {shouldReconnect ? "Reconnect Gmail" : "Connect Gmail"}
             </LoadingButton>
           ) : (
@@ -156,16 +173,31 @@ export function GmailWorkspace({
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="font-label-md text-label-md uppercase text-on-surface-variant">Candidate emails</p>
-                <LoadingButton className="font-label-md text-label-md text-primary hover:underline" disabled={Boolean(selectedCandidateId)} loading={flowState === "searching_emails"} loadingLabel="Searching..." icon="search" onClick={onSearch}>
+                <LoadingButton
+                  className="font-label-md text-label-md text-primary hover:underline"
+                  disabled={Boolean(selectedCandidateId)}
+                  loading={flowState === "searching_emails"}
+                  loadingLabel="Searching..."
+                  icon="search"
+                  onClick={onSearch}
+                >
                   Search again
                 </LoadingButton>
               </div>
               {searchResults.map((email) => {
                 const isSelected = selectedCandidateId === email.id;
-                const isParsing = isSelected && flowState !== "idle" && flowState !== "failed" && flowState !== "ready_for_review" && isParsingCandidateId === email.id;
+                const isParsing =
+                  isSelected &&
+                  flowState !== "idle" &&
+                  flowState !== "failed" &&
+                  flowState !== "ready_for_review" &&
+                  isParsingCandidateId === email.id;
 
                 return (
-                  <div key={email.id} className={`rounded-xl border p-4 transition-colors ${isSelected ? "border-primary bg-primary/5" : "border-outline-variant bg-white"}`}>
+                  <div
+                    key={email.id}
+                    className={`rounded-xl border p-4 transition-colors ${isSelected ? "border-primary bg-primary/5" : "border-outline-variant bg-white"}`}
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-semibold text-on-background">{email.subject}</p>
@@ -198,7 +230,9 @@ export function GmailWorkspace({
                     </div>
                     <p className="mt-3 text-body-md text-on-surface-variant">{email.snippet}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full px-3 py-1 text-label-sm ${email.relevance.isRelevant ? "bg-primary-container text-on-primary-container" : "bg-surface-container-low text-on-surface-variant"}`}>
+                      <span
+                        className={`rounded-full px-3 py-1 text-label-sm ${email.relevance.isRelevant ? "bg-primary-container text-on-primary-container" : "bg-surface-container-low text-on-surface-variant"}`}
+                      >
                         {email.relevance.emailType}
                       </span>
                       <span className="rounded-full bg-surface-container-low px-3 py-1 text-label-sm text-on-surface-variant">
@@ -212,7 +246,14 @@ export function GmailWorkspace({
                       </div>
                     ) : null}
                     <div className="mt-4 flex justify-end">
-                      <LoadingButton className="btn btn-primary" disabled={actionDisabled} loading={isParsing} loadingLabel="Parsing..." icon="auto_awesome" onClick={() => onParseEmail(email)}>
+                      <LoadingButton
+                        className="btn btn-primary"
+                        disabled={actionDisabled}
+                        loading={isParsing}
+                        loadingLabel="Parsing..."
+                        icon="auto_awesome"
+                        onClick={() => onParseEmail(email)}
+                      >
                         Parse email
                       </LoadingButton>
                     </div>
@@ -230,7 +271,11 @@ export function GmailWorkspace({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Removed emails</p>
               <div className="flex items-center gap-2">
                 {gmailMessageStatesFetching ? <InlineLoadingState label="Refreshing" /> : null}
-                <button className="btn btn-secondary" type="button" onClick={() => onRemovedEmailsExpandedChange(!removedEmailsExpanded)}>
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  onClick={() => onRemovedEmailsExpandedChange(!removedEmailsExpanded)}
+                >
                   <MaterialIcon name={removedEmailsExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} />
                   {removedEmailsExpanded ? "Hide" : `Show (${removedEmails.length})`}
                 </button>
@@ -242,10 +287,20 @@ export function GmailWorkspace({
                   {removedEmails.map((email) => (
                     <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                       <div className="min-w-0">
-                        <p className="truncate font-body-md text-body-md font-semibold text-on-background">{email.subject}</p>
-                        <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                        <p className="truncate font-body-md text-body-md font-semibold text-on-background">
+                          {email.subject}
+                        </p>
+                        <p className="mt-1 text-body-sm text-on-surface-variant">
+                          {new Date(email.date).toLocaleString()}
+                        </p>
                       </div>
-                      <LoadingButton className="btn btn-secondary" loading={clearingEmailId === email.id} loadingLabel="Restoring..." icon="undo" onClick={() => onRestoreEmail(email)}>
+                      <LoadingButton
+                        className="btn btn-secondary"
+                        loading={clearingEmailId === email.id}
+                        loadingLabel="Restoring..."
+                        icon="undo"
+                        onClick={() => onRestoreEmail(email)}
+                      >
                         Undo
                       </LoadingButton>
                     </div>
@@ -269,14 +324,28 @@ export function GmailWorkspace({
                   <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                     <div className="min-w-0">
                       <p className="truncate font-body-md text-body-md font-semibold text-on-background">
-                        {pendingPickedEmailIds.has(email.id) ? <Badge value="Pending" tone="warning" className="mr-2">Pending</Badge> : null}
+                        {pendingPickedEmailIds.has(email.id) ? (
+                          <Badge value="Pending" tone="warning" className="mr-2">
+                            Pending
+                          </Badge>
+                        ) : null}
                         {email.subject}
                       </p>
-                      <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                      <p className="mt-1 text-body-sm text-on-surface-variant">
+                        {new Date(email.date).toLocaleString()}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-primary-container px-3 py-1 text-label-sm text-on-primary-container">Picked</span>
-                      <LoadingButton className="btn btn-secondary" loading={clearingEmailId === email.id} loadingLabel="Removing..." icon="delete" onClick={() => onUnpickEmail(email)}>
+                      <span className="rounded-full bg-primary-container px-3 py-1 text-label-sm text-on-primary-container">
+                        Picked
+                      </span>
+                      <LoadingButton
+                        className="btn btn-secondary"
+                        loading={clearingEmailId === email.id}
+                        loadingLabel="Removing..."
+                        icon="delete"
+                        onClick={() => onUnpickEmail(email)}
+                      >
                         Remove
                       </LoadingButton>
                     </div>
@@ -292,7 +361,11 @@ export function GmailWorkspace({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Ignored emails</p>
               <div className="flex items-center gap-2">
                 {gmailMessageStatesFetching ? <InlineLoadingState label="Refreshing" /> : null}
-                <button className="btn btn-secondary" type="button" onClick={() => onIgnoredEmailsExpandedChange(!ignoredEmailsExpanded)}>
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  onClick={() => onIgnoredEmailsExpandedChange(!ignoredEmailsExpanded)}
+                >
                   <MaterialIcon name={ignoredEmailsExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} />
                   {ignoredEmailsExpanded ? "Hide" : `Show (${ignoredEmails.length})`}
                 </button>
@@ -304,10 +377,20 @@ export function GmailWorkspace({
                   {ignoredEmails.map((email) => (
                     <div key={email.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                       <div className="min-w-0">
-                        <p className="truncate font-body-md text-body-md font-semibold text-on-surface-variant line-through">{email.subject}</p>
-                        <p className="mt-1 text-body-sm text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
+                        <p className="truncate font-body-md text-body-md font-semibold text-on-surface-variant line-through">
+                          {email.subject}
+                        </p>
+                        <p className="mt-1 text-body-sm text-on-surface-variant">
+                          {new Date(email.date).toLocaleString()}
+                        </p>
                       </div>
-                      <LoadingButton className="btn btn-secondary" loading={ignoringEmailId === email.id} loadingLabel="Unignoring..." icon="undo" onClick={() => onUnignoreEmail(email)}>
+                      <LoadingButton
+                        className="btn btn-secondary"
+                        loading={ignoringEmailId === email.id}
+                        loadingLabel="Unignoring..."
+                        icon="undo"
+                        onClick={() => onUnignoreEmail(email)}
+                      >
                         Unignore
                       </LoadingButton>
                     </div>

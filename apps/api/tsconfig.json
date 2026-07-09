@@ -7,24 +7,12 @@
     "outDir": "../../dist/api",
     "noEmit": false,
     "paths": {
-      "@interviews-tracker/ai": [
-        "packages/ai/dist/index.d.ts"
-      ],
-      "@interviews-tracker/core": [
-        "packages/core/dist/index.d.ts"
-      ],
-      "@interviews-tracker/integrations": [
-        "packages/integrations/dist/index.d.ts"
-      ],
-      "@interviews-tracker/logger": [
-        "packages/logger/dist/index.d.ts"
-      ]
+      "@interviews-tracker/ai": ["packages/ai/dist/index.d.ts"],
+      "@interviews-tracker/core": ["packages/core/dist/index.d.ts"],
+      "@interviews-tracker/integrations": ["packages/integrations/dist/index.d.ts"],
+      "@interviews-tracker/logger": ["packages/logger/dist/index.d.ts"]
     }
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "src/**/*.test.ts"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
 }

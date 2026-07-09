@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
+
+import { appendSlugCollisionSuffix, createPersonSlug } from "@interviews-tracker/core";
+
 import { prisma } from "../lib/prisma.js";
-import { createPersonSlug, appendSlugCollisionSuffix } from "@interviews-tracker/core";
 
 /**
  * Generate a unique slug for a Person
@@ -18,10 +20,10 @@ export async function generateUniquePersonSlug(
     where: {
       ownerEmail,
       slug: {
-        startsWith: baseSlug
-      }
+        startsWith: baseSlug,
+      },
     },
-    select: { slug: true }
+    select: { slug: true },
   });
 
   // If no collisions, use base slug
@@ -30,7 +32,7 @@ export async function generateUniquePersonSlug(
   }
 
   // Find the next available counter
-  const slugSet = new Set(existingSlugs.map(p => p.slug));
+  const slugSet = new Set(existingSlugs.map((p) => p.slug));
   let counter = 1;
   let candidateSlug = baseSlug;
 
@@ -45,17 +47,15 @@ export async function generateUniquePersonSlug(
 /**
  * Create a new Person with auto-generated slug
  */
-export async function createPersonWithSlug(
-  data: {
-    name: string;
-    ownerEmail: string;
-    email?: string | null;
-    linkedinUrl?: string | null;
-    title?: string | null;
-    avatarUrl?: string | null;
-    companyId?: string | null;
-  }
-) {
+export async function createPersonWithSlug(data: {
+  name: string;
+  ownerEmail: string;
+  email?: string | null;
+  linkedinUrl?: string | null;
+  title?: string | null;
+  avatarUrl?: string | null;
+  companyId?: string | null;
+}) {
   return await prisma.$transaction(async (tx) => {
     const slug = await generateUniquePersonSlug(data.name, data.ownerEmail, tx);
 
@@ -64,7 +64,7 @@ export async function createPersonWithSlug(
         ...data,
         slug,
       },
-      include: { research: true, company: true }
+      include: { research: true, company: true },
     });
   });
 }
@@ -72,18 +72,15 @@ export async function createPersonWithSlug(
 /**
  * Find Person by slug
  */
-export async function findPersonBySlug(
-  slug: string,
-  ownerEmail: string
-) {
+export async function findPersonBySlug(slug: string, ownerEmail: string) {
   return await prisma.person.findUnique({
     where: {
       ownerEmail_slug: {
         ownerEmail,
-        slug
-      }
+        slug,
+      },
     },
-    include: { research: true, company: true }
+    include: { research: true, company: true },
   });
 }
 
@@ -91,19 +88,16 @@ export async function findPersonBySlug(
  * Resolve Person slug or ID to internal database ID
  * Tries slug first, then falls back to ID for backward compatibility
  */
-export async function resolvePersonId(
-  slugOrId: string,
-  ownerEmail: string
-): Promise<string | null> {
+export async function resolvePersonId(slugOrId: string, ownerEmail: string): Promise<string | null> {
   // Try finding by slug first
   const bySlug = await prisma.person.findUnique({
     where: {
       ownerEmail_slug: {
         ownerEmail,
-        slug: slugOrId
-      }
+        slug: slugOrId,
+      },
     },
-    select: { id: true }
+    select: { id: true },
   });
 
   if (bySlug) {
@@ -114,9 +108,9 @@ export async function resolvePersonId(
   const byId = await prisma.person.findFirst({
     where: {
       id: slugOrId,
-      ownerEmail
+      ownerEmail,
     },
-    select: { id: true }
+    select: { id: true },
   });
 
   return byId?.id ?? null;

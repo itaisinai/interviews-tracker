@@ -1,12 +1,14 @@
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { PageIntro } from "../components/app-shell";
 import { ParserLoadingState } from "../components/parser-loading-state";
-import type { ParserRunState } from "../lib/parser-run";
 import { api } from "../lib/api";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import type { ParserRunState } from "../lib/parser-run";
 
 type ParsedJobDescription = Awaited<ReturnType<typeof api.parseJob>>;
 
@@ -17,10 +19,7 @@ function sleep(ms: number) {
 function friendlyParseError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
 
-  if (
-    message.includes("API auth token is not ready") ||
-    message.includes("API auth token is empty")
-  ) {
+  if (message.includes("API auth token is not ready") || message.includes("API auth token is empty")) {
     return "Your session is still loading. Wait a moment and try again.";
   }
 
@@ -37,13 +36,11 @@ function friendlyParseError(error: unknown) {
 
 export function ParseJobPage() {
   const [text, setText] = useState("");
-  const [parseResult, setParseResult] = useState<ParsedJobDescription | null>(
-    null,
-  );
+  const [parseResult, setParseResult] = useState<ParsedJobDescription | null>(null);
   const [runState, setRunState] = useState<ParserRunState>("idle");
   const [runError, setRunError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>(
-    "Paste raw company or job text, review structured CRM fields, then save.",
+    "Paste raw company or job text, review structured CRM fields, then save."
   );
   const [progress, setProgress] = useState(0);
   const { data: options } = useQuery({
@@ -63,11 +60,8 @@ export function ParseJobPage() {
       if (!parseResult) throw new Error("Nothing parsed");
       const domainIds = [];
       for (const label of parseResult.company.domains) {
-        const existing = options?.domains.find(
-          (item) => item.label.toLowerCase() === label.toLowerCase(),
-        );
-        const domain =
-          existing ?? ((await api.addDomain(label)) as { id: string });
+        const existing = options?.domains.find((item) => item.label.toLowerCase() === label.toLowerCase());
+        const domain = existing ?? ((await api.addDomain(label)) as { id: string });
         domainIds.push(domain.id);
       }
       return api.createOpportunity({
@@ -107,8 +101,7 @@ export function ParseJobPage() {
 
     if (trimmed.length < 20) {
       await sleep(120);
-      const message =
-        "Paste at least a few lines so the parser has enough context to work with.";
+      const message = "Paste at least a few lines so the parser has enough context to work with.";
       setRunError(message);
       setStatusMessage("The pasted text is too short to parse reliably.");
       setProgress(100);
@@ -133,9 +126,7 @@ export function ParseJobPage() {
       const parsePromise = api.parseJob(trimmed);
       await sleep(160);
       setRunState("extracting_fields");
-      setStatusMessage(
-        "The AI is extracting company, role, and process details.",
-      );
+      setStatusMessage("The AI is extracting company, role, and process details.");
 
       const parsed = await parsePromise;
       setRunState("normalizing_result");
@@ -189,11 +180,7 @@ export function ParseJobPage() {
               Parse
             </LoadingButton>
             {runState === "failed" ? (
-              <LoadingButton
-                className="btn btn-secondary"
-                icon="refresh"
-                onClick={() => void runParser(text)}
-              >
+              <LoadingButton className="btn btn-secondary" icon="refresh" onClick={() => void runParser(text)}>
                 Retry
               </LoadingButton>
             ) : null}
@@ -201,9 +188,7 @@ export function ParseJobPage() {
         </section>
         <section className="panel p-6 lg:col-span-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-title-md text-title-md font-bold">
-              Review Parsed Data
-            </h3>
+            <h3 className="font-title-md text-title-md font-bold">Review Parsed Data</h3>
             {parseResult ? (
               <LoadingButton
                 className="btn btn-primary"
@@ -219,21 +204,13 @@ export function ParseJobPage() {
           {runState !== "idle" ? (
             <div className="mb-4 space-y-4">
               <ParserLoadingState
-                state={
-                  runState === "failed"
-                    ? "failed"
-                    : runState === "completed"
-                      ? "completed"
-                      : runState
-                }
+                state={runState === "failed" ? "failed" : runState === "completed" ? "completed" : runState}
                 message={statusMessage}
                 progress={progress}
               />
               {runError ? (
                 <div className="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-on-error-container">
-                  <p className="font-body-md text-body-md font-semibold">
-                    Parsing failed
-                  </p>
+                  <p className="font-body-md text-body-md font-semibold">Parsing failed</p>
                   <p className="mt-1 font-body-md text-body-md">{runError}</p>
                 </div>
               ) : null}

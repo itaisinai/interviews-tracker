@@ -1,11 +1,17 @@
 import * as React from "react";
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
-import assert from "node:assert/strict";
-import test from "node:test";
 import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
-import { NotificationsContext, type NotificationsContextValue } from "../components/notifications/notifications-context.js";
+
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  NotificationsContext,
+  type NotificationsContextValue,
+} from "../components/notifications/notifications-context.js";
 import type { AppNotification } from "../lib/notifications.js";
+
 import { filterNotifications, NotificationsPage } from "./notifications-page.js";
 
 const notification: AppNotification = {
@@ -45,7 +51,7 @@ test("notifications page renders filters, mark all as read, and list", () => {
       <NotificationsContext.Provider value={context}>
         <NotificationsPage />
       </NotificationsContext.Provider>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
   assert.match(html, /Stay on top of what needs your attention\./);
   assert.match(html, /Unread/);
@@ -57,8 +63,14 @@ test("notifications page renders filters, mark all as read, and list", () => {
 
 test("notification page filters update the displayed collection", () => {
   const notifications = [notification, readNotification];
-  assert.deepEqual(filterNotifications(notifications, "Unread").map((item) => item.key), ["unlinked-interactions:alta"]);
-  assert.deepEqual(filterNotifications(notifications, "Interactions").map((item) => item.key), ["unlinked-interactions:alta", "unlinked-interactions:reevol"]);
+  assert.deepEqual(
+    filterNotifications(notifications, "Unread").map((item) => item.key),
+    ["unlinked-interactions:alta"]
+  );
+  assert.deepEqual(
+    filterNotifications(notifications, "Interactions").map((item) => item.key),
+    ["unlinked-interactions:alta", "unlinked-interactions:reevol"]
+  );
   assert.equal(filterNotifications(notifications, "Opportunities").length, 0);
   assert.equal(filterNotifications(notifications, "System").length, 0);
 });

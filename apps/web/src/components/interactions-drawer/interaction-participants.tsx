@@ -1,8 +1,10 @@
 import { useState } from "react";
+
 import { MaterialIcon } from "@interviews-tracker/design-system";
-import { PersonResearchFlow } from "../person-research/person-research-flow";
-import { PersonInfoModal } from "../contacts/person-info-modal";
+
 import type { Person } from "../../lib/types";
+import { PersonInfoModal } from "../contacts/person-info-modal";
+import { PersonResearchFlow } from "../person-research/person-research-flow";
 
 type InteractionParticipantsProps = {
   personNames: string[];
@@ -18,7 +20,7 @@ export function InteractionParticipants({
   personNames,
   personRecords,
   opportunitySlug,
-  opportunityCompanyName
+  opportunityCompanyName,
 }: InteractionParticipantsProps) {
   const [researchModalOpen, setResearchModalOpen] = useState(false);
   const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
@@ -49,11 +51,7 @@ export function InteractionParticipants({
                   className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors text-left group"
                 >
                   {person.avatarUrl ? (
-                    <img
-                      src={person.avatarUrl}
-                      alt={person.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
+                    <img src={person.avatarUrl} alt={person.name} className="w-10 h-10 rounded-full object-cover" />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center">
                       <MaterialIcon name="person" className="text-[20px] text-neutral-400" />
@@ -61,9 +59,7 @@ export function InteractionParticipants({
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm text-neutral-900">{person.name}</div>
-                    {person.title && (
-                      <div className="text-xs text-neutral-500 truncate">{person.title}</div>
-                    )}
+                    {person.title && <div className="text-xs text-neutral-500 truncate">{person.title}</div>}
                   </div>
                   <MaterialIcon
                     name="arrow_forward"

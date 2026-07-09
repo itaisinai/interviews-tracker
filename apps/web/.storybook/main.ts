@@ -16,8 +16,12 @@ const config: StorybookConfig = {
     return mergeConfig(baseConfig, {
       resolve: {
         alias: {
-          "@interviews-tracker/design-system/styles/tokens.css": fileURLToPath(new URL("../../../packages/design-system/src/styles/tokens.css", import.meta.url)),
-          "@interviews-tracker/design-system": fileURLToPath(new URL("../../../packages/design-system/src/index.ts", import.meta.url)),
+          "@interviews-tracker/design-system/styles/tokens.css": fileURLToPath(
+            new URL("../../../packages/design-system/src/styles/tokens.css", import.meta.url)
+          ),
+          "@interviews-tracker/design-system": fileURLToPath(
+            new URL("../../../packages/design-system/src/index.ts", import.meta.url)
+          ),
         },
       },
     });

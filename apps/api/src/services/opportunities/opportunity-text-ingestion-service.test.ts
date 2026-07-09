@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { buildOpportunityInputFromParsedJobDescription } from "./opportunity-text-ingestion-service.js";
 
 test("buildOpportunityInputFromParsedJobDescription maps parser output to opportunity input", async () => {
@@ -18,7 +19,7 @@ test("buildOpportunityInputFromParsedJobDescription maps parser output to opport
       funding: "Series B",
       customersTraction: "Enterprise customers",
       companyDescription: "Builds payments software",
-      productDescription: "Payment automation"
+      productDescription: "Payment automation",
     },
     role: {
       techStack: ["Node.js", "TypeScript"],
@@ -26,14 +27,14 @@ test("buildOpportunityInputFromParsedJobDescription maps parser output to opport
       responsibilities: [],
       requirements: [],
       niceToHave: [],
-      compensation: "Competitive"
+      compensation: "Competitive",
     },
     process: {
       knownNextInteraction: null,
       knownContact: "Jane Recruiter",
-      suggestedNextStep: "Reply with availability"
+      suggestedNextStep: "Reply with availability",
     },
-    rawImportantNotes: ["Recruiter reached out", "Remote friendly"]
+    rawImportantNotes: ["Recruiter reached out", "Remote friendly"],
   });
 
   assert.equal(input.companyName, "ExampleCo");
@@ -73,7 +74,7 @@ test("buildOpportunityInputFromParsedJobDescription supplies safe defaults", asy
       funding: null,
       customersTraction: null,
       companyDescription: null,
-      productDescription: null
+      productDescription: null,
     },
     role: {
       techStack: [],
@@ -81,14 +82,14 @@ test("buildOpportunityInputFromParsedJobDescription supplies safe defaults", asy
       responsibilities: [],
       requirements: [],
       niceToHave: [],
-      compensation: null
+      compensation: null,
     },
     process: {
       knownNextInteraction: null,
       knownContact: null,
-      suggestedNextStep: null
+      suggestedNextStep: null,
     },
-    rawImportantNotes: []
+    rawImportantNotes: [],
   });
 
   assert.equal(input.companyName, "Unknown company");

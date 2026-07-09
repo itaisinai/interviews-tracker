@@ -1,6 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { getBasicHealth, getDeepHealth, checkReadiness } from "./health-service.js";
+import test from "node:test";
+
+import { checkReadiness, getBasicHealth, getDeepHealth } from "./health-service.js";
 
 test("getBasicHealth returns health status with uptime", () => {
   const health = getBasicHealth();

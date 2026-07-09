@@ -1,7 +1,17 @@
 import { z } from "zod";
-import { companyResearchExistingDataSchema, companyResearchInputSchema, companyResearchResultSchema } from "../../lib/schemas.js";
+
 import { createTimer } from "../../lib/logger.js";
-import { createCompanySearchProvider, type CompanySearchProvider, type SearchResult } from "./company-search-provider.js";
+import {
+  companyResearchExistingDataSchema,
+  companyResearchInputSchema,
+  companyResearchResultSchema,
+} from "../../lib/schemas.js";
+
+import {
+  type CompanySearchProvider,
+  createCompanySearchProvider,
+  type SearchResult,
+} from "./company-search-provider.js";
 
 type CompanyResearchExistingData = z.infer<typeof companyResearchExistingDataSchema>;
 export type CompanyResearchInput = z.infer<typeof companyResearchInputSchema>;
@@ -33,7 +43,26 @@ type MissingResearchFields = {
 const companyResearchResultJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["companyName", "companySearchName", "linkedinUrl", "funding", "totalRaised", "roundsCount", "latestRound", "investors", "investmentRounds", "employees", "location", "domains", "customersTraction", "companyDescription", "productDescription", "sourceUrls", "confidence", "rawImportantNotes"],
+  required: [
+    "companyName",
+    "companySearchName",
+    "linkedinUrl",
+    "funding",
+    "totalRaised",
+    "roundsCount",
+    "latestRound",
+    "investors",
+    "investmentRounds",
+    "employees",
+    "location",
+    "domains",
+    "customersTraction",
+    "companyDescription",
+    "productDescription",
+    "sourceUrls",
+    "confidence",
+    "rawImportantNotes",
+  ],
   properties: {
     companyName: { type: "string" },
     companySearchName: { type: ["string", "null"] },
@@ -52,12 +81,12 @@ const companyResearchResultJsonSchema = {
     productDescription: { type: ["string", "null"] },
     sourceUrls: { type: "array", items: { type: "string" } },
     confidence: { type: "string", enum: ["HIGH", "MEDIUM", "LOW"] },
-    rawImportantNotes: { type: "array", items: { type: "string" } }
-  }
+    rawImportantNotes: { type: "array", items: { type: "string" } },
+  },
 } as const;
 
 const companyResearchDraftSchema = companyResearchResultSchema.extend({
-  sourceUrls: z.array(z.string())
+  sourceUrls: z.array(z.string()),
 });
 
 function isPresent(value: string | null | undefined) {
@@ -112,9 +141,23 @@ function getSourcePriority(url: string) {
   const host = getHostname(url);
 
   if (host.includes("crunchbase.com")) return 2;
-  if (host.includes("techcrunch.com") || host.includes("calcalist.co.il") || host.includes("globes.co.il") || host.includes("ctech.com") || host.includes("geektime.com")) return 3;
+  if (
+    host.includes("techcrunch.com") ||
+    host.includes("calcalist.co.il") ||
+    host.includes("globes.co.il") ||
+    host.includes("ctech.com") ||
+    host.includes("geektime.com")
+  )
+    return 3;
   if (host.includes("linkedin.com")) return 5;
-  if (host.includes("vc") || host.includes("ventures") || host.includes("capital") || host.includes("partners") || host.includes("fund")) return 4;
+  if (
+    host.includes("vc") ||
+    host.includes("ventures") ||
+    host.includes("capital") ||
+    host.includes("partners") ||
+    host.includes("fund")
+  )
+    return 4;
   return 6;
 }
 
@@ -135,7 +178,7 @@ function extractEmployeesFromText(text: string) {
   const patterns = [
     /\b(1-10|11-50|51-200|201-500|501-1000|1001-5000|5001-10000|10000\+)\b/i,
     /\b(?:employees?|headcount|team size)\b[^0-9]{0,40}\b(1-10|11-50|51-200|201-500|501-1000|1001-5000|5001-10000|10000\+)\b/i,
-    /\b(1-10|11-50|51-200|201-500|501-1000|1001-5000|5001-10000|10000\+)\b[^0-9]{0,20}\b(?:employees?|people|team members?)\b/i
+    /\b(1-10|11-50|51-200|201-500|501-1000|1001-5000|5001-10000|10000\+)\b[^0-9]{0,20}\b(?:employees?|people|team members?)\b/i,
   ];
 
   for (const pattern of patterns) {
@@ -173,7 +216,7 @@ function inferEmployeesFromEvidence(evidence: ResearchEvidence[]) {
       if (employees) {
         return {
           employees,
-          note: getSourceUrlEvidence(`Employees inferred from ${result.title}`, result.url)
+          note: getSourceUrlEvidence(`Employees inferred from ${result.title}`, result.url),
         };
       }
     }
@@ -188,12 +231,16 @@ export function getMissingResearchFields(existingCompanyData: CompanyResearchExi
     employees: !isPresent(existingCompanyData.employees),
     location: !isPresent(existingCompanyData.location),
     traction: !isPresent(existingCompanyData.customersTraction),
-    descriptions: !isPresent(existingCompanyData.companyDescription) || !isPresent(existingCompanyData.productDescription)
+    descriptions:
+      !isPresent(existingCompanyData.companyDescription) || !isPresent(existingCompanyData.productDescription),
   };
 }
 
 function buildContextSuffix(roleTitle?: string | null, knownContext?: string | null) {
-  return [roleTitle, knownContext].map((value) => normalizeText(value)).filter(Boolean).join(" · ");
+  return [roleTitle, knownContext]
+    .map((value) => normalizeText(value))
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export function buildCompanyResearchQueries(input: CompanyResearchInput) {
@@ -253,13 +300,17 @@ function composeFundingSummary(result: CompanyResearchResult) {
     result.totalRaised ? `Total raised: ${result.totalRaised}` : null,
     result.roundsCount != null ? `Rounds: ${result.roundsCount}` : null,
     result.latestRound ? `Latest round: ${result.latestRound}` : null,
-    result.investors.length > 0 ? `Investors: ${result.investors.join(", ")}` : null
+    result.investors.length > 0 ? `Investors: ${result.investors.join(", ")}` : null,
   ].filter((value): value is string => Boolean(value));
 
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
-function deriveConfidence(result: CompanyResearchResult, missing: MissingResearchFields, evidenceCount: number): CompanyResearchResult["confidence"] {
+function deriveConfidence(
+  result: CompanyResearchResult,
+  missing: MissingResearchFields,
+  evidenceCount: number
+): CompanyResearchResult["confidence"] {
   const signalCount = [
     result.funding,
     result.totalRaised,
@@ -270,14 +321,18 @@ function deriveConfidence(result: CompanyResearchResult, missing: MissingResearc
     result.customersTraction,
     result.companyDescription,
     result.productDescription,
-    result.investors.length > 0 ? "investors" : null
+    result.investors.length > 0 ? "investors" : null,
   ].filter(Boolean).length;
 
   if (signalCount === 0 && evidenceCount === 0) {
     return "LOW";
   }
 
-  if (missing.funding && (result.funding || result.totalRaised || result.latestRound || result.investors.length > 0) && evidenceCount >= 2) {
+  if (
+    missing.funding &&
+    (result.funding || result.totalRaised || result.latestRound || result.investors.length > 0) &&
+    evidenceCount >= 2
+  ) {
     return "HIGH";
   }
 
@@ -306,15 +361,25 @@ export function buildResearchNote(result: CompanyResearchResult) {
     result.productDescription ? `Product: ${result.productDescription}` : null,
     `Confidence: ${result.confidence}`,
     result.sourceUrls.length > 0 ? `Sources:\n${result.sourceUrls.map((url) => `- ${url}`).join("\n")}` : null,
-    result.rawImportantNotes.length > 0 ? `Notes:\n${result.rawImportantNotes.map((note) => `- ${note}`).join("\n")}` : null
+    result.rawImportantNotes.length > 0
+      ? `Notes:\n${result.rawImportantNotes.map((note) => `- ${note}`).join("\n")}`
+      : null,
   ].filter((line): line is string => Boolean(line));
 
   return lines.join("\n");
 }
 
-function mergeResearchResult(input: CompanyResearchInput, extracted: CompanyResearchResult, evidenceUrls: string[], evidence: ResearchEvidence[]): CompanyResearchResult {
+function mergeResearchResult(
+  input: CompanyResearchInput,
+  extracted: CompanyResearchResult,
+  evidenceUrls: string[],
+  evidence: ResearchEvidence[]
+): CompanyResearchResult {
   const existing = input.existingCompanyData ?? {};
-  const linkedinUrl = normalizeText(input.linkedinUrl) || normalizeText(extracted.linkedinUrl) || normalizeText(inferLinkedinUrlFromEvidence(evidence));
+  const linkedinUrl =
+    normalizeText(input.linkedinUrl) ||
+    normalizeText(extracted.linkedinUrl) ||
+    normalizeText(inferLinkedinUrlFromEvidence(evidence));
   const funding = mergeValue(existing.funding, extracted.funding);
   const investmentRounds = mergeValue(existing.investmentRounds, extracted.investmentRounds);
   const inferredEmployees = existing.employees ? null : inferEmployeesFromEvidence(evidence);
@@ -344,15 +409,16 @@ function mergeResearchResult(input: CompanyResearchInput, extracted: CompanyRese
       ...extracted.rawImportantNotes,
       linkedinUrl.length > 0 ? `LinkedIn URL: ${linkedinUrl}` : null,
       inferredEmployees?.note ?? null,
-      sourceUrls.length > 0 ? `Source URLs: ${sourceUrls.join(", ")}` : null
+      sourceUrls.length > 0 ? `Source URLs: ${sourceUrls.join(", ")}` : null,
     ]),
-    confidence: extracted.confidence
+    confidence: extracted.confidence,
   };
 
   result.funding = funding ?? composeFundingSummary(result);
-  result.confidence = sourceUrls.length === 0 && extracted.confidence === "LOW"
-    ? "LOW"
-    : deriveConfidence(result, getMissingResearchFields(existing), sourceUrls.length);
+  result.confidence =
+    sourceUrls.length === 0 && extracted.confidence === "LOW"
+      ? "LOW"
+      : deriveConfidence(result, getMissingResearchFields(existing), sourceUrls.length);
 
   return result;
 }
@@ -366,8 +432,8 @@ function createEvidencePayload(evidence: ResearchEvidence[]) {
       publishedDate: result.publishedDate,
       author: result.author,
       text: result.text,
-      highlights: result.highlights
-    }))
+      highlights: result.highlights,
+    })),
   }));
 }
 
@@ -379,13 +445,24 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
     throw new Error("OPENAI_API_KEY is required for company research.");
   }
 
-  return async ({ companyName, roleTitle, knownContext, linkedinUrl, existingCompanyData, evidence, missingFields }) => {
-    const timer = createTimer("llm", "extract company research", { company: companyName, evidenceGroups: evidence.length });
+  return async ({
+    companyName,
+    roleTitle,
+    knownContext,
+    linkedinUrl,
+    existingCompanyData,
+    evidence,
+    missingFields,
+  }) => {
+    const timer = createTimer("llm", "extract company research", {
+      company: companyName,
+      evidenceGroups: evidence.length,
+    });
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model,
@@ -405,10 +482,10 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
                   "If existing company data is already present, preserve it unless the evidence is clearly more specific.",
                   "If a LinkedIn URL is provided, treat it as a strong identifier and include it in linkedinUrl in the response unless the evidence proves a different official LinkedIn company page.",
                   "For important funding and investor claims, include supporting URLs in rawImportantNotes.",
-                  "Return compact but useful CRM data."
-                ].join(" ")
-              }
-            ]
+                  "Return compact but useful CRM data.",
+                ].join(" "),
+              },
+            ],
           },
           {
             role: "user",
@@ -423,24 +500,24 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
                     linkedinUrl: normalizeText(linkedinUrl),
                     missingFields,
                     existingCompanyData,
-                    evidence: createEvidencePayload(evidence)
+                    evidence: createEvidencePayload(evidence),
                   },
                   null,
                   2
-                )
-              }
-            ]
-          }
+                ),
+              },
+            ],
+          },
         ],
         text: {
           format: {
             type: "json_schema",
             name: "company_research_result",
             strict: true,
-            schema: companyResearchResultJsonSchema
-          }
-        }
-      })
+            schema: companyResearchResultJsonSchema,
+          },
+        },
+      }),
     });
 
     if (!response.ok) {
@@ -448,8 +525,13 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
       throw new Error(`OpenAI company research failed: ${response.status} ${await response.text()}`);
     }
 
-    const payload = await response.json() as { output_text?: string; output?: Array<{ content?: Array<{ type?: string; text?: string }> }> };
-    const outputText = payload.output_text ?? payload.output?.flatMap((item) => item.content ?? []).find((item) => item.type === "output_text")?.text;
+    const payload = (await response.json()) as {
+      output_text?: string;
+      output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
+    };
+    const outputText =
+      payload.output_text ??
+      payload.output?.flatMap((item) => item.content ?? []).find((item) => item.type === "output_text")?.text;
 
     if (!outputText) {
       timer.fail(new Error("OpenAI company research returned no text output."), { company: companyName });
@@ -482,7 +564,7 @@ export class CompanyResearchService {
       knownContext: normalizeText(input.knownContext) || undefined,
       linkedinUrl: normalizeText(input.linkedinUrl) || undefined,
       existingCompanyData: input.existingCompanyData ?? {},
-      forceResearch: input.forceResearch ?? false
+      forceResearch: input.forceResearch ?? false,
     };
 
     const existing = normalizedInput.existingCompanyData ?? {};
@@ -490,26 +572,31 @@ export class CompanyResearchService {
     const evidence = await this.collectEvidence(queries);
 
     if (evidence.length === 0) {
-      const result = mergeResearchResult(normalizedInput, {
-        companyName: normalizedInput.companyName,
-        companySearchName: existing.companySearchName ?? null,
-        linkedinUrl: normalizedInput.linkedinUrl ?? null,
-        funding: existing.funding ?? null,
-        totalRaised: null,
-        roundsCount: null,
-        latestRound: null,
-        investors: [],
-        investmentRounds: existing.investmentRounds ?? null,
-        employees: existing.employees ?? null,
-        location: existing.location ?? null,
-        domains: [],
-        customersTraction: existing.customersTraction ?? null,
-        companyDescription: existing.companyDescription ?? null,
-        productDescription: existing.productDescription ?? null,
-        sourceUrls: [],
-        confidence: "LOW",
-        rawImportantNotes: ["No reliable company research results were found."]
-      }, [], evidence);
+      const result = mergeResearchResult(
+        normalizedInput,
+        {
+          companyName: normalizedInput.companyName,
+          companySearchName: existing.companySearchName ?? null,
+          linkedinUrl: normalizedInput.linkedinUrl ?? null,
+          funding: existing.funding ?? null,
+          totalRaised: null,
+          roundsCount: null,
+          latestRound: null,
+          investors: [],
+          investmentRounds: existing.investmentRounds ?? null,
+          employees: existing.employees ?? null,
+          location: existing.location ?? null,
+          domains: [],
+          customersTraction: existing.customersTraction ?? null,
+          companyDescription: existing.companyDescription ?? null,
+          productDescription: existing.productDescription ?? null,
+          sourceUrls: [],
+          confidence: "LOW",
+          rawImportantNotes: ["No reliable company research results were found."],
+        },
+        [],
+        evidence
+      );
       return result;
     }
 
@@ -520,14 +607,19 @@ export class CompanyResearchService {
       linkedinUrl: normalizedInput.linkedinUrl,
       existingCompanyData: existing,
       evidence,
-      missingFields: getMissingResearchFields(existing)
+      missingFields: getMissingResearchFields(existing),
     });
 
-    const result = mergeResearchResult(normalizedInput, extracted, evidence.flatMap((item) => item.results.map((result) => result.url)), evidence);
+    const result = mergeResearchResult(
+      normalizedInput,
+      extracted,
+      evidence.flatMap((item) => item.results.map((result) => result.url)),
+      evidence
+    );
     if (!result.companySearchName && containsHebrew(normalizedInput.companyName)) {
       result.rawImportantNotes = unique([
         ...result.rawImportantNotes,
-        "Company name is non-Latin. Add an English company search name if Gmail or web search results are weak."
+        "Company name is non-Latin. Add an English company search name if Gmail or web search results are weak.",
       ]);
     }
     return result;
@@ -537,14 +629,14 @@ export class CompanyResearchService {
     const results = await Promise.all(
       queries.map(async (query) => ({
         query,
-        results: sortSearchResults(await this.provider.search(query))
+        results: sortSearchResults(await this.provider.search(query)),
       }))
     );
 
     return results
       .map((item) => ({
         ...item,
-        results: item.results.filter((result) => isPresent(result.url) && isPresent(result.title))
+        results: item.results.filter((result) => isPresent(result.url) && isPresent(result.title)),
       }))
       .filter((item) => item.results.length > 0);
   }
