@@ -9,6 +9,7 @@ export type InteractionOpportunityGroup = {
   opportunitySlug: string;
   companyName: string;
   roleTitle: string;
+  opportunityStatus: string;
   interactions: Interaction[];
   latestTimestamp: number;
   closestTimestamp: number;
@@ -39,6 +40,7 @@ export function buildOpportunityGroups(interactions: readonly Interaction[]) {
         opportunitySlug: opportunitySlug,
         companyName: interaction.jobOpportunity?.company.name ?? "Unknown company",
         roleTitle: interaction.jobOpportunity?.roleTitle ?? "Unknown role",
+        opportunityStatus: interaction.jobOpportunity?.status ?? "UNKNOWN",
         interactions: [interaction],
         latestTimestamp: timestamp,
         closestTimestamp: timestamp,
@@ -84,6 +86,10 @@ export function filterOpportunityGroup(group: InteractionOpportunityGroup, filte
   }
 
   if (filter === "followup") {
+    // Exclude rejected opportunities from "waiting for response" filter
+    if (group.opportunityStatus === "REJECTED") {
+      return false;
+    }
     return group.interactions.some(
       (item) =>
         isLatestInteraction(item, group.interactions) &&
