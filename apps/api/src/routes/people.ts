@@ -184,6 +184,17 @@ peopleRouter.post(
       return;
     }
 
+    // Extract current job title from experience (most recent position)
+    let currentTitle: string | null = null;
+
+    if (research.experience && Array.isArray(research.experience) && research.experience.length > 0) {
+      const mostRecentJob = research.experience[0];
+
+      if (mostRecentJob.positions && Array.isArray(mostRecentJob.positions) && mostRecentJob.positions.length > 0) {
+        currentTitle = mostRecentJob.positions[0].title || null;
+      }
+    }
+
     // Update or create person research
     const saved = await prisma.personResearch.upsert({
       where: { personId },
@@ -212,8 +223,29 @@ peopleRouter.post(
       },
     });
 
-    // Return the person with research (not the research with person)
-    response.json(serializePerson(saved.person));
+    // Update person's current title if we found it in research
+    if (currentTitle) {
+      await prisma.person.update({
+        where: { id: personId },
+        data: {
+          title: currentTitle,
+        },
+      });
+
+      // Refresh the person data to include the updates
+      const updatedPerson = await prisma.person.findUnique({
+        where: { id: personId },
+        include: {
+          company: true,
+          research: true,
+        },
+      });
+
+      response.json(serializePerson(updatedPerson!));
+    } else {
+      // Return the person with research (not the research with person)
+      response.json(serializePerson(saved.person));
+    }
   })
 );
 

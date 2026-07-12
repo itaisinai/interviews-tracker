@@ -1,25 +1,21 @@
-import {
-  InlineLoadingState,
-  LoadingButton,
-  MaterialIcon,
-} from "@interviews-tracker/design-system";
-import {
-  getOpportunityProcessBadgeMeta,
-  promoteOverdueInteractionsForRead,
-} from "../../lib/interaction-status";
 import { useEffect, useMemo, useState } from "react";
-
-import { Badge } from "../badge";
-import type { CompanyDetail } from "../../lib/types";
-import { CompanyFactsStrip } from "./company-facts-strip";
-import { CompanyResearchPanel } from "../company-research-panel";
-import type { CompanyResearchResult } from "../../lib/types";
-import { CompanySummaryCard } from "./company-summary-card";
-import { InteractionsDrawer } from "../interactions-drawer";
 import { Link } from "react-router-dom";
-import { OpportunityInteractionTimeline } from "../interactions-timeline";
-import { buildSelectedOpportunityForInteraction } from "../../pages/interactions-page-selection";
+
 import { useQueryClient } from "@tanstack/react-query";
+
+import { InlineLoadingState, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+
+import { getOpportunityProcessBadgeMeta, promoteOverdueInteractionsForRead } from "../../lib/interaction-status";
+import type { CompanyDetail } from "../../lib/types";
+import type { CompanyResearchResult } from "../../lib/types";
+import { buildSelectedOpportunityForInteraction } from "../../pages/interactions-page-selection";
+import { Badge } from "../badge";
+import { CompanyResearchPanel } from "../company-research-panel";
+import { InteractionsDrawer } from "../interactions-drawer";
+import { OpportunityInteractionTimeline } from "../interactions-timeline";
+
+import { CompanyFactsStrip } from "./company-facts-strip";
+import { CompanySummaryCard } from "./company-summary-card";
 
 type CompanyDetailViewProps = {
   company: CompanyDetail;
@@ -44,34 +40,30 @@ export function CompanyDetailView({
 }: CompanyDetailViewProps) {
   const queryClient = useQueryClient();
   const [showResearch, setShowResearch] = useState(false);
-  const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<
-    string | null
-  >(null);
+  const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<string | null>(null);
 
   // Flatten all interactions from opportunities for status processing
   // Restore parent opportunity reference since backend strips it from nested interactions
   const allInteractions = useMemo(
-    () => company.opportunities.flatMap((opp) =>
-      opp.interactions.map((int) => ({
-        ...int,
-        jobOpportunity: {
-          slug: opp.slug,
-          roleTitle: opp.roleTitle,
-          pipelineType: opp.pipelineType,
-          status: opp.status,
-          priority: opp.priority,
-          updatedAt: opp.updatedAt,
-          company: opp.company,
-        } as any, // Minimal metadata, not full Opportunity
-      }))
-    ),
-    [company.opportunities],
+    () =>
+      company.opportunities.flatMap((opp) =>
+        opp.interactions.map((int) => ({
+          ...int,
+          jobOpportunity: {
+            slug: opp.slug,
+            roleTitle: opp.roleTitle,
+            pipelineType: opp.pipelineType,
+            status: opp.status,
+            priority: opp.priority,
+            updatedAt: opp.updatedAt,
+            company: opp.company,
+          } as any, // Minimal metadata, not full Opportunity
+        }))
+      ),
+    [company.opportunities]
   );
 
-  const displayInteractions = useMemo(
-    () => promoteOverdueInteractionsForRead(allInteractions),
-    [allInteractions],
-  );
+  const displayInteractions = useMemo(() => promoteOverdueInteractionsForRead(allInteractions), [allInteractions]);
 
   const opportunitiesWithInteractions = useMemo(() => {
     // Create a map for fast lookup: interaction slug -> which opportunity it belongs to
@@ -86,8 +78,7 @@ export function CompanyDetailView({
       .map((opportunity) => ({
         ...opportunity,
         interactions: displayInteractions.filter(
-          (interaction) =>
-            interactionToOppMap.get(interaction.slug) === opportunity.slug,
+          (interaction) => interactionToOppMap.get(interaction.slug) === opportunity.slug
         ),
       }))
       .sort((left, right) => {
@@ -99,43 +90,28 @@ export function CompanyDetailView({
   }, [company.opportunities, displayInteractions]);
 
   const selectedInteraction = useMemo(
-    () =>
-      displayInteractions.find(
-        (item) => item.slug === selectedInteractionSlug,
-      ) ?? null,
-    [displayInteractions, selectedInteractionSlug],
+    () => displayInteractions.find((item) => item.slug === selectedInteractionSlug) ?? null,
+    [displayInteractions, selectedInteractionSlug]
   );
   const selectedOpportunity = useMemo(
     () =>
       selectedInteraction
-        ? buildSelectedOpportunityForInteraction(
-            selectedInteraction,
-            displayInteractions,
-            company.opportunities,
-          )
+        ? buildSelectedOpportunityForInteraction(selectedInteraction, displayInteractions, company.opportunities)
         : null,
-    [company.opportunities, displayInteractions, selectedInteraction],
+    [company.opportunities, displayInteractions, selectedInteraction]
   );
 
   useEffect(() => {
-    if (
-      selectedInteractionSlug &&
-      !displayInteractions.some((item) => item.slug === selectedInteractionSlug)
-    ) {
+    if (selectedInteractionSlug && !displayInteractions.some((item) => item.slug === selectedInteractionSlug)) {
       setSelectedInteractionSlug(null);
     }
   }, [displayInteractions, selectedInteractionSlug]);
 
   const primary = company.opportunities[0];
   const domains = [
-    ...new Set(
-      company.opportunities.flatMap((item) =>
-        item.domains.map((domain) => domain.domain.label),
-      ),
-    ),
+    ...new Set(company.opportunities.flatMap((item) => item.domains.map((domain) => domain.domain.label))),
   ];
-  const summaryDomain =
-    domains.find((domain) => !domain.includes(".")) ?? domains[0] ?? "-";
+  const summaryDomain = domains.find((domain) => !domain.includes(".")) ?? domains[0] ?? "-";
   const summaryFacts = [
     { label: "Industry", value: summaryDomain, icon: "work" },
     { label: "Location", value: company.location ?? "-", icon: "location_on" },
@@ -175,17 +151,12 @@ export function CompanyDetailView({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="truncate font-title-lg text-title-lg font-bold text-on-background">
-              {company.name}
-            </h1>
-            {companyBadge ? (
-              <Badge tone={companyBadge.tone}>{companyBadge.label}</Badge>
-            ) : null}
+            <h1 className="truncate font-title-lg text-title-lg font-bold text-on-background">{company.name}</h1>
+            {companyBadge ? <Badge tone={companyBadge.tone}>{companyBadge.label}</Badge> : null}
           </div>
           <p className="mt-1 text-body-md text-on-surface-variant">
             {company.opportunities.length} role
-            {company.opportunities.length === 1 ? "" : "s"} ·{" "}
-            {allInteractions.length} interaction
+            {company.opportunities.length === 1 ? "" : "s"} · {allInteractions.length} interaction
             {allInteractions.length === 1 ? "" : "s"}
           </p>
         </div>
@@ -198,11 +169,7 @@ export function CompanyDetailView({
             loadingLabel="Deleting..."
             icon="delete"
             onClick={() => {
-              if (
-                window.confirm(
-                  `Delete ${company.name} and all its opportunities/interactions?`,
-                )
-              ) {
+              if (window.confirm(`Delete ${company.name} and all its opportunities/interactions?`)) {
                 onDeleteCompany();
               }
             }}
@@ -232,6 +199,7 @@ export function CompanyDetailView({
       {showResearch ? (
         <section className="panel mt-4 p-5">
           <CompanyResearchPanel
+            companySlugOrId={company.slug}
             companyName={company.name}
             knownContext={researchContext}
             existingCompanyData={researchExistingData}
@@ -254,18 +222,14 @@ export function CompanyDetailView({
         <section className="panel p-6 lg:col-span-8">
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <h2 className="font-title-md text-title-md font-bold">
-                Opportunity Timelines
-              </h2>
+              <h2 className="font-title-md text-title-md font-bold">Opportunity Timelines</h2>
               <p className="mt-1 text-body-md text-on-surface-variant">
                 All roles and their interactions in one place.
               </p>
             </div>
             <div className="rounded-full bg-surface-container-low px-3 py-1 font-label-md text-label-md text-on-surface-variant">
               {opportunitiesWithInteractions.length}{" "}
-              {opportunitiesWithInteractions.length === 1
-                ? "opportunity"
-                : "opportunities"}
+              {opportunitiesWithInteractions.length === 1 ? "opportunity" : "opportunities"}
             </div>
           </div>
 
@@ -282,9 +246,7 @@ export function CompanyDetailView({
                 onDeleteInteraction={onDeleteInteraction}
                 isDeletingInteraction={isDeletingInteraction}
                 opportunityHref={`/opportunities/${item.slug}`}
-                defaultCollapsed={
-                  item.slug !== opportunitiesWithInteractions[0]?.slug
-                }
+                defaultCollapsed={item.slug !== opportunitiesWithInteractions[0]?.slug}
                 referenceDate={referenceDate}
               />
             ))}
