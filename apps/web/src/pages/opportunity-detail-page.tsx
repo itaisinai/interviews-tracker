@@ -149,16 +149,7 @@ export function OpportunityDetailPage() {
     <>
       {/* Mobile header */}
       <div className="mb-4 md:hidden">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-on-background">{data.company.name}</h1>
-          <Link
-            to={`/companies/${data.company.slug}`}
-            className="inline-flex items-center justify-center rounded-lg p-1.5 text-primary transition-colors hover:bg-primary-container"
-            title="View company page"
-          >
-            <MaterialIcon name="open_in_new" className="text-[18px]" />
-          </Link>
-        </div>
+        <h1 className="text-2xl font-bold text-on-background">{data.company.name}</h1>
         <p className="mt-1 text-body-md text-on-surface-variant">{data.roleTitle}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge value={data.status} />
@@ -180,26 +171,17 @@ export function OpportunityDetailPage() {
       <div className="hidden md:block">
         <PageIntro
           title={
-            <div className="flex items-center gap-3">
-              <EditableTitleField
-                ariaLabel="Company name"
-                className="font-headline-lg text-headline-lg text-on-background"
-                value={data.company.name}
-                isSaving={updateOpportunityTitle.isPending}
-                onSave={(companyName) =>
-                  updateOpportunityTitle.mutate({
-                    roleTitle: data.roleTitle,
-                  })
-                }
-              />
-              <Link
-                to={`/companies/${data.company.slug}`}
-                className="inline-flex items-center justify-center rounded-lg p-2 text-primary transition-colors hover:bg-primary-container"
-                title="View company page"
-              >
-                <MaterialIcon name="open_in_new" className="text-[20px]" />
-              </Link>
-            </div>
+            <EditableTitleField
+              ariaLabel="Company name"
+              className="font-headline-lg text-headline-lg text-on-background"
+              value={data.company.name}
+              isSaving={updateOpportunityTitle.isPending}
+              onSave={(companyName) =>
+                updateOpportunityTitle.mutate({
+                  roleTitle: data.roleTitle,
+                })
+              }
+            />
           }
           description={
             <EditableTitleField
@@ -364,7 +346,6 @@ function EditableTitleField({
       <form className="group/title-edit flex max-w-full items-center gap-2" onSubmit={submit}>
         <input
           aria-label={ariaLabel}
-          autoFocus
           className={`${className} min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-1 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20`}
           disabled={isSaving}
           value={draft}
