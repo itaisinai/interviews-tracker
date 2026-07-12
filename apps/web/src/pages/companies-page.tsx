@@ -34,6 +34,7 @@ export function CompaniesPage() {
   const columns = [
     {
       header: "Company",
+      minSize: 500,
       cell: ({ row }) => (
         <Link
           className="flex items-center gap-3 font-semibold text-on-background"
