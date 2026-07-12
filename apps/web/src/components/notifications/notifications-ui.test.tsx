@@ -15,7 +15,7 @@ const notification: AppNotification = {
   id: "unlinked-interactions:reevol",
   key: "unlinked-interactions:reevol",
   type: "unlinked_interactions",
-  opportunityId: "reevol",
+  opportunitySlug: "reevol",
   opportunityName: "Reevol",
   count: 2,
   title: "Reevol has 2 interactions not linked to emails",

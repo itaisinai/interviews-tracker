@@ -101,7 +101,7 @@ test("person identity: does not match same name, different company", () => {
 // Research payload structure
 test("research request payload: builds correctly with all fields", () => {
   const input = {
-    personId: "person-123",
+    personSlug: "person-123",
     name: "John Doe",
     companyName: "Acme Corp",
     roleTitle: "Engineering Manager",

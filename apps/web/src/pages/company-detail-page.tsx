@@ -25,7 +25,7 @@ export function CompanyDetailPage() {
   });
 
   const deleteInteraction = useMutation({
-    mutationFn: (id: string) => api.deleteInteraction(id),
+    mutationFn: (interactionSlug: string) => api.deleteInteraction(interactionSlug),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["company", decodedSlugOrId] });
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
@@ -55,9 +55,9 @@ export function CompanyDetailPage() {
       isRefreshing={isFetching}
       isDeletingCompany={deleteCompany.isPending}
       onDeleteCompany={() => deleteCompany.mutate()}
-      onDeleteInteraction={(interactionId) => deleteInteraction.mutate(interactionId)}
-      isDeletingInteraction={(interactionId) =>
-        deleteInteraction.isPending && deleteInteraction.variables === interactionId
+      onDeleteInteraction={(interactionSlug) => deleteInteraction.mutate(interactionSlug)}
+      isDeletingInteraction={(interactionSlug) =>
+        deleteInteraction.isPending && deleteInteraction.variables === interactionSlug
       }
       onResearchSaved={(research, newSlug) => {
         if (newSlug && newSlug !== decodedSlugOrId) {

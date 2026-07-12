@@ -10,7 +10,7 @@ import { GmailEmailSelector } from "../shared/gmail-email-selector";
 type AttachEmailModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  interactionId: string;
+  interactionSlug: string;
   opportunitySlug: string;
   onAttached?: (aiSuggestion?: any) => void;
 };
@@ -18,11 +18,10 @@ type AttachEmailModalProps = {
 export function AttachEmailModal({
   isOpen,
   onClose,
-  interactionId,
+  interactionSlug,
   opportunitySlug,
   onAttached,
 }: AttachEmailModalProps) {
-  const interactionSlug = interactionId;
   const queryClient = useQueryClient();
   const [isAttaching, setIsAttaching] = useState(false);
 
@@ -47,9 +46,9 @@ export function AttachEmailModal({
 
   // Get already attached emails to filter them out
   const { data: attachedEmails = [] } = useQuery({
-    queryKey: ["interaction-emails", interactionId],
+    queryKey: ["interaction-emails", interactionSlug],
     queryFn: () => api.listInteractionEmails(interactionSlug),
-    enabled: isOpen && !!interactionId,
+    enabled: isOpen && !!interactionSlug,
   });
 
   // Fetch Gmail message states for debug section
@@ -91,12 +90,12 @@ export function AttachEmailModal({
     setIsAttaching(true);
     try {
       // Attach all selected emails in a single batch request to avoid race conditions
-      const result = await api.attachMultipleEmailsToInteraction(interactionId, selectedEmailIds);
+      const result = await api.attachMultipleEmailsToInteraction(interactionSlug, selectedEmailIds);
 
       // Invalidate and refetch queries - wait for them to complete
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["interaction-emails", interactionId],
+          queryKey: ["interaction-emails", interactionSlug],
         }),
         queryClient.invalidateQueries({ queryKey: ["interactions"] }),
         queryClient.invalidateQueries({

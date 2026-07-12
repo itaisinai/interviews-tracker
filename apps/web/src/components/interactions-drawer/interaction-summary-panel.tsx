@@ -107,7 +107,7 @@ export function InteractionSummaryPanel({
 
   const handleAddFeedback = async (content: string, source?: string) => {
     console.log("[FEEDBACK] Submitting feedback", {
-      interactionId: interaction.slug,
+      interactionSlug: interaction.slug,
       contentLength: content.length,
       source,
     });
@@ -182,7 +182,7 @@ export function InteractionSummaryPanel({
           columns={1}
         />
         <AttachedEmailsCard
-          interactionId={interaction.slug}
+          interactionSlug={interaction.slug}
           opportunitySlug={opportunitySlug!}
           onEmailsAttached={onToggleEditing}
         />

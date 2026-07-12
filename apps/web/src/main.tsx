@@ -87,11 +87,8 @@ function App() {
                   <Route path="/companies/:companySlugOrId" element={<CompanyDetailPage />} />
                   <Route path="/opportunities" element={<OpportunitiesPage />} />
                   <Route path="/opportunities/new" element={<OpportunityFormPage />} />
-                  <Route path="/opportunities/:slugOrId" element={<OpportunityDetailPage />} />
-                  <Route
-                    path="/opportunities/:slugOrId/edit"
-                    element={<Navigate to="/opportunities/:slugOrId" replace />}
-                  />
+                  <Route path="/opportunities/:slug" element={<OpportunityDetailPage />} />
+                  <Route path="/opportunities/:slug/edit" element={<Navigate to="/opportunities/:slug" replace />} />
                   <Route path="/interactions" element={<InteractionsPage />} />
                   <Route path="/search" element={<SearchPage />} />
                   <Route path="/parse" element={<ParseJobPage />} />

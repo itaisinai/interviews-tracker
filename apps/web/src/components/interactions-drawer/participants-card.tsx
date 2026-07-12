@@ -32,9 +32,9 @@ export function ParticipantsCard({
   const [selectedLinkedinUrl, setSelectedLinkedinUrl] = useState<string | null>(null);
 
   const markAsWrong = useMutation({
-    mutationFn: async (personId: string) => {
-      if (!opportunitySlug) throw new Error("No opportunity ID");
-      return api.markPersonAsWrong(personId, opportunitySlug, selectedPersonName, undefined);
+    mutationFn: async (personSlug: string) => {
+      if (!opportunitySlug) throw new Error("No opportunity slug");
+      return api.markPersonAsWrong(personSlug, opportunitySlug, selectedPersonName, undefined);
     },
     onSuccess: () => {
       // Refresh contacts list
@@ -143,7 +143,7 @@ export function ParticipantsCard({
                 `Mark ${selectedPerson.name} as the wrong person? This will help future searches exclude this candidate.`
               )
             ) {
-              markAsWrong.mutate(selectedPerson.id);
+              markAsWrong.mutate(selectedPerson.slug);
               setPersonDetailModalOpen(false);
               setSelectedPerson(null);
             }
