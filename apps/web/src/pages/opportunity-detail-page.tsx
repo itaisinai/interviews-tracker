@@ -28,28 +28,28 @@ import { getInteractionBadgeMeta, promoteOverdueInteractionsForRead } from "../l
 import type { Interaction, Opportunity, Person } from "../lib/types";
 
 export function OpportunityDetailPage() {
-  const { slugOrId = "" } = useParams();
+  const { slug = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["opportunity", slugOrId],
-    queryFn: () => api.opportunity(slugOrId),
-    enabled: Boolean(slugOrId),
+    queryKey: ["opportunity", slug],
+    queryFn: () => api.opportunity(slug),
+    enabled: Boolean(slug),
   });
   const [showAddInteractionModal, setShowAddInteractionModal] = useState(false);
   const [isInteractionOperationPending, setIsInteractionOperationPending] = useState(false);
 
   // Slug-first architecture: use slug for all operations
-  const opportunitySlug = data?.slug ?? slugOrId;
+  const opportunitySlug = data?.slug ?? slug;
   const canonicalSlug = data?.slug ?? null;
   const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<string | null>(null);
-  const refresh = () => void queryClient.invalidateQueries({ queryKey: ["opportunity", slugOrId] });
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: ["opportunity", slug] });
   const deleteOpportunity = useMutation({
     mutationFn: () => api.deleteOpportunity(opportunitySlug),
     onSuccess: () => navigate("/opportunities"),
   });
   const deleteInteraction = useMutation({
-    mutationFn: (interactionId: string) => api.deleteInteraction(interactionId),
+    mutationFn: (interactionSlug: string) => api.deleteInteraction(interactionSlug),
     onMutate: () => setIsInteractionOperationPending(true),
     onSuccess: refresh,
     onSettled: () => setIsInteractionOperationPending(false),
@@ -62,10 +62,10 @@ export function OpportunityDetailPage() {
       return api.updateOpportunity(opportunitySlug, buildOpportunityInput(data, updates));
     },
     onSuccess: (updated) => {
-      queryClient.setQueryData(["opportunity", slugOrId], updated);
+      queryClient.setQueryData(["opportunity", slug], updated);
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
-      if (updated.slug && updated.slug !== slugOrId) {
+      if (updated.slug && updated.slug !== slug) {
         navigate(`/opportunities/${updated.slug}`, { replace: true });
       }
     },
@@ -97,10 +97,10 @@ export function OpportunityDetailPage() {
   }, [displayedInteractions, selectedInteractionSlug]);
 
   useEffect(() => {
-    if (canonicalSlug && canonicalSlug !== slugOrId) {
+    if (canonicalSlug && canonicalSlug !== slug) {
       navigate(`/opportunities/${canonicalSlug}`, { replace: true });
     }
-  }, [canonicalSlug, navigate, slugOrId]);
+  }, [canonicalSlug, navigate, slug]);
 
   if (isLoading || !data) {
     return <PageLoadingState title="Opportunity" description="Loading opportunity details, interaction history." />;
@@ -224,13 +224,13 @@ export function OpportunityDetailPage() {
             selectedInteractionSlug={selectedInteractionSlug}
             onSelectInteraction={setSelectedInteractionSlug}
             onAddInteraction={() => setShowAddInteractionModal(true)}
-            onDeleteInteraction={(interactionId) => {
+            onDeleteInteraction={(interactionSlug) => {
               if (window.confirm("Delete this interaction?")) {
-                deleteInteraction.mutate(interactionId);
+                deleteInteraction.mutate(interactionSlug);
               }
             }}
-            isDeletingInteraction={(interactionId) =>
-              deleteInteraction.isPending && deleteInteraction.variables === interactionId
+            isDeletingInteraction={(interactionSlug) =>
+              deleteInteraction.isPending && deleteInteraction.variables === interactionSlug
             }
           />
           <div id="contacts-section">

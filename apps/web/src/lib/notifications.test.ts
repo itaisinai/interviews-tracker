@@ -40,9 +40,9 @@ const base: any[] = [
 test("detects unlinked interactions and groups notifications by opportunity", () => {
   const notifications = buildUnlinkedInteractionNotifications(base, now);
   assert.equal(notifications.length, 2);
-  assert.equal(notifications.find((item) => item.opportunityId === "reevol")?.count, 2);
+  assert.equal(notifications.find((item) => item.opportunitySlug === "reevol")?.count, 2);
   assert.equal(
-    notifications.find((item) => item.opportunityId === "token")?.title,
+    notifications.find((item) => item.opportunitySlug === "token")?.title,
     "Token Security has 1 interaction not linked to emails"
   );
 });
@@ -52,14 +52,14 @@ test("avoids duplicate notifications when synced repeatedly", () => {
   const once = syncNotifications([], generated, now);
   const twice = syncNotifications(once, generated, later);
   assert.equal(twice.filter((item) => item.key === "unlinked-interactions:reevol").length, 1);
-  assert.equal(twice.find((item) => item.opportunityId === "reevol")?.createdAt, now.toISOString());
+  assert.equal(twice.find((item) => item.opportunitySlug === "reevol")?.createdAt, now.toISOString());
 });
 
 test("updates count when unlinked interactions count changes", () => {
   const existing = syncNotifications([], buildUnlinkedInteractionNotifications(base, now), now);
   const changed = buildUnlinkedInteractionNotifications(base.slice(0, 1), later);
   const synced = syncNotifications(existing, changed, later);
-  const reevol = synced.find((item) => item.opportunityId === "reevol");
+  const reevol = synced.find((item) => item.opportunitySlug === "reevol");
   assert.equal(reevol?.count, 1);
   assert.equal(reevol?.status, "unread");
 });

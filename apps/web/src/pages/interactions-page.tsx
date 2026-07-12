@@ -70,7 +70,7 @@ export function InteractionsPage() {
   const followUpPercent = calculatePercent(followUpCount, displayInteractions.length);
 
   const deleteInteraction = useMutation({
-    mutationFn: (id: string) => api.deleteInteraction(id),
+    mutationFn: (interactionSlug: string) => api.deleteInteraction(interactionSlug),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -128,9 +128,9 @@ export function InteractionsPage() {
     onSelectGmailOpportunity: setGmailOpportunitySlug,
     onGmailSaved: closeGmailImport,
     onSelectInteraction: setSelectedInteractionSlug,
-    onDeleteInteraction: (interactionId: string) => deleteInteraction.mutate(interactionId),
-    isDeletingInteraction: (interactionId: string) =>
-      deleteInteraction.isPending && deleteInteraction.variables === interactionId,
+    onDeleteInteraction: (interactionSlug: string) => deleteInteraction.mutate(interactionSlug),
+    isDeletingInteraction: (interactionSlug: string) =>
+      deleteInteraction.isPending && deleteInteraction.variables === interactionSlug,
   };
 
   return (

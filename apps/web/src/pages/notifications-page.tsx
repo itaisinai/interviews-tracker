@@ -76,7 +76,7 @@ export function NotificationsPage() {
                 notification={notification}
                 onClick={() => {
                   markAsRead(notification.key);
-                  navigate(`/opportunities/${notification.opportunityId}`);
+                  navigate(`/opportunities/${notification.opportunitySlug}`);
                 }}
               />
             ))}

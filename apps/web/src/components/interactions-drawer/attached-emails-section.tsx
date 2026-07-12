@@ -9,34 +9,33 @@ import { api } from "../../lib/api";
 import { AttachEmailModal } from "./attach-email-modal";
 
 type AttachedEmailsSectionProps = {
-  interactionId: string;
+  interactionSlug: string;
   opportunitySlug: string;
   onEmailsAttached?: () => void;
 };
 
 export function AttachedEmailsSection({
-  interactionId,
+  interactionSlug,
   opportunitySlug,
   onEmailsAttached,
 }: AttachedEmailsSectionProps) {
-  const interactionSlug = interactionId;
   const queryClient = useQueryClient();
   const [removingEmailId, setRemovingEmailId] = useState<string | null>(null);
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [isReparsing, setIsReparsing] = useState(false);
 
   const { data: emails = [], isLoading } = useQuery({
-    queryKey: ["interaction-emails", interactionId],
+    queryKey: ["interaction-emails", interactionSlug],
     queryFn: () => api.listInteractionEmails(interactionSlug),
-    enabled: !!interactionId,
+    enabled: !!interactionSlug,
   });
 
   const removeMutation = useMutation({
     mutationFn: async (emailId: string) => {
-      await api.removeEmailFromInteraction(interactionId, emailId);
+      await api.removeEmailFromInteraction(interactionSlug, emailId);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["interaction-emails", interactionId] });
+      void queryClient.invalidateQueries({ queryKey: ["interaction-emails", interactionSlug] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       setRemovingEmailId(null);
@@ -168,7 +167,7 @@ export function AttachedEmailsSection({
       <AttachEmailModal
         isOpen={showAttachModal}
         onClose={() => setShowAttachModal(false)}
-        interactionId={interactionId}
+        interactionSlug={interactionSlug}
         opportunitySlug={opportunitySlug}
         onAttached={onEmailsAttached}
       />

@@ -29,7 +29,7 @@ type PersonResearchFlowProps = {
   onSaved?: () => void;
   opportunitySlug?: string;
   opportunityCompanyName?: string; // For company validation
-  personId?: string; // Existing person ID to update instead of creating new
+  personSlug?: string; // Existing person slug to update instead of creating new
 };
 
 type FlowStep = "confirm" | "loading" | "review" | "error";
@@ -41,7 +41,7 @@ export function PersonResearchFlow({
   onSaved,
   opportunitySlug,
   opportunityCompanyName,
-  personId,
+  personSlug,
 }: PersonResearchFlowProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("confirm");
@@ -50,8 +50,8 @@ export function PersonResearchFlow({
   const [linkedinUrlOverride, setLinkedinUrlOverride] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Log personId when component mounts or personId changes (debug only)
-  // console.log('[PersonResearchFlow] Rendered with personId:', personId, 'person:', person);
+  // Log personSlug when component mounts or personSlug changes (debug only)
+  // console.log('[PersonResearchFlow] Rendered with personSlug:', personSlug, 'person:', person);
 
   const resetFlow = () => {
     setStep("confirm");
@@ -108,13 +108,13 @@ export function PersonResearchFlow({
         throw new Error("No research result to save");
       }
 
-      console.log("[SAVE PERSON] personId:", personId, "opportunitySlug:", opportunitySlug);
+      console.log("[SAVE PERSON] personSlug:", personSlug, "opportunitySlug:", opportunitySlug);
 
-      // If personId is provided, update existing person instead of creating new
-      if (personId) {
-        console.log("[SAVE PERSON] Updating existing person:", personId);
+      // If personSlug is provided, update existing person instead of creating new
+      if (personSlug) {
+        console.log("[SAVE PERSON] Updating existing person:", personSlug);
         // Update person's basic data from research result
-        await api.updatePerson(personId, {
+        await api.updatePerson(personSlug, {
           name: researchResult.person.name,
           linkedinUrl: linkedinUrlOverride || researchResult.person.linkedinUrl || undefined,
           title: researchResult.person.title || undefined,
@@ -124,10 +124,10 @@ export function PersonResearchFlow({
 
         // Update existing person's research
         if (saveForLater) {
-          await api.savePersonResearch(personId, researchResult.research);
+          await api.savePersonResearch(personSlug, researchResult.research);
         }
 
-        return { id: personId };
+        return { slug: personSlug };
       }
 
       console.log("[SAVE PERSON] Creating new person");

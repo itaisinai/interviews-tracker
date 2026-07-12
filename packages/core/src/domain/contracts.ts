@@ -150,7 +150,6 @@ export type Company = {
 export type Opportunity = {
   ownerEmail: string;
   slug: string;
-  companyId: string;
   company: Company;
   roleTitle: string;
   pipelineType: PipelineType;
@@ -164,7 +163,6 @@ export type Opportunity = {
   sourceUrl?: string | null;
   nextStep?: string | null;
   notes?: string | null;
-  workModelId?: string | null;
   compensationNotes?: string | null;
   updatedAt: string;
   workModel?: Option | null;
@@ -194,9 +192,7 @@ export type Interaction = {
 };
 
 export type Compensation = {
-  id: string;
   ownerEmail: string;
-  jobOpportunityId: string;
   baseSalary?: string | null;
   equity?: string | null;
   bonus?: string | null;
@@ -210,7 +206,6 @@ export type Compensation = {
 };
 
 export type CompanySummary = {
-  id: string;
   slug: string;
   name: string;
   isWatchlisted: boolean;
@@ -231,7 +226,6 @@ export type CompanySummary = {
 };
 
 export type CompanyDetail = {
-  id: string;
   slug: string;
   name: string;
   searchName?: string | null;
@@ -264,7 +258,6 @@ export type CompanyDetail = {
 export type Note = {
   id: string;
   ownerEmail: string;
-  companyId?: string | null;
   jobOpportunityId?: string | null;
   interactionId?: string | null;
   title: string;
@@ -277,7 +270,6 @@ export type Note = {
 export type Task = {
   id: string;
   ownerEmail: string;
-  companyId?: string | null;
   jobOpportunityId?: string | null;
   interactionId?: string | null;
   title: string;
@@ -290,7 +282,6 @@ export type Task = {
 };
 
 export type Person = {
-  id: string;
   ownerEmail: string;
   slug: string;
   name: string;
@@ -298,7 +289,6 @@ export type Person = {
   linkedinUrl?: string | null;
   title?: string | null;
   avatarUrl?: string | null;
-  companyId?: string | null;
   company?: Company | null;
   createdAt: string;
   updatedAt: string;

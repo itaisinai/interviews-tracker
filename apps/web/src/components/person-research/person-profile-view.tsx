@@ -3,7 +3,7 @@ import { MaterialIcon } from "@interviews-tracker/design-system";
 import { Badge } from "../badge";
 
 type PersonWithResearch = {
-  id: string;
+  slug: string;
   name: string;
   email: string | null;
   linkedinUrl: string | null;

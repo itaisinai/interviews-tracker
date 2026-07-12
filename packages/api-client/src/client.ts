@@ -197,7 +197,6 @@ export const api = {
     opportunitySlug?: string;
   }) =>
     request<{
-      id: string;
       slug: string;
       name: string;
       email: string | null;
@@ -212,7 +211,6 @@ export const api = {
     body: { name?: string; email?: string; linkedinUrl?: string; title?: string; company?: string; avatarUrl?: string }
   ) =>
     request<{
-      id: string;
       slug: string;
       name: string;
       email: string | null;
@@ -236,7 +234,6 @@ export const api = {
     }),
   getPerson: (personSlug: string) =>
     request<{
-      id: string;
       slug: string;
       name: string;
       email: string | null;
@@ -249,7 +246,6 @@ export const api = {
   searchPeople: (query?: string) =>
     request<
       Array<{
-        id: string;
         slug: string;
         name: string;
         email: string | null;

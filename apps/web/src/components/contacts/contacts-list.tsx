@@ -23,16 +23,15 @@ type ContactsListProps = {
 export function ContactsList({ opportunitySlug, companyName }: ContactsListProps) {
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [selectedPersonSlug, setSelectedPersonSlug] = useState<string | null>(null);
   const [researchPerson, setResearchPerson] = useState<{
-    id?: string;
     name: string;
     title?: string;
     company: string;
     linkedinUrl?: string;
     email?: string;
   } | null>(null);
-  const [researchPersonId, setResearchPersonId] = useState<string | undefined>(undefined); // Explicit ID for updates
+  const [researchPersonSlug, setResearchPersonSlug] = useState<string | undefined>(undefined); // Explicit slug for updates
   const [fixMismatchPerson, setFixMismatchPerson] = useState<Person | null>(null);
   const [manualUpdatePerson, setManualUpdatePerson] = useState<Person | null>(null);
   const [reviewTimeline, setReviewTimeline] = useState<{
@@ -47,8 +46,8 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
   });
 
   const deletePerson = useMutation({
-    mutationFn: async (personId: string) => {
-      await api.deletePerson(personId);
+    mutationFn: async (personSlug: string) => {
+      await api.deletePerson(personSlug);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -59,11 +58,11 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
   });
 
   const parseJob = useMutation({
-    mutationFn: async ({ personId, jobDescriptionText }: { personId: string; jobDescriptionText: string }) => {
-      return await api.parseCurrentJob(personId, jobDescriptionText);
+    mutationFn: async ({ personSlug, jobDescriptionText }: { personSlug: string; jobDescriptionText: string }) => {
+      return await api.parseCurrentJob(personSlug, jobDescriptionText);
     },
     onSuccess: (data, variables) => {
-      const person = typedContacts.find((c) => c.slug === variables.personId);
+      const person = typedContacts.find((c) => c.slug === variables.personSlug);
       if (person) {
         setReviewTimeline({
           person,
@@ -80,8 +79,8 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
   });
 
   const applyJobUpdate = useMutation({
-    mutationFn: async ({ personId, updatedTimeline }: { personId: string; updatedTimeline: any }) => {
-      return await api.applyJobUpdate(personId, updatedTimeline);
+    mutationFn: async ({ personSlug, updatedTimeline }: { personSlug: string; updatedTimeline: any }) => {
+      return await api.applyJobUpdate(personSlug, updatedTimeline);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -100,7 +99,7 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
   const typedContacts = contacts as Person[];
 
   // Derive selectedPerson from the latest contacts data
-  const selectedPerson = selectedPersonId ? typedContacts.find((c) => c.slug === selectedPersonId) || null : null;
+  const selectedPerson = selectedPersonSlug ? typedContacts.find((c) => c.slug === selectedPersonSlug) || null : null;
 
   if (isLoading) {
     return (
@@ -142,7 +141,7 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
                     onClick={() =>
                       detectCompanyMismatch(contact, companyName)
                         ? setFixMismatchPerson(contact)
-                        : setSelectedPersonId(contact.slug)
+                        : setSelectedPersonSlug(contact.slug)
                     }
                     className="flex min-w-0 flex-1 items-start gap-3 text-left"
                   >
@@ -207,7 +206,7 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
         <PersonInfoModal
           person={selectedPerson}
           isOpen={!!selectedPerson}
-          onClose={() => setSelectedPersonId(null)}
+          onClose={() => setSelectedPersonSlug(null)}
           onRefreshResearch={() => {
             setResearchPerson({
               name: selectedPerson.name,
@@ -216,17 +215,17 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
               linkedinUrl: selectedPerson.linkedinUrl || undefined,
               email: selectedPerson.email || undefined,
             });
-            setResearchPersonId(selectedPerson.slug);
-            setSelectedPersonId(null);
+            setResearchPersonSlug(selectedPerson.slug);
+            setSelectedPersonSlug(null);
           }}
           onMarkAsWrong={() => {
             setFixMismatchPerson(selectedPerson);
-            setSelectedPersonId(null);
+            setSelectedPersonSlug(null);
           }}
           onDelete={() => {
             if (window.confirm(`Delete ${selectedPerson.name}? This will remove all their research data.`)) {
               deletePerson.mutate(selectedPerson.slug);
-              setSelectedPersonId(null);
+              setSelectedPersonSlug(null);
             }
           }}
         />
@@ -238,15 +237,15 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
           isOpen={!!researchPerson}
           onClose={() => {
             setResearchPerson(null);
-            setResearchPersonId(undefined);
+            setResearchPersonSlug(undefined);
           }}
           onSaved={() => {
             setResearchPerson(null);
-            setResearchPersonId(undefined);
+            setResearchPersonSlug(undefined);
           }}
           opportunitySlug={opportunitySlug}
           opportunityCompanyName={companyName}
-          personId={researchPersonId} // Use explicit ID state
+          personSlug={researchPersonSlug} // Use explicit slug state
         />
       )}
 
@@ -257,9 +256,9 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
           person={fixMismatchPerson}
           opportunityCompanyName={companyName}
           onAutoRefresh={() => {
-            // Trigger auto-refresh by re-running person research WITH existing person ID
-            console.log("[AUTO REFRESH] Setting personId:", fixMismatchPerson.slug);
-            setResearchPersonId(fixMismatchPerson.slug); // Set ID separately for clarity
+            // Trigger auto-refresh by re-running person research WITH existing person slug
+            console.log("[AUTO REFRESH] Setting personSlug:", fixMismatchPerson.slug);
+            setResearchPersonSlug(fixMismatchPerson.slug); // Set slug separately for clarity
             setResearchPerson({
               name: fixMismatchPerson.name,
               title: fixMismatchPerson.title || undefined,
@@ -284,7 +283,7 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
           opportunityCompanyName={companyName}
           onSubmit={(jobDescription) => {
             parseJob.mutate({
-              personId: manualUpdatePerson.slug,
+              personSlug: manualUpdatePerson.slug,
               jobDescriptionText: jobDescription,
             });
           }}
@@ -301,7 +300,7 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
           updatedTimeline={reviewTimeline.updatedTimeline}
           onApply={() => {
             applyJobUpdate.mutate({
-              personId: reviewTimeline.person.slug,
+              personSlug: reviewTimeline.person.slug,
               updatedTimeline: reviewTimeline.updatedTimeline,
             });
           }}
