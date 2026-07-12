@@ -318,6 +318,23 @@ export class ExaProvider {
                 company: parts[1]?.trim() || "",
               };
             }
+          } else if (rawLine.match(/\s+-\s+\[([^\]]+)\]\(([^)]+)\)$/)) {
+            // Format: ### Title - [Company](url)
+            const dashMatch = rawLine.match(/^(.+?)\s+-\s+\[([^\]]+)\]\(([^)]+)\)$/);
+            if (dashMatch) {
+              currentExperience = {
+                title: dashMatch[1].trim(),
+                company: dashMatch[2],
+                companyUrl: dashMatch[3],
+              };
+            } else {
+              // Fallback for plain text without markdown link: Title - Company
+              const parts = rawLine.split(/\s+-\s+/);
+              currentExperience = {
+                title: parts[0]?.trim() || "",
+                company: parts[1]?.trim() || "",
+              };
+            }
           } else {
             // Format: ### [Company](url) - multiple positions will follow as ####
             const companyMatch = rawLine.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
