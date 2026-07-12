@@ -55,4 +55,8 @@ export type CompanyResearchApplyInput = z.infer<typeof companyResearchApplyInput
 export type CompanyResearchApplyResponse = {
   research: CompanyResearchResult;
   updatedOpportunities: number;
+  company: {
+    slug: string;
+    name: string;
+  };
 };

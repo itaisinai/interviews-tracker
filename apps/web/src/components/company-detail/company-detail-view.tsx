@@ -24,7 +24,7 @@ type CompanyDetailViewProps = {
   onDeleteCompany: () => void;
   onDeleteInteraction: (interactionSlug: string) => void;
   isDeletingInteraction: (interactionSlug: string) => boolean;
-  onResearchSaved?: (research: CompanyResearchResult) => void;
+  onResearchSaved?: (research: CompanyResearchResult, newSlug?: string) => void;
   referenceDate?: Date;
 };
 
@@ -188,7 +188,7 @@ export function CompanyDetailView({
             companyName={company.name}
             knownContext={researchContext}
             existingCompanyData={researchExistingData}
-            onSaved={(research) => {
+            onSaved={(research, newSlug) => {
               void queryClient.invalidateQueries({
                 queryKey: ["company", company.name],
               });
@@ -197,7 +197,7 @@ export function CompanyDetailView({
                 queryKey: ["opportunities"],
               });
               setShowResearch(false);
-              onResearchSaved?.(research);
+              onResearchSaved?.(research, newSlug);
             }}
           />
         </section>
