@@ -1,15 +1,13 @@
-import {
-  DiffReviewRow,
-  LoadingButton,
-  MaterialIcon,
-} from "@interviews-tracker/design-system";
 import { useEffect, useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { GmailEmailSelector } from "../shared/gmail-email-selector";
-import type { InteractionDraft } from "../../lib/types";
+import { DiffReviewRow, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
 import { formatDateTime } from "../../lib/format";
+import type { InteractionDraft } from "../../lib/types";
+import { GmailEmailSelector } from "../shared/gmail-email-selector";
 
 export type GmailImportFlowProps = {
   opportunitySlug: string;
@@ -19,25 +17,15 @@ export type GmailImportFlowProps = {
   onBack: () => void;
 };
 
-type FlowStep =
-  | "searching"
-  | "select-candidate"
-  | "review-changes"
-  | "no-results"
-  | "error";
+type FlowStep = "searching" | "select-candidate" | "review-changes" | "no-results" | "error";
 
-export function GmailImportFlow({
-  opportunitySlug,
-  companyName,
-  roleTitle,
-  onSaved,
-  onBack,
-}: GmailImportFlowProps) {
+export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSaved, onBack }: GmailImportFlowProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("searching");
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
   const [allGmailMessageIds, setAllGmailMessageIds] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
 
   const {
     data: searchResults,
@@ -59,8 +47,7 @@ export function GmailImportFlow({
   });
 
   const parseEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailParseEmail(opportunitySlug, { messageId }),
+    mutationFn: (messageId: string) => api.gmailParseEmail(opportunitySlug, { messageId }),
     onSuccess: (result) => {
       setDraft(result.interaction);
       setStep("review-changes");
@@ -68,8 +55,7 @@ export function GmailImportFlow({
   });
 
   const unpickEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailUnpickEmail(opportunitySlug, messageId),
+    mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunitySlug, messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["gmail-message-states", opportunitySlug],
@@ -81,8 +67,7 @@ export function GmailImportFlow({
   });
 
   const restoreEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailRestoreEmail(opportunitySlug, messageId),
+    mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["gmail-message-states", opportunitySlug],
@@ -94,8 +79,7 @@ export function GmailImportFlow({
   });
 
   const ignoreEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailIgnoreEmail(opportunitySlug, messageId),
+    mutationFn: (messageId: string) => api.gmailIgnoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["gmail-message-states", opportunitySlug],
@@ -107,8 +91,7 @@ export function GmailImportFlow({
   });
 
   const unignoreEmail = useMutation({
-    mutationFn: (messageId: string) =>
-      api.gmailUnignoreEmail(opportunitySlug, messageId),
+    mutationFn: (messageId: string) => api.gmailUnignoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["gmail-message-states", opportunitySlug],
@@ -124,6 +107,7 @@ export function GmailImportFlow({
       queryKey: ["gmail-message-states", opportunitySlug],
     });
     refetchSearch();
+    setLastSyncTime(new Date());
   };
 
   const createInteraction = useMutation({
@@ -136,9 +120,7 @@ export function GmailImportFlow({
       // Attach all Gmail messages to the InteractionEmail table
       if (allGmailMessageIds.length > 0) {
         await Promise.all(
-          allGmailMessageIds.map((messageId) =>
-            api.attachEmailToInteraction(interaction.slug, messageId),
-          ),
+          allGmailMessageIds.map((messageId) => api.attachEmailToInteraction(interaction.slug, messageId))
         );
       }
 
@@ -181,9 +163,7 @@ export function GmailImportFlow({
           <MaterialIcon name="error" className="text-[24px]" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-neutral-900">
-            Gmail search failed
-          </h3>
+          <h3 className="text-lg font-semibold text-neutral-900">Gmail search failed</h3>
           <p className="mt-2 text-sm text-neutral-600">
             {searchError instanceof Error
               ? searchError.message
@@ -216,12 +196,8 @@ export function GmailImportFlow({
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-200 border-t-emerald-600"></div>
         </div>
-        <h3 className="text-lg font-semibold text-neutral-900">
-          Searching Gmail...
-        </h3>
-        <p className="mt-2 text-sm text-neutral-600">
-          Looking for emails related to {companyName}
-        </p>
+        <h3 className="text-lg font-semibold text-neutral-900">Searching Gmail...</h3>
+        <p className="mt-2 text-sm text-neutral-600">Looking for emails related to {companyName}</p>
       </div>
     );
   }
@@ -293,9 +269,10 @@ export function GmailImportFlow({
         isRestorePending={restoreEmail.isPending}
         isIgnorePending={ignoreEmail.isPending}
         isUnignorePending={unignoreEmail.isPending}
-        showDebugSection={true}
+        showDebugSection={false}
         onRefresh={handleRefresh}
         isRefreshing={isRefetching}
+        lastSyncTime={lastSyncTime}
       />
     );
   }
@@ -309,8 +286,7 @@ export function GmailImportFlow({
         <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-700">
             <MaterialIcon name="check_circle" className="text-[18px]" />
-            Interaction extracted from{" "}
-            {wasMultipleEmails ? `${emailCount} emails` : "email"}
+            Interaction extracted from {wasMultipleEmails ? `${emailCount} emails` : "email"}
           </div>
           <p className="text-sm text-emerald-900">
             {wasMultipleEmails
@@ -320,45 +296,18 @@ export function GmailImportFlow({
         </div>
 
         <div className="space-y-3">
-          <DiffReviewRow
-            label="Date"
-            currentValue=""
-            newValue={formatDateTime(draft.date)}
-            isChanged={true}
-          />
+          <DiffReviewRow label="Date" currentValue="" newValue={formatDateTime(draft.date)} isChanged={true} />
 
           {draft.endDate && (
-            <DiffReviewRow
-              label="End Date"
-              currentValue=""
-              newValue={formatDateTime(draft.endDate)}
-              isChanged={true}
-            />
+            <DiffReviewRow label="End Date" currentValue="" newValue={formatDateTime(draft.endDate)} isChanged={true} />
           )}
 
-          <DiffReviewRow
-            label="Type"
-            currentValue=""
-            newValue={draft.type}
-            isChanged={true}
-          />
+          <DiffReviewRow label="Type" currentValue="" newValue={draft.type} isChanged={true} />
 
-          {draft.stage && (
-            <DiffReviewRow
-              label="Stage"
-              currentValue=""
-              newValue={draft.stage}
-              isChanged={true}
-            />
-          )}
+          {draft.stage && <DiffReviewRow label="Stage" currentValue="" newValue={draft.stage} isChanged={true} />}
 
           {draft.personName && (
-            <DiffReviewRow
-              label="Participants"
-              currentValue=""
-              newValue={draft.personName}
-              isChanged={true}
-            />
+            <DiffReviewRow label="Participants" currentValue="" newValue={draft.personName} isChanged={true} />
           )}
 
           {draft.meetingLink && (
@@ -383,9 +332,7 @@ export function GmailImportFlow({
             <DiffReviewRow
               label="Agenda"
               currentValue=""
-              newValue={
-                <span className="whitespace-pre-wrap">{draft.agenda}</span>
-              }
+              newValue={<span className="whitespace-pre-wrap">{draft.agenda}</span>}
               isChanged={true}
             />
           )}
@@ -418,17 +365,10 @@ export function GmailImportFlow({
       <div className="space-y-6">
         <div className="py-12 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
-            <MaterialIcon
-              name="inbox"
-              className="text-[32px] text-neutral-400"
-            />
+            <MaterialIcon name="inbox" className="text-[32px] text-neutral-400" />
           </div>
-          <h3 className="text-lg font-semibold text-neutral-900">
-            No emails found
-          </h3>
-          <p className="mt-2 text-sm text-neutral-600">
-            We couldn't find any recent emails for {companyName}.
-          </p>
+          <h3 className="text-lg font-semibold text-neutral-900">No emails found</h3>
+          <p className="mt-2 text-sm text-neutral-600">We couldn't find any recent emails for {companyName}.</p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <button
               onClick={() => {
