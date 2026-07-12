@@ -318,9 +318,9 @@ export class ExaProvider {
                 company: parts[1]?.trim() || "",
               };
             }
-          } else if (rawLine.match(/\s+-\s+\[([^\]]+)\]\(([^)]+)\)$/)) {
-            // Format: ### Title - [Company](url)
-            const dashMatch = rawLine.match(/^(.+?)\s+-\s+\[([^\]]+)\]\(([^)]+)\)$/);
+          } else if (rawLine.match(/\s+-\s+\[([^\]]+)\]\(([^)]+)\)/)) {
+            // Format: ### Title - [Company](url) (may have optional suffix like "(Current)")
+            const dashMatch = rawLine.match(/^(.+?)\s+-\s+\[([^\]]+)\]\(([^)]+)\)/);
             if (dashMatch) {
               currentExperience = {
                 title: dashMatch[1].trim(),

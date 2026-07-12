@@ -134,3 +134,25 @@ Boston, MA
   assert.equal(result.research.experience?.[0].company, "TechCo");
   assert.equal(result.research.experience?.[0].positions[0].title, "Product Manager");
 });
+
+test("parseLinkedInContent handles dash format with (Current) suffix", () => {
+  const provider = new ExaProvider("test-key");
+
+  const result = provider.parseLinkedInContent(
+    `
+# Sarah Lee
+
+## Experience
+### Assessment Group R&D Director - [Hypernative](https://www.linkedin.com/company/hypernative) (Current)
+Mar 2026 - Present (3 months) in Herzliya, Israel
+`,
+    "Sarah Lee",
+    "https://www.linkedin.com/in/sarahlee/"
+  );
+
+  assert.equal(result.person.company, "Hypernative");
+  assert.equal(result.person.title, "Assessment Group R&D Director");
+  assert.equal(result.research.experience?.length, 1);
+  assert.equal(result.research.experience?.[0].company, "Hypernative");
+  assert.equal(result.research.experience?.[0].positions[0].title, "Assessment Group R&D Director");
+});
