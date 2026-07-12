@@ -1,7 +1,7 @@
 import { Button, InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { Interaction, Opportunity } from "../../lib/types";
-import { PageIntro } from "../app-shell";
+import { PageIntro } from "../app-layout";
 import { AppCalendar } from "../calendar";
 import { OpportunityInteractionTimeline } from "../interactions-timeline";
 

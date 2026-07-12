@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
-import { PageIntro } from "../components/app-shell";
+import { PageIntro } from "../components/app-layout";
 import { ParserLoadingState } from "../components/parser-loading-state";
 import { api } from "../lib/api";
 import { jobStatusOptions, labelForJobStatus, labelForPipelineType, labelForPriority } from "../lib/enum-labels";

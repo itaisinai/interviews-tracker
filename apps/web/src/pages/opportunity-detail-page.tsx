@@ -14,7 +14,7 @@ import {
 } from "@interviews-tracker/design-system";
 
 import { AddInteractionModal } from "../components/add-interaction-modal";
-import { PageIntro, useBreadcrumbs } from "../components/app-shell";
+import { PageIntro, useBreadcrumbs } from "../components/app-layout";
 import { Badge } from "../components/badge";
 import { ContactsList } from "../components/contacts/contacts-list";
 import { InteractionsDrawer } from "../components/interactions-drawer";

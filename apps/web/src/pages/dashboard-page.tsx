@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { InlineLoadingState, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
-import { PageIntro } from "../components/app-shell";
+import { PageIntro } from "../components/app-layout";
 import { Badge } from "../components/badge";
 import { AppCalendar } from "../components/calendar";
 import { InteractionsDrawer } from "../components/interactions-drawer";

@@ -8,7 +8,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Button, DataTable, MaterialIcon } from "@interviews-tracker/design-system";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
-import { PageIntro } from "../components/app-shell";
+import { PageIntro } from "../components/app-layout";
 import { Badge } from "../components/badge";
 import { api } from "../lib/api";
 import { jobStatusOptions, pipelineTypeOptions, priorityOptions } from "../lib/enum-labels";

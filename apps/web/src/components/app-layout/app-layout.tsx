@@ -44,7 +44,7 @@ const placeholders: Record<string, string> = {
   "/settings": "Search options...",
 };
 
-export function AppShell() {
+export function AppLayout() {
   const { logout, user } = useAuth0();
   const location = useLocation();
   const navigate = useNavigate();
