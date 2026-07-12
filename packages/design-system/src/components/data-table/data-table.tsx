@@ -53,15 +53,17 @@ function TableHead<TData>({ table }: { table: Table<TData> }) {
             >
               {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
               {header.column.getCanResize() && (
-                <div
+                <button
+                  type="button"
                   onMouseDown={header.getResizeHandler()}
                   onTouchStart={header.getResizeHandler()}
-                  className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none bg-transparent hover:bg-primary/30 ${
+                  className={`absolute right-0 top-0 h-full w-2 cursor-col-resize select-none touch-none border-0 bg-transparent p-0 hover:bg-primary/30 ${
                     header.column.getIsResizing() ? "bg-primary/50" : ""
                   }`}
                   style={{
                     transform: header.column.getIsResizing() ? "translateX(0)" : undefined,
                   }}
+                  aria-label="Resize column"
                 />
               )}
             </th>
