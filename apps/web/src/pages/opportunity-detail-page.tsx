@@ -344,7 +344,7 @@ function EditableTitleField({
 
   if (isEditing) {
     return (
-      <form className="group/title-edit flex max-w-full items-center gap-2" onSubmit={submit}>
+      <form className="group/title-edit flex max-w-full items-center gap-1" onSubmit={submit}>
         <input
           aria-label={ariaLabel}
           className={`${className} min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-1 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20`}
@@ -357,38 +357,41 @@ function EditableTitleField({
             }
           }}
         />
-        <Button
-          aria-label={`Save ${ariaLabel.toLowerCase()}`}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary-container disabled:opacity-50"
-          disabled={isSaving || !draft.trim()}
+        <button
           type="submit"
+          aria-label={`Save ${ariaLabel.toLowerCase()}`}
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:brightness-110 disabled:opacity-50"
+          disabled={isSaving || !draft.trim()}
         >
-          <MaterialIcon name="check" />
-        </Button>
-        <Button
+          <MaterialIcon name="check" className="text-[16px]" />
+        </button>
+        <button
+          type="button"
           aria-label={`Cancel ${ariaLabel.toLowerCase()} edit`}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-outline-variant/30 text-on-surface-variant transition-colors hover:bg-outline-variant/50"
           disabled={isSaving}
           onClick={cancel}
         >
-          <MaterialIcon name="close" />
-        </Button>
+          <MaterialIcon name="close" className="text-[16px]" />
+        </button>
       </form>
     );
   }
 
   return (
-    <span className="group/title-edit inline-flex max-w-full items-center gap-2">
+    <button
+      type="button"
+      className="group/title-edit inline-flex max-w-full items-center gap-2 rounded-lg transition-colors hover:bg-surface-container-low/50"
+      onClick={() => setIsEditing(true)}
+      aria-label={`Edit ${ariaLabel.toLowerCase()}`}
+      disabled={isSaving}
+    >
       <span className={className}>{value}</span>
-      <Button
-        aria-label={`Edit ${ariaLabel.toLowerCase()}`}
-        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-on-surface-variant opacity-0 transition hover:bg-surface-container group-hover/title-edit:opacity-100 focus:opacity-100"
-        disabled={isSaving}
-        onClick={() => setIsEditing(true)}
-      >
-        <MaterialIcon name="edit" className="text-[18px]" />
-      </Button>
-    </span>
+      <MaterialIcon
+        name="edit"
+        className="shrink-0 text-[18px] text-on-surface-variant opacity-0 transition-opacity group-hover/title-edit:opacity-100 group-focus/title-edit:opacity-100"
+      />
+    </button>
   );
 }
 
