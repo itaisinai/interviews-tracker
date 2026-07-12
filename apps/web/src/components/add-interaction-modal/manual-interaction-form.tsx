@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { LoadingButton } from "@interviews-tracker/design-system";
+import { Button, LoadingButton } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import type { InteractionDraft } from "../../lib/types";
@@ -78,9 +78,9 @@ export function ManualInteractionForm({
         >
           Save Interaction
         </LoadingButton>
-        <button onClick={onCancel} className="btn btn-secondary">
+        <Button onClick={onCancel} variant="secondary">
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );

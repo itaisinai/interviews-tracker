@@ -43,6 +43,7 @@ export function InteractionParticipants({
               // Researched contact - clickable card
               return (
                 <button
+                  type="button"
                   key={index}
                   onClick={() => {
                     setSelectedPerson(person);
@@ -78,6 +79,7 @@ export function InteractionParticipants({
                     <div className="font-medium text-sm text-neutral-900">{name}</div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => {
                       setSelectedPersonName(name);
                       setResearchModalOpen(true);

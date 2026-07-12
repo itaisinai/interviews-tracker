@@ -97,7 +97,7 @@ function EmailStateList({ emails, title, tone, pending, actionLabel, onAction, c
                 {compact ? email.date : new Date(email.date).toLocaleDateString()}
               </div>
             </div>
-            <button onClick={() => onAction(email.id)} disabled={pending} className={buttonClass}>
+            <button type="button" onClick={() => onAction(email.id)} disabled={pending} className={buttonClass}>
               {pending ? "..." : actionLabel}
             </button>
           </div>

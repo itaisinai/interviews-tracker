@@ -36,6 +36,7 @@ function ExpandableDescription({ text }: DescriptionProps) {
       </p>
       {text.length > 150 && (
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           className="mt-1 text-body-sm font-medium text-on-surface-variant hover:text-primary transition-colors"
         >

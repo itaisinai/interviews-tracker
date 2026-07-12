@@ -139,6 +139,7 @@ export function PersonInfoModal({
                 )}
                 {hasResearch && showActions.refreshResearch && (
                   <button
+                    type="button"
                     onClick={onRefreshResearch}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-emerald-600 bg-white text-emerald-600 font-medium text-sm hover:bg-emerald-50 transition-all"
                   >
@@ -148,6 +149,7 @@ export function PersonInfoModal({
                 )}
                 {hasResearch && showActions.markAsWrong && (
                   <button
+                    type="button"
                     onClick={onMarkAsWrong}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-red-600 bg-white text-red-600 font-medium text-sm hover:bg-red-50 transition-all"
                   >
@@ -157,6 +159,7 @@ export function PersonInfoModal({
                 )}
                 {showActions.delete && (
                   <button
+                    type="button"
                     onClick={onDelete}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-orange-600 bg-white text-orange-600 font-medium text-sm hover:bg-orange-50 transition-all"
                   >
@@ -165,6 +168,7 @@ export function PersonInfoModal({
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={onClose}
                   className="ml-1 rounded-lg p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                 >
@@ -217,6 +221,7 @@ export function PersonInfoModal({
                       </h3>
                       {experienceData.length > 3 && (
                         <button
+                          type="button"
                           onClick={() => setShowAllExperience(!showAllExperience)}
                           className="text-body-md font-medium text-primary transition-colors hover:text-primary/80"
                         >
@@ -251,6 +256,7 @@ export function PersonInfoModal({
           {/* Footer */}
           <div className="flex items-center justify-end border-t border-outline-variant bg-surface px-6 py-4">
             <button
+              type="button"
               onClick={onClose}
               className="rounded-lg bg-primary px-8 py-2.5 font-label-lg text-label-lg font-medium text-on-primary transition-colors hover:bg-primary/90"
             >

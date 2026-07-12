@@ -66,7 +66,7 @@ export function Button({
       ) : leadingIcon ? (
         <MaterialIcon name={leadingIcon} filled={leadingIconFilled} className="text-[18px]" />
       ) : null}
-      <span className="whitespace-nowrap">{loading ? (loadingLabel ?? children) : children}</span>
+      {loading ? (loadingLabel ?? children) : children}
       {!loading && trailingIcon ? <MaterialIcon name={trailingIcon} className="text-[18px]" /> : null}
     </button>
   );

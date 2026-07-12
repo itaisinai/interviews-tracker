@@ -24,6 +24,7 @@ export function DrawerHeader({ title, subtitle, badge, onClose, actions, classNa
       <div className="flex items-center gap-1">
         {actions}
         <button
+          type="button"
           onClick={onClose}
           className="rounded-lg p-2 text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
           aria-label="Close"

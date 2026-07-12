@@ -122,6 +122,7 @@ export function AttachedEmailsCard({ interactionSlug, opportunitySlug, onEmailsA
           <div className="text-center py-4">
             <p className="text-sm text-neutral-500 mb-2">No emails attached</p>
             <button
+              type="button"
               onClick={() => setShowAttachModal(true)}
               className="text-xs text-blue-600 hover:text-blue-700 font-medium"
             >
@@ -171,6 +172,7 @@ export function AttachedEmailsCard({ interactionSlug, opportunitySlug, onEmailsA
 
                   {/* Remove button */}
                   <button
+                    type="button"
                     onClick={() => detachMutation.mutate(email.id)}
                     disabled={detachMutation.isPending}
                     className="flex-shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-neutral-400 hover:text-red-600 transition-colors disabled:opacity-50"

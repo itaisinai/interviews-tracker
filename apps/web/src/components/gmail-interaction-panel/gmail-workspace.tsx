@@ -1,4 +1,10 @@
-import { InlineLoadingState, LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
+import {
+  Button,
+  InlineLoadingState,
+  LoadingButton,
+  MaterialIcon,
+  ProcessStateCard,
+} from "@interviews-tracker/design-system";
 
 import type { GmailFlowState } from "../../lib/gmail";
 import { type GmailSearchCandidate } from "../../lib/types";
@@ -271,14 +277,10 @@ export function GmailWorkspace({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Removed emails</p>
               <div className="flex items-center gap-2">
                 {gmailMessageStatesFetching ? <InlineLoadingState label="Refreshing" /> : null}
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  onClick={() => onRemovedEmailsExpandedChange(!removedEmailsExpanded)}
-                >
+                <Button variant="secondary" onClick={() => onRemovedEmailsExpandedChange(!removedEmailsExpanded)}>
                   <MaterialIcon name={removedEmailsExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} />
                   {removedEmailsExpanded ? "Hide" : `Show (${removedEmails.length})`}
-                </button>
+                </Button>
               </div>
             </div>
             {removedEmailsExpanded ? (
@@ -361,14 +363,10 @@ export function GmailWorkspace({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Ignored emails</p>
               <div className="flex items-center gap-2">
                 {gmailMessageStatesFetching ? <InlineLoadingState label="Refreshing" /> : null}
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  onClick={() => onIgnoredEmailsExpandedChange(!ignoredEmailsExpanded)}
-                >
+                <Button variant="secondary" onClick={() => onIgnoredEmailsExpandedChange(!ignoredEmailsExpanded)}>
                   <MaterialIcon name={ignoredEmailsExpanded ? "keyboard_arrow_up" : "keyboard_arrow_down"} />
                   {ignoredEmailsExpanded ? "Hide" : `Show (${ignoredEmails.length})`}
-                </button>
+                </Button>
               </div>
             </div>
             {ignoredEmailsExpanded ? (

@@ -5,7 +5,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactNode } from "react";
 
-import { type BreadcrumbItem, Breadcrumbs, MaterialIcon } from "@interviews-tracker/design-system";
+import { type BreadcrumbItem, Breadcrumbs, Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { NotificationsBell } from "../notifications";
 import { TelegramBot } from "../telegram-bot";
@@ -44,7 +44,7 @@ const placeholders: Record<string, string> = {
   "/settings": "Search options...",
 };
 
-export function AppShell() {
+export function AppLayout() {
   const { logout, user } = useAuth0();
   const location = useLocation();
   const navigate = useNavigate();
@@ -111,6 +111,7 @@ export function AppShell() {
               </AnimatePresence>
             </div>
             <button
+              type="button"
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="flex-shrink-0 rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-low"
               aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -167,6 +168,7 @@ export function AppShell() {
             className={`mt-auto space-y-1 border-t border-outline-variant pt-4 overflow-hidden ${sidebarCollapsed ? "px-2" : "px-4"}`}
           >
             <button
+              type="button"
               className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
                 sidebarCollapsed ? "" : "gap-4"
               }`}
@@ -188,6 +190,7 @@ export function AppShell() {
               </AnimatePresence>
             </button>
             <button
+              type="button"
               className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
                 sidebarCollapsed ? "" : "gap-4"
               }`}
@@ -231,17 +234,21 @@ export function AppShell() {
             </div>
             <div className="flex items-center gap-3 md:gap-4">
               <NotificationsBell />
-              <button className="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant">
+              <button
+                type="button"
+                className="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant"
+              >
                 <MaterialIcon name="help_outline" />
               </button>
               <div className="hidden lg:block">
-                <button
-                  className="btn btn-primary rounded-full shadow-sm"
+                <Button
+                  variant="primary"
+                  className="rounded-full shadow-sm"
                   onClick={() => navigate("/opportunities/new")}
                 >
                   <MaterialIcon name="add" />
                   Add Opportunity
-                </button>
+                </Button>
               </div>
               <div className="hidden text-right sm:block">
                 <p className="max-w-40 truncate font-label-md text-label-md text-on-background">{displayName}</p>

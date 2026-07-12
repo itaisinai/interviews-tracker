@@ -71,6 +71,7 @@ export function GmailEmailListItem({
       {/* Remove button (only for removable items) */}
       {onRemove && (
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
@@ -88,6 +89,7 @@ export function GmailEmailListItem({
   if (isInteractive && onToggle) {
     return (
       <button
+        type="button"
         onClick={onToggle}
         disabled={disabled}
         className={`w-full flex items-start gap-3 p-3 rounded-lg border transition-colors text-left ${

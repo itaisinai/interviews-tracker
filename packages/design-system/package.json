@@ -9,10 +9,10 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
     },
-    "./styles/tokens.css": "./dist/styles/tokens.css"
+    "./styles/tokens.css": "./src/styles/tokens.css"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",

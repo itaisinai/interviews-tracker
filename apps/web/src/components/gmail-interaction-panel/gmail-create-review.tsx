@@ -257,6 +257,7 @@ export function GmailCreateReview({
           </LoadingButton>
 
           <button
+            type="button"
             onClick={onCancel}
             disabled={isAttaching || saveInteractionPending}
             className="px-4 py-2.5 text-neutral-600 font-medium text-sm hover:text-neutral-900 transition-colors disabled:opacity-50"

@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { labelForPipelineType } from "../../lib/enum-labels";
 import type { Opportunity } from "../../lib/types";
@@ -107,10 +107,10 @@ export function CompanyDataSection({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Add interaction</p>
               <h4 className="font-title-md text-title-md font-bold">Gmail import</h4>
             </div>
-            <button className="btn btn-secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
+            <Button variant="secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
-            </button>
+            </Button>
           </div>
           <GmailInteractionPanel
             opportunitySlug={opportunity.slug}
@@ -128,10 +128,10 @@ export function CompanyDataSection({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Add interaction</p>
               <h4 className="font-title-md text-title-md font-bold">Text parser</h4>
             </div>
-            <button className="btn btn-secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
+            <Button variant="secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
-            </button>
+            </Button>
           </div>
           <InteractionTextParserPanel
             opportunitySlug={opportunity.slug}

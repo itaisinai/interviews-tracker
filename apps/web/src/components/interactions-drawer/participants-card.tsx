@@ -111,6 +111,7 @@ export function ParticipantsCard({
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => {
                     if (person?.research) {
                       setSelectedPerson(person);

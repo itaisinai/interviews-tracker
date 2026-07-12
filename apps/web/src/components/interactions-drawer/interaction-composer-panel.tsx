@@ -1,5 +1,7 @@
 import { ArrowLeft, Plus, X } from "lucide-react";
 
+import { Button } from "@interviews-tracker/design-system";
+
 import type { Interaction } from "../../lib/types";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
 import { InteractionInputChooser } from "../interaction-input-chooser";
@@ -41,15 +43,15 @@ export function InteractionComposerPanel({
           </h4>
         </div>
         {composer === null ? (
-          <button className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
+          <Button variant="secondary" onClick={() => onComposerChange("chooser")}>
             <Plus className="h-4 w-4" />
             Add interaction
-          </button>
+          </Button>
         ) : (
-          <button className="btn btn-secondary" onClick={() => onComposerChange(null)}>
+          <Button variant="secondary" onClick={() => onComposerChange(null)}>
             <X className="h-4 w-4" />
             Hide add flow
-          </button>
+          </Button>
         )}
       </div>
 
@@ -73,10 +75,10 @@ export function InteractionComposerPanel({
                 ? "Search Gmail and attach the selected email to this interaction."
                 : "Use the Gmail flow for the selected opportunity."}
             </p>
-            <button className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
+            <Button variant="secondary" onClick={() => onComposerChange("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
-            </button>
+            </Button>
           </div>
           <GmailInteractionPanel
             opportunitySlug={opportunitySlug}
@@ -97,10 +99,10 @@ export function InteractionComposerPanel({
             <p className="text-body-md text-on-surface-variant">
               Paste raw text and let the AI turn it into an interaction draft.
             </p>
-            <button className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
+            <Button variant="secondary" onClick={() => onComposerChange("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
-            </button>
+            </Button>
           </div>
           <InteractionTextParserPanel
             opportunitySlug={opportunitySlug}

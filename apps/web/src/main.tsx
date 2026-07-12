@@ -6,7 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 
 import { PageLoadingState } from "@interviews-tracker/design-system";
 
-import { AppShell } from "./components/app-shell";
+import { AppLayout } from "./components/app-layout";
 import { AuthGate } from "./components/auth-gate";
 import { NotificationsProvider } from "./components/notifications";
 import { queryClient } from "./lib/query-client";
@@ -81,7 +81,7 @@ function App() {
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Suspense fallback={<PageLoadingState title="Loading" description="Loading page..." />}>
               <Routes>
-                <Route element={<AppShell />}>
+                <Route element={<AppLayout />}>
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/companies" element={<CompaniesPage />} />
                   <Route path="/companies/:companySlugOrId" element={<CompanyDetailPage />} />

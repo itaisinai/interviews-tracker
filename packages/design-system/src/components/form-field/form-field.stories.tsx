@@ -22,4 +22,4 @@ export default meta;
 type Story = StoryObj<typeof FormField>;
 
 export const Default: Story = {};
-export const Error: Story = { args: { error: "Required field" } };
+export const WithError: Story = { args: { error: "Required field" } };

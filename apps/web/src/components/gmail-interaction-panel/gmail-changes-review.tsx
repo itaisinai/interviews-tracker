@@ -197,6 +197,7 @@ export function GmailChangesReview({
           </LoadingButton>
 
           <button
+            type="button"
             onClick={onEditManually}
             disabled={isAttaching || saveInteractionPending}
             className="px-6 py-2.5 rounded-lg border border-neutral-200 text-neutral-700 font-medium text-sm hover:bg-neutral-50 transition-colors disabled:opacity-50"
@@ -205,6 +206,7 @@ export function GmailChangesReview({
           </button>
 
           <button
+            type="button"
             onClick={onCancel}
             disabled={isAttaching || saveInteractionPending}
             className="px-4 py-2.5 text-neutral-600 font-medium text-sm hover:text-neutral-900 transition-colors disabled:opacity-50"

@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
-import { useBreadcrumbs } from "../components/app-shell";
+import { useBreadcrumbs } from "../components/app-layout";
 import { CompanyDetailView } from "../components/company-detail";
 import { api } from "../lib/api";
 

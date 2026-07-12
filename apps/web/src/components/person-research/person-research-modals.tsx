@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type { CompanyExperience } from "@interviews-tracker/design-system";
-import { JobHistoryTimeline, LoadingButton, MaterialIcon, Modal } from "@interviews-tracker/design-system";
+import { Button, JobHistoryTimeline, LoadingButton, MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
 import type { PersonResearchResult } from "../../lib/types";
 
@@ -143,13 +143,13 @@ export function ConfirmResearchModal({ isOpen, onClose, person, onStartResearch 
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-3">
-        <button type="button" className="btn btn-secondary" onClick={onClose}>
+        <Button variant="secondary" onClick={onClose}>
           Cancel
-        </button>
-        <button type="button" className="btn btn-primary" onClick={validateAndStart}>
+        </Button>
+        <Button variant="primary" onClick={validateAndStart}>
           <MaterialIcon name="travel_explore" />
           Start research
-        </button>
+        </Button>
       </div>
     </Modal>
   );
@@ -373,9 +373,9 @@ export function ReviewResearchModal({
           <div />
         )}
         <div className="flex items-center gap-3">
-          <button type="button" className="btn btn-secondary" onClick={onDiscard}>
+          <Button variant="secondary" onClick={onDiscard}>
             Discard
-          </button>
+          </Button>
           <LoadingButton className="btn btn-primary" loading={isSaving} loadingLabel="Saving..." onClick={onSave}>
             <MaterialIcon name="save" />
             {saveForLater ? "Save research" : "Done"}
@@ -408,13 +408,13 @@ export function ResearchErrorModal({ isOpen, onClose, onRetry, message }: ErrorM
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-3">
-        <button type="button" className="btn btn-secondary" onClick={onClose}>
+        <Button variant="secondary" onClick={onClose}>
           Cancel
-        </button>
-        <button type="button" className="btn btn-primary" onClick={onRetry}>
+        </Button>
+        <Button variant="primary" onClick={onRetry}>
           <MaterialIcon name="refresh" />
           Try again
-        </button>
+        </Button>
       </div>
     </Modal>
   );

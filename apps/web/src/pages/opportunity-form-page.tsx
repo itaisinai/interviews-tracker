@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { LoadingButton, MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
-import { PageIntro } from "../components/app-shell";
+import { PageIntro } from "../components/app-layout";
 import { ParserLoadingState } from "../components/parser-loading-state";
 import { api } from "../lib/api";
 import { jobStatusOptions, labelForJobStatus, labelForPipelineType, labelForPriority } from "../lib/enum-labels";
@@ -99,11 +99,11 @@ export function OpportunityFormPage() {
     runState === "extracting_fields" ||
     runState === "normalizing_result";
 
-  const companySizeOption = findMatchingOption(options?.companySizes, parseResult?.company.employees);
-  const companyStageOption = findMatchingOption(options?.companyStages, parseResult?.company.stage);
-  const workModelOption = findMatchingOption(options?.workModels, parseResult?.company.workModel);
+  const companySizeOption = findMatchingOption(options?.companySizes, parseResult?.company?.employees);
+  const companyStageOption = findMatchingOption(options?.companyStages, parseResult?.company?.stage);
+  const workModelOption = findMatchingOption(options?.workModels, parseResult?.company?.workModel);
   const parsedDomains = useMemo(() => {
-    const raw = parseResult?.company.domains ?? [];
+    const raw = parseResult?.company?.domains ?? [];
     return [...new Set(raw.map((item) => item.trim()).filter(Boolean))];
   }, [parseResult]);
 

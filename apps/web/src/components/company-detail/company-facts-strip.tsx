@@ -1,4 +1,4 @@
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { CompanyDetailField } from "./company-detail-field";
 import { formatCompactFunding } from "./company-detail-formatters";
@@ -30,10 +30,10 @@ export function CompanyFactsStrip({ facts, onResearchClick }: CompanyFactsStripP
           ))}
         </div>
 
-        <button type="button" className="btn btn-primary shrink-0" onClick={onResearchClick}>
+        <Button variant="primary" className="shrink-0" onClick={onResearchClick}>
           <MaterialIcon name="travel_explore" />
           Research company
-        </button>
+        </Button>
       </div>
     </section>
   );
