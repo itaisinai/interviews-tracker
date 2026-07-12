@@ -134,7 +134,7 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
             <div className="space-y-2">
               {typedContacts.map((contact) => (
                 <div
-                  key={contact.id}
+                  key={contact.slug}
                   className="group flex w-full items-start gap-3 rounded-lg border border-outline-variant bg-surface p-3 transition-colors hover:bg-surface-container"
                 >
                   <button

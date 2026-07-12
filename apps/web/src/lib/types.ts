@@ -45,7 +45,6 @@ export type {
 } from "@interviews-tracker/integrations";
 
 export type Person = {
-  id: string;
   slug: string; // Added for slug-first architecture
   name: string;
   email: string | null;
