@@ -84,7 +84,7 @@ function App() {
                 <Route element={<AppShell />}>
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/companies" element={<CompaniesPage />} />
-                  <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
+                  <Route path="/companies/:companySlugOrId" element={<CompanyDetailPage />} />
                   <Route path="/opportunities" element={<OpportunitiesPage />} />
                   <Route path="/opportunities/new" element={<OpportunityFormPage />} />
                   <Route path="/opportunities/:slugOrId" element={<OpportunityDetailPage />} />

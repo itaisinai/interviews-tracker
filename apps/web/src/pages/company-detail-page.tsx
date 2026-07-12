@@ -8,26 +8,26 @@ import { CompanyDetailView } from "../components/company-detail";
 import { api } from "../lib/api";
 
 export function CompanyDetailPage() {
-  const { companyName = "" } = useParams();
-  const decodedName = decodeURIComponent(companyName);
+  const { companySlugOrId = "" } = useParams();
+  const decodedSlugOrId = decodeURIComponent(companySlugOrId);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["company", decodedName],
-    queryFn: () => api.company(decodedName),
-    enabled: Boolean(decodedName),
+    queryKey: ["company", decodedSlugOrId],
+    queryFn: () => api.company(decodedSlugOrId),
+    enabled: Boolean(decodedSlugOrId),
   });
 
   const deleteCompany = useMutation({
-    mutationFn: () => api.deleteCompany(decodedName),
+    mutationFn: () => api.deleteCompany(decodedSlugOrId),
     onSuccess: () => navigate("/companies"),
   });
 
   const deleteInteraction = useMutation({
     mutationFn: (id: string) => api.deleteInteraction(id),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["company", decodedName] });
+      void queryClient.invalidateQueries({ queryKey: ["company", decodedSlugOrId] });
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
@@ -60,11 +60,9 @@ export function CompanyDetailPage() {
         deleteInteraction.isPending && deleteInteraction.variables === interactionId
       }
       onResearchSaved={(research) => {
-        if (research.companyName !== data.name) {
-          navigate(`/companies/${encodeURIComponent(research.companyName)}`, {
-            replace: true,
-          });
-        }
+        // Refresh the current company data after research is saved
+        void queryClient.invalidateQueries({ queryKey: ["company", decodedSlugOrId] });
+        void queryClient.invalidateQueries({ queryKey: ["companies"] });
       }}
     />
   );
