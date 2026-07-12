@@ -345,8 +345,10 @@ export function GmailEmailSelector({
 
                       {/* Email info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <div className="font-semibold text-sm text-neutral-900 line-clamp-2">{candidate.subject}</div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="font-semibold text-sm text-neutral-900 line-clamp-2 flex-1">
+                            {candidate.subject}
+                          </div>
                           {isRelevant && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex-shrink-0">
                               <MaterialIcon name="auto_awesome" className="text-[12px]" />
@@ -388,7 +390,7 @@ export function GmailEmailSelector({
                           onIgnore(candidate.id);
                         }}
                         disabled={isSubmitting || isIgnorePending}
-                        className="flex-shrink-0 self-start mt-1 px-3 py-1.5 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-shrink-0 self-start px-3 py-1.5 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Mark as not relevant"
                       >
                         Mark as not relevant
