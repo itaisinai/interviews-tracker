@@ -25,6 +25,7 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
   const [draft, setDraft] = useState<InteractionDraft | null>(null);
   const [allGmailMessageIds, setAllGmailMessageIds] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
 
   const {
     data: searchResults,
@@ -56,22 +57,57 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
   const unpickEmail = useMutation({
     mutationFn: (messageId: string) => api.gmailUnpickEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
     },
   });
 
   const restoreEmail = useMutation({
     mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
-      queryClient.invalidateQueries({ queryKey: ["gmail-search", opportunitySlug] });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
+    },
+  });
+
+  const ignoreEmail = useMutation({
+    mutationFn: (messageId: string) => api.gmailIgnoreEmail(opportunitySlug, messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
+    },
+  });
+
+  const unignoreEmail = useMutation({
+    mutationFn: (messageId: string) => api.gmailUnignoreEmail(opportunitySlug, messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
     },
   });
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["gmail-message-states", opportunitySlug] });
+    queryClient.invalidateQueries({
+      queryKey: ["gmail-message-states", opportunitySlug],
+    });
     refetchSearch();
+    setLastSyncTime(new Date());
   };
 
   const createInteraction = useMutation({
@@ -204,6 +240,11 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
             subject: e.subject,
             date: e.date,
           })),
+          ignoredEmails: messageStates.ignoredEmails.map((e) => ({
+            id: e.id,
+            subject: e.subject,
+            date: e.date,
+          })),
         }
       : undefined;
 
@@ -222,11 +263,16 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
         messageStates={transformedMessageStates}
         onUnpick={(messageId) => unpickEmail.mutate(messageId)}
         onRestore={(messageId) => restoreEmail.mutate(messageId)}
+        onIgnore={(messageId) => ignoreEmail.mutate(messageId)}
+        onUnignore={(messageId) => unignoreEmail.mutate(messageId)}
         isUnpickPending={unpickEmail.isPending}
         isRestorePending={restoreEmail.isPending}
-        showDebugSection={true}
+        isIgnorePending={ignoreEmail.isPending}
+        isUnignorePending={unignoreEmail.isPending}
+        showDebugSection={false}
         onRefresh={handleRefresh}
         isRefreshing={isRefetching}
+        lastSyncTime={lastSyncTime}
       />
     );
   }

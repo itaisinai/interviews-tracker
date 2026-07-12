@@ -43,8 +43,23 @@ export function CompanyDetailView({
   const [selectedInteractionSlug, setSelectedInteractionSlug] = useState<string | null>(null);
 
   // Flatten all interactions from opportunities for status processing
+  // Restore parent opportunity reference since backend strips it from nested interactions
   const allInteractions = useMemo(
-    () => company.opportunities.flatMap((opp) => opp.interactions),
+    () =>
+      company.opportunities.flatMap((opp) =>
+        opp.interactions.map((int) => ({
+          ...int,
+          jobOpportunity: {
+            slug: opp.slug,
+            roleTitle: opp.roleTitle,
+            pipelineType: opp.pipelineType,
+            status: opp.status,
+            priority: opp.priority,
+            updatedAt: opp.updatedAt,
+            company: opp.company,
+          } as any, // Minimal metadata, not full Opportunity
+        }))
+      ),
     [company.opportunities]
   );
 

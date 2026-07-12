@@ -260,6 +260,7 @@ export const api = {
     request<
       Array<{
         slug: string;
+        ownerEmail: string;
         name: string;
         email: string | null;
         linkedinUrl: string | null;

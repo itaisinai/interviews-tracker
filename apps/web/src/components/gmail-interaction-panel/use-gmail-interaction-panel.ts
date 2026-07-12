@@ -19,7 +19,7 @@ type GmailInteractionPanelArgs = {
   companyName: string;
   roleTitle: string;
   onSaved?: (interaction?: Interaction) => void;
-  attachToInteractionId?: string | null;
+  attachToInteractionSlug?: string | null;
 };
 
 /**
@@ -30,7 +30,7 @@ export function useGmailInteractionPanel({
   companyName,
   roleTitle,
   onSaved,
-  attachToInteractionId = null,
+  attachToInteractionSlug = null,
 }: GmailInteractionPanelArgs) {
   const queryClient = useQueryClient();
   const statusQuery = useQuery({ queryKey: ["gmail-status"], queryFn: api.gmailStatus });
@@ -52,7 +52,7 @@ export function useGmailInteractionPanel({
     staleTime: 30_000,
   });
 
-  const isAttachMode = Boolean(attachToInteractionId);
+  const isAttachMode = Boolean(attachToInteractionSlug);
   const currentMeta = gmailFlowMeta[state.flowState];
   const searchHint = useMemo(() => `Searching Gmail for "${companyName}" from the last 180 days.`, [companyName]);
 
@@ -135,10 +135,10 @@ export function useGmailInteractionPanel({
     isBusy: state.isBusy,
     connected: statusQuery.data?.connected,
     selectedEmail: state.selectedEmail,
-    attachToInteractionId,
+    attachToInteractionSlug,
     opportunitySlug,
     interactions: (opportunityQuery.data?.interactions ?? []).map((i) => ({
-      id: i.slug,
+      slug: i.slug,
       gmailMessageId: i.gmailMessageId,
     })),
     setProgress: state.setProgress,

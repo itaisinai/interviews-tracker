@@ -158,7 +158,9 @@ export function PersonResearchFlow({
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       if (opportunitySlug) {
-        void queryClient.invalidateQueries({ queryKey: ["opportunity-contacts", opportunitySlug] });
+        void queryClient.invalidateQueries({
+          queryKey: ["opportunity-contacts", opportunitySlug],
+        });
       }
 
       onSaved?.();

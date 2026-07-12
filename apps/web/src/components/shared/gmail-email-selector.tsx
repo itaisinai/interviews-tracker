@@ -13,6 +13,13 @@ type TrackedGmailEmail = {
 type GmailMessageStates = {
   pickedEmails: TrackedGmailEmail[];
   removedEmails: TrackedGmailEmail[];
+  ignoredEmails: TrackedGmailEmail[];
+};
+
+type InteractionContext = {
+  title: string;
+  companyName: string;
+  date: string;
 };
 
 type GmailEmailSelectorProps = {
@@ -30,11 +37,17 @@ type GmailEmailSelectorProps = {
   messageStates?: GmailMessageStates;
   onUnpick?: (messageId: string) => void;
   onRestore?: (messageId: string) => void;
+  onIgnore?: (messageId: string) => void;
+  onUnignore?: (messageId: string) => void;
   isUnpickPending?: boolean;
   isRestorePending?: boolean;
+  isIgnorePending?: boolean;
+  isUnignorePending?: boolean;
   showDebugSection?: boolean;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  lastSyncTime?: Date;
+  interactionContext?: InteractionContext;
 };
 
 export function GmailEmailSelector({
@@ -52,16 +65,54 @@ export function GmailEmailSelector({
   messageStates,
   onUnpick,
   onRestore,
+  onIgnore,
+  onUnignore,
   isUnpickPending = false,
   isRestorePending = false,
+  isIgnorePending = false,
+  isUnignorePending = false,
   showDebugSection = false,
   onRefresh,
   isRefreshing = false,
+  lastSyncTime,
+  interactionContext,
 }: GmailEmailSelectorProps) {
   const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(new Set());
+  const [locallyIgnoredIds, setLocallyIgnoredIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<"suggested" | "ignored">("suggested");
 
-  // Filter out excluded emails
-  const availableCandidates = candidates.filter((candidate) => !filterOutIds.has(candidate.id));
+  // Filter out excluded emails and locally ignored emails
+  const availableCandidates = candidates.filter(
+    (candidate) => !filterOutIds.has(candidate.id) && !locallyIgnoredIds.has(candidate.id)
+  );
+
+  // Calculate ignored emails including locally ignored and those from messageStates
+  const allIgnoredEmails = [
+    ...(messageStates?.ignoredEmails || []),
+    ...(Array.from(locallyIgnoredIds)
+      .map((id) => {
+        const candidate = candidates.find((c) => c.id === id);
+        return candidate ? { id: candidate.id, subject: candidate.subject, date: candidate.date } : null;
+      })
+      .filter(Boolean) as TrackedGmailEmail[]),
+  ];
+
+  const ignoredCount = allIgnoredEmails.length;
+  const suggestedCount = availableCandidates.length;
+
+  // Calculate time since last sync
+  const getTimeSinceSync = () => {
+    if (!lastSyncTime) return null;
+    const now = new Date();
+    const diffMs = now.getTime() - lastSyncTime.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "just now";
+    if (diffMins === 1) return "1 min ago";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours === 1) return "1 hour ago";
+    return `${diffHours} hours ago`;
+  };
 
   const handleToggleEmail = (emailId: string) => {
     setSelectedEmailIds((prev) => {
@@ -97,97 +148,258 @@ export function GmailEmailSelector({
         </div>
       )}
 
-      {/* Info and Refresh */}
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-neutral-600">
-          Select one or more emails {allowMultiSelect ? "" : "(single selection)"}.
-          {selectedEmailIds.size > 0 && ` ${selectedEmailIds.size} selected.`}
-        </p>
-        {onRefresh && (
+      {/* Contextual Header */}
+      <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            {interactionContext ? (
+              <>
+                <div className="text-xs font-medium text-neutral-500 mb-1">Attach emails to</div>
+                <div className="text-base font-semibold text-neutral-900 mb-0.5">{interactionContext.title}</div>
+                <div className="text-sm text-neutral-600">
+                  {interactionContext.companyName} • {interactionContext.date}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-base font-semibold text-neutral-900 mb-1">Create interaction from emails</div>
+                <div className="text-sm text-neutral-600">
+                  A new interaction will be created from the selected emails.
+                </div>
+              </>
+            )}
+          </div>
+          {onRefresh && (
+            <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-2 text-neutral-500">
+                <MaterialIcon name="mail" className="text-[16px]" />
+                <span>Last synced {getTimeSinceSync()}</span>
+              </div>
+              <button
+                onClick={onRefresh}
+                disabled={isSubmitting || isRefreshing}
+                className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 font-medium"
+              >
+                <MaterialIcon name="refresh" className={`text-[18px] ${isRefreshing ? "animate-spin" : ""}`} />
+                Refresh
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-6 border-b border-neutral-200">
+        <button
+          onClick={() => setActiveTab("suggested")}
+          className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "suggested"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-neutral-600 hover:text-neutral-900"
+          }`}
+        >
+          Suggested
+          {suggestedCount > 0 && (
+            <span
+              className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                activeTab === "suggested" ? "bg-blue-100 text-blue-700" : "bg-neutral-100 text-neutral-600"
+              }`}
+            >
+              {suggestedCount}
+            </span>
+          )}
+        </button>
+        {ignoredCount > 0 && (
           <button
-            onClick={onRefresh}
-            disabled={isSubmitting || isRefreshing}
-            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
+            onClick={() => setActiveTab("ignored")}
+            className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "ignored"
+                ? "border-orange-600 text-orange-600"
+                : "border-transparent text-neutral-600 hover:text-neutral-900"
+            }`}
           >
-            <MaterialIcon name="refresh" className={`text-[16px] ${isRefreshing ? "animate-spin" : ""}`} />
-            Refresh
+            Ignored
+            <span
+              className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                activeTab === "ignored" ? "bg-orange-100 text-orange-700" : "bg-neutral-100 text-neutral-600"
+              }`}
+            >
+              {ignoredCount}
+            </span>
           </button>
         )}
       </div>
 
-      {/* Loading state */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <MaterialIcon name="progress_activity" className="text-[24px] text-neutral-400 animate-spin" />
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!isLoading && availableCandidates.length === 0 && (
-        <div className="text-center py-12">
-          <MaterialIcon name="mail_outline" className="text-[48px] text-neutral-300 mb-3" />
-          <p className="text-sm text-neutral-500">{emptyMessage}</p>
-          {emptySubMessage && <p className="text-xs text-neutral-400 mt-1">{emptySubMessage}</p>}
-        </div>
-      )}
-
-      {/* Email list */}
-      {!isLoading && availableCandidates.length > 0 && (
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {availableCandidates.map((candidate) => {
-            const isSelected = selectedEmailIds.has(candidate.id);
-            const isRelevant = candidate.relevance.isRelevant;
-
-            return (
+      {/* Tab content - Suggested */}
+      {activeTab === "suggested" && (
+        <>
+          {/* Description and Select all */}
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-neutral-600">
+              We found {suggestedCount} email{suggestedCount === 1 ? "" : "s"} that may belong to this interaction.
+              Select the emails you want to import.
+            </p>
+            {suggestedCount > 0 && (
               <button
-                key={candidate.id}
-                onClick={() => handleToggleEmail(candidate.id)}
-                disabled={isSubmitting}
-                className={`w-full flex items-start gap-3 p-3 rounded-lg border transition-colors text-left ${
-                  isSelected ? "border-blue-500 bg-blue-50" : "border-neutral-200 hover:bg-neutral-50"
-                } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+                onClick={() => {
+                  const allIds = new Set(availableCandidates.map((c) => c.id));
+                  setSelectedEmailIds(allIds);
+                }}
+                className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0"
               >
-                {/* Checkbox */}
-                <div
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
-                    isSelected ? "border-blue-500 bg-blue-500" : "border-neutral-300"
-                  }`}
-                >
-                  {isSelected && <MaterialIcon name="check" className="text-[14px] text-white" />}
-                </div>
+                Select all
+              </button>
+            )}
+          </div>
 
-                {/* Email info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <div className="font-medium text-sm text-neutral-900 truncate">{candidate.subject}</div>
-                    {isRelevant && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex-shrink-0">
-                        <MaterialIcon name="check_circle" className="text-[12px]" />
-                        Relevant
-                      </span>
+          {/* Loading state */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <MaterialIcon name="progress_activity" className="text-[24px] text-neutral-400 animate-spin" />
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!isLoading && availableCandidates.length === 0 && (
+            <div className="text-center py-12">
+              <MaterialIcon name="mail_outline" className="text-[48px] text-neutral-300 mb-3" />
+              <p className="text-sm text-neutral-500">{emptyMessage}</p>
+              {emptySubMessage && <p className="text-xs text-neutral-400 mt-1">{emptySubMessage}</p>}
+            </div>
+          )}
+
+          {/* Email list - Suggested */}
+          {!isLoading && availableCandidates.length > 0 && (
+            <div className="space-y-3 max-h-[480px] overflow-y-auto">
+              {availableCandidates.map((candidate) => {
+                const isSelected = selectedEmailIds.has(candidate.id);
+                const isRelevant = candidate.relevance.isRelevant;
+
+                return (
+                  <div
+                    key={candidate.id}
+                    className={`w-full flex items-start gap-3 p-4 rounded-lg border transition-colors ${
+                      isSelected ? "border-blue-500 bg-blue-50" : "border-neutral-200 bg-white hover:bg-neutral-50"
+                    } ${isSubmitting || isIgnorePending ? "opacity-50" : ""}`}
+                  >
+                    {/* Checkbox button */}
+                    <button
+                      onClick={() => handleToggleEmail(candidate.id)}
+                      disabled={isSubmitting || isIgnorePending}
+                      className="flex items-start gap-3 flex-1 min-w-0 text-left"
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
+                          isSelected ? "border-blue-500 bg-blue-500" : "border-neutral-300"
+                        }`}
+                      >
+                        {isSelected && <MaterialIcon name="check" className="text-[14px] text-white" />}
+                      </div>
+
+                      {/* Email info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <div className="font-semibold text-sm text-neutral-900 line-clamp-2">{candidate.subject}</div>
+                          {isRelevant && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex-shrink-0">
+                              <MaterialIcon name="auto_awesome" className="text-[12px]" />
+                              AI Suggested
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-neutral-600 mb-1">{candidate.from}</div>
+                        <div className="text-xs text-neutral-500 mb-2">
+                          {new Date(candidate.date).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                        {candidate.snippet && (
+                          <div className="text-xs text-neutral-600 line-clamp-2">{candidate.snippet}</div>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Mark as not relevant button */}
+                    {onIgnore && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Optimistically hide it from UI immediately
+                          setLocallyIgnoredIds((prev) => new Set(prev).add(candidate.id));
+                          // Also remove from selected if it was selected
+                          setSelectedEmailIds((prev) => {
+                            const next = new Set(prev);
+                            next.delete(candidate.id);
+                            return next;
+                          });
+                          // Call API in background
+                          onIgnore(candidate.id);
+                        }}
+                        disabled={isSubmitting || isIgnorePending}
+                        className="flex-shrink-0 self-start mt-1 px-3 py-1.5 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Mark as not relevant"
+                      >
+                        Mark as not relevant
+                      </button>
                     )}
                   </div>
-                  <div className="text-xs text-neutral-500 mb-1">From: {candidate.from}</div>
-                  <div className="text-xs text-neutral-400">
-                    {new Date(candidate.date).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                  {candidate.snippet && (
-                    <div className="text-xs text-neutral-500 mt-2 line-clamp-2">{candidate.snippet}</div>
-                  )}
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Tab content - Ignored */}
+      {activeTab === "ignored" && ignoredCount > 0 && (
+        <div className="space-y-3 max-h-[480px] overflow-y-auto">
+          {allIgnoredEmails.map((email) => (
+            <div
+              key={email.id}
+              className="w-full flex items-start gap-3 p-4 rounded-lg border border-orange-200 bg-orange-50"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm text-neutral-900 mb-1.5 line-clamp-2">{email.subject}</div>
+                <div className="text-xs text-neutral-500">
+                  {new Date(email.date).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
-              </button>
-            );
-          })}
+              </div>
+              {onUnignore && (
+                <button
+                  onClick={() => {
+                    // Remove from locally ignored
+                    setLocallyIgnoredIds((prev) => {
+                      const next = new Set(prev);
+                      next.delete(email.id);
+                      return next;
+                    });
+                    // Call API
+                    onUnignore(email.id);
+                    // Switch back to suggested tab
+                    setActiveTab("suggested");
+                  }}
+                  disabled={isUnignorePending}
+                  className="flex-shrink-0 self-start px-3 py-1.5 rounded text-xs font-medium text-orange-700 hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Restore
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Actions */}
+      {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
         <div className="text-sm text-neutral-600">
           {selectedEmailIds.size > 0 ? (
@@ -195,7 +407,7 @@ export function GmailEmailSelector({
               {selectedEmailIds.size} email{selectedEmailIds.size === 1 ? "" : "s"} selected
             </span>
           ) : (
-            <span>Select emails to continue</span>
+            <span className="text-neutral-500">No emails selected</span>
           )}
         </div>
         <div className="flex gap-3">
@@ -203,117 +415,25 @@ export function GmailEmailSelector({
             <button
               onClick={onCancel}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg border border-neutral-200 text-neutral-700 font-medium text-sm hover:bg-neutral-50 transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-lg border border-neutral-300 text-neutral-700 font-medium text-sm hover:bg-neutral-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
           )}
           <LoadingButton
             loading={isSubmitting}
-            loadingLabel="Processing..."
+            loadingLabel="Importing..."
             onClick={handleSubmit}
             disabled={selectedEmailIds.size === 0}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
           >
-            <MaterialIcon name={submitIcon} className="text-[16px]" />
-            {submitLabel} {selectedEmailIds.size > 0 ? `(${selectedEmailIds.size})` : ""}
+            <MaterialIcon name="download" className="text-[18px]" />
+            Import
+            {selectedEmailIds.size > 0
+              ? ` ${selectedEmailIds.size} Email${selectedEmailIds.size === 1 ? "" : "s"}`
+              : " Emails"}
           </LoadingButton>
         </div>
-      </div>
-
-      {/* Debug Section */}
-      {showDebugSection &&
-        messageStates &&
-        (messageStates.pickedEmails.length > 0 || messageStates.removedEmails.length > 0) && (
-          <div className="border-t border-neutral-200 pt-4 mt-4">
-            <details className="group">
-              <summary className="cursor-pointer text-sm font-medium text-neutral-600 hover:text-neutral-900 flex items-center gap-2">
-                <MaterialIcon name="expand_more" className="text-[18px] group-open:rotate-180 transition-transform" />
-                Debug: Picked/Cleared emails ({messageStates.pickedEmails.length + messageStates.removedEmails.length})
-              </summary>
-              <div className="mt-3 space-y-3">
-                {messageStates.pickedEmails.length > 0 && (
-                  <EmailStateList
-                    emails={messageStates.pickedEmails}
-                    title="Picked"
-                    tone="picked"
-                    pending={isUnpickPending}
-                    actionLabel="Undo"
-                    onAction={onUnpick}
-                  />
-                )}
-                {messageStates.removedEmails.length > 0 && (
-                  <EmailStateList
-                    emails={messageStates.removedEmails}
-                    title="Cleared"
-                    tone="removed"
-                    pending={isRestorePending}
-                    actionLabel="Restore"
-                    onAction={onRestore}
-                  />
-                )}
-              </div>
-            </details>
-          </div>
-        )}
-    </div>
-  );
-}
-
-type EmailStateListProps = {
-  emails: TrackedGmailEmail[];
-  title: string;
-  tone: "picked" | "removed";
-  pending: boolean;
-  actionLabel: string;
-  onAction?: (messageId: string) => void;
-};
-
-function EmailStateList({ emails, title, tone, pending, actionLabel, onAction }: EmailStateListProps) {
-  if (emails.length === 0) {
-    return null;
-  }
-
-  const picked = tone === "picked";
-  const headingClass = picked ? "text-emerald-600" : "text-neutral-500";
-  const dateClass = picked ? "text-emerald-600" : "text-neutral-500";
-  const cardClass = `flex items-start justify-between gap-2 rounded border ${picked ? "border-emerald-200 bg-emerald-50" : "border-neutral-200 bg-neutral-50"} p-2`;
-  const buttonClass = `flex-shrink-0 rounded px-2 py-1 text-xs font-medium ${picked ? "text-emerald-700 hover:bg-emerald-100" : "text-neutral-700 hover:bg-neutral-100"} disabled:opacity-50`;
-
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
-  return (
-    <div>
-      <div className={`mb-2 text-xs font-semibold uppercase ${headingClass}`}>
-        {title} ({emails.length})
-      </div>
-      <div className="space-y-2">
-        {emails.map((email) => (
-          <div key={email.id} className={cardClass}>
-            <div className="flex-1 min-w-0 text-xs">
-              <div className="font-medium truncate">{email.subject}</div>
-              <div className={dateClass}>{formatDate(email.date)}</div>
-            </div>
-            {onAction && (
-              <button onClick={() => onAction(email.id)} disabled={pending} className={buttonClass}>
-                {pending ? "..." : actionLabel}
-              </button>
-            )}
-          </div>
-        ))}
       </div>
     </div>
   );

@@ -12,8 +12,10 @@ type InteractionEmail = {
 type InteractionWithEmails = {
   id: string;
   jobOpportunity: {
-    companyName: string;
-    roleTitle: string | null;
+    roleTitle: string;
+    company: {
+      name: string;
+    };
   } | null;
   attachedEmails: InteractionEmail[];
 };
@@ -62,7 +64,7 @@ export async function generateAiSuggestionFromEmails(interaction: InteractionWit
 
   const aiService = getAiParserService();
   const aiSuggestion = await aiService.parseMultipleEmailsToInteraction({
-    companyName: interaction.jobOpportunity?.companyName || "Unknown",
+    companyName: interaction.jobOpportunity?.company?.name || "Unknown",
     roleTitle: interaction.jobOpportunity?.roleTitle || null,
     emails,
   });
@@ -82,7 +84,14 @@ export async function aggregateAndSaveInteractionEmails(interactionId: string) {
     where: { id: interactionId },
     include: {
       attachedEmails: { orderBy: { receivedDate: "desc" } },
-      jobOpportunity: { select: { companyName: true, roleTitle: true } },
+      jobOpportunity: {
+        select: {
+          roleTitle: true,
+          company: {
+            select: { name: true },
+          },
+        },
+      },
     },
   });
 

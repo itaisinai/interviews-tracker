@@ -139,3 +139,19 @@ export function serializeInteractions<T extends Record<string, any>>(interaction
 export function serializePeople<T extends Record<string, any>>(people: T[]): any[] {
   return people.map(serializePerson);
 }
+
+/**
+ * Serialize interaction email (attached email)
+ * Keep id for client-side delete operations, remove interactionId
+ */
+export function serializeInteractionEmail<T extends Record<string, any>>(email: T): any {
+  const { interactionId, ...rest } = email;
+  return rest;
+}
+
+/**
+ * Serialize array of interaction emails
+ */
+export function serializeInteractionEmails<T extends Record<string, any>>(emails: T[]): any[] {
+  return emails.map(serializeInteractionEmail);
+}

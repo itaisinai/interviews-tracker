@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { useAuth0 } from "@auth0/auth0-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { MaterialIcon } from "@interviews-tracker/design-system";
@@ -10,7 +11,7 @@ import { PersonInfoModal } from "../contacts/person-info-modal";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
 
 type ParticipantsCardProps = {
-  personNames: string[];
+  personNames: string[]; // Can contain names or emails
   personRecords: Array<Person | undefined>;
   opportunitySlug?: string;
   opportunityCompanyName?: string;
@@ -24,6 +25,7 @@ export function ParticipantsCard({
   opportunityCompanyName,
   columns = 2,
 }: ParticipantsCardProps) {
+  const { user } = useAuth0();
   const queryClient = useQueryClient();
   const [researchModalOpen, setResearchModalOpen] = useState(false);
   const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
@@ -52,7 +54,22 @@ export function ParticipantsCard({
     },
   });
 
-  if (personNames.length === 0) {
+  // Filter out current user from participants list
+  const participantsToShow = personNames
+    .map((name, index) => ({ name, person: personRecords[index], index }))
+    .filter(({ name, person }) => {
+      // Check if this is the current user
+      const nameIsEmail = name.includes("@");
+      const namesMatch = user?.name && name.toLowerCase() === user.name.toLowerCase();
+      const isCurrentUser =
+        user?.email &&
+        ((person?.email && person.email.toLowerCase() === user.email.toLowerCase()) ||
+          (nameIsEmail && name.toLowerCase() === user.email.toLowerCase()) ||
+          namesMatch);
+      return !isCurrentUser; // Exclude current user
+    });
+
+  if (participantsToShow.length === 0) {
     return null;
   }
 
@@ -68,9 +85,7 @@ export function ParticipantsCard({
 
         {/* Participants List */}
         <div className={columns === 1 ? "space-y-2" : "grid grid-cols-2 gap-2"}>
-          {personNames.map((name, index) => {
-            const person = personRecords[index];
-
+          {participantsToShow.map(({ name, person, index }) => {
             return (
               <div
                 key={name}
@@ -81,7 +96,11 @@ export function ParticipantsCard({
                   <MaterialIcon name="person" className="text-[18px] text-neutral-400 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-neutral-900 truncate">{name}</div>
-                    {person?.title && <div className="text-xs text-neutral-600 truncate mt-0.5">{person.title}</div>}
+                    {person?.title && (
+                      <div className="text-xs text-neutral-600 truncate mt-0.5">
+                        {person.title.replace(/\s*\(Current\)\s*$/i, "")}
+                      </div>
+                    )}
                   </div>
                 </div>
 

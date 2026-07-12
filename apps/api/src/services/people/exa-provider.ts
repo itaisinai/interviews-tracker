@@ -318,6 +318,26 @@ export class ExaProvider {
                 company: parts[1]?.trim() || "",
               };
             }
+          } else if (rawLine.match(/\s+-\s+/)) {
+            // Format with dash separator: either "Title - [Company](url)" or "Title - Company"
+            const dashWithLinkMatch = rawLine.match(/^(.+?)\s+-\s+\[([^\]]+)\]\(([^)]+)\)/);
+            if (dashWithLinkMatch) {
+              // Has markdown link
+              currentExperience = {
+                title: dashWithLinkMatch[1].trim(),
+                company: dashWithLinkMatch[2],
+                companyUrl: dashWithLinkMatch[3],
+              };
+            } else {
+              // Plain text without markdown link: Title - Company
+              const parts = rawLine.split(/\s+-\s+/);
+              if (parts.length >= 2) {
+                currentExperience = {
+                  title: parts[0]?.trim() || "",
+                  company: parts.slice(1).join(" - ").trim(), // Join remaining parts in case company name has dashes
+                };
+              }
+            }
           } else {
             // Format: ### [Company](url) - multiple positions will follow as ####
             const companyMatch = rawLine.match(/^\[([^\]]+)\]\(([^)]+)\)$/);

@@ -246,7 +246,7 @@ companiesRouter.post(
     const slugOrId = request.params.slugOrId;
     const timer = createTimer("route", "company research apply", { slugOrId });
 
-    const { targetOpportunityId, research } = companyResearchApplyInputSchema.parse(request.body);
+    const { targetOpportunitySlug, research } = companyResearchApplyInputSchema.parse(request.body);
 
     const company = await getCompanyService().get(slugOrId, ownerEmail);
     if (!company) {
@@ -297,8 +297,8 @@ companiesRouter.post(
     );
 
     // Create note on specific opportunity or first opportunity
-    const targetOpportunity = targetOpportunityId
-      ? company.opportunities.find((opp) => opp.id === targetOpportunityId)
+    const targetOpportunity = targetOpportunitySlug
+      ? company.opportunities.find((opp) => opp.slug === targetOpportunitySlug)
       : company.opportunities[0];
 
     if (targetOpportunity) {

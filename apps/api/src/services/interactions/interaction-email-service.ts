@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
+import { serializeInteraction, serializeInteractionEmails } from "../../lib/serializers.js";
 import { resolveInteractionId } from "../../repositories/interaction-repository.js";
 import { getAccessTokenForEmail } from "../gmail/gmail-auth.js";
 import { fetchJson } from "../gmail/gmail-http.js";
@@ -47,7 +48,7 @@ export async function attachEmailToInteraction(params: {
   });
 
   if (existing) {
-    return { alreadyAttached: true, email: existing };
+    return { alreadyAttached: true, email: serializeInteractionEmails([existing])[0] };
   }
 
   // Fetch the email from Gmail
@@ -80,8 +81,8 @@ export async function attachEmailToInteraction(params: {
   console.log("[ATTACH SINGLE] AI suggestion (NOT saved):", aiSuggestion?.notes?.slice(0, 200));
 
   return {
-    email: interactionEmail,
-    interaction: refreshedInteraction,
+    email: serializeInteractionEmails([interactionEmail])[0],
+    interaction: serializeInteraction(refreshedInteraction),
     aiSuggestion,
   };
 }
@@ -173,8 +174,8 @@ export async function attachMultipleEmailsToInteraction(params: {
   console.log("[ATTACH] Returning interaction with AI suggestion for review");
 
   return {
-    attachedEmails,
-    interaction: refreshedInteraction,
+    attachedEmails: serializeInteractionEmails(attachedEmails),
+    interaction: serializeInteraction(refreshedInteraction),
     aiSuggestion,
   };
 }
@@ -238,10 +239,12 @@ export async function listInteractionEmails(auth0Email: string, interactionSlugO
     throw new Error(`Unauthorized: interaction belongs to ${interaction.ownerEmail}`);
   }
 
-  return prisma.interactionEmail.findMany({
+  const emails = await prisma.interactionEmail.findMany({
     where: { interactionId },
     orderBy: { receivedDate: "desc" },
   });
+
+  return serializeInteractionEmails(emails);
 }
 
 /**

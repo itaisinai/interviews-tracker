@@ -286,9 +286,15 @@ export function ReviewResearchModal({
               Education
             </h3>
             <div className="space-y-6">
-              {research.education
-                .slice(0, showAllEducation ? undefined : 2)
-                .map((edu: { institution: string; degree?: string; dates?: string }, index: number) => (
+              {research.education.slice(0, showAllEducation ? undefined : 2).map(
+                (
+                  edu: {
+                    institution: string;
+                    degree?: string;
+                    dates?: string;
+                  },
+                  index: number
+                ) => (
                   <div key={index} className="flex gap-3">
                     <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-surface-container" />
                     <div className="min-w-0 flex-1">
@@ -297,7 +303,8 @@ export function ReviewResearchModal({
                       {edu.dates ? <p className="mt-0.5 text-body-sm text-on-surface-variant">{edu.dates}</p> : null}
                     </div>
                   </div>
-                ))}
+                )
+              )}
             </div>
             {research.education.length > 2 ? (
               <button

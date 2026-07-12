@@ -25,8 +25,10 @@ export async function addFeedbackToInteraction(params: {
     include: {
       jobOpportunity: {
         select: {
-          companyName: true,
           roleTitle: true,
+          company: {
+            select: { name: true },
+          },
         },
       },
     },
@@ -67,7 +69,7 @@ export async function addFeedbackToInteraction(params: {
   // cannot leave duplicate or failed feedback rows behind.
   const aiParser = getAiParserService();
   const result = await aiParser.smartMergeFeedback({
-    companyName: interaction.jobOpportunity.companyName,
+    companyName: interaction.jobOpportunity.company.name,
     roleTitle: interaction.jobOpportunity.roleTitle,
     existingNotes: interaction.notes,
     feedbackItems,

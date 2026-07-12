@@ -24,6 +24,7 @@ export function AttachEmailModal({
 }: AttachEmailModalProps) {
   const queryClient = useQueryClient();
   const [isAttaching, setIsAttaching] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
 
   // Fetch Gmail search results
   const {
@@ -42,6 +43,7 @@ export function AttachEmailModal({
       queryKey: ["gmail-message-states", opportunitySlug],
     });
     refetchSearch();
+    setLastSyncTime(new Date());
   };
 
   // Get already attached emails to filter them out
@@ -72,6 +74,30 @@ export function AttachEmailModal({
 
   const restoreEmail = useMutation({
     mutationFn: (messageId: string) => api.gmailRestoreEmail(opportunitySlug, messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
+    },
+  });
+
+  const ignoreEmail = useMutation({
+    mutationFn: (messageId: string) => api.gmailIgnoreEmail(opportunitySlug, messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-message-states", opportunitySlug],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["gmail-search", opportunitySlug],
+      });
+    },
+  });
+
+  const unignoreEmail = useMutation({
+    mutationFn: (messageId: string) => api.gmailUnignoreEmail(opportunitySlug, messageId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["gmail-message-states", opportunitySlug],
@@ -135,6 +161,11 @@ export function AttachEmailModal({
           subject: e.subject,
           date: e.date,
         })),
+        ignoredEmails: messageStates.ignoredEmails.map((e) => ({
+          id: e.id,
+          subject: e.subject,
+          date: e.date,
+        })),
       }
     : undefined;
 
@@ -157,11 +188,16 @@ export function AttachEmailModal({
         messageStates={transformedMessageStates}
         onUnpick={(messageId) => unpickEmail.mutate(messageId)}
         onRestore={(messageId) => restoreEmail.mutate(messageId)}
+        onIgnore={(messageId) => ignoreEmail.mutate(messageId)}
+        onUnignore={(messageId) => unignoreEmail.mutate(messageId)}
         isUnpickPending={unpickEmail.isPending}
         isRestorePending={restoreEmail.isPending}
-        showDebugSection={true}
+        isIgnorePending={ignoreEmail.isPending}
+        isUnignorePending={unignoreEmail.isPending}
+        showDebugSection={false}
         onRefresh={handleRefresh}
         isRefreshing={isRefetching}
+        lastSyncTime={lastSyncTime}
       />
     </Modal>
   );

@@ -43,7 +43,7 @@ export const companyResearchResultSchema = z.object({
 });
 
 export const companyResearchApplyInputSchema = z.object({
-  targetOpportunityId: z.string().nullish(),
+  targetOpportunitySlug: z.string().nullish(),
   research: companyResearchResultSchema,
 });
 
