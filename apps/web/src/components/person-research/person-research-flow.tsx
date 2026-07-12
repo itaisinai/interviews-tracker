@@ -1,14 +1,16 @@
+import { useState } from "react";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { api } from "../../lib/api";
+import type { PersonResearchResult } from "../../lib/types";
+
 import {
   ConfirmResearchModal,
   LoadingResearchModal,
   ResearchErrorModal,
   ReviewResearchModal,
 } from "./person-research-modals";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-import type { PersonResearchResult } from "../../lib/types";
-import { api } from "../../lib/api";
-import { useState } from "react";
 
 type PersonInfo = {
   id?: string; // Add optional ID for updating existing person
@@ -43,8 +45,7 @@ export function PersonResearchFlow({
 }: PersonResearchFlowProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<FlowStep>("confirm");
-  const [researchResult, setResearchResult] =
-    useState<PersonResearchResult | null>(null);
+  const [researchResult, setResearchResult] = useState<PersonResearchResult | null>(null);
   const [saveForLater, setSaveForLater] = useState(true);
   const [linkedinUrlOverride, setLinkedinUrlOverride] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -61,13 +62,7 @@ export function PersonResearchFlow({
   };
 
   const research = useMutation({
-    mutationFn: async ({
-      linkedinUrl,
-      save,
-    }: {
-      linkedinUrl: string;
-      save: boolean;
-    }) => {
+    mutationFn: async ({ linkedinUrl, save }: { linkedinUrl: string; save: boolean }) => {
       setSaveForLater(save);
       setLinkedinUrlOverride(linkedinUrl);
       setStep("loading");
@@ -85,7 +80,7 @@ export function PersonResearchFlow({
         throw new Error(
           opportunityCompanyName || person.company
             ? `No matching LinkedIn profile was found for ${person.name} at ${opportunityCompanyName || person.company}. Try adding the person's LinkedIn URL or checking the company name.`
-            : `No LinkedIn profile was found for ${person.name}. Try adding the person's LinkedIn URL.`,
+            : `No LinkedIn profile was found for ${person.name}. Try adding the person's LinkedIn URL.`
         );
       }
 
@@ -101,7 +96,7 @@ export function PersonResearchFlow({
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Couldn't research this person. Please try again or add a LinkedIn URL.",
+          : "Couldn't research this person. Please try again or add a LinkedIn URL."
       );
       setStep("error");
     },
@@ -113,12 +108,7 @@ export function PersonResearchFlow({
         throw new Error("No research result to save");
       }
 
-      console.log(
-        "[SAVE PERSON] personId:",
-        personId,
-        "opportunitySlug:",
-        opportunitySlug,
-      );
+      console.log("[SAVE PERSON] personId:", personId, "opportunitySlug:", opportunitySlug);
 
       // If personId is provided, update existing person instead of creating new
       if (personId) {
@@ -126,10 +116,7 @@ export function PersonResearchFlow({
         // Update person's basic data from research result
         await api.updatePerson(personId, {
           name: researchResult.person.name,
-          linkedinUrl:
-            linkedinUrlOverride ||
-            researchResult.person.linkedinUrl ||
-            undefined,
+          linkedinUrl: linkedinUrlOverride || researchResult.person.linkedinUrl || undefined,
           title: researchResult.person.title || undefined,
           company: researchResult.person.company || undefined,
           avatarUrl: researchResult.person.avatarUrl || undefined,
@@ -152,8 +139,7 @@ export function PersonResearchFlow({
       const personRecord = await api.createPerson({
         name: researchResult.person.name,
         email: emailToStore,
-        linkedinUrl:
-          linkedinUrlOverride || researchResult.person.linkedinUrl || undefined,
+        linkedinUrl: linkedinUrlOverride || researchResult.person.linkedinUrl || undefined,
         title: researchResult.person.title || undefined,
         company: researchResult.person.company || undefined,
         avatarUrl: researchResult.person.avatarUrl || undefined,
@@ -162,10 +148,7 @@ export function PersonResearchFlow({
 
       // Save research
       if (saveForLater) {
-        await api.savePersonResearch(
-          personRecord.slug,
-          researchResult.research,
-        );
+        await api.savePersonResearch(personRecord.slug, researchResult.research);
       }
 
       return personRecord;
@@ -190,9 +173,7 @@ export function PersonResearchFlow({
       console.error("Save failed:", error);
       // Extract error message from API response
       const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to save contact. Please try again.";
+        error?.response?.data?.message || error?.message || "Failed to save contact. Please try again.";
       alert(errorMessage);
     },
   });
@@ -219,7 +200,7 @@ export function PersonResearchFlow({
 
     if (
       confirm(
-        `Mark ${researchResult.person.name} as wrong candidate? This will exclude them from future searches for this opportunity.`,
+        `Mark ${researchResult.person.name} as wrong candidate? This will exclude them from future searches for this opportunity.`
       )
     ) {
       try {

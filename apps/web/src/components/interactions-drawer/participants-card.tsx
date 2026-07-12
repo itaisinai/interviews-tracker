@@ -1,12 +1,14 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+
 import { useAuth0 } from "@auth0/auth0-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { MaterialIcon } from "@interviews-tracker/design-system";
+
+import { api } from "../../lib/api";
 import type { Person } from "../../lib/types";
 import { PersonInfoModal } from "../contacts/person-info-modal";
 import { PersonResearchFlow } from "../person-research/person-research-flow";
-import { api } from "../../lib/api";
-import { useState } from "react";
 
 type ParticipantsCardProps = {
   personNames: string[]; // Can contain names or emails
@@ -29,19 +31,12 @@ export function ParticipantsCard({
   const [personDetailModalOpen, setPersonDetailModalOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [selectedPersonName, setSelectedPersonName] = useState<string>("");
-  const [selectedLinkedinUrl, setSelectedLinkedinUrl] = useState<string | null>(
-    null,
-  );
+  const [selectedLinkedinUrl, setSelectedLinkedinUrl] = useState<string | null>(null);
 
   const markAsWrong = useMutation({
     mutationFn: async (personId: string) => {
       if (!opportunitySlug) throw new Error("No opportunity ID");
-      return api.markPersonAsWrong(
-        personId,
-        opportunitySlug,
-        selectedPersonName,
-        undefined,
-      );
+      return api.markPersonAsWrong(personId, opportunitySlug, selectedPersonName, undefined);
     },
     onSuccess: () => {
       // Refresh contacts list
@@ -66,11 +61,11 @@ export function ParticipantsCard({
       // Check if this is the current user
       const nameIsEmail = name.includes("@");
       const namesMatch = user?.name && name.toLowerCase() === user.name.toLowerCase();
-      const isCurrentUser = user?.email && (
-        (person?.email && person.email.toLowerCase() === user.email.toLowerCase()) ||
-        (nameIsEmail && name.toLowerCase() === user.email.toLowerCase()) ||
-        namesMatch
-      );
+      const isCurrentUser =
+        user?.email &&
+        ((person?.email && person.email.toLowerCase() === user.email.toLowerCase()) ||
+          (nameIsEmail && name.toLowerCase() === user.email.toLowerCase()) ||
+          namesMatch);
       return !isCurrentUser; // Exclude current user
     });
 
@@ -83,13 +78,8 @@ export function ParticipantsCard({
       <div className="bg-white rounded-lg border border-neutral-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <MaterialIcon
-              name="group"
-              className="text-[18px] text-neutral-600"
-            />
-            <h3 className="text-sm font-semibold text-neutral-900">
-              Participants
-            </h3>
+            <MaterialIcon name="group" className="text-[18px] text-neutral-600" />
+            <h3 className="text-sm font-semibold text-neutral-900">Participants</h3>
           </div>
         </div>
 
@@ -103,17 +93,12 @@ export function ParticipantsCard({
                 title={person?.title || undefined}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <MaterialIcon
-                    name="person"
-                    className="text-[18px] text-neutral-400 flex-shrink-0"
-                  />
+                  <MaterialIcon name="person" className="text-[18px] text-neutral-400 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-neutral-900 truncate">
-                      {name}
-                    </div>
+                    <div className="text-sm font-medium text-neutral-900 truncate">{name}</div>
                     {person?.title && (
                       <div className="text-xs text-neutral-600 truncate mt-0.5">
-                        {person.title.replace(/\s*\(Current\)\s*$/i, '')}
+                        {person.title.replace(/\s*\(Current\)\s*$/i, "")}
                       </div>
                     )}
                   </div>
@@ -133,10 +118,7 @@ export function ParticipantsCard({
                   className="flex-shrink-0 rounded-lg p-1.5 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-emerald-600"
                   title={person?.research ? "View details" : "Research person"}
                 >
-                  <MaterialIcon
-                    name={person?.research ? "badge" : "search"}
-                    className="text-[18px]"
-                  />
+                  <MaterialIcon name={person?.research ? "badge" : "search"} className="text-[18px]" />
                 </button>
               </div>
             );
@@ -177,7 +159,7 @@ export function ParticipantsCard({
             if (
               selectedPerson &&
               window.confirm(
-                `Mark ${selectedPerson.name} as the wrong person? This will help future searches exclude this candidate.`,
+                `Mark ${selectedPerson.name} as the wrong person? This will help future searches exclude this candidate.`
               )
             ) {
               markAsWrong.mutate(selectedPerson.slug);
@@ -188,9 +170,7 @@ export function ParticipantsCard({
           onDelete={() => {
             if (
               selectedPerson &&
-              window.confirm(
-                `Delete ${selectedPerson.name}? This will remove all their research data.`,
-              )
+              window.confirm(`Delete ${selectedPerson.name}? This will remove all their research data.`)
             ) {
               // You would implement delete here if needed
               setPersonDetailModalOpen(false);

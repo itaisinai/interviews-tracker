@@ -1,18 +1,18 @@
 import { useMemo } from "react";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "../../lib/api";
 import { gmailFlowMeta } from "../../lib/gmail";
 import type { Interaction } from "../../lib/types";
-import { useGmailState } from "./use-gmail-state";
+
+import { getChangedInteractionFields, type InteractionDiffField } from "./gmail-interaction-panel-helpers";
 import { useGmailConnection } from "./use-gmail-connection";
-import { useGmailSearch } from "./use-gmail-search";
-import { useGmailSave } from "./use-gmail-save";
 import { useGmailEffects } from "./use-gmail-effects";
 import { useGmailEmailActions } from "./use-gmail-email-actions";
-import {
-  getChangedInteractionFields,
-  type InteractionDiffField
-} from "./gmail-interaction-panel-helpers";
+import { useGmailSave } from "./use-gmail-save";
+import { useGmailSearch } from "./use-gmail-search";
+import { useGmailState } from "./use-gmail-state";
 
 type GmailInteractionPanelArgs = {
   opportunitySlug: string;
@@ -30,7 +30,7 @@ export function useGmailInteractionPanel({
   companyName,
   roleTitle,
   onSaved,
-  attachToInteractionSlug = null
+  attachToInteractionSlug = null,
 }: GmailInteractionPanelArgs) {
   const queryClient = useQueryClient();
   const statusQuery = useQuery({ queryKey: ["gmail-status"], queryFn: api.gmailStatus });
@@ -42,22 +42,19 @@ export function useGmailInteractionPanel({
   const gmailMessageStatesQuery = useQuery({
     queryKey: ["gmail-message-states", opportunitySlug],
     queryFn: () => api.gmailMessageStates(opportunitySlug),
-    enabled: Boolean(statusQuery.data?.connected && opportunitySlug)
+    enabled: Boolean(statusQuery.data?.connected && opportunitySlug),
   });
 
   const opportunityQuery = useQuery({
     queryKey: ["opportunity", opportunitySlug, "gmail-attach"],
     queryFn: () => api.opportunity(opportunitySlug),
     enabled: Boolean(statusQuery.data?.connected && opportunitySlug),
-    staleTime: 30_000
+    staleTime: 30_000,
   });
 
   const isAttachMode = Boolean(attachToInteractionSlug);
   const currentMeta = gmailFlowMeta[state.flowState];
-  const searchHint = useMemo(
-    () => `Searching Gmail for "${companyName}" from the last 180 days.`,
-    [companyName]
-  );
+  const searchHint = useMemo(() => `Searching Gmail for "${companyName}" from the last 180 days.`, [companyName]);
 
   // Connection logic
   const connectionHandlers = useGmailConnection({
@@ -69,7 +66,7 @@ export function useGmailInteractionPanel({
     setSaveMessage: state.setSaveMessage,
     setLastAction: state.setLastAction,
     activeRunIdRef: state.activeRunIdRef,
-    invalidateGmailStatus: () => queryClient.invalidateQueries({ queryKey: ["gmail-status"] })
+    invalidateGmailStatus: () => queryClient.invalidateQueries({ queryKey: ["gmail-status"] }),
   });
 
   // Search logic
@@ -91,15 +88,12 @@ export function useGmailInteractionPanel({
     setPendingPickedEmailIds: state.setPendingPickedEmailIds,
     setClearingEmailId: state.setClearingEmailId,
     activeRunIdRef: state.activeRunIdRef,
-    handleGmailActionError: connectionHandlers.handleGmailActionError
+    handleGmailActionError: connectionHandlers.handleGmailActionError,
   });
 
   // Computed values
   const attachTargetInteraction = useMemo(
-    () =>
-      opportunityQuery.data?.interactions.find(
-        (interaction) => interaction.slug === state.attachTargetId
-      ) ?? null,
+    () => opportunityQuery.data?.interactions.find((interaction) => interaction.slug === state.attachTargetId) ?? null,
     [state.attachTargetId, opportunityQuery.data?.interactions]
   );
 
@@ -120,7 +114,7 @@ export function useGmailInteractionPanel({
     setSelectedEmail: state.setSelectedEmail,
     setSelectedCandidate: state.setSelectedCandidate,
     setAnalysis: state.setAnalysis,
-    setPendingPickedEmailIds: state.setPendingPickedEmailIds
+    setPendingPickedEmailIds: state.setPendingPickedEmailIds,
   });
 
   // Email actions
@@ -132,7 +126,7 @@ export function useGmailInteractionPanel({
     setFlowState: state.setFlowState,
     setClearingEmailId: state.setClearingEmailId,
     setIgnoringEmailId: state.setIgnoringEmailId,
-    setPendingPickedEmailIds: state.setPendingPickedEmailIds
+    setPendingPickedEmailIds: state.setPendingPickedEmailIds,
   });
 
   // Side effects
@@ -143,7 +137,10 @@ export function useGmailInteractionPanel({
     selectedEmail: state.selectedEmail,
     attachToInteractionSlug,
     opportunitySlug,
-    interactions: (opportunityQuery.data?.interactions ?? []).map(i => ({ slug: i.slug, gmailMessageId: i.gmailMessageId })),
+    interactions: (opportunityQuery.data?.interactions ?? []).map((i) => ({
+      slug: i.slug,
+      gmailMessageId: i.gmailMessageId,
+    })),
     setProgress: state.setProgress,
     setSearchResults: state.setSearchResults,
     setSelectedCandidate: state.setSelectedCandidate,
@@ -154,7 +151,7 @@ export function useGmailInteractionPanel({
     setFlowState: state.setFlowState,
     setMessage: state.setMessage,
     setError: state.setError,
-    handleGmailActionError: connectionHandlers.handleGmailActionError
+    handleGmailActionError: connectionHandlers.handleGmailActionError,
   });
 
   const changedInteractionFields = useMemo(
@@ -166,19 +163,21 @@ export function useGmailInteractionPanel({
     () =>
       Array.from(changedInteractionFields).map(
         (field) =>
-          ({
-            date: "Date",
-            type: "Type",
-            stage: "Stage",
-            status: "Status",
-            personName: "Person name",
-            personRole: "Person role",
-            agenda: "Agenda",
-            meetingLink: "Meeting link",
-            notes: "Notes",
-            outcome: "Outcome",
-            followUp: "Follow-up"
-          } satisfies Record<InteractionDiffField, string>)[field]
+          (
+            ({
+              date: "Date",
+              type: "Type",
+              stage: "Stage",
+              status: "Status",
+              personName: "Person name",
+              personRole: "Person role",
+              agenda: "Agenda",
+              meetingLink: "Meeting link",
+              notes: "Notes",
+              outcome: "Outcome",
+              followUp: "Follow-up",
+            }) satisfies Record<InteractionDiffField, string>
+          )[field]
       ),
     [changedInteractionFields]
   );
@@ -226,8 +225,7 @@ export function useGmailInteractionPanel({
     selectedCandidateId: state.selectedCandidate?.id ?? null,
     selectedCandidate: state.selectedCandidate,
     isParsingCandidateId:
-      state.selectedCandidate &&
-      (state.flowState === "fetching_email" || state.flowState === "parsing_email")
+      state.selectedCandidate && (state.flowState === "fetching_email" || state.flowState === "parsing_email")
         ? state.selectedCandidate.id
         : null,
     actionDisabled:
@@ -279,8 +277,9 @@ export function useGmailInteractionPanel({
       state.setAnalysis(null);
       state.setMessage("Ready to search Gmail again.");
     },
-    onSaveInteraction: (draftOverride?: typeof state.draft) => saveHandlers.saveInteraction.mutateAsync(draftOverride ?? undefined),
+    onSaveInteraction: (draftOverride?: typeof state.draft) =>
+      saveHandlers.saveInteraction.mutateAsync(draftOverride ?? undefined),
     onDraftChange: state.setDraft,
-    onAttachTargetIdChange: state.setAttachTargetId
+    onAttachTargetIdChange: state.setAttachTargetId,
   };
 }

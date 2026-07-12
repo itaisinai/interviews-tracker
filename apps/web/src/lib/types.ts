@@ -1,58 +1,52 @@
 export type {
-  PipelineType,
-  Priority,
-  JobStatus,
-  InteractionStatus,
-  InteractionType,
-  TaskStatus,
-  OfferStatus,
-  Option,
-  OptionsResponse,
-  Opportunity,
-  Interaction,
-  CompanySummary,
-  CompanyDetail
-} from "@interviews-tracker/core";
-
-export type {
-  ParsedJobDescription,
   CompanyEnrichment,
+  CompanyResearchApplyResponse,
   CompanyResearchExistingData,
   CompanyResearchInput,
   CompanyResearchResult,
-  CompanyResearchApplyResponse,
   InteractionDraft,
+  ParsedJobDescription,
   PersonResearchInput,
-  PersonResearchResult
+  PersonResearchResult,
 } from "@interviews-tracker/ai";
-
-export type {
-  GmailStatus,
-  GmailConnectRequest,
-  GmailConnectResponse,
-  GmailMessageCandidate,
-  GmailEmailClassification,
-  GmailSearchCandidate,
-  GmailSearchResponse,
-  GmailStructuredEmailCalendar as GmailEmailCalendar,
-  GmailStructuredEmail,
-  GmailSearchQuery,
-  GmailSearchCandidateMetadata,
-  GmailSearchCandidateClassification
-} from "@interviews-tracker/integrations";
-
 export type {
   GmailEmailExtractionAnalysis,
-  GmailInteractionDraft
+  GmailInteractionDraft,
 } from "@interviews-tracker/ai";
-
+export type { GmailParsedEmailResponse } from "@interviews-tracker/api-client";
 export type {
-  GmailParsedEmailResponse
-} from "@interviews-tracker/api-client";
+  CompanyDetail,
+  CompanySummary,
+  Interaction,
+  InteractionStatus,
+  InteractionType,
+  JobStatus,
+  OfferStatus,
+  Opportunity,
+  Option,
+  OptionsResponse,
+  PipelineType,
+  Priority,
+  TaskStatus,
+} from "@interviews-tracker/core";
+export type {
+  GmailConnectRequest,
+  GmailConnectResponse,
+  GmailStructuredEmailCalendar as GmailEmailCalendar,
+  GmailEmailClassification,
+  GmailMessageCandidate,
+  GmailSearchCandidate,
+  GmailSearchCandidateClassification,
+  GmailSearchCandidateMetadata,
+  GmailSearchQuery,
+  GmailSearchResponse,
+  GmailStatus,
+  GmailStructuredEmail,
+} from "@interviews-tracker/integrations";
 
 export type Person = {
   slug: string;
-  ownerEmail: string;     // Email of user who owns this contact
+  ownerEmail: string; // Email of user who owns this contact
   name: string;
   email: string | null;
   linkedinUrl: string | null;

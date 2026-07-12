@@ -1,26 +1,26 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
-import { FixCompanyMismatchModal } from "./fix-company-mismatch-modal";
-import { ManualJobUpdateModal } from "./manual-job-update-modal";
+
 import { MaterialIcon } from "@interviews-tracker/design-system";
-import type { Person } from "../../lib/types";
-import { PersonInfoModal } from "./person-info-modal";
-import { PersonResearchFlow } from "../person-research/person-research-flow";
-import { ReviewJobTimelineModal } from "./review-job-timeline-modal";
+
 import { api } from "../../lib/api";
 import { detectCompanyMismatch } from "../../lib/person-utils";
-import { useState } from "react";
+import type { Person } from "../../lib/types";
+import { PersonResearchFlow } from "../person-research/person-research-flow";
+
+import { FixCompanyMismatchModal } from "./fix-company-mismatch-modal";
+import { ManualJobUpdateModal } from "./manual-job-update-modal";
+import { PersonInfoModal } from "./person-info-modal";
+import { ReviewJobTimelineModal } from "./review-job-timeline-modal";
 
 type ContactsListProps = {
   opportunitySlug: string;
   companyName: string;
 };
 
-export function ContactsList({
-  opportunitySlug,
-  companyName,
-}: ContactsListProps) {
+export function ContactsList({ opportunitySlug, companyName }: ContactsListProps) {
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
@@ -32,15 +32,9 @@ export function ContactsList({
     linkedinUrl?: string;
     email?: string;
   } | null>(null);
-  const [researchPersonId, setResearchPersonId] = useState<string | undefined>(
-    undefined,
-  ); // Explicit ID for updates
-  const [fixMismatchPerson, setFixMismatchPerson] = useState<Person | null>(
-    null,
-  );
-  const [manualUpdatePerson, setManualUpdatePerson] = useState<Person | null>(
-    null,
-  );
+  const [researchPersonId, setResearchPersonId] = useState<string | undefined>(undefined); // Explicit ID for updates
+  const [fixMismatchPerson, setFixMismatchPerson] = useState<Person | null>(null);
+  const [manualUpdatePerson, setManualUpdatePerson] = useState<Person | null>(null);
   const [reviewTimeline, setReviewTimeline] = useState<{
     person: Person;
     currentTimeline: any;
@@ -65,13 +59,7 @@ export function ContactsList({
   });
 
   const parseJob = useMutation({
-    mutationFn: async ({
-      personId,
-      jobDescriptionText,
-    }: {
-      personId: string;
-      jobDescriptionText: string;
-    }) => {
+    mutationFn: async ({ personId, jobDescriptionText }: { personId: string; jobDescriptionText: string }) => {
       return await api.parseCurrentJob(personId, jobDescriptionText);
     },
     onSuccess: (data, variables) => {
@@ -87,20 +75,12 @@ export function ContactsList({
     },
     onError: (error: any) => {
       console.error("Parse job failed:", error);
-      alert(
-        error?.message || "Failed to parse job description. Please try again.",
-      );
+      alert(error?.message || "Failed to parse job description. Please try again.");
     },
   });
 
   const applyJobUpdate = useMutation({
-    mutationFn: async ({
-      personId,
-      updatedTimeline,
-    }: {
-      personId: string;
-      updatedTimeline: any;
-    }) => {
+    mutationFn: async ({ personId, updatedTimeline }: { personId: string; updatedTimeline: any }) => {
       return await api.applyJobUpdate(personId, updatedTimeline);
     },
     onSuccess: () => {
@@ -120,9 +100,7 @@ export function ContactsList({
   const typedContacts = contacts as Person[];
 
   // Derive selectedPerson from the latest contacts data
-  const selectedPerson = selectedPersonId
-    ? typedContacts.find((c) => c.slug === selectedPersonId) || null
-    : null;
+  const selectedPerson = selectedPersonId ? typedContacts.find((c) => c.slug === selectedPersonId) || null : null;
 
   if (isLoading) {
     return (
@@ -138,14 +116,10 @@ export function ContactsList({
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex w-full items-center justify-between rounded-lg p-2 transition-colors hover:bg-surface-container"
       >
-        <h3 className="font-title-md text-title-md font-bold uppercase tracking-wide text-on-surface">
-          Contacts
-        </h3>
+        <h3 className="font-title-md text-title-md font-bold uppercase tracking-wide text-on-surface">Contacts</h3>
         <div className="flex items-center gap-2">
           {typedContacts.length > 0 && (
-            <span className="text-body-sm text-on-surface-variant">
-              {typedContacts.length}
-            </span>
+            <span className="text-body-sm text-on-surface-variant">{typedContacts.length}</span>
           )}
           <ChevronDown
             className={`h-5 w-5 text-on-surface-variant transition-transform ${isExpanded ? "rotate-180" : ""}`}
@@ -156,9 +130,7 @@ export function ContactsList({
       {isExpanded && (
         <>
           {typedContacts.length === 0 ? (
-            <p className="text-body-sm text-on-surface-variant">
-              No contacts yet
-            </p>
+            <p className="text-body-sm text-on-surface-variant">No contacts yet</p>
           ) : (
             <div className="space-y-2">
               {typedContacts.map((contact) => (
@@ -175,10 +147,7 @@ export function ContactsList({
                     className="flex min-w-0 flex-1 items-start gap-3 text-left"
                   >
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-                      <MaterialIcon
-                        name="person"
-                        className="text-[20px] text-primary"
-                      />
+                      <MaterialIcon name="person" className="text-[20px] text-primary" />
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -189,9 +158,7 @@ export function ContactsList({
                             {contact.email ? ` (${contact.email})` : ""}
                           </p>
                           {contact.title && (
-                            <p className="truncate text-body-sm text-on-surface-variant">
-                              {contact.title}
-                            </p>
+                            <p className="truncate text-body-sm text-on-surface-variant">{contact.title}</p>
                           )}
                         </div>
                         <MaterialIcon
@@ -203,24 +170,14 @@ export function ContactsList({
                       <div className="mt-1 flex items-center gap-2">
                         {contact.research && (
                           <div className="flex items-center gap-1.5">
-                            <MaterialIcon
-                              name="check_circle"
-                              className="text-[16px] text-tertiary"
-                            />
-                            <span className="text-body-xs text-tertiary">
-                              Researched
-                            </span>
+                            <MaterialIcon name="check_circle" className="text-[16px] text-tertiary" />
+                            <span className="text-body-xs text-tertiary">Researched</span>
                           </div>
                         )}
                         {detectCompanyMismatch(contact, companyName) && (
                           <div className="flex items-center gap-1.5">
-                            <MaterialIcon
-                              name="warning"
-                              className="text-[14px] text-warning"
-                            />
-                            <span className="text-body-xs font-medium text-warning">
-                              Company mismatch
-                            </span>
+                            <MaterialIcon name="warning" className="text-[14px] text-warning" />
+                            <span className="text-body-xs font-medium text-warning">Company mismatch</span>
                           </div>
                         )}
                       </div>
@@ -267,11 +224,7 @@ export function ContactsList({
             setSelectedPersonId(null);
           }}
           onDelete={() => {
-            if (
-              window.confirm(
-                `Delete ${selectedPerson.name}? This will remove all their research data.`,
-              )
-            ) {
+            if (window.confirm(`Delete ${selectedPerson.name}? This will remove all their research data.`)) {
               deletePerson.mutate(selectedPerson.slug);
               setSelectedPersonId(null);
             }
@@ -305,10 +258,7 @@ export function ContactsList({
           opportunityCompanyName={companyName}
           onAutoRefresh={() => {
             // Trigger auto-refresh by re-running person research WITH existing person ID
-            console.log(
-              "[AUTO REFRESH] Setting personId:",
-              fixMismatchPerson.slug,
-            );
+            console.log("[AUTO REFRESH] Setting personId:", fixMismatchPerson.slug);
             setResearchPersonId(fixMismatchPerson.slug); // Set ID separately for clarity
             setResearchPerson({
               name: fixMismatchPerson.name,

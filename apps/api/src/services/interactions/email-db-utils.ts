@@ -8,7 +8,7 @@ export async function fetchInteractionWithEmails(interactionId: string) {
     where: { id: interactionId },
     include: {
       attachedEmails: {
-        orderBy: { receivedDate: 'desc' }
+        orderBy: { receivedDate: "desc" },
       },
       jobOpportunity: {
         select: {
@@ -21,16 +21,16 @@ export async function fetchInteractionWithEmails(interactionId: string) {
           company: {
             select: {
               slug: true,
-              name: true
-            }
-          }
-        }
-      }
-    }
+              name: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!interaction) {
-    throw new Error('Interaction not found');
+    throw new Error("Interaction not found");
   }
 
   return interaction;
@@ -39,27 +39,23 @@ export async function fetchInteractionWithEmails(interactionId: string) {
 /**
  * Mark a Gmail message as USED in the message state
  */
-export async function markEmailAsUsed(
-  auth0Email: string,
-  gmailMessageId: string,
-  jobOpportunityId: string
-) {
+export async function markEmailAsUsed(auth0Email: string, gmailMessageId: string, jobOpportunityId: string) {
   await prisma.gmailMessageState.upsert({
     where: {
       auth0Email_messageId: {
         auth0Email,
-        messageId: gmailMessageId
-      }
+        messageId: gmailMessageId,
+      },
     },
     create: {
       auth0Email,
       jobOpportunityId,
       messageId: gmailMessageId,
-      status: "USED"
+      status: "USED",
     },
     update: {
       status: "USED",
-      jobOpportunityId
-    }
+      jobOpportunityId,
+    },
   });
 }

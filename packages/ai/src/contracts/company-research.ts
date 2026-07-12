@@ -9,7 +9,7 @@ export const companyResearchExistingDataSchema = z.object({
   companyDescription: z.string().nullable().optional(),
   productDescription: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
-  employees: z.string().nullable().optional()
+  employees: z.string().nullable().optional(),
 });
 
 export const companyResearchInputSchema = z.object({
@@ -18,7 +18,7 @@ export const companyResearchInputSchema = z.object({
   knownContext: z.string().nullish(),
   linkedinUrl: z.string().url().nullish(),
   existingCompanyData: companyResearchExistingDataSchema.nullish(),
-  forceResearch: z.boolean().optional()
+  forceResearch: z.boolean().optional(),
 });
 
 export const companyResearchResultSchema = z.object({
@@ -39,12 +39,12 @@ export const companyResearchResultSchema = z.object({
   productDescription: z.string().nullable(),
   sourceUrls: z.array(z.string().url()),
   confidence: z.enum(["HIGH", "MEDIUM", "LOW"]),
-  rawImportantNotes: z.array(z.string())
+  rawImportantNotes: z.array(z.string()),
 });
 
 export const companyResearchApplyInputSchema = z.object({
   targetOpportunitySlug: z.string().nullish(),
-  research: companyResearchResultSchema
+  research: companyResearchResultSchema,
 });
 
 export type CompanyResearchExistingData = z.infer<typeof companyResearchExistingDataSchema>;

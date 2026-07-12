@@ -1,12 +1,13 @@
-import type { GmailMessageResponse } from "../gmail/gmail-message-utils.js";
-import { fetchJson } from "../gmail/gmail-http.js";
-import { getAccessTokenForEmail } from "../gmail/gmail-auth.js";
 import { prisma } from "../../lib/prisma.js";
-import { resolveInteractionId } from "../../repositories/interaction-repository.js";
-import { fetchAndParseGmailMessage, createExtractedData } from "./email-fetch-utils.js";
-import { generateAiSuggestionFromEmails, aggregateAndSaveInteractionEmails } from "./email-ai-aggregation.js";
-import { fetchInteractionWithEmails, markEmailAsUsed } from "./email-db-utils.js";
 import { serializeInteraction, serializeInteractionEmails } from "../../lib/serializers.js";
+import { resolveInteractionId } from "../../repositories/interaction-repository.js";
+import { getAccessTokenForEmail } from "../gmail/gmail-auth.js";
+import { fetchJson } from "../gmail/gmail-http.js";
+import type { GmailMessageResponse } from "../gmail/gmail-message-utils.js";
+
+import { aggregateAndSaveInteractionEmails, generateAiSuggestionFromEmails } from "./email-ai-aggregation.js";
+import { fetchInteractionWithEmails, markEmailAsUsed } from "./email-db-utils.js";
+import { createExtractedData, fetchAndParseGmailMessage } from "./email-fetch-utils.js";
 
 /**
  * Attach a Gmail message to an interaction
@@ -25,7 +26,7 @@ export async function attachEmailToInteraction(params: {
   // Verify interaction ownership
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
-    select: { ownerEmail: true, jobOpportunityId: true }
+    select: { ownerEmail: true, jobOpportunityId: true },
   });
 
   if (!interaction) {
@@ -41,9 +42,9 @@ export async function attachEmailToInteraction(params: {
     where: {
       interactionId_gmailMessageId: {
         interactionId,
-        gmailMessageId
-      }
-    }
+        gmailMessageId,
+      },
+    },
   });
 
   if (existing) {
@@ -66,8 +67,8 @@ export async function attachEmailToInteraction(params: {
       subject: parsed.structured.subject,
       from: parsed.structured.fromRaw,
       receivedDate: new Date(parsed.structured.internalDate),
-      extractedData: createExtractedData(parsed) as any
-    }
+      extractedData: createExtractedData(parsed) as any,
+    },
   });
 
   // Mark email as used
@@ -77,12 +78,12 @@ export async function attachEmailToInteraction(params: {
   const refreshedInteraction = await fetchInteractionWithEmails(interactionId);
   const aiSuggestion = await generateAiSuggestionFromEmails(refreshedInteraction);
 
-  console.log('[ATTACH SINGLE] AI suggestion (NOT saved):', aiSuggestion?.notes?.slice(0, 200));
+  console.log("[ATTACH SINGLE] AI suggestion (NOT saved):", aiSuggestion?.notes?.slice(0, 200));
 
   return {
     email: serializeInteractionEmails([interactionEmail])[0],
     interaction: serializeInteraction(refreshedInteraction),
-    aiSuggestion
+    aiSuggestion,
   };
 }
 
@@ -109,7 +110,7 @@ export async function attachMultipleEmailsToInteraction(params: {
   // Verify interaction ownership
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
-    select: { ownerEmail: true, jobOpportunityId: true }
+    select: { ownerEmail: true, jobOpportunityId: true },
   });
 
   if (!interaction) {
@@ -134,9 +135,9 @@ export async function attachMultipleEmailsToInteraction(params: {
       where: {
         interactionId_gmailMessageId: {
           interactionId,
-          gmailMessageId
-        }
-      }
+          gmailMessageId,
+        },
+      },
     });
 
     if (existing) {
@@ -155,8 +156,8 @@ export async function attachMultipleEmailsToInteraction(params: {
         subject: parsed.structured.subject,
         from: parsed.structured.fromRaw,
         receivedDate: new Date(parsed.structured.internalDate),
-        extractedData: createExtractedData(parsed) as any
-      }
+        extractedData: createExtractedData(parsed) as any,
+      },
     });
 
     attachedEmails.push(interactionEmail);
@@ -169,13 +170,13 @@ export async function attachMultipleEmailsToInteraction(params: {
   const refreshedInteraction = await fetchInteractionWithEmails(interactionId);
   const aiSuggestion = await generateAiSuggestionFromEmails(refreshedInteraction);
 
-  console.log('[ATTACH] AI suggestion (NOT saved):', aiSuggestion?.notes?.slice(0, 200));
-  console.log('[ATTACH] Returning interaction with AI suggestion for review');
+  console.log("[ATTACH] AI suggestion (NOT saved):", aiSuggestion?.notes?.slice(0, 200));
+  console.log("[ATTACH] Returning interaction with AI suggestion for review");
 
   return {
     newlyAttachedEmails: serializeInteractionEmails(attachedEmails),
     interaction: serializeInteraction(refreshedInteraction),
-    aiSuggestion
+    aiSuggestion,
   };
 }
 
@@ -196,7 +197,7 @@ export async function removeEmailFromInteraction(params: {
   // Verify interaction ownership
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
-    select: { ownerEmail: true }
+    select: { ownerEmail: true },
   });
 
   if (!interaction) {
@@ -208,7 +209,7 @@ export async function removeEmailFromInteraction(params: {
   }
 
   await prisma.interactionEmail.delete({
-    where: { id: emailId }
+    where: { id: emailId },
   });
 
   // Re-aggregate remaining emails
@@ -227,7 +228,7 @@ export async function listInteractionEmails(auth0Email: string, interactionSlugO
   // Verify interaction ownership
   const interaction = await prisma.interaction.findUnique({
     where: { id: interactionId },
-    select: { ownerEmail: true }
+    select: { ownerEmail: true },
   });
 
   if (!interaction) {
@@ -240,7 +241,7 @@ export async function listInteractionEmails(auth0Email: string, interactionSlugO
 
   const emails = await prisma.interactionEmail.findMany({
     where: { interactionId },
-    orderBy: { receivedDate: 'desc' }
+    orderBy: { receivedDate: "desc" },
   });
 
   return serializeInteractionEmails(emails);
@@ -261,9 +262,9 @@ export async function reparseInteractionEmails(auth0Email: string, interactionSl
     include: {
       attachedEmails: true,
       jobOpportunity: {
-        select: { ownerEmail: true }
-      }
-    }
+        select: { ownerEmail: true },
+      },
+    },
   });
 
   if (!interaction) {
@@ -277,7 +278,7 @@ export async function reparseInteractionEmails(auth0Email: string, interactionSl
 
   // Re-fetch and re-parse any emails that have null extractedData OR missing plainText
   // This handles legacy emails that were attached before we added plainText extraction
-  const emailsNeedingParse = interaction.attachedEmails.filter(e => {
+  const emailsNeedingParse = interaction.attachedEmails.filter((e) => {
     if (!e.extractedData) return true;
     const data = e.extractedData as any;
     const hasPlainText = data?.structured?.plainText;
@@ -301,37 +302,39 @@ export async function reparseInteractionEmails(auth0Email: string, interactionSl
           { headers: { Authorization: `Bearer ${access.accessToken}` } }
         );
 
-        console.log(`[REPARSE] Fetched email subject: ${rawMessage.payload?.headers?.find(h => h.name === 'Subject')?.value}`);
+        console.log(
+          `[REPARSE] Fetched email subject: ${rawMessage.payload?.headers?.find((h) => h.name === "Subject")?.value}`
+        );
 
         const parsed = await fetchAndParseGmailMessage(email.gmailMessageId, access);
 
-        console.log('[REPARSE] Parsed structuredEmail:', {
+        console.log("[REPARSE] Parsed structuredEmail:", {
           subject: parsed.structured.subject,
           hasPlainText: !!parsed.structured.plainText,
           plainTextLength: parsed.structured.plainText?.length,
-          plainTextPreview: parsed.structured.plainText?.slice(0, 200)
+          plainTextPreview: parsed.structured.plainText?.slice(0, 200),
         });
 
         const dataToSave = {
           subject: parsed.structured.subject,
           from: parsed.structured.fromRaw,
           receivedDate: new Date(parsed.structured.internalDate),
-          extractedData: createExtractedData(parsed) as any
+          extractedData: createExtractedData(parsed) as any,
         };
 
-        console.log('[REPARSE] Saving to database:', {
+        console.log("[REPARSE] Saving to database:", {
           emailId: email.id,
           hasPlainText: !!(dataToSave.extractedData as any).structured.plainText,
-          plainTextLength: (dataToSave.extractedData as any).structured.plainText?.length
+          plainTextLength: (dataToSave.extractedData as any).structured.plainText?.length,
         });
 
         // Update the email with parsed data
         await prisma.interactionEmail.update({
           where: { id: email.id },
-          data: dataToSave
+          data: dataToSave,
         });
 
-        console.log('[REPARSE] ✅ Database updated for email', email.id);
+        console.log("[REPARSE] ✅ Database updated for email", email.id);
       } catch (error) {
         console.error(`Failed to re-parse email ${email.gmailMessageId}:`, error);
         // Continue with other emails even if one fails
@@ -344,11 +347,11 @@ export async function reparseInteractionEmails(auth0Email: string, interactionSl
   const refreshedInteraction = await fetchInteractionWithEmails(interactionId);
   const aiSuggestion = await generateAiSuggestionFromEmails(refreshedInteraction);
 
-  console.log('[REPARSE] AI suggestion (NOT saved):', aiSuggestion?.notes?.slice(0, 200));
-  console.log('[REPARSE] Returning interaction with AI suggestion for review');
+  console.log("[REPARSE] AI suggestion (NOT saved):", aiSuggestion?.notes?.slice(0, 200));
+  console.log("[REPARSE] Returning interaction with AI suggestion for review");
 
   return {
     ...refreshedInteraction,
-    aiSuggestion // Frontend can use this to pre-fill edit form
+    aiSuggestion, // Frontend can use this to pre-fill edit form
   };
 }
