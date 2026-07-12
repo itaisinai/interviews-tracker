@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { MaterialIcon, PageLoadingState } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon, PageLoadingState } from "@interviews-tracker/design-system";
 
 import { api } from "../lib/api";
 import {
@@ -157,9 +157,9 @@ export function SearchPage() {
               </div>
               <h3 className="font-title-md text-title-md font-bold">No results found</h3>
               <p className="mt-2 text-body-md text-on-surface-variant">Try searching for something else</p>
-              <button type="button" className="btn btn-secondary mt-6" onClick={() => setQuery("")}>
+              <Button variant="secondary" className="mt-6" onClick={() => setQuery("")}>
                 Clear search
-              </button>
+              </Button>
             </div>
           )}
         </main>

@@ -1,4 +1,4 @@
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { CompanyResearchExistingData, CompanyResearchResult } from "../../lib/types";
 
@@ -44,10 +44,10 @@ export function CompanyResearchReview({
           <h4 className="font-title-md text-title-md font-bold">Extracted company research</h4>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="btn btn-secondary text-error hover:bg-error-container" onClick={onCancel}>
+          <Button variant="secondary" className="text-error hover:bg-error-container" onClick={onCancel}>
             <MaterialIcon name="close" />
             Cancel
-          </button>
+          </Button>
           <span className="rounded-full bg-primary-container px-3 py-1 font-label-md text-label-md text-on-primary-container">
             {research.confidence} confidence
           </span>

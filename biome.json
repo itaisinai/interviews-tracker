@@ -46,6 +46,9 @@
         "noNonNullAssertion": "off",
         "useImportType": "off",
         "useNodejsImportProtocol": "off"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "off"
       }
     }
   },

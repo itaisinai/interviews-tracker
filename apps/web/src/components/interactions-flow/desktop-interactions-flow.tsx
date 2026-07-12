@@ -1,4 +1,4 @@
-import { InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { Interaction, Opportunity } from "../../lib/types";
 import { PageIntro } from "../app-shell";
@@ -67,14 +67,10 @@ export function DesktopInteractionsFlow({
         actions={
           <>
             {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={showGmailImport ? onCloseGmailImport : onOpenGmailImport}
-            >
+            <Button variant="secondary" onClick={showGmailImport ? onCloseGmailImport : onOpenGmailImport}>
               <MaterialIcon name="mail" />
               {showGmailImport ? "Hide Gmail Import" : "Add interaction from Gmail"}
-            </button>
+            </Button>
           </>
         }
       />

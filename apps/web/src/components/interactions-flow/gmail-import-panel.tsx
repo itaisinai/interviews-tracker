@@ -1,4 +1,4 @@
-import { FormField, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, FormField, MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { Opportunity } from "../../lib/types";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
@@ -51,10 +51,10 @@ export function GmailImportPanel({
           onSelectOpportunity={onSelectOpportunity}
         />
         {onClose ? (
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             <MaterialIcon name="close" />
             Close
-          </button>
+          </Button>
         ) : null}
       </div>
       <ImportBody selectedOpportunity={selectedOpportunity} onSaved={onSaved} />

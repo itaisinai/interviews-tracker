@@ -218,7 +218,7 @@ export function DashboardPage() {
                   key={item.slug}
                   type="button"
                   className={`flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary ${index > 0 ? "border-t border-outline-variant/40" : ""}`}
-                  aria-label={`Open interaction for ${item.jobOpportunity?.company.name ?? item.type}`}
+                  aria-label={`Open interaction for ${item.jobOpportunity?.company?.name ?? item.type}`}
                   onClick={() => setSelectedInteractionId(item.slug)}
                 >
                   <div className="w-10 shrink-0 text-center">
@@ -229,7 +229,7 @@ export function DashboardPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate font-body-lg text-body-lg font-semibold text-on-background">
-                      {item.jobOpportunity?.company.name ?? item.type}
+                      {item.jobOpportunity?.company?.name ?? item.type}
                     </h3>
                     <p className="truncate font-body-md text-body-md text-on-surface-variant">
                       {item.agenda ?? item.followUp ?? item.type}
@@ -289,7 +289,7 @@ export function DashboardPage() {
                   key={item.slug}
                   type="button"
                   className="w-full rounded-xl border border-outline-variant bg-white p-5 text-left shadow-sm transition-all hover:border-primary/40 hover:bg-surface-container-low hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  aria-label={`Open interaction for ${item.jobOpportunity?.company.name ?? item.type}`}
+                  aria-label={`Open interaction for ${item.jobOpportunity?.company?.name ?? item.type}`}
                   onClick={() => setSelectedInteractionId(item.slug)}
                 >
                   <div className="mb-2 flex items-center gap-2">
@@ -300,7 +300,7 @@ export function DashboardPage() {
                     <MaterialIcon name="call" filled className="text-primary" />
                     <span className="font-semibold">{item.type}</span>
                   </div>
-                  <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.company.name}</h4>
+                  <h4 className="font-headline-md text-headline-md">{item.jobOpportunity?.company?.name}</h4>
                   <p className="mt-1 text-body-md text-on-surface-variant">{item.agenda}</p>
                   {item.followUp ? (
                     <p className="mt-3 rounded-lg bg-surface-container-low p-3 text-body-md italic text-on-background">

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { Badge } from "../badge";
 
@@ -79,10 +79,10 @@ export function EditableDetail({
           ) : (
             <input className="input" value={value ?? ""} onChange={(event) => onChange(event.target.value || null)} />
           )}
-          <button type="button" className="btn btn-secondary" onClick={onDone}>
+          <Button variant="secondary" onClick={onDone}>
             <MaterialIcon name="check" />
             Save
-          </button>
+          </Button>
         </div>
       ) : isUrl && value ? (
         <a

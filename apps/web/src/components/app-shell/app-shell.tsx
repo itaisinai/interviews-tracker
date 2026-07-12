@@ -5,7 +5,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactNode } from "react";
 
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { NotificationsBell } from "../notifications";
 import { TelegramBot } from "../telegram-bot";
@@ -226,14 +226,14 @@ export function AppShell() {
               <MaterialIcon name="help_outline" />
             </button>
             <div className="hidden lg:block">
-              <button
-                type="button"
-                className="btn btn-primary rounded-full shadow-sm"
+              <Button
+                variant="primary"
+                className="rounded-full shadow-sm"
                 onClick={() => navigate("/opportunities/new")}
               >
                 <MaterialIcon name="add" />
                 Add Opportunity
-              </button>
+              </Button>
             </div>
             <div className="hidden text-right sm:block">
               <p className="max-w-40 truncate font-label-md text-label-md text-on-background">{displayName}</p>

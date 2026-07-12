@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 
-import { DataTable, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, DataTable, MaterialIcon } from "@interviews-tracker/design-system";
 import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 import { PageIntro } from "../components/app-shell";
@@ -390,10 +390,10 @@ export function OpportunitiesPage() {
           title="Opportunities"
           description="Manage your active pipeline and potential leads."
           actions={
-            <Link className="btn btn-primary" to="/opportunities/new">
+            <Button variant="primary" onClick={() => navigate("/opportunities/new")}>
               <MaterialIcon name="add" />
               Add Opportunity
-            </Link>
+            </Button>
           }
         />
 

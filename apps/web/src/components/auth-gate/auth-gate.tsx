@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useState } from "react";
 
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { setAccessTokenGetter } from "../../lib/api";
 
@@ -113,9 +113,9 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
   if (error) {
     return (
       <AuthPanel title="Login Error" description={error.message}>
-        <button
-          type="button"
-          className="btn btn-primary w-full"
+        <Button
+          variant="primary"
+          className="w-full"
           onClick={() =>
             void loginWithRedirect({
               authorizationParams: { connection: "google-oauth2" },
@@ -124,7 +124,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
         >
           <MaterialIcon name="login" />
           Try Again
-        </button>
+        </Button>
       </AuthPanel>
     );
   }
@@ -132,9 +132,9 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
   if (!isAuthenticated) {
     return (
       <AuthPanel title="Sign in" description="Use your authorized Google account to access CareerFlow.">
-        <button
-          type="button"
-          className="btn btn-primary w-full"
+        <Button
+          variant="primary"
+          className="w-full"
           onClick={() =>
             void loginWithRedirect({
               authorizationParams: { connection: "google-oauth2" },
@@ -143,7 +143,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
         >
           <MaterialIcon name="login" />
           Continue with Google
-        </button>
+        </Button>
       </AuthPanel>
     );
   }
@@ -161,9 +161,9 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
   if (tokenError) {
     return (
       <AuthPanel title="Token Error" description={tokenError}>
-        <button
-          type="button"
-          className="btn btn-primary w-full"
+        <Button
+          variant="primary"
+          className="w-full"
           onClick={() =>
             void loginWithRedirect({
               authorizationParams: {
@@ -176,7 +176,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
         >
           <MaterialIcon name="login" />
           Try Again
-        </button>
+        </Button>
       </AuthPanel>
     );
   }

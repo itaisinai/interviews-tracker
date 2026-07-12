@@ -99,11 +99,11 @@ export function OpportunityFormPage() {
     runState === "extracting_fields" ||
     runState === "normalizing_result";
 
-  const companySizeOption = findMatchingOption(options?.companySizes, parseResult?.company.employees);
-  const companyStageOption = findMatchingOption(options?.companyStages, parseResult?.company.stage);
-  const workModelOption = findMatchingOption(options?.workModels, parseResult?.company.workModel);
+  const companySizeOption = findMatchingOption(options?.companySizes, parseResult?.company?.employees);
+  const companyStageOption = findMatchingOption(options?.companyStages, parseResult?.company?.stage);
+  const workModelOption = findMatchingOption(options?.workModels, parseResult?.company?.workModel);
   const parsedDomains = useMemo(() => {
-    const raw = parseResult?.company.domains ?? [];
+    const raw = parseResult?.company?.domains ?? [];
     return [...new Set(raw.map((item) => item.trim()).filter(Boolean))];
   }, [parseResult]);
 

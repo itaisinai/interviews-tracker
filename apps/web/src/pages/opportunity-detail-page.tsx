@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
 
 import {
+  Button,
   InlineLoadingState,
   LoadingButton,
   MaterialIcon,
@@ -335,23 +336,22 @@ function EditableTitleField({
             }
           }}
         />
-        <button
+        <Button
           aria-label={`Save ${ariaLabel.toLowerCase()}`}
           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary-container disabled:opacity-50"
           disabled={isSaving || !draft.trim()}
           type="submit"
         >
           <MaterialIcon name="check" />
-        </button>
-        <button
+        </Button>
+        <Button
           aria-label={`Cancel ${ariaLabel.toLowerCase()} edit`}
           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
           disabled={isSaving}
-          type="button"
           onClick={cancel}
         >
           <MaterialIcon name="close" />
-        </button>
+        </Button>
       </form>
     );
   }
@@ -359,15 +359,14 @@ function EditableTitleField({
   return (
     <span className="group/title-edit inline-flex max-w-full items-center gap-2">
       <span className={className}>{value}</span>
-      <button
+      <Button
         aria-label={`Edit ${ariaLabel.toLowerCase()}`}
         className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-on-surface-variant opacity-0 transition hover:bg-surface-container group-hover/title-edit:opacity-100 focus:opacity-100"
         disabled={isSaving}
-        type="button"
         onClick={() => setIsEditing(true)}
       >
         <MaterialIcon name="edit" className="text-[18px]" />
-      </button>
+      </Button>
     </span>
   );
 }
@@ -491,10 +490,10 @@ function FocusedInteractionCard({
               Join meeting
             </a>
           ) : null}
-          <button className="btn btn-secondary" type="button" onClick={onOpen}>
+          <Button variant="secondary" onClick={onOpen}>
             <MaterialIcon name="open_in_full" />
             Open details
-          </button>
+          </Button>
         </div>
       </div>
       {personNames.length > 0 ? (
