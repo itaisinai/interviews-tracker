@@ -1,6 +1,9 @@
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { Modal } from "@interviews-tracker/design-system";
+
 import { api } from "../../lib/api";
+
 import { GmailEmailSelector } from "./gmail-email-selector";
 
 type SelectGmailEmailsModalProps = {
@@ -31,7 +34,12 @@ export function SelectGmailEmailsModal({
   const queryClient = useQueryClient();
 
   // Fetch Gmail search results
-  const { data: searchResults, isLoading, refetch: refetchSearch, isRefetching } = useQuery({
+  const {
+    data: searchResults,
+    isLoading,
+    refetch: refetchSearch,
+    isRefetching,
+  } = useQuery({
     queryKey: ["gmail-search", opportunitySlug],
     queryFn: () => api.gmailSearch(opportunitySlug),
     enabled: isOpen && !!opportunitySlug,
@@ -82,31 +90,28 @@ export function SelectGmailEmailsModal({
   };
 
   // Transform messageStates to the format expected by GmailEmailSelector
-  const transformedMessageStates = messageStates ? {
-    pickedEmails: messageStates.pickedEmails.map(e => ({
-      id: e.id,
-      subject: e.subject,
-      date: e.date
-    })),
-    removedEmails: messageStates.removedEmails.map(e => ({
-      id: e.id,
-      subject: e.subject,
-      date: e.date
-    })),
-    ignoredEmails: messageStates.ignoredEmails.map(e => ({
-      id: e.id,
-      subject: e.subject,
-      date: e.date
-    }))
-  } : undefined;
+  const transformedMessageStates = messageStates
+    ? {
+        pickedEmails: messageStates.pickedEmails.map((e) => ({
+          id: e.id,
+          subject: e.subject,
+          date: e.date,
+        })),
+        removedEmails: messageStates.removedEmails.map((e) => ({
+          id: e.id,
+          subject: e.subject,
+          date: e.date,
+        })),
+        ignoredEmails: messageStates.ignoredEmails.map((e) => ({
+          id: e.id,
+          subject: e.subject,
+          date: e.date,
+        })),
+      }
+    : undefined;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="lg">
       <GmailEmailSelector
         candidates={searchResults?.candidates || []}
         isLoading={isLoading}
