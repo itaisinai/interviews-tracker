@@ -114,16 +114,16 @@ export const api = {
       `/companies/${encodeURIComponent(companyName)}/enrich`,
       { method: "POST", body: JSON.stringify({ text }) }
     ),
-  researchCompany: (companyName: string, body: CompanyResearchInput) =>
-    request<{ research: CompanyResearchResult }>(`/companies/${encodeURIComponent(companyName)}/research`, {
+  researchCompany: (companySlugOrId: string, body: CompanyResearchInput) =>
+    request<{ research: CompanyResearchResult }>(`/companies/${encodeURIComponent(companySlugOrId)}/research`, {
       method: "POST",
       body: JSON.stringify(body),
     }),
   applyCompanyResearch: (
-    companyName: string,
+    companySlugOrId: string,
     body: { targetOpportunitySlug?: string | null; research: CompanyResearchResult }
   ) =>
-    request<CompanyResearchApplyResponse>(`/companies/${encodeURIComponent(companyName)}/research/apply`, {
+    request<CompanyResearchApplyResponse>(`/companies/${encodeURIComponent(companySlugOrId)}/research/apply`, {
       method: "POST",
       body: JSON.stringify(body),
     }),

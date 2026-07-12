@@ -17,6 +17,7 @@ import { CompanyResearchProgress } from "./company-research-progress";
 import { CompanyResearchReview } from "./company-research-review";
 
 type CompanyResearchPanelProps = {
+  companySlugOrId: string;
   companyName: string;
   roleTitle?: string | null;
   knownContext?: string | null;
@@ -47,6 +48,7 @@ export type EditableResearchListField = keyof Pick<
 >;
 
 export function CompanyResearchPanel({
+  companySlugOrId,
   companyName,
   roleTitle,
   knownContext,
@@ -138,7 +140,7 @@ export function CompanyResearchPanel({
     ];
 
     try {
-      const response = await api.researchCompany(companyName, {
+      const response = await api.researchCompany(companySlugOrId, {
         companyName,
         roleTitle: roleTitle ?? null,
         knownContext: knownContext ?? null,
@@ -174,7 +176,7 @@ export function CompanyResearchPanel({
     setSaveMessage(null);
 
     try {
-      const response = await api.applyCompanyResearch(companyName, {
+      const response = await api.applyCompanyResearch(companySlugOrId, {
         targetOpportunitySlug: targetOpportunitySlug ?? null,
         research,
       });
