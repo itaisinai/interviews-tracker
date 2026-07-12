@@ -184,6 +184,7 @@ export function CompanyDetailView({
       {showResearch ? (
         <section className="panel mt-4 p-5">
           <CompanyResearchPanel
+            companySlugOrId={company.slug}
             companyName={company.name}
             knownContext={researchContext}
             existingCompanyData={researchExistingData}

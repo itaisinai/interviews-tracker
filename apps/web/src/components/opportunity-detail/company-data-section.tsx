@@ -67,6 +67,7 @@ export function CompanyDataSection({
       {showResearch ? (
         <div className="mt-6">
           <CompanyResearchPanel
+            companySlugOrId={opportunity.company.slug}
             companyName={opportunity.company.name}
             roleTitle={opportunity.roleTitle}
             knownContext={`Status: ${opportunity.status} · Pipeline: ${opportunity.pipelineType} · Next step: ${opportunity.nextStep ?? "None"}${opportunity.notes ? ` · Notes: ${opportunity.notes}` : ""}`}
