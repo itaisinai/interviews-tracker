@@ -13,7 +13,7 @@ import {
 } from "@interviews-tracker/design-system";
 
 import { AddInteractionModal } from "../components/add-interaction-modal";
-import { PageIntro } from "../components/app-shell";
+import { PageIntro, useBreadcrumbs } from "../components/app-shell";
 import { Badge } from "../components/badge";
 import { ContactsList } from "../components/contacts/contacts-list";
 import { InteractionsDrawer } from "../components/interactions-drawer";
@@ -31,6 +31,7 @@ export function OpportunityDetailPage() {
   const { slug = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { setBreadcrumbs } = useBreadcrumbs();
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["opportunity", slug],
     queryFn: () => api.opportunity(slug),
@@ -102,6 +103,34 @@ export function OpportunityDetailPage() {
     }
   }, [canonicalSlug, navigate, slug]);
 
+  useEffect(() => {
+    if (data) {
+      setBreadcrumbs([
+        {
+          label: "Opportunities",
+          element: (
+            <Link to="/opportunities" className="font-medium text-primary transition-colors hover:text-primary/80">
+              Opportunities
+            </Link>
+          ),
+        },
+        {
+          label: data.company.name,
+          element: (
+            <Link
+              to={`/companies/${data.company.slug}`}
+              className="font-medium text-primary transition-colors hover:text-primary/80"
+            >
+              {data.company.name}
+            </Link>
+          ),
+        },
+        { label: data.roleTitle },
+      ]);
+    }
+    return () => setBreadcrumbs([]);
+  }, [data, setBreadcrumbs]);
+
   if (isLoading || !data) {
     return <PageLoadingState title="Opportunity" description="Loading opportunity details, interaction history." />;
   }
@@ -120,7 +149,16 @@ export function OpportunityDetailPage() {
     <>
       {/* Mobile header */}
       <div className="mb-4 md:hidden">
-        <h1 className="text-2xl font-bold text-on-background">{data.company.name}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-on-background">{data.company.name}</h1>
+          <Link
+            to={`/companies/${data.company.slug}`}
+            className="inline-flex items-center justify-center rounded-lg p-1.5 text-primary transition-colors hover:bg-primary-container"
+            title="View company page"
+          >
+            <MaterialIcon name="open_in_new" className="text-[18px]" />
+          </Link>
+        </div>
         <p className="mt-1 text-body-md text-on-surface-variant">{data.roleTitle}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge value={data.status} />
@@ -135,9 +173,6 @@ export function OpportunityDetailPage() {
           >
             Add Interaction
           </LoadingButton>
-          <Link className="btn btn-primary" to="/opportunities">
-            <MaterialIcon name="arrow_back" />
-          </Link>
         </div>
       </div>
 
@@ -145,17 +180,26 @@ export function OpportunityDetailPage() {
       <div className="hidden md:block">
         <PageIntro
           title={
-            <EditableTitleField
-              ariaLabel="Company name"
-              className="font-headline-lg text-headline-lg text-on-background"
-              value={data.company.name}
-              isSaving={updateOpportunityTitle.isPending}
-              onSave={(companyName) =>
-                updateOpportunityTitle.mutate({
-                  roleTitle: data.roleTitle,
-                })
-              }
-            />
+            <div className="flex items-center gap-3">
+              <EditableTitleField
+                ariaLabel="Company name"
+                className="font-headline-lg text-headline-lg text-on-background"
+                value={data.company.name}
+                isSaving={updateOpportunityTitle.isPending}
+                onSave={(companyName) =>
+                  updateOpportunityTitle.mutate({
+                    roleTitle: data.roleTitle,
+                  })
+                }
+              />
+              <Link
+                to={`/companies/${data.company.slug}`}
+                className="inline-flex items-center justify-center rounded-lg p-2 text-primary transition-colors hover:bg-primary-container"
+                title="View company page"
+              >
+                <MaterialIcon name="open_in_new" className="text-[20px]" />
+              </Link>
+            </div>
           }
           description={
             <EditableTitleField
@@ -181,10 +225,6 @@ export function OpportunityDetailPage() {
               <LoadingButton className="btn btn-secondary" icon="add" onClick={() => setShowAddInteractionModal(true)}>
                 Add Interaction
               </LoadingButton>
-              <Link className="btn btn-primary" to="/opportunities">
-                <MaterialIcon name="arrow_back" />
-                Back to Pipeline
-              </Link>
               <LoadingButton
                 className="btn btn-secondary text-error hover:bg-error-container"
                 loading={deleteOpportunity.isPending}
