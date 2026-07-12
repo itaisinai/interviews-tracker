@@ -132,15 +132,19 @@ export function AttachedEmailsCard({ interactionSlug, opportunitySlug, onEmailsA
           </div>
         ) : (
           <>
-            <div className="space-y-2">
-              {(isExpanded ? enrichedEmails : enrichedEmails.slice(0, 2)).map((email) => {
+            <div className="space-y-2 overflow-hidden transition-all duration-300 ease-in-out">
+              {(isExpanded ? enrichedEmails : enrichedEmails.slice(0, 2)).map((email, index) => {
                 const gmailData = email.gmailData;
                 const isRelevant = gmailData?.relevance?.isRelevant;
 
                 return (
                   <div
                     key={email.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 transition-all duration-200 ease-in-out animate-in fade-in slide-in-from-top-2"
+                    style={{
+                      animationDelay: `${index * 50}ms`,
+                      animationFillMode: "backwards",
+                    }}
                   >
                     {/* Email info */}
                     <div className="flex-1 min-w-0">
