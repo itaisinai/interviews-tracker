@@ -86,6 +86,12 @@ export function ParticipantsCard({
         {/* Participants List */}
         <div className={columns === 1 ? "space-y-2" : "grid grid-cols-2 gap-2"}>
           {participantsToShow.map(({ name, person, index }) => {
+            // Capitalize each word in the name
+            const displayName = name
+              .split(" ")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join(" ");
+
             return (
               <div
                 key={name}
@@ -95,7 +101,7 @@ export function ParticipantsCard({
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <MaterialIcon name="person" className="text-[18px] text-neutral-400 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-neutral-900 truncate">{name}</div>
+                    <div className="text-sm font-medium text-neutral-900 truncate">{displayName}</div>
                     {person?.title && (
                       <div className="text-xs text-neutral-600 truncate mt-0.5">
                         {person.title.replace(/\s*\(Current\)\s*$/i, "")}

@@ -1,5 +1,7 @@
 export type { BadgeTone } from "./components/badge/index.js";
 export { Badge } from "./components/badge/index.js";
+export type { BreadcrumbItem, BreadcrumbsProps } from "./components/breadcrumbs/index.js";
+export { Breadcrumbs } from "./components/breadcrumbs/index.js";
 export type { ButtonProps, ButtonSize, ButtonVariant } from "./components/button/index.js";
 export { Button } from "./components/button/index.js";
 export type { CalendarEvent, CalendarProps } from "./components/calendar/index.js";

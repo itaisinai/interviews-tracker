@@ -37,6 +37,12 @@ export function PersonInfoModal({
   const [showAllExperience, setShowAllExperience] = useState(false);
   const hasResearch = !!person.research;
 
+  // Capitalize each word in the name
+  const displayName = person.name
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+
   // Get initials for avatar
   const initials = person.name
     .split(" ")
@@ -113,7 +119,7 @@ export function PersonInfoModal({
 
                 {/* Name and context */}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-bold text-gray-900">{person.name}</h2>
+                  <h2 className="text-lg font-bold text-gray-900">{displayName}</h2>
                   <p className="text-sm text-gray-600 mt-0.5">{subtitle}</p>
                 </div>
               </div>
