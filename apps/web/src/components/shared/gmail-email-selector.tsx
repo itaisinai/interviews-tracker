@@ -79,7 +79,7 @@ export function GmailEmailSelector({
 }: GmailEmailSelectorProps) {
   const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(new Set());
   const [locallyIgnoredIds, setLocallyIgnoredIds] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<"suggested" | "ignored">("suggested");
+  const [activeTab, setActiveTab] = useState<"suggested" | "picked" | "cleared" | "ignored">("suggested");
 
   // Filter out excluded emails and locally ignored emails
   const availableCandidates = candidates.filter(
@@ -99,6 +99,8 @@ export function GmailEmailSelector({
 
   const ignoredCount = allIgnoredEmails.length;
   const suggestedCount = availableCandidates.length;
+  const pickedCount = messageStates?.pickedEmails?.length || 0;
+  const clearedCount = messageStates?.removedEmails?.length || 0;
 
   // Calculate time since last sync
   const getTimeSinceSync = () => {
@@ -211,6 +213,46 @@ export function GmailEmailSelector({
             </span>
           )}
         </button>
+        {pickedCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setActiveTab("picked")}
+            className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "picked"
+                ? "border-emerald-600 text-emerald-600"
+                : "border-transparent text-neutral-600 hover:text-neutral-900"
+            }`}
+          >
+            Picked
+            <span
+              className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                activeTab === "picked" ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-600"
+              }`}
+            >
+              {pickedCount}
+            </span>
+          </button>
+        )}
+        {clearedCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setActiveTab("cleared")}
+            className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "cleared"
+                ? "border-neutral-600 text-neutral-600"
+                : "border-transparent text-neutral-600 hover:text-neutral-900"
+            }`}
+          >
+            Cleared
+            <span
+              className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                activeTab === "cleared" ? "bg-neutral-200 text-neutral-700" : "bg-neutral-100 text-neutral-600"
+              }`}
+            >
+              {clearedCount}
+            </span>
+          </button>
+        )}
         {ignoredCount > 0 && (
           <button
             type="button"
@@ -358,6 +400,90 @@ export function GmailEmailSelector({
             </div>
           )}
         </>
+      )}
+
+      {/* Tab content - Picked */}
+      {activeTab === "picked" && pickedCount > 0 && (
+        <div className="space-y-3 max-h-[480px] overflow-y-auto">
+          <p className="text-sm text-neutral-600 mb-3">
+            These emails have been previously selected and attached to interactions.
+          </p>
+          {messageStates?.pickedEmails.map((email) => (
+            <div
+              key={email.id}
+              className="w-full flex items-start gap-3 p-4 rounded-lg border border-emerald-200 bg-emerald-50"
+            >
+              <MaterialIcon name="check_circle" className="text-emerald-600 text-[20px] flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm text-neutral-900 mb-1.5 line-clamp-2">{email.subject}</div>
+                <div className="text-xs text-neutral-500">
+                  {new Date(email.date).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </div>
+              {onUnpick && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUnpick(email.id);
+                    setActiveTab("suggested");
+                  }}
+                  disabled={isUnpickPending}
+                  className="flex-shrink-0 self-start px-3 py-1.5 rounded text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Unpick
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tab content - Cleared */}
+      {activeTab === "cleared" && clearedCount > 0 && (
+        <div className="space-y-3 max-h-[480px] overflow-y-auto">
+          <p className="text-sm text-neutral-600 mb-3">
+            These emails were marked as not relevant and have been cleared from suggestions.
+          </p>
+          {messageStates?.removedEmails.map((email) => (
+            <div
+              key={email.id}
+              className="w-full flex items-start gap-3 p-4 rounded-lg border border-neutral-300 bg-neutral-50"
+            >
+              <MaterialIcon name="block" className="text-neutral-500 text-[20px] flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm text-neutral-900 mb-1.5 line-clamp-2">{email.subject}</div>
+                <div className="text-xs text-neutral-500">
+                  {new Date(email.date).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </div>
+              {onRestore && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onRestore(email.id);
+                    setActiveTab("suggested");
+                  }}
+                  disabled={isRestorePending}
+                  className="flex-shrink-0 self-start px-3 py-1.5 rounded text-xs font-medium text-neutral-700 hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Restore
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Tab content - Ignored */}
