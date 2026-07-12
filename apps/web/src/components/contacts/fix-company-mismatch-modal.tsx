@@ -72,6 +72,7 @@ export function FixCompanyMismatchModal({
 
             {/* Primary option: Auto-refresh */}
             <button
+              type="button"
               onClick={() => {
                 onAutoRefresh();
                 onClose();
@@ -92,6 +93,7 @@ export function FixCompanyMismatchModal({
 
             {/* Secondary option: Manual update */}
             <button
+              type="button"
               onClick={() => {
                 onManualUpdate();
                 onClose();
@@ -115,6 +117,7 @@ export function FixCompanyMismatchModal({
         {/* Footer */}
         <div className="flex items-center justify-end border-t border-outline-variant p-6">
           <button
+            type="button"
             onClick={onClose}
             className="rounded-lg px-6 py-2 font-medium text-on-surface transition-colors hover:bg-surface-container"
           >

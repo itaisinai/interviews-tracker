@@ -23,6 +23,7 @@ export function Drawer({
   return (
     <div className="fixed inset-0 z-50 flex">
       <button
+        type="button"
         aria-label="Close drawer"
         className="absolute inset-0 bg-ink/30 backdrop-blur-sm transition-opacity"
         onClick={onClose}

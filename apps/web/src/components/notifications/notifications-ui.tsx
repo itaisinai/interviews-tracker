@@ -40,7 +40,7 @@ export function NotificationsDropdown({ onClose }: { onClose: () => void }) {
     >
       <div className="flex items-center justify-between border-b border-outline-variant px-5 py-4">
         <h3 className="font-title-md text-title-md font-bold">Notifications</h3>
-        <button className="text-body-sm text-on-surface-variant hover:text-primary" onClick={goAll}>
+        <button type="button" className="text-body-sm text-on-surface-variant hover:text-primary" onClick={goAll}>
           View all
         </button>
       </div>
@@ -48,6 +48,7 @@ export function NotificationsDropdown({ onClose }: { onClose: () => void }) {
         {latest.length ? (
           latest.map((item) => (
             <button
+              type="button"
               key={item.key}
               className="flex w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-surface-container-low"
               onClick={() => markAsRead(item.key)}
@@ -67,6 +68,7 @@ export function NotificationsDropdown({ onClose }: { onClose: () => void }) {
         )}
       </div>
       <button
+        type="button"
         className="w-full border-t border-outline-variant px-5 py-4 text-left font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-low hover:text-primary"
         onClick={goAll}
       >
@@ -79,6 +81,7 @@ export function NotificationsDropdown({ onClose }: { onClose: () => void }) {
 export function NotificationRow({ notification, onClick }: { notification: AppNotification; onClick: () => void }) {
   return (
     <button
+      type="button"
       className="flex w-full items-center gap-4 px-4 py-4 text-left transition-colors hover:bg-surface-container-low md:px-5"
       onClick={onClick}
     >
@@ -106,6 +109,7 @@ export function NotificationsBell() {
   return (
     <div className="relative">
       <button
+        type="button"
         aria-label="Open notifications"
         className={`relative rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant ${open ? "bg-surface-container-lowest shadow-sm" : ""}`}
         onClick={() => setOpen((value) => !value)}

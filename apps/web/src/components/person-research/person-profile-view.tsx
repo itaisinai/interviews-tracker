@@ -1,4 +1,4 @@
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { Badge } from "../badge";
 
@@ -88,10 +88,10 @@ export function PersonProfileView({ person, onUpdateResearch }: PersonProfileVie
             </div>
           </div>
           {onUpdateResearch ? (
-            <button type="button" className="btn btn-secondary" onClick={onUpdateResearch}>
+            <Button variant="secondary" onClick={onUpdateResearch}>
               <MaterialIcon name="refresh" />
               Update research
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>

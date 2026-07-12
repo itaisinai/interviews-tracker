@@ -112,6 +112,7 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
   return (
     <div className="space-y-3">
       <button
+        type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex w-full items-center justify-between rounded-lg p-2 transition-colors hover:bg-surface-container"
       >
@@ -138,6 +139,7 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
                   className="group flex w-full items-start gap-3 rounded-lg border border-outline-variant bg-surface p-3 transition-colors hover:bg-surface-container"
                 >
                   <button
+                    type="button"
                     onClick={() =>
                       detectCompanyMismatch(contact, companyName)
                         ? setFixMismatchPerson(contact)
@@ -184,6 +186,7 @@ export function ContactsList({ opportunitySlug, companyName }: ContactsListProps
                   </button>
 
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (window.confirm(`Delete ${contact.name}?`)) {

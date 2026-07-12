@@ -44,6 +44,7 @@ export function PreparationCard({
       {!isLoading && content && <div className="text-sm text-neutral-700">{content}</div>}
       {!isLoading && action && (
         <button
+          type="button"
           onClick={action.onClick}
           className="mt-4 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-50"
         >

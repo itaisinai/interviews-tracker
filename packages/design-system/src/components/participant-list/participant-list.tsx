@@ -62,6 +62,7 @@ export function ParticipantList({
 
               {(participant.onResearch || participant.onViewDetails) && (
                 <button
+                  type="button"
                   onClick={() => {
                     if (participant.hasResearch && participant.onViewDetails) {
                       participant.onViewDetails();

@@ -74,6 +74,7 @@ export function AddFeedbackModal({ isOpen, onClose, onSubmit }: AddFeedbackModal
           <div className="text-sm text-neutral-500">{content.length} characters</div>
           <div className="flex gap-3">
             <button
+              type="button"
               onClick={handleClose}
               disabled={isSubmitting}
               className="px-4 py-2 rounded-lg border border-neutral-200 text-neutral-700 font-medium text-sm hover:bg-neutral-50 transition-colors disabled:opacity-50"

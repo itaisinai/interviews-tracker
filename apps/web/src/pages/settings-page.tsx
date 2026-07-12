@@ -10,7 +10,7 @@ import {
   PageLoadingState,
 } from "@interviews-tracker/design-system";
 
-import { PageIntro } from "../components/app-shell";
+import { PageIntro } from "../components/app-layout";
 import { api } from "../lib/api";
 import type { GmailStatus, Option } from "../lib/types";
 

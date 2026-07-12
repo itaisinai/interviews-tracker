@@ -10,6 +10,7 @@ export function InteractionInputChooser({ onSelectMode }: InteractionInputChoose
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       <button
+        type="button"
         className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 text-left transition-colors hover:border-primary hover:bg-primary/5"
         onClick={() => onSelectMode("gmail")}
       >
@@ -26,6 +27,7 @@ export function InteractionInputChooser({ onSelectMode }: InteractionInputChoose
         </div>
       </button>
       <button
+        type="button"
         className="rounded-2xl border border-outline-variant bg-surface-container-low p-4 text-left transition-colors hover:border-primary hover:bg-primary/5"
         onClick={() => onSelectMode("text")}
       >

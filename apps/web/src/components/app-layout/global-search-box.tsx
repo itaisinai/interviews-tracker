@@ -96,6 +96,7 @@ export function GlobalSearchBox({ placeholder = "Search..." }: { placeholder?: s
       />
       {query ? (
         <button
+          type="button"
           aria-label="Clear global search"
           className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
           onClick={() => {
@@ -120,6 +121,7 @@ export function GlobalSearchBox({ placeholder = "Search..." }: { placeholder?: s
                     <p className="px-5 pb-2 font-label-md text-label-md text-on-surface-variant">{section.label}</p>
                     {items.map((item) => (
                       <button
+                        type="button"
                         key={`${item.type}-${item.id}`}
                         className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-surface-container-low"
                         onClick={() => goToResult(item)}
@@ -149,6 +151,7 @@ export function GlobalSearchBox({ placeholder = "Search..." }: { placeholder?: s
             )}
           </div>
           <button
+            type="button"
             className="flex w-full items-center justify-between border-t border-outline-variant bg-surface-container-low px-5 py-4 font-label-lg text-label-lg text-primary"
             onClick={goToSearch}
           >

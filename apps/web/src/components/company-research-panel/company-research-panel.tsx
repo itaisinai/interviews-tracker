@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import {
@@ -270,15 +270,15 @@ export function CompanyResearchPanel({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button className="btn btn-primary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
+          <Button variant="primary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
             <MaterialIcon name="travel_explore" />
             {isRunning ? "Researching..." : actionLabel}
-          </button>
+          </Button>
           {research ? (
-            <button className="btn btn-secondary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
+            <Button variant="secondary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
               <MaterialIcon name="refresh" />
               Research again
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>

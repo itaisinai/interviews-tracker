@@ -249,7 +249,7 @@ export function TelegramBot() {
     <>
       {/* Floating button */}
       {!isOpen && !isClosing && (
-        <button className={styles.floatingButton} onClick={handleOpen} aria-label="Open Telegram bot">
+        <button type="button" className={styles.floatingButton} onClick={handleOpen} aria-label="Open Telegram bot">
           <MaterialIcon name="chat" className={styles.floatingIcon} />
         </button>
       )}
@@ -271,6 +271,7 @@ export function TelegramBot() {
             <div className={styles.headerActions}>
               {messages.length > 0 && (
                 <button
+                  type="button"
                   className={styles.iconButton}
                   onClick={handleClear}
                   aria-label="Clear messages"
@@ -279,7 +280,7 @@ export function TelegramBot() {
                   <MaterialIcon name="delete" />
                 </button>
               )}
-              <button className={styles.iconButton} onClick={handleClose} aria-label="Close chat">
+              <button type="button" className={styles.iconButton} onClick={handleClose} aria-label="Close chat">
                 <MaterialIcon name="close" />
               </button>
             </div>
@@ -330,6 +331,7 @@ export function TelegramBot() {
               disabled={isLoading}
             />
             <button
+              type="button"
               className={styles.sendButton}
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || isLoading}

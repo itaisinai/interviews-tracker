@@ -115,6 +115,7 @@ export function AttachedEmailsSection({
           <div className="p-4 rounded-lg border border-dashed border-neutral-200 text-center">
             <p className="text-sm text-neutral-500 mb-2">No emails attached</p>
             <button
+              type="button"
               onClick={() => setShowAttachModal(true)}
               className="text-xs text-blue-600 hover:text-blue-700 font-medium"
             >
@@ -146,6 +147,7 @@ export function AttachedEmailsSection({
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleRemove(email.id)}
                   disabled={removingEmailId === email.id}
                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-neutral-100 flex-shrink-0"

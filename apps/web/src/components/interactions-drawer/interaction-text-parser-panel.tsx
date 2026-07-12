@@ -2,7 +2,7 @@ import { type ReactNode, useMemo, useState } from "react";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
+import { Button, LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
@@ -113,10 +113,10 @@ export function InteractionTextParserPanel({
             {companyName} · {roleTitle}
           </p>
         </div>
-        <button className="btn btn-secondary" onClick={resetToDraft}>
+        <Button variant="secondary" onClick={resetToDraft}>
           <MaterialIcon name="refresh" />
           Reset
-        </button>
+        </Button>
       </div>
 
       <Field label="Text to parse">

@@ -176,6 +176,7 @@ export function GmailEmailSelector({
                 <span>Last synced {getTimeSinceSync()}</span>
               </div>
               <button
+                type="button"
                 onClick={onRefresh}
                 disabled={isSubmitting || isRefreshing}
                 className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 font-medium"
@@ -191,6 +192,7 @@ export function GmailEmailSelector({
       {/* Tabs */}
       <div className="flex items-center gap-6 border-b border-neutral-200">
         <button
+          type="button"
           onClick={() => setActiveTab("suggested")}
           className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
             activeTab === "suggested"
@@ -211,6 +213,7 @@ export function GmailEmailSelector({
         </button>
         {ignoredCount > 0 && (
           <button
+            type="button"
             onClick={() => setActiveTab("ignored")}
             className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "ignored"
@@ -241,6 +244,7 @@ export function GmailEmailSelector({
             </p>
             {suggestedCount > 0 && (
               <button
+                type="button"
                 onClick={() => {
                   const allIds = new Set(availableCandidates.map((c) => c.id));
                   setSelectedEmailIds(allIds);
@@ -284,6 +288,7 @@ export function GmailEmailSelector({
                   >
                     {/* Checkbox button */}
                     <button
+                      type="button"
                       onClick={() => handleToggleEmail(candidate.id)}
                       disabled={isSubmitting || isIgnorePending}
                       className="flex items-start gap-3 flex-1 min-w-0 text-left"
@@ -326,6 +331,7 @@ export function GmailEmailSelector({
                     {/* Mark as not relevant button */}
                     {onIgnore && (
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           // Optimistically hide it from UI immediately
@@ -376,6 +382,7 @@ export function GmailEmailSelector({
               </div>
               {onUnignore && (
                 <button
+                  type="button"
                   onClick={() => {
                     // Remove from locally ignored
                     setLocallyIgnoredIds((prev) => {
@@ -413,6 +420,7 @@ export function GmailEmailSelector({
         <div className="flex gap-3">
           {onCancel && (
             <button
+              type="button"
               onClick={onCancel}
               disabled={isSubmitting}
               className="px-4 py-2 rounded-lg border border-neutral-300 text-neutral-700 font-medium text-sm hover:bg-neutral-50 transition-colors disabled:opacity-50"

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { DiffReviewRow, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, DiffReviewRow, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import { formatDateTime } from "../../lib/format";
@@ -171,20 +171,20 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
           </p>
         </div>
         <div className="flex justify-center gap-2">
-          <button onClick={onBack} className="btn btn-secondary">
+          <Button onClick={onBack} variant="secondary">
             <MaterialIcon name="arrow_back" />
             Back
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => {
               setStep("searching");
               void refetchSearch();
             }}
-            className="btn btn-primary"
+            variant="primary"
           >
             <MaterialIcon name="refresh" />
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -348,13 +348,13 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
             <MaterialIcon name="check" />
             Accept Changes
           </LoadingButton>
-          <button
+          <Button
             onClick={() => setStep("select-candidate")}
-            className="btn btn-secondary"
+            variant="secondary"
             disabled={createInteraction.isPending}
           >
             Back
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -370,20 +370,20 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
           <h3 className="text-lg font-semibold text-neutral-900">No emails found</h3>
           <p className="mt-2 text-sm text-neutral-600">We couldn't find any recent emails for {companyName}.</p>
           <div className="mt-6 flex items-center justify-center gap-3">
-            <button
+            <Button
               onClick={() => {
                 setStep("searching");
                 void refetchSearch();
               }}
-              className="btn btn-secondary"
+              variant="secondary"
             >
               <MaterialIcon name="refresh" />
               Refresh Search
-            </button>
-            <button onClick={onBack} className="btn btn-secondary">
+            </Button>
+            <Button onClick={onBack} variant="secondary">
               <MaterialIcon name="arrow_back" />
               Back
-            </button>
+            </Button>
           </div>
         </div>
       </div>
