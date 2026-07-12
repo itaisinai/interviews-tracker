@@ -23,6 +23,7 @@ export function AttachedEmailsSection({
   const [removingEmailId, setRemovingEmailId] = useState<string | null>(null);
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [isReparsing, setIsReparsing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: emails = [], isLoading } = useQuery({
     queryKey: ["interaction-emails", interactionSlug],
@@ -123,45 +124,66 @@ export function AttachedEmailsSection({
             </button>
           </div>
         ) : (
-          <div className="space-y-1">
-            {emails.map((email) => (
-              <div
-                key={email.id}
-                className="flex items-start gap-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors group"
-              >
-                <MaterialIcon name="mail" className="text-[16px] text-neutral-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-neutral-900 font-medium truncate">{email.subject || "No subject"}</div>
-                  <div className="text-xs text-neutral-500 truncate">
-                    {email.from || "Unknown sender"}
-                    {email.receivedDate && (
-                      <>
-                        {" · "}
-                        {new Date(email.receivedDate).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </>
-                    )}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(email.id)}
-                  disabled={removingEmailId === email.id}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-neutral-100 flex-shrink-0"
-                  title="Remove attachment"
+          <>
+            <div className="space-y-1">
+              {(isExpanded ? emails : emails.slice(0, 2)).map((email) => (
+                <div
+                  key={email.id}
+                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors group"
                 >
-                  {removingEmailId === email.id ? (
-                    <MaterialIcon name="progress_activity" className="text-[14px] text-neutral-400 animate-spin" />
-                  ) : (
-                    <MaterialIcon name="close" className="text-[14px] text-neutral-400 hover:text-red-600" />
-                  )}
-                </button>
-              </div>
-            ))}
-          </div>
+                  <MaterialIcon name="mail" className="text-[16px] text-neutral-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-neutral-900 font-medium truncate">{email.subject || "No subject"}</div>
+                    <div className="text-xs text-neutral-500 truncate">
+                      {email.from || "Unknown sender"}
+                      {email.receivedDate && (
+                        <>
+                          {" · "}
+                          {new Date(email.receivedDate).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(email.id)}
+                    disabled={removingEmailId === email.id}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-neutral-100 flex-shrink-0"
+                    title="Remove attachment"
+                  >
+                    {removingEmailId === email.id ? (
+                      <MaterialIcon name="progress_activity" className="text-[14px] text-neutral-400 animate-spin" />
+                    ) : (
+                      <MaterialIcon name="close" className="text-[14px] text-neutral-400 hover:text-red-600" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+            {emails.length > 2 && (
+              <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full mt-2 py-2 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+              >
+                {isExpanded ? (
+                  <>
+                    Show less
+                    <MaterialIcon name="expand_less" className="text-[14px] ml-1 inline-block align-text-bottom" />
+                  </>
+                ) : (
+                  <>
+                    Show {emails.length - 2} more
+                    <MaterialIcon name="expand_more" className="text-[14px] ml-1 inline-block align-text-bottom" />
+                  </>
+                )}
+              </button>
+            )}
+          </>
         )}
       </div>
 
