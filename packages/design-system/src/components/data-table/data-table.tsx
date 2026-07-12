@@ -8,6 +8,8 @@ type DataTableProps<TData> = {
   className?: string;
   tableClassName?: string;
   getRowProps?: (row: TData) => HTMLAttributes<HTMLTableRowElement>;
+  enableColumnResizing?: boolean;
+  columnResizeMode?: "onChange" | "onEnd";
 };
 
 export function DataTable<TData>({
@@ -17,11 +19,15 @@ export function DataTable<TData>({
   className,
   tableClassName,
   getRowProps,
+  enableColumnResizing = true,
+  columnResizeMode = "onChange",
 }: DataTableProps<TData>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    enableColumnResizing,
+    columnResizeMode,
   });
 
   return (
@@ -42,10 +48,24 @@ function TableHead<TData>({ table }: { table: Table<TData> }) {
           {headerGroup.headers.map((header) => (
             <th
               key={header.id}
-              className="overflow-hidden border-r border-outline-variant/40 px-6 py-5 text-left font-label-md text-label-md uppercase tracking-wider text-on-surface-variant last:border-r-0"
+              className="relative overflow-hidden border-r border-outline-variant/40 px-6 py-5 text-left font-label-md text-label-md uppercase tracking-wider text-on-surface-variant last:border-r-0"
               style={{ width: header.getSize() }}
             >
               {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+              {header.column.getCanResize() && (
+                <button
+                  type="button"
+                  onMouseDown={header.getResizeHandler()}
+                  onTouchStart={header.getResizeHandler()}
+                  className={`absolute right-0 top-0 h-full w-2 cursor-col-resize select-none touch-none border-0 bg-transparent p-0 hover:bg-primary/30 ${
+                    header.column.getIsResizing() ? "bg-primary/50" : ""
+                  }`}
+                  style={{
+                    transform: header.column.getIsResizing() ? "translateX(0)" : undefined,
+                  }}
+                  aria-label="Resize column"
+                />
+              )}
             </th>
           ))}
         </tr>
