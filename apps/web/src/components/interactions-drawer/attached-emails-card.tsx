@@ -132,19 +132,15 @@ export function AttachedEmailsCard({ interactionSlug, opportunitySlug, onEmailsA
           </div>
         ) : (
           <>
-            <div className="space-y-2 overflow-hidden transition-all duration-300 ease-in-out">
-              {(isExpanded ? enrichedEmails : enrichedEmails.slice(0, 2)).map((email, index) => {
+            <div className="space-y-2">
+              {enrichedEmails.slice(0, 2).map((email) => {
                 const gmailData = email.gmailData;
                 const isRelevant = gmailData?.relevance?.isRelevant;
 
                 return (
                   <div
                     key={email.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 transition-all duration-200 ease-in-out animate-in fade-in slide-in-from-top-2"
-                    style={{
-                      animationDelay: `${index * 50}ms`,
-                      animationFillMode: "backwards",
-                    }}
+                    className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors"
                   >
                     {/* Email info */}
                     <div className="flex-1 min-w-0">
@@ -190,6 +186,71 @@ export function AttachedEmailsCard({ interactionSlug, opportunitySlug, onEmailsA
                 );
               })}
             </div>
+
+            {/* Collapsible additional emails */}
+            {enrichedEmails.length > 2 && (
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  isExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <div className="space-y-2 pt-2">
+                  {enrichedEmails.slice(2).map((email) => {
+                    const gmailData = email.gmailData;
+                    const isRelevant = gmailData?.relevance?.isRelevant;
+
+                    return (
+                      <div
+                        key={email.id}
+                        className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors"
+                      >
+                        {/* Email info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div className="font-medium text-sm text-neutral-900 truncate">
+                              {email.subject || "No subject"}
+                            </div>
+                            {isRelevant && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex-shrink-0">
+                                <MaterialIcon name="check_circle" className="text-[12px]" />
+                                Relevant
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-neutral-500 mb-1">From: {email.from || "Unknown sender"}</div>
+                          <div className="text-xs text-neutral-400">
+                            {email.receivedDate
+                              ? new Date(email.receivedDate).toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "No date"}
+                          </div>
+                          {gmailData?.snippet && (
+                            <div className="text-xs text-neutral-500 mt-2 line-clamp-2">{gmailData.snippet}</div>
+                          )}
+                        </div>
+
+                        {/* Remove button */}
+                        <button
+                          type="button"
+                          onClick={() => detachMutation.mutate(email.id)}
+                          disabled={detachMutation.isPending}
+                          className="flex-shrink-0 p-1.5 rounded-lg hover:bg-red-50 text-neutral-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                          title="Remove email"
+                        >
+                          <MaterialIcon name="close" className="text-[16px]" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {enrichedEmails.length > 2 && (
               <button
                 type="button"
