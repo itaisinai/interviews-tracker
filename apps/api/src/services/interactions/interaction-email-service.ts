@@ -174,7 +174,7 @@ export async function attachMultipleEmailsToInteraction(params: {
   console.log("[ATTACH] Returning interaction with AI suggestion for review");
 
   return {
-    newlyAttachedEmails: serializeInteractionEmails(attachedEmails),
+    attachedEmails: serializeInteractionEmails(attachedEmails),
     interaction: serializeInteraction(refreshedInteraction),
     aiSuggestion,
   };

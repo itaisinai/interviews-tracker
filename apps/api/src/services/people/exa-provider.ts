@@ -318,22 +318,25 @@ export class ExaProvider {
                 company: parts[1]?.trim() || "",
               };
             }
-          } else if (rawLine.match(/\s+-\s+\[([^\]]+)\]\(([^)]+)\)/)) {
-            // Format: ### Title - [Company](url) (may have optional suffix like "(Current)")
-            const dashMatch = rawLine.match(/^(.+?)\s+-\s+\[([^\]]+)\]\(([^)]+)\)/);
-            if (dashMatch) {
+          } else if (rawLine.match(/\s+-\s+/)) {
+            // Format with dash separator: either "Title - [Company](url)" or "Title - Company"
+            const dashWithLinkMatch = rawLine.match(/^(.+?)\s+-\s+\[([^\]]+)\]\(([^)]+)\)/);
+            if (dashWithLinkMatch) {
+              // Has markdown link
               currentExperience = {
-                title: dashMatch[1].trim(),
-                company: dashMatch[2],
-                companyUrl: dashMatch[3],
+                title: dashWithLinkMatch[1].trim(),
+                company: dashWithLinkMatch[2],
+                companyUrl: dashWithLinkMatch[3],
               };
             } else {
-              // Fallback for plain text without markdown link: Title - Company
+              // Plain text without markdown link: Title - Company
               const parts = rawLine.split(/\s+-\s+/);
-              currentExperience = {
-                title: parts[0]?.trim() || "",
-                company: parts[1]?.trim() || "",
-              };
+              if (parts.length >= 2) {
+                currentExperience = {
+                  title: parts[0]?.trim() || "",
+                  company: parts.slice(1).join(" - ").trim(), // Join remaining parts in case company name has dashes
+                };
+              }
             }
           } else {
             // Format: ### [Company](url) - multiple positions will follow as ####

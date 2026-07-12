@@ -141,10 +141,11 @@ export function serializePeople<T extends Record<string, any>>(people: T[]): any
 }
 
 /**
- * Remove internal IDs from interaction email (attached email)
+ * Serialize interaction email (attached email)
+ * Keep id for client-side delete operations, remove interactionId
  */
 export function serializeInteractionEmail<T extends Record<string, any>>(email: T): any {
-  const { id, interactionId, ...rest } = email;
+  const { interactionId, ...rest } = email;
   return rest;
 }
 
