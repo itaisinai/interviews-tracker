@@ -32,9 +32,9 @@ type DesktopInteractionsFlowProps = {
   onCloseGmailImport: () => void;
   onSelectGmailOpportunity: (opportunitySlug: string) => void;
   onGmailSaved: () => void;
-  onSelectInteraction: (interactionId: string) => void;
-  onDeleteInteraction: (interactionId: string) => void;
-  isDeletingInteraction: (interactionId: string) => boolean;
+  onSelectInteraction: (interactionSlug: string) => void;
+  onDeleteInteraction: (interactionSlug: string) => void;
+  isDeletingInteraction: (interactionSlug: string) => boolean;
 };
 
 export function DesktopInteractionsFlow({

@@ -7,7 +7,7 @@ export type AppNotification = {
   id: string;
   key: string;
   type: NotificationType;
-  opportunityId: string;
+  opportunitySlug: string;
   opportunityName: string;
   count: number;
   title: string;
@@ -24,8 +24,8 @@ export type InteractionNotificationSource = Pick<Interaction, "slug" | "jobOppor
   jobOpportunity?: Pick<Opportunity, "company"> | null;
 };
 
-export function getNotificationKey(opportunityId: string) {
-  return `unlinked-interactions:${opportunityId}`;
+export function getNotificationKey(opportunitySlug: string) {
+  return `unlinked-interactions:${opportunitySlug}`;
 }
 
 function titleFor(opportunityName: string, count: number) {
@@ -40,21 +40,21 @@ export function buildUnlinkedInteractionNotifications(
 
   for (const interaction of interactions) {
     if (interaction.gmailMessageId) continue;
-    const opportunityId = interaction.jobOpportunityId;
-    if (!opportunityId) continue;
+    const opportunitySlug = interaction.jobOpportunityId;
+    if (!opportunitySlug) continue;
     const opportunityName = interaction.jobOpportunity?.company?.name?.trim() || "Opportunity";
-    const current = grouped.get(opportunityId) ?? { name: opportunityName, count: 0 };
+    const current = grouped.get(opportunitySlug) ?? { name: opportunityName, count: 0 };
     current.count += 1;
     if (opportunityName !== "Opportunity") current.name = opportunityName;
-    grouped.set(opportunityId, current);
+    grouped.set(opportunitySlug, current);
   }
 
   const timestamp = now.toISOString();
-  return [...grouped.entries()].map(([opportunityId, group]) => ({
-    id: getNotificationKey(opportunityId),
-    key: getNotificationKey(opportunityId),
+  return [...grouped.entries()].map(([opportunitySlug, group]) => ({
+    id: getNotificationKey(opportunitySlug),
+    key: getNotificationKey(opportunitySlug),
     type: "unlinked_interactions" as const,
-    opportunityId,
+    opportunitySlug,
     opportunityName: group.name,
     count: group.count,
     title: titleFor(group.name, group.count),

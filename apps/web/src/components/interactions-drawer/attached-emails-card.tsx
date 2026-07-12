@@ -10,21 +10,20 @@ import type { GmailSearchCandidate } from "../../lib/types";
 import { AttachEmailModal } from "./attach-email-modal";
 
 type AttachedEmailsCardProps = {
-  interactionId: string;
+  interactionSlug: string;
   opportunitySlug: string;
   onEmailsAttached?: (aiSuggestion?: any) => void;
 };
 
-export function AttachedEmailsCard({ interactionId, opportunitySlug, onEmailsAttached }: AttachedEmailsCardProps) {
-  const interactionSlug = interactionId;
+export function AttachedEmailsCard({ interactionSlug, opportunitySlug, onEmailsAttached }: AttachedEmailsCardProps) {
   const queryClient = useQueryClient();
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [isReparsing, setIsReparsing] = useState(false);
 
   const { data: emails = [], isLoading } = useQuery({
-    queryKey: ["interaction-emails", interactionId],
+    queryKey: ["interaction-emails", interactionSlug],
     queryFn: () => api.listInteractionEmails(interactionSlug),
-    enabled: !!interactionId,
+    enabled: !!interactionSlug,
   });
 
   // Fetch Gmail search results to get full email details and relevance
@@ -47,7 +46,7 @@ export function AttachedEmailsCard({ interactionId, opportunitySlug, onEmailsAtt
     mutationFn: (emailId: string) => api.removeEmailFromInteraction(interactionSlug, emailId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["interaction-emails", interactionId],
+        queryKey: ["interaction-emails", interactionSlug],
       });
       queryClient.invalidateQueries({ queryKey: ["interactions"] });
       queryClient.invalidateQueries({
@@ -69,7 +68,7 @@ export function AttachedEmailsCard({ interactionId, opportunitySlug, onEmailsAtt
         if (!old) return old;
         return {
           ...old,
-          interactions: old.interactions.map((int: any) => (int.id === interactionId ? result : int)),
+          interactions: old.interactions.map((int: any) => (int.slug === interactionSlug ? result : int)),
         };
       });
 
@@ -189,7 +188,7 @@ export function AttachedEmailsCard({ interactionId, opportunitySlug, onEmailsAtt
       <AttachEmailModal
         isOpen={showAttachModal}
         onClose={() => setShowAttachModal(false)}
-        interactionId={interactionId}
+        interactionSlug={interactionSlug}
         opportunitySlug={opportunitySlug}
         onAttached={onEmailsAttached}
       />

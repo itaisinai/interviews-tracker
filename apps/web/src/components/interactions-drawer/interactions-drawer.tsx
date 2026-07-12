@@ -121,7 +121,7 @@ export function InteractionsDrawer({
   };
 
   const deleteInteraction = useMutation({
-    mutationFn: (interactionId: string) => api.deleteInteraction(interactionId),
+    mutationFn: (interactionSlug: string) => api.deleteInteraction(interactionSlug),
     onMutate: () => onOperationStart?.(),
     onSuccess: () => {
       refreshQueries();
