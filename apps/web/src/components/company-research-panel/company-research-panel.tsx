@@ -23,7 +23,7 @@ type CompanyResearchPanelProps = {
   knownContext?: string | null;
   existingCompanyData?: CompanyResearchExistingData | null;
   targetOpportunitySlug?: string | null;
-  onSaved?: (research: CompanyResearchResult) => void;
+  onSaved?: (research: CompanyResearchResult, newSlug?: string) => void;
 };
 
 export type EditableResearchField = keyof Pick<
@@ -184,8 +184,13 @@ export function CompanyResearchPanel({
       setSaveMessage(
         `Saved to ${response.updatedOpportunities} opportunity${response.updatedOpportunities === 1 ? "" : " records"}.`
       );
+
+      // If slug changed, pass it to parent to handle navigation
+      const slugChanged = response.company.slug !== companySlugOrId;
+      const queryKeyToInvalidate = slugChanged ? response.company.slug : companySlugOrId;
+
       void queryClient.invalidateQueries({
-        queryKey: ["company", companySlugOrId],
+        queryKey: ["company", queryKeyToInvalidate],
       });
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
@@ -194,7 +199,7 @@ export function CompanyResearchPanel({
           queryKey: ["opportunity", targetOpportunitySlug],
         });
       }
-      onSaved?.(research);
+      onSaved?.(research, slugChanged ? response.company.slug : undefined);
     } catch (caughtError) {
       setSaveError(caughtError instanceof Error ? caughtError.message : "Unable to save research");
     } finally {

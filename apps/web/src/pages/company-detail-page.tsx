@@ -59,10 +59,15 @@ export function CompanyDetailPage() {
       isDeletingInteraction={(interactionId) =>
         deleteInteraction.isPending && deleteInteraction.variables === interactionId
       }
-      onResearchSaved={(research) => {
-        // Refresh the current company data after research is saved
-        void queryClient.invalidateQueries({ queryKey: ["company", decodedSlugOrId] });
-        void queryClient.invalidateQueries({ queryKey: ["companies"] });
+      onResearchSaved={(research, newSlug) => {
+        if (newSlug && newSlug !== decodedSlugOrId) {
+          // Slug changed, navigate to new URL
+          navigate(`/companies/${encodeURIComponent(newSlug)}`, { replace: true });
+        } else {
+          // Slug unchanged, just refresh data
+          void queryClient.invalidateQueries({ queryKey: ["company", decodedSlugOrId] });
+          void queryClient.invalidateQueries({ queryKey: ["companies"] });
+        }
       }}
     />
   );
