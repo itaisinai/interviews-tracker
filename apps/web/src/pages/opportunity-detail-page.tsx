@@ -13,7 +13,7 @@ import {
 } from "@interviews-tracker/design-system";
 
 import { AddInteractionModal } from "../components/add-interaction-modal";
-import { PageIntro } from "../components/app-shell";
+import { PageIntro, useBreadcrumbs } from "../components/app-shell";
 import { Badge } from "../components/badge";
 import { ContactsList } from "../components/contacts/contacts-list";
 import { InteractionsDrawer } from "../components/interactions-drawer";
@@ -31,6 +31,7 @@ export function OpportunityDetailPage() {
   const { slug = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { setBreadcrumbs } = useBreadcrumbs();
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["opportunity", slug],
     queryFn: () => api.opportunity(slug),
@@ -102,6 +103,34 @@ export function OpportunityDetailPage() {
     }
   }, [canonicalSlug, navigate, slug]);
 
+  useEffect(() => {
+    if (data) {
+      setBreadcrumbs([
+        {
+          label: "Opportunities",
+          element: (
+            <Link to="/opportunities" className="font-medium text-primary transition-colors hover:text-primary/80">
+              Opportunities
+            </Link>
+          ),
+        },
+        {
+          label: data.company.name,
+          element: (
+            <Link
+              to={`/companies/${data.company.slug}`}
+              className="font-medium text-primary transition-colors hover:text-primary/80"
+            >
+              {data.company.name}
+            </Link>
+          ),
+        },
+        { label: data.roleTitle },
+      ]);
+    }
+    return () => setBreadcrumbs([]);
+  }, [data, setBreadcrumbs]);
+
   if (isLoading || !data) {
     return <PageLoadingState title="Opportunity" description="Loading opportunity details, interaction history." />;
   }
@@ -135,9 +164,6 @@ export function OpportunityDetailPage() {
           >
             Add Interaction
           </LoadingButton>
-          <Link className="btn btn-primary" to="/opportunities">
-            <MaterialIcon name="arrow_back" />
-          </Link>
         </div>
       </div>
 
@@ -181,10 +207,6 @@ export function OpportunityDetailPage() {
               <LoadingButton className="btn btn-secondary" icon="add" onClick={() => setShowAddInteractionModal(true)}>
                 Add Interaction
               </LoadingButton>
-              <Link className="btn btn-primary" to="/opportunities">
-                <MaterialIcon name="arrow_back" />
-                Back to Pipeline
-              </Link>
               <LoadingButton
                 className="btn btn-secondary text-error hover:bg-error-container"
                 loading={deleteOpportunity.isPending}
@@ -324,7 +346,6 @@ function EditableTitleField({
       <form className="group/title-edit flex max-w-full items-center gap-2" onSubmit={submit}>
         <input
           aria-label={ariaLabel}
-          autoFocus
           className={`${className} min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-1 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20`}
           disabled={isSaving}
           value={draft}
