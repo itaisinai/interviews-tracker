@@ -185,7 +185,7 @@ export function CompanyResearchPanel({
         `Saved to ${response.updatedOpportunities} opportunity${response.updatedOpportunities === 1 ? "" : " records"}.`
       );
       void queryClient.invalidateQueries({
-        queryKey: ["company", companyName],
+        queryKey: ["company", companySlugOrId],
       });
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
       void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
