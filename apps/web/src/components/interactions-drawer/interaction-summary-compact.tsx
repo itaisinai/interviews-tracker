@@ -61,6 +61,7 @@ export function InteractionSummaryCompact({
           {/* Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
+              type="button"
               onClick={onAddFeedback}
               disabled={isAddFeedbackDisabled}
               className="p-2 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-neutral-200 disabled:text-neutral-400 disabled:hover:bg-transparent transition-colors"
@@ -69,6 +70,7 @@ export function InteractionSummaryCompact({
               <MessageSquare className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={() => {
                 if (isEditing) {
                   onCancelEditing();
@@ -82,6 +84,7 @@ export function InteractionSummaryCompact({
               {isEditing ? <PencilOff className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
             </button>
             <button
+              type="button"
               onClick={onDelete}
               className="p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
               title="Delete"

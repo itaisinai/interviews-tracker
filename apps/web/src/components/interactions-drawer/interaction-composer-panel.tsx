@@ -41,12 +41,12 @@ export function InteractionComposerPanel({
           </h4>
         </div>
         {composer === null ? (
-          <button className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
+          <button type="button" className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
             <Plus className="h-4 w-4" />
             Add interaction
           </button>
         ) : (
-          <button className="btn btn-secondary" onClick={() => onComposerChange(null)}>
+          <button type="button" className="btn btn-secondary" onClick={() => onComposerChange(null)}>
             <X className="h-4 w-4" />
             Hide add flow
           </button>
@@ -73,7 +73,7 @@ export function InteractionComposerPanel({
                 ? "Search Gmail and attach the selected email to this interaction."
                 : "Use the Gmail flow for the selected opportunity."}
             </p>
-            <button className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
+            <button type="button" className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
             </button>
@@ -97,7 +97,7 @@ export function InteractionComposerPanel({
             <p className="text-body-md text-on-surface-variant">
               Paste raw text and let the AI turn it into an interaction draft.
             </p>
-            <button className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
+            <button type="button" className="btn btn-secondary" onClick={() => onComposerChange("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
             </button>

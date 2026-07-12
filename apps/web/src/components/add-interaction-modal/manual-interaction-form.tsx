@@ -78,7 +78,7 @@ export function ManualInteractionForm({
         >
           Save Interaction
         </LoadingButton>
-        <button onClick={onCancel} className="btn btn-secondary">
+        <button type="button" onClick={onCancel} className="btn btn-secondary">
           Cancel
         </button>
       </div>

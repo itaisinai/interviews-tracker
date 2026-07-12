@@ -97,6 +97,7 @@ export function ManualJobUpdateModal({
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-outline-variant p-6">
           <button
+            type="button"
             onClick={handleClose}
             className="rounded-lg px-6 py-2 font-medium text-on-surface transition-colors hover:bg-surface-container"
             disabled={isLoading}
@@ -104,6 +105,7 @@ export function ManualJobUpdateModal({
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={!jobDescription.trim() || isLoading}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2 font-medium text-on-primary transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"

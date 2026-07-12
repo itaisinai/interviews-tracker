@@ -71,6 +71,7 @@ export function AddInteractionModal({
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <button
+                type="button"
                 onClick={() => setMode("gmail")}
                 className="flex flex-col items-start gap-3 rounded-xl border-2 border-neutral-200 bg-white p-6 text-left transition-all hover:border-emerald-500 hover:shadow-md"
               >
@@ -84,6 +85,7 @@ export function AddInteractionModal({
               </button>
 
               <button
+                type="button"
                 onClick={() => setMode("text-parse")}
                 className="flex flex-col items-start gap-3 rounded-xl border-2 border-neutral-200 bg-white p-6 text-left transition-all hover:border-emerald-500 hover:shadow-md"
               >
@@ -97,6 +99,7 @@ export function AddInteractionModal({
               </button>
 
               <button
+                type="button"
                 onClick={() => setMode("manual")}
                 className="flex flex-col items-start gap-3 rounded-xl border-2 border-neutral-200 bg-white p-6 text-left transition-all hover:border-emerald-500 hover:shadow-md"
               >

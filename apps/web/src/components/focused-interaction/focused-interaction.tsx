@@ -100,7 +100,10 @@ export function FocusedInteraction({ interaction, allInteractions, className = "
                         <div className="text-xs text-neutral-500">{interaction.personRole}</div>
                       )}
                     </div>
-                    <button className="p-1.5 rounded-lg hover:bg-neutral-200 text-neutral-400 hover:text-neutral-600 transition-colors">
+                    <button
+                      type="button"
+                      className="p-1.5 rounded-lg hover:bg-neutral-200 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    >
                       <MaterialIcon name="person_search" className="text-[16px]" />
                     </button>
                   </div>

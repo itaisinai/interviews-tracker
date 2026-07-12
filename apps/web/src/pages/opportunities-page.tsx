@@ -312,6 +312,7 @@ export function OpportunitiesPage() {
           </div>
           <div className="flex flex-wrap gap-3 pb-1 hide-scrollbar">
             <button
+              type="button"
               className={`whitespace-nowrap rounded-full px-4 py-2 font-label-md ${!status && !pipeline && !priority && !domainId ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"}`}
               onClick={() => {
                 setStatus("");
@@ -413,6 +414,7 @@ export function OpportunitiesPage() {
           <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-x-auto hide-scrollbar">
             {pipeline ? (
               <button
+                type="button"
                 className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
                 onClick={() => setPipeline("")}
               >
@@ -422,6 +424,7 @@ export function OpportunitiesPage() {
             ) : null}
             {status ? (
               <button
+                type="button"
                 className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
                 onClick={() => setStatus("")}
               >
@@ -431,6 +434,7 @@ export function OpportunitiesPage() {
             ) : null}
             {priority ? (
               <button
+                type="button"
                 className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
                 onClick={() => setPriority("")}
               >
@@ -440,6 +444,7 @@ export function OpportunitiesPage() {
             ) : null}
             {domainId ? (
               <button
+                type="button"
                 className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
                 onClick={() => setDomainId("")}
               >
@@ -454,6 +459,7 @@ export function OpportunitiesPage() {
 
           {pipeline || status || priority || domainId ? (
             <button
+              type="button"
               className="flex flex-shrink-0 items-center gap-2 text-[14px] font-medium text-on-surface-variant hover:text-error transition-colors"
               onClick={() => {
                 setStatus("");
@@ -619,6 +625,7 @@ function ColumnHeader({
                   </span>
                 </div>
                 <button
+                  type="button"
                   className="w-full px-3 py-1.5 text-left text-[13px] hover:bg-primary/5 transition-colors flex items-center justify-between group"
                   onClick={() => {
                     onFilterChange("");
@@ -630,6 +637,7 @@ function ColumnHeader({
                 </button>
                 {filterOptions.map((option) => (
                   <button
+                    type="button"
                     key={option.value}
                     className="w-full px-3 py-1.5 text-left text-[13px] hover:bg-primary/5 transition-colors flex items-center justify-between group"
                     onClick={() => {

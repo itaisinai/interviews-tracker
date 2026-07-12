@@ -96,6 +96,7 @@ export function AppShell() {
             </AnimatePresence>
           </div>
           <button
+            type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="flex-shrink-0 rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-low"
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -152,6 +153,7 @@ export function AppShell() {
           className={`mt-auto space-y-1 border-t border-outline-variant pt-4 overflow-hidden ${sidebarCollapsed ? "px-2" : "px-4"}`}
         >
           <button
+            type="button"
             className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
               sidebarCollapsed ? "" : "gap-4"
             }`}
@@ -173,6 +175,7 @@ export function AppShell() {
             </AnimatePresence>
           </button>
           <button
+            type="button"
             className={`flex w-full items-center rounded-lg py-2 pl-4 text-on-surface-variant transition-colors hover:bg-surface-container-low/80 ${
               sidebarCollapsed ? "" : "gap-4"
             }`}
@@ -216,11 +219,18 @@ export function AppShell() {
           </div>
           <div className="flex items-center gap-3 md:gap-4">
             <NotificationsBell />
-            <button className="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant">
+            <button
+              type="button"
+              className="rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant"
+            >
               <MaterialIcon name="help_outline" />
             </button>
             <div className="hidden lg:block">
-              <button className="btn btn-primary rounded-full shadow-sm" onClick={() => navigate("/opportunities/new")}>
+              <button
+                type="button"
+                className="btn btn-primary rounded-full shadow-sm"
+                onClick={() => navigate("/opportunities/new")}
+              >
                 <MaterialIcon name="add" />
                 Add Opportunity
               </button>

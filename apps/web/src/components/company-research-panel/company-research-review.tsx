@@ -44,7 +44,7 @@ export function CompanyResearchReview({
           <h4 className="font-title-md text-title-md font-bold">Extracted company research</h4>
         </div>
         <div className="flex items-center gap-2">
-          <button className="btn btn-secondary text-error hover:bg-error-container" onClick={onCancel}>
+          <button type="button" className="btn btn-secondary text-error hover:bg-error-container" onClick={onCancel}>
             <MaterialIcon name="close" />
             Cancel
           </button>

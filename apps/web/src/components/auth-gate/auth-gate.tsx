@@ -114,6 +114,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
     return (
       <AuthPanel title="Login Error" description={error.message}>
         <button
+          type="button"
           className="btn btn-primary w-full"
           onClick={() =>
             void loginWithRedirect({
@@ -132,6 +133,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
     return (
       <AuthPanel title="Sign in" description="Use your authorized Google account to access CareerFlow.">
         <button
+          type="button"
           className="btn btn-primary w-full"
           onClick={() =>
             void loginWithRedirect({
@@ -160,6 +162,7 @@ function AuthenticatedOnly({ children }: { children: ReactNode }) {
     return (
       <AuthPanel title="Token Error" description={tokenError}>
         <button
+          type="button"
           className="btn btn-primary w-full"
           onClick={() =>
             void loginWithRedirect({

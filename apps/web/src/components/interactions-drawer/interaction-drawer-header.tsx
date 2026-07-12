@@ -40,12 +40,12 @@ export function InteractionDrawerHeader({
           </Link>
         ) : null}
         {onOpenFullscreen && (
-          <button className="btn btn-secondary" onClick={onOpenFullscreen} title="Open in fullscreen">
+          <button type="button" className="btn btn-secondary" onClick={onOpenFullscreen} title="Open in fullscreen">
             <Maximize2 className="h-4 w-4" />
             Fullscreen
           </button>
         )}
-        <button className="btn btn-secondary" onClick={onClose}>
+        <button type="button" className="btn btn-secondary" onClick={onClose}>
           <X className="h-4 w-4" />
           Close
         </button>

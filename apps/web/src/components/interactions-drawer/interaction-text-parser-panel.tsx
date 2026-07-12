@@ -113,7 +113,7 @@ export function InteractionTextParserPanel({
             {companyName} · {roleTitle}
           </p>
         </div>
-        <button className="btn btn-secondary" onClick={resetToDraft}>
+        <button type="button" className="btn btn-secondary" onClick={resetToDraft}>
           <MaterialIcon name="refresh" />
           Reset
         </button>

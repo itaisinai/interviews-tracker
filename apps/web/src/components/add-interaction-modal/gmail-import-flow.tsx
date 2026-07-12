@@ -171,11 +171,12 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
           </p>
         </div>
         <div className="flex justify-center gap-2">
-          <button onClick={onBack} className="btn btn-secondary">
+          <button type="button" onClick={onBack} className="btn btn-secondary">
             <MaterialIcon name="arrow_back" />
             Back
           </button>
           <button
+            type="button"
             onClick={() => {
               setStep("searching");
               void refetchSearch();
@@ -349,6 +350,7 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
             Accept Changes
           </LoadingButton>
           <button
+            type="button"
             onClick={() => setStep("select-candidate")}
             className="btn btn-secondary"
             disabled={createInteraction.isPending}
@@ -371,6 +373,7 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
           <p className="mt-2 text-sm text-neutral-600">We couldn't find any recent emails for {companyName}.</p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <button
+              type="button"
               onClick={() => {
                 setStep("searching");
                 void refetchSearch();
@@ -380,7 +383,7 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
               <MaterialIcon name="refresh" />
               Refresh Search
             </button>
-            <button onClick={onBack} className="btn btn-secondary">
+            <button type="button" onClick={onBack} className="btn btn-secondary">
               <MaterialIcon name="arrow_back" />
               Back
             </button>

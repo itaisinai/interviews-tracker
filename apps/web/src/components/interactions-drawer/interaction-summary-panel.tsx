@@ -162,6 +162,7 @@ export function InteractionSummaryPanel({
               <Save className="h-5 w-5" />
             </LoadingButton>
             <button
+              type="button"
               onClick={onCancelEditing}
               className="p-2 rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors inline-flex items-center justify-center"
               title="Cancel"

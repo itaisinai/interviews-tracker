@@ -1,9 +1,7 @@
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { FormField, MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { Opportunity } from "../../lib/types";
 import { GmailInteractionPanel } from "../gmail-interaction-panel";
-
-import { Field } from "./field";
 
 type GmailImportPanelProps = {
   opportunities: Opportunity[];
@@ -83,7 +81,7 @@ function OpportunitySelect({
   onSelectOpportunity: (opportunitySlug: string) => void;
 }) {
   return (
-    <Field label="Opportunity">
+    <FormField label="Opportunity">
       <select
         className="input"
         value={selectedOpportunitySlug}
@@ -96,7 +94,7 @@ function OpportunitySelect({
           </option>
         ))}
       </select>
-    </Field>
+    </FormField>
   );
 }
 

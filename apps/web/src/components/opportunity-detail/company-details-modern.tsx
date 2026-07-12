@@ -181,6 +181,7 @@ function CollapsibleSection({ title, icon, isExpanded, onToggle, children }: Col
   return (
     <div className="rounded-xl border border-neutral-200 bg-white transition-shadow hover:shadow-sm">
       <button
+        type="button"
         onClick={onToggle}
         className="flex w-full items-center justify-between gap-4 p-4 text-left transition-colors hover:bg-neutral-50"
       >

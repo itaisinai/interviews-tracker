@@ -85,6 +85,7 @@ export function SearchPage() {
           />
           {query ? (
             <button
+              type="button"
               aria-label="Clear search"
               className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant"
               onClick={() => setQuery("")}
@@ -109,6 +110,7 @@ export function SearchPage() {
             const active = filter === item.key;
             return (
               <button
+                type="button"
                 key={item.key}
                 className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left font-label-lg text-label-lg ${active ? "border-l-4 border-primary bg-surface-container-low text-primary" : "text-on-surface-variant hover:bg-surface-container-low"}`}
                 onClick={() => setFilter(item.key)}
@@ -155,7 +157,7 @@ export function SearchPage() {
               </div>
               <h3 className="font-title-md text-title-md font-bold">No results found</h3>
               <p className="mt-2 text-body-md text-on-surface-variant">Try searching for something else</p>
-              <button className="btn btn-secondary mt-6" onClick={() => setQuery("")}>
+              <button type="button" className="btn btn-secondary mt-6" onClick={() => setQuery("")}>
                 Clear search
               </button>
             </div>

@@ -46,6 +46,7 @@ export function TextParseFlow({ opportunitySlug, companyName, roleTitle, onParse
     <div className="space-y-6">
       {/* Back button */}
       <button
+        type="button"
         onClick={onBack}
         className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
       >
@@ -96,6 +97,7 @@ Looking forward to speaking with you!`}
       {/* Actions */}
       <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
         <button
+          type="button"
           onClick={onBack}
           className="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
         >

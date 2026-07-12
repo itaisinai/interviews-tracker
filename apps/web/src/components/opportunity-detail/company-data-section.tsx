@@ -107,7 +107,7 @@ export function CompanyDataSection({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Add interaction</p>
               <h4 className="font-title-md text-title-md font-bold">Gmail import</h4>
             </div>
-            <button className="btn btn-secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
+            <button type="button" className="btn btn-secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
             </button>
@@ -128,7 +128,7 @@ export function CompanyDataSection({
               <p className="font-label-md text-label-md uppercase text-on-surface-variant">Add interaction</p>
               <h4 className="font-title-md text-title-md font-bold">Text parser</h4>
             </div>
-            <button className="btn btn-secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
+            <button type="button" className="btn btn-secondary" onClick={() => onSelectInteractionInputMode("chooser")}>
               <ArrowLeft className="h-4 w-4" />
               Back
             </button>

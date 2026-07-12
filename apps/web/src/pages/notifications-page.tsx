@@ -47,6 +47,7 @@ export function NotificationsPage() {
               const isSelected = filter === selectedFilter;
               return (
                 <button
+                  type="button"
                   key={filter}
                   className={`rounded-full border px-4 py-2 font-label-md text-label-md transition-colors ${isSelected ? "border-primary-container bg-primary-container text-primary" : "border-outline-variant bg-background text-on-surface-variant hover:border-primary/40 hover:text-primary"}`}
                   aria-pressed={isSelected}
@@ -58,6 +59,7 @@ export function NotificationsPage() {
             })}
           </div>
           <button
+            type="button"
             className="flex items-center gap-2 self-start rounded-full px-3 py-2 font-label-md text-label-md text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
             onClick={markAllAsRead}
           >

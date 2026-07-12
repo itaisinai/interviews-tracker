@@ -270,12 +270,22 @@ export function CompanyResearchPanel({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button className="btn btn-primary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => void runResearch()}
+            disabled={isRunning || isSaving}
+          >
             <MaterialIcon name="travel_explore" />
             {isRunning ? "Researching..." : actionLabel}
           </button>
           {research ? (
-            <button className="btn btn-secondary" onClick={() => void runResearch()} disabled={isRunning || isSaving}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => void runResearch()}
+              disabled={isRunning || isSaving}
+            >
               <MaterialIcon name="refresh" />
               Research again
             </button>

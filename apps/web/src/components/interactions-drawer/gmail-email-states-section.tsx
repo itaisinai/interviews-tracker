@@ -88,6 +88,7 @@ export function GmailEmailStatesSection({ opportunitySlug }: GmailEmailStatesSec
   return (
     <div className="mb-8">
       <button
+        type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center justify-between w-full text-sm font-medium text-neutral-900 mb-3 hover:text-neutral-700 transition-colors"
       >
@@ -101,6 +102,7 @@ export function GmailEmailStatesSection({ opportunitySlug }: GmailEmailStatesSec
           {hasRemovedEmails && (
             <div className="mb-4">
               <button
+                type="button"
                 onClick={() => setHiddenExpanded(!hiddenExpanded)}
                 className="flex items-center justify-between w-full text-xs font-medium text-neutral-600 mb-2 hover:text-neutral-800 transition-colors"
               >
@@ -131,6 +133,7 @@ export function GmailEmailStatesSection({ opportunitySlug }: GmailEmailStatesSec
                         </div>
                       </div>
                       <button
+                        type="button"
                         onClick={() => handleRestore(email.id)}
                         disabled={restoringId === email.id}
                         className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded text-xs font-medium text-blue-600 hover:bg-blue-50 flex-shrink-0 flex items-center gap-1"
@@ -156,6 +159,7 @@ export function GmailEmailStatesSection({ opportunitySlug }: GmailEmailStatesSec
           {hasPickedEmails && (
             <div>
               <button
+                type="button"
                 onClick={() => setPickedExpanded(!pickedExpanded)}
                 className="flex items-center justify-between w-full text-xs font-medium text-neutral-600 mb-2 hover:text-neutral-800 transition-colors"
               >
@@ -183,6 +187,7 @@ export function GmailEmailStatesSection({ opportunitySlug }: GmailEmailStatesSec
                         </div>
                       </div>
                       <button
+                        type="button"
                         onClick={() => handleUnpick(email.id)}
                         disabled={unpickingId === email.id}
                         className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded text-xs font-medium text-neutral-600 hover:bg-neutral-100 flex-shrink-0 flex items-center gap-1"
