@@ -88,7 +88,8 @@ export function SourcePanel({
         <div>
           <p className="mb-3 text-body-sm text-on-surface-variant">Paste a job post or recruiter message below.</p>
           <textarea
-            className="input min-h-[400px] bg-surface-container-low"
+            className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 min-h-[200px]"
+            style={{ resize: "vertical" }}
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder="Paste the content here..."
