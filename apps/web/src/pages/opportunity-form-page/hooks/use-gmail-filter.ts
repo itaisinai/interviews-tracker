@@ -27,11 +27,6 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
     // Also build a set of domain base names (e.g., "unframe" from "unframe.ai")
     const existingDomainBases = new Set(Array.from(existingDomains).map((d) => d.split(".")[0]));
 
-    console.log("[Gmail Filter] Existing company names:", Array.from(existingCompanyNames));
-    console.log("[Gmail Filter] Existing domains:", Array.from(existingDomains));
-    console.log("[Gmail Filter] Existing domain bases:", Array.from(existingDomainBases));
-    console.log("[Gmail Filter] Total candidates:", gmailCandidates.candidates.length);
-
     const groups = new Map<string, typeof gmailCandidates.candidates>();
 
     for (const candidate of gmailCandidates.candidates) {
@@ -40,16 +35,8 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
       const email = emailMatch?.[1] || emailMatch?.[2] || candidate.from;
       const domain = email.split("@")[1]?.toLowerCase() || "unknown";
 
-      console.log(`[Gmail Filter] Checking candidate:`, {
-        subject: candidate.subject,
-        from: candidate.from,
-        email,
-        domain,
-      });
-
       // Skip if this domain matches an existing opportunity
       if (existingDomains.has(domain)) {
-        console.log(`[Gmail Filter] ❌ FILTERED OUT by domain: ${domain}`);
         continue;
       }
 
@@ -58,7 +45,6 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
 
       // Skip if domain base matches an existing opportunity domain
       if (existingDomainBases.has(companyKey)) {
-        console.log(`[Gmail Filter] ❌ FILTERED OUT by domain base: ${companyKey}`);
         continue;
       }
 
@@ -73,23 +59,14 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
 
       // Skip if company name matches an existing opportunity
       if (existingCompanyNames.has(companyKey)) {
-        console.log(`[Gmail Filter] ❌ FILTERED OUT by company name: ${companyKey}`);
         continue;
       }
-
-      console.log(`[Gmail Filter] ✅ KEPT: ${companyKey} (${candidate.subject.substring(0, 50)}...)`);
 
       if (!groups.has(companyKey)) {
         groups.set(companyKey, []);
       }
       groups.get(companyKey)!.push(candidate);
     }
-
-    console.log("[Gmail Filter] Final groups:", Array.from(groups.keys()));
-    console.log(
-      "[Gmail Filter] Group sizes:",
-      Array.from(groups.entries()).map(([key, candidates]) => `${key}: ${candidates.length}`)
-    );
 
     return groups;
   }, [gmailCandidates, existingOpportunities.data]);
@@ -112,10 +89,6 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
     // Also build a set of domain base names (e.g., "unframe" from "unframe.ai")
     const existingDomainBases = new Set(Array.from(existingDomains).map((d) => d.split(".")[0]));
 
-    console.log("[Gmail Filter] filteredCandidates - checking company names:", Array.from(existingCompanyNames));
-    console.log("[Gmail Filter] filteredCandidates - checking domains:", Array.from(existingDomains));
-    console.log("[Gmail Filter] filteredCandidates - checking domain bases:", Array.from(existingDomainBases));
-
     const filtered = gmailCandidates.candidates.filter((candidate) => {
       const emailMatch = candidate.from.match(/<([^>]+)>|([^\s<]+@[^\s>]+)/);
       const email = emailMatch?.[1] || emailMatch?.[2] || candidate.from;
@@ -124,7 +97,6 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
 
       // Check if domain or domain base matches
       if (existingDomains.has(domain) || existingDomainBases.has(domainBase)) {
-        console.log(`[Gmail Filter] filteredCandidates - ❌ FILTERED by domain: ${candidate.subject.substring(0, 50)}`);
         return false;
       }
 
@@ -140,17 +112,11 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
 
       // Check if company name matches
       if (existingCompanyNames.has(companyKey)) {
-        console.log(
-          `[Gmail Filter] filteredCandidates - ❌ FILTERED by company name: ${candidate.subject.substring(0, 50)}`
-        );
         return false;
       }
 
-      console.log(`[Gmail Filter] filteredCandidates - ✅ KEPT: ${candidate.subject.substring(0, 50)}`);
       return true;
     });
-
-    console.log(`[Gmail Filter] filteredCandidates result: ${filtered.length} of ${gmailCandidates.candidates.length}`);
 
     return filtered;
   }, [gmailCandidates, existingOpportunities.data]);
