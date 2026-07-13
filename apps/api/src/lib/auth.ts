@@ -25,17 +25,23 @@ function normalizeDomain(domain: string) {
 function getAuthConfig() {
   const domain = process.env.AUTH0_DOMAIN;
   const audience = process.env.AUTH0_AUDIENCE;
-  const allowedEmail = process.env.ALLOWED_EMAIL?.trim().toLowerCase();
 
-  if (!domain || !audience || !allowedEmail) {
+  if (!domain || !audience) {
     return undefined;
   }
 
   const normalizedDomain = normalizeDomain(domain);
 
+  // Optional: allowlist of permitted emails (comma-separated)
+  // If not set or empty, all authenticated users are allowed
+  const allowedEmails = process.env.ALLOWED_EMAILS?.trim()
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+
   return {
     audience,
-    allowedEmail,
+    allowedEmails: allowedEmails && allowedEmails.length > 0 ? new Set(allowedEmails) : undefined,
     issuer: `https://${normalizedDomain}/`,
     jwksUrl: new URL(`https://${normalizedDomain}/.well-known/jwks.json`),
   };
@@ -105,8 +111,15 @@ export async function requireAuth(request: Request, response: Response, next: Ne
     });
     const email = getEmail(payload)?.trim().toLowerCase();
 
-    if (email !== config.allowedEmail) {
-      logger.warn("authentication_failed", { reason: "email_not_allowed" });
+    if (!email) {
+      logger.warn("authentication_failed", { reason: "missing_email_claim" });
+      response.status(403).json({ message: "Access denied" });
+      return;
+    }
+
+    // If allowlist is configured, check if user is permitted
+    if (config.allowedEmails && !config.allowedEmails.has(email)) {
+      logger.warn("authentication_failed", { reason: "email_not_in_allowlist", email });
       response.status(403).json({ message: "Access denied" });
       return;
     }

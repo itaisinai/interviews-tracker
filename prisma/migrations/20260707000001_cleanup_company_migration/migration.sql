@@ -14,8 +14,8 @@ ALTER TABLE "Task" ADD CONSTRAINT "Task_companyId_fkey" FOREIGN KEY ("companyId"
 
 ALTER TABLE "Person" ADD CONSTRAINT "Person_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
--- Drop old unique constraint on JobOpportunity
-ALTER TABLE "JobOpportunity" DROP CONSTRAINT "JobOpportunity_ownerEmail_companyName_roleTitle_key";
+-- Drop old unique constraint on JobOpportunity (if exists)
+ALTER TABLE "JobOpportunity" DROP CONSTRAINT IF EXISTS "JobOpportunity_ownerEmail_companyName_roleTitle_key";
 
 -- Add new unique constraint
 CREATE UNIQUE INDEX "JobOpportunity_ownerEmail_companyId_roleTitle_key" ON "JobOpportunity"("ownerEmail", "companyId", "roleTitle");

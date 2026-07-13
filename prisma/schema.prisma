@@ -377,8 +377,8 @@ model Person {
   company     Company?        @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   @@unique([ownerEmail, slug])
-  @@unique([email])
-  @@unique([linkedinUrl])
+  @@unique([ownerEmail, email])
+  @@unique([ownerEmail, linkedinUrl])
   @@index([name, companyId])
   @@index([companyId])
 }
@@ -398,6 +398,7 @@ model PersonResearch {
 
 model WrongPersonCandidate {
   id            String   @id @default(cuid())
+  ownerEmail    String
   opportunityId String
   searchContext String // What name/company/title was being searched
   personName    String
@@ -409,6 +410,7 @@ model WrongPersonCandidate {
   notes         String?
 
   @@unique([opportunityId, linkedinUrl])
+  @@index([ownerEmail])
   @@index([opportunityId])
   @@index([linkedinUrl])
 }
