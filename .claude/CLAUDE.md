@@ -4,6 +4,150 @@ This document provides the primary context for Claude Code sessions working on t
 
 ---
 
+## 🚨 CRITICAL SAFETY PROTOCOLS 🚨
+
+**READ THIS FIRST - These rules override all other instructions.**
+
+### Database Safety
+
+**NEVER run these commands without explicit user permission:**
+
+❌ `prisma migrate reset` - DELETES ALL DATA  
+❌ `prisma db push --force-reset` - DELETES ALL DATA  
+❌ `prisma db execute` with DROP/TRUNCATE/DELETE - DESTRUCTIVE  
+❌ Any SQL that starts with `DROP DATABASE`, `TRUNCATE`, `DELETE FROM` without WHERE
+
+**ALWAYS check before database operations:**
+
+1. **Verify DATABASE_URL target:**
+   ```bash
+   # Check if it's a cloud database (Neon, Supabase, RDS, etc.)
+   echo $DATABASE_URL | grep -E "(neon|supabase|aws|azure|planetscale)"
+   # If match found → STOP and ask user
+   ```
+
+2. **For migrations:**
+   - ✅ `prisma migrate deploy` - Safe (applies migrations)
+   - ✅ `prisma migrate dev` - Ask first (creates new migration)
+   - ❌ `prisma migrate reset` - NEVER without explicit permission
+
+3. **Before any destructive DB operation:**
+   - Show the user what DATABASE_URL you're targeting
+   - Ask: "This will modify [production/staging/local] database. Proceed?"
+   - Wait for explicit "yes"
+
+### Git Safety
+
+**MUST ask user before:**
+
+- ✅ Creating commits (`git commit`)
+- ✅ Pushing to remote (`git push`)
+- ✅ Force pushing (`git push --force`)
+- ✅ Deleting branches (`git branch -D`)
+- ✅ Resetting commits (`git reset --hard`)
+- ✅ Rebasing (`git rebase`)
+- ✅ Stashing with `--all` or `--include-untracked`
+
+**Show the user:**
+- What files will be committed
+- The commit message
+- What branch you're on
+- Where you're pushing to
+
+**Format:**
+```
+About to commit on branch: [branch-name]
+Files:
+  - [file1]
+  - [file2]
+
+Commit message: [message]
+
+Push to origin? [yes/no]
+```
+
+### Dependency Safety
+
+**MUST ask before:**
+
+- Installing new npm packages
+- Upgrading major versions of dependencies
+- Removing dependencies
+- Running `npm update` or `npm outdated`
+- Modifying package.json scripts
+
+**Show the user:**
+- What package and version
+- Why it's needed
+- Potential impact
+
+### File Safety
+
+**NEVER delete without permission:**
+
+- Migration files (even if they look wrong)
+- .env files
+- Configuration files (.claude/*, tsconfig.json, etc.)
+- Any file in `/prisma/migrations/`
+
+**ALWAYS create backups before:**
+
+- Modifying schema.prisma
+- Editing critical config files
+- Running codemod/refactor scripts on >10 files
+
+### Environment Detection
+
+**ALWAYS verify environment before destructive operations:**
+
+```bash
+# Check for production indicators
+if [[ "$DATABASE_URL" == *"production"* ]] || \
+   [[ "$DATABASE_URL" == *".aws."* ]] || \
+   [[ "$DATABASE_URL" == *"neon.tech"* ]]; then
+  echo "⚠️  PRODUCTION DATABASE DETECTED"
+  echo "Operation blocked. Ask user for explicit permission."
+  exit 1
+fi
+```
+
+### Verification Checklist
+
+**Before any major change, verify:**
+
+1. [ ] Is this a production/staging/cloud database?
+2. [ ] Have I shown the user what will change?
+3. [ ] Did the user explicitly approve?
+4. [ ] Is there a backup/snapshot available?
+5. [ ] Can this operation be rolled back?
+6. [ ] Have I tested this on a small subset first?
+
+### Auto-Reject Operations
+
+**These operations are BLOCKED unless user types them explicitly:**
+
+- `rm -rf` anywhere near project files
+- `DROP DATABASE`
+- `TRUNCATE TABLE` without WHERE clause
+- `git push --force` to main/master
+- Modifying `.git/` directory directly
+- Disabling TypeScript checks or tests
+
+### When In Doubt
+
+**ASK THE USER.**
+
+If you're unsure whether an operation is safe:
+1. Stop immediately
+2. Explain what you were about to do
+3. Explain the risks
+4. Ask for explicit permission
+5. Wait for "yes" or "proceed"
+
+**"Better safe than sorry" is the rule.**
+
+---
+
 ## Product Vision & Philosophy
 
 ### Core Mental Model
