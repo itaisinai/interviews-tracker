@@ -173,38 +173,59 @@ export function SourcePanel({
             </div>
           ) : filteredCandidates.length > 0 ? (
             <>
-              {emailDateRange ? (
-                <div className="mb-3 flex items-center justify-between gap-2 text-body-sm text-on-surface-variant">
+              <div className="mb-3 flex items-center justify-between gap-4 text-body-sm text-on-surface-variant">
+                <div className="flex items-center gap-3">
                   <span>
-                    Showing emails from {emailDateRange.oldest} to {emailDateRange.newest}
+                    {(() => {
+                      // Count grouped companies (2+ emails)
+                      const groupedCount = Array.from(groupedCandidates.entries()).filter(
+                        ([, candidates]) => candidates.length > 1
+                      ).length;
+                      // Count single emails (not in groups)
+                      const singleCount = filteredCandidates.filter((candidate) => {
+                        const emailMatch = candidate.from.match(/<([^>]+)>|([^\s<]+@[^\s>]+)/);
+                        const email = emailMatch?.[1] || emailMatch?.[2] || candidate.from;
+                        const domain = email.split("@")[1]?.toLowerCase() || "";
+                        let companyKey = domain.split(".")[0] || domain;
+                        const subjectMatch = candidate.subject.match(/at\s+(\w+)|@\s+(\w+)|with\s+(\w+)/i);
+                        if (subjectMatch) {
+                          const subjectCompany = (subjectMatch[1] || subjectMatch[2] || subjectMatch[3])?.toLowerCase();
+                          if (subjectCompany && subjectCompany.length > 2) {
+                            companyKey = subjectCompany;
+                          }
+                        }
+                        const grouped = groupedCandidates.get(companyKey);
+                        return !grouped || grouped.length <= 1;
+                      }).length;
+                      const totalCompanies = groupedCount + singleCount;
+                      return `${totalCompanies} new ${totalCompanies === 1 ? "opportunity" : "opportunities"}`;
+                    })()}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <label className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={showAllEmails}
-                        onChange={(e) => {
-                          setShowAllEmails(e.target.checked);
-                          onRefresh();
-                        }}
-                        className="h-4 w-4 rounded border-outline-variant"
-                      />
-                      <span className="text-body-sm font-medium">Show All</span>
-                    </label>
-                    {gmailPageToken ? (
-                      <LoadingButton
-                        className="btn btn-secondary btn-sm"
-                        loading={gmailSearch.isPending}
-                        loadingLabel="Loading..."
-                        icon="expand_more"
-                        onClick={() => gmailSearch.mutate(gmailPageToken)}
-                      >
-                        More
-                      </LoadingButton>
-                    ) : null}
-                  </div>
+                  {gmailPageToken ? (
+                    <LoadingButton
+                      className="btn btn-secondary btn-sm"
+                      loading={gmailSearch.isPending}
+                      loadingLabel="Loading..."
+                      icon="refresh"
+                      onClick={() => gmailSearch.mutate(gmailPageToken)}
+                    >
+                      Load More
+                    </LoadingButton>
+                  ) : null}
                 </div>
-              ) : null}
+                <label className="flex cursor-pointer items-center gap-2 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={showAllEmails}
+                    onChange={(e) => {
+                      setShowAllEmails(e.target.checked);
+                      onRefresh();
+                    }}
+                    className="h-4 w-4 rounded border-outline-variant"
+                  />
+                  <span className="text-body-sm font-medium">Show All</span>
+                </label>
+              </div>
 
               {/* Email list with grouped companies */}
               <div className="max-h-[400px] space-y-3 overflow-auto">

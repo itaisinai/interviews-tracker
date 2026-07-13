@@ -61,7 +61,7 @@ export function OpportunityFormPage() {
   });
 
   const gmailSearch = useMutation({
-    mutationFn: (pageToken?: string | null) => api.gmailFindOpportunityCandidates(pageToken, 10, showAllEmails),
+    mutationFn: (pageToken?: string | null) => api.gmailFindOpportunityCandidates(pageToken, 50, showAllEmails),
     onSuccess: (result, pageToken) => {
       setGmailCandidates((current) => ({
         ...result,

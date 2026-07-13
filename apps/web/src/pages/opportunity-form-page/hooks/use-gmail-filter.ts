@@ -24,8 +24,12 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
         .filter(Boolean)
     );
 
+    // Also build a set of domain base names (e.g., "unframe" from "unframe.ai")
+    const existingDomainBases = new Set(Array.from(existingDomains).map((d) => d.split(".")[0]));
+
     console.log("[Gmail Filter] Existing company names:", Array.from(existingCompanyNames));
     console.log("[Gmail Filter] Existing domains:", Array.from(existingDomains));
+    console.log("[Gmail Filter] Existing domain bases:", Array.from(existingDomainBases));
     console.log("[Gmail Filter] Total candidates:", gmailCandidates.candidates.length);
 
     const groups = new Map<string, typeof gmailCandidates.candidates>();
@@ -51,6 +55,12 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
 
       // Clean up domain to get company name
       let companyKey = domain.split(".")[0] || domain;
+
+      // Skip if domain base matches an existing opportunity domain
+      if (existingDomainBases.has(companyKey)) {
+        console.log(`[Gmail Filter] ❌ FILTERED OUT by domain base: ${companyKey}`);
+        continue;
+      }
 
       // Try to extract company from subject line as well
       const subjectMatch = candidate.subject.match(/at\s+(\w+)|@\s+(\w+)|with\s+(\w+)/i);
@@ -87,6 +97,11 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
   const filteredCandidates = useMemo(() => {
     if (!gmailCandidates?.candidates) return [];
 
+    // Build a set of existing company names to filter out
+    const existingCompanyNames = new Set(
+      (existingOpportunities.data ?? []).map((opp) => opp.company.name.toLowerCase())
+    );
+
     // Build a set of existing company domains to filter out
     const existingDomains = new Set(
       (existingOpportunities.data ?? [])
@@ -94,20 +109,45 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
         .filter(Boolean)
     );
 
+    // Also build a set of domain base names (e.g., "unframe" from "unframe.ai")
+    const existingDomainBases = new Set(Array.from(existingDomains).map((d) => d.split(".")[0]));
+
+    console.log("[Gmail Filter] filteredCandidates - checking company names:", Array.from(existingCompanyNames));
     console.log("[Gmail Filter] filteredCandidates - checking domains:", Array.from(existingDomains));
+    console.log("[Gmail Filter] filteredCandidates - checking domain bases:", Array.from(existingDomainBases));
 
     const filtered = gmailCandidates.candidates.filter((candidate) => {
       const emailMatch = candidate.from.match(/<([^>]+)>|([^\s<]+@[^\s>]+)/);
       const email = emailMatch?.[1] || emailMatch?.[2] || candidate.from;
       const domain = email.split("@")[1]?.toLowerCase() || "";
+      const domainBase = domain.split(".")[0];
 
-      const keep = !existingDomains.has(domain);
-      console.log(`[Gmail Filter] filteredCandidates - ${candidate.subject.substring(0, 50)}:`, {
-        domain,
-        keep,
-      });
+      // Check if domain or domain base matches
+      if (existingDomains.has(domain) || existingDomainBases.has(domainBase)) {
+        console.log(`[Gmail Filter] filteredCandidates - ❌ FILTERED by domain: ${candidate.subject.substring(0, 50)}`);
+        return false;
+      }
 
-      return keep;
+      // Extract company name from domain or subject
+      let companyKey = domainBase;
+      const subjectMatch = candidate.subject.match(/at\s+(\w+)|@\s+(\w+)|with\s+(\w+)/i);
+      if (subjectMatch) {
+        const subjectCompany = (subjectMatch[1] || subjectMatch[2] || subjectMatch[3])?.toLowerCase();
+        if (subjectCompany && subjectCompany.length > 2) {
+          companyKey = subjectCompany;
+        }
+      }
+
+      // Check if company name matches
+      if (existingCompanyNames.has(companyKey)) {
+        console.log(
+          `[Gmail Filter] filteredCandidates - ❌ FILTERED by company name: ${candidate.subject.substring(0, 50)}`
+        );
+        return false;
+      }
+
+      console.log(`[Gmail Filter] filteredCandidates - ✅ KEPT: ${candidate.subject.substring(0, 50)}`);
+      return true;
     });
 
     console.log(`[Gmail Filter] filteredCandidates result: ${filtered.length} of ${gmailCandidates.candidates.length}`);
