@@ -263,13 +263,9 @@ export function DashboardPage() {
           actions={
             <>
               {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
-              <Link className="btn btn-secondary" to="/parse">
-                <MaterialIcon name="description" />
-                Parse Job Description
-              </Link>
               <Link className="btn btn-primary" to="/opportunities/new">
                 <MaterialIcon name="add" />
-                Add Opportunity
+                New Opportunity
               </Link>
             </>
           }

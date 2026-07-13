@@ -392,7 +392,7 @@ export function OpportunitiesPage() {
           actions={
             <Button variant="primary" onClick={() => navigate("/opportunities/new")}>
               <MaterialIcon name="add" />
-              Add Opportunity
+              New Opportunity
             </Button>
           }
         />

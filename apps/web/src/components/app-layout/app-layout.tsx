@@ -27,6 +27,7 @@ export function useBreadcrumbs() {
 
 const nav = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
+  { to: "/opportunities/new", label: "New Opportunity", icon: "add_circle" },
   { to: "/companies", label: "Companies", icon: "business" },
   { to: "/opportunities", label: "Opportunities", icon: "work" },
   { to: "/interactions", label: "Interactions", icon: "forum" },
@@ -36,11 +37,11 @@ const nav = [
 
 const placeholders: Record<string, string> = {
   "/": "Search opportunities...",
+  "/opportunities/new": "Search opportunities...",
   "/companies": "Search companies...",
   "/opportunities": "Search opportunities...",
   "/interactions": "Search interactions...",
   "/search": "Search companies, opportunities, interactions...",
-  "/parse": "Search parsed jobs...",
   "/settings": "Search options...",
 };
 
@@ -59,10 +60,8 @@ export function AppLayout() {
     .map((part) => part[0]?.toUpperCase())
     .join("");
   const activeNavItem = nav.find((item) => item.to === activeBase) ?? nav[0];
-  const mobileTitle =
-    activeBase === "/parse" ? "Parse Job" : activeNavItem.to === "/" ? "CareerFlow" : activeNavItem.label;
-  const mobileIcon =
-    activeBase === "/parse" ? "auto_awesome" : activeNavItem.to === "/" ? "rocket_launch" : activeNavItem.icon;
+  const mobileTitle = activeNavItem.to === "/" ? "CareerFlow" : activeNavItem.label;
+  const mobileIcon = activeNavItem.to === "/" ? "rocket_launch" : activeNavItem.icon;
   const avatar = user?.picture ?? null;
   const sidebarWidth = sidebarCollapsed ? 72 : 260;
   const transitionDuration = 0.3; // seconds
@@ -131,7 +130,7 @@ export function AppLayout() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                end={item.to === "/"}
+                end={item.to === "/" || item.to === "/opportunities"}
                 title={sidebarCollapsed ? item.label : undefined}
                 className={({ isActive }) =>
                   `flex items-center py-2 transition-colors hover:bg-surface-container-low/80 pl-6 ${
@@ -247,7 +246,7 @@ export function AppLayout() {
                   onClick={() => navigate("/opportunities/new")}
                 >
                   <MaterialIcon name="add" />
-                  Add Opportunity
+                  New Opportunity
                 </Button>
               </div>
               <div className="hidden text-right sm:block">
