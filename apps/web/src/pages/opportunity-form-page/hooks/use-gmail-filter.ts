@@ -24,6 +24,10 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
         .filter(Boolean)
     );
 
+    console.log("[Gmail Filter] Existing company names:", Array.from(existingCompanyNames));
+    console.log("[Gmail Filter] Existing domains:", Array.from(existingDomains));
+    console.log("[Gmail Filter] Total candidates:", gmailCandidates.candidates.length);
+
     const groups = new Map<string, typeof gmailCandidates.candidates>();
 
     for (const candidate of gmailCandidates.candidates) {
@@ -32,8 +36,16 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
       const email = emailMatch?.[1] || emailMatch?.[2] || candidate.from;
       const domain = email.split("@")[1]?.toLowerCase() || "unknown";
 
+      console.log(`[Gmail Filter] Checking candidate:`, {
+        subject: candidate.subject,
+        from: candidate.from,
+        email,
+        domain,
+      });
+
       // Skip if this domain matches an existing opportunity
       if (existingDomains.has(domain)) {
+        console.log(`[Gmail Filter] ❌ FILTERED OUT by domain: ${domain}`);
         continue;
       }
 
@@ -51,14 +63,23 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
 
       // Skip if company name matches an existing opportunity
       if (existingCompanyNames.has(companyKey)) {
+        console.log(`[Gmail Filter] ❌ FILTERED OUT by company name: ${companyKey}`);
         continue;
       }
+
+      console.log(`[Gmail Filter] ✅ KEPT: ${companyKey} (${candidate.subject.substring(0, 50)}...)`);
 
       if (!groups.has(companyKey)) {
         groups.set(companyKey, []);
       }
       groups.get(companyKey)!.push(candidate);
     }
+
+    console.log("[Gmail Filter] Final groups:", Array.from(groups.keys()));
+    console.log(
+      "[Gmail Filter] Group sizes:",
+      Array.from(groups.entries()).map(([key, candidates]) => `${key}: ${candidates.length}`)
+    );
 
     return groups;
   }, [gmailCandidates, existingOpportunities.data]);
@@ -73,13 +94,25 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
         .filter(Boolean)
     );
 
-    return gmailCandidates.candidates.filter((candidate) => {
+    console.log("[Gmail Filter] filteredCandidates - checking domains:", Array.from(existingDomains));
+
+    const filtered = gmailCandidates.candidates.filter((candidate) => {
       const emailMatch = candidate.from.match(/<([^>]+)>|([^\s<]+@[^\s>]+)/);
       const email = emailMatch?.[1] || emailMatch?.[2] || candidate.from;
       const domain = email.split("@")[1]?.toLowerCase() || "";
 
-      return !existingDomains.has(domain);
+      const keep = !existingDomains.has(domain);
+      console.log(`[Gmail Filter] filteredCandidates - ${candidate.subject.substring(0, 50)}:`, {
+        domain,
+        keep,
+      });
+
+      return keep;
     });
+
+    console.log(`[Gmail Filter] filteredCandidates result: ${filtered.length} of ${gmailCandidates.candidates.length}`);
+
+    return filtered;
   }, [gmailCandidates, existingOpportunities.data]);
 
   const emailDateRange = useMemo(() => {
