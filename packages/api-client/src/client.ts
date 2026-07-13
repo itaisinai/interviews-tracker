@@ -135,6 +135,18 @@ export const api = {
   gmailDisconnect: () => request<void>("/gmail/connection", { method: "DELETE" }),
   gmailSearch: (opportunitySlug: string) =>
     request<GmailSearchResponse>(`/opportunities/${opportunitySlug}/gmail/search`),
+  gmailFindOpportunityCandidates: (pageToken?: string | null, maxResults = 10) =>
+    request<GmailSearchResponse & { nextPageToken: string | null }>(
+      `/gmail/opportunity-candidates?${new URLSearchParams({
+        maxResults: String(maxResults),
+        ...(pageToken ? { pageToken } : {}),
+      }).toString()}`
+    ),
+  gmailParseOpportunityCandidate: (messageId: string) =>
+    request<{ email: GmailStructuredEmail; parsed: ParsedJobDescription }>("/gmail/opportunity-candidates/parse", {
+      method: "POST",
+      body: JSON.stringify({ messageId }),
+    }),
   gmailMessageStates: (opportunitySlug: string) =>
     request<{
       removedEmails: Array<{ id: string; subject: string; date: string }>;

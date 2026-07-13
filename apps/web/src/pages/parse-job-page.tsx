@@ -43,6 +43,10 @@ export function ParseJobPage() {
     "Paste raw company or job text, review structured CRM fields, then save."
   );
   const [progress, setProgress] = useState(0);
+  const [gmailCandidates, setGmailCandidates] = useState<Awaited<
+    ReturnType<typeof api.gmailFindOpportunityCandidates>
+  > | null>(null);
+  const [gmailPageToken, setGmailPageToken] = useState<string | null>(null);
   const { data: options } = useQuery({
     queryKey: ["options"],
     queryFn: api.options,
@@ -54,6 +58,48 @@ export function ParseJobPage() {
     runState === "sending_to_api" ||
     runState === "extracting_fields" ||
     runState === "normalizing_result";
+
+  const gmailStatus = useQuery({
+    queryKey: ["gmail-status"],
+    queryFn: api.gmailStatus,
+  });
+
+  const gmailConnect = useMutation({
+    mutationFn: () => api.gmailConnect({ returnTo: "/parse" }),
+    onSuccess: ({ authUrl }) => {
+      window.location.href = authUrl;
+    },
+  });
+
+  const gmailSearch = useMutation({
+    mutationFn: (pageToken?: string | null) => api.gmailFindOpportunityCandidates(pageToken, 10),
+    onSuccess: (result, pageToken) => {
+      setGmailCandidates((current) => ({
+        ...result,
+        candidates: pageToken ? [...(current?.candidates ?? []), ...result.candidates] : result.candidates,
+      }));
+      setGmailPageToken(result.nextPageToken);
+    },
+  });
+
+  const gmailParse = useMutation({
+    mutationFn: api.gmailParseOpportunityCandidate,
+    onSuccess: ({ parsed, email }) => {
+      const emailText = [
+        `Subject: ${email.subject}`,
+        `From: ${email.fromRaw}`,
+        email.plainText || email.htmlText || email.snippet,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      setText(emailText);
+      setParseResult(parsed);
+      setRunState("completed");
+      setProgress(100);
+      setRunError(null);
+      setStatusMessage("Parsed the selected Gmail message. Review the result before creating the opportunity.");
+    },
+  });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -179,12 +225,92 @@ export function ParseJobPage() {
             >
               Parse
             </LoadingButton>
+            <LoadingButton
+              className="btn btn-secondary"
+              disabled={gmailSearch.isPending || gmailConnect.isPending || gmailParse.isPending}
+              loading={gmailSearch.isPending}
+              loadingLabel="Scanning Gmail..."
+              icon="mail_search"
+              onClick={() => {
+                if (gmailStatus.data?.connected) {
+                  gmailSearch.mutate(null);
+                } else {
+                  gmailConnect.mutate();
+                }
+              }}
+            >
+              Find opportunity from Gmail
+            </LoadingButton>
             {runState === "failed" ? (
               <LoadingButton className="btn btn-secondary" icon="refresh" onClick={() => void runParser(text)}>
                 Retry
               </LoadingButton>
             ) : null}
           </div>
+          {gmailSearch.error || gmailParse.error ? (
+            <div className="mt-4 rounded-lg border border-error/30 bg-error-container px-4 py-3 text-on-error-container">
+              {gmailSearch.error instanceof Error
+                ? gmailSearch.error.message
+                : gmailParse.error instanceof Error
+                  ? gmailParse.error.message
+                  : "Gmail scan failed."}
+            </div>
+          ) : null}
+          {gmailCandidates ? (
+            <div className="mt-5 rounded-xl border border-outline-variant bg-surface-container-low p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-body-md text-body-md font-semibold">Gmail opportunity candidates</p>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    Pick the email that looks like a recruiter, founder, or job opportunity message.
+                  </p>
+                </div>
+                {gmailPageToken ? (
+                  <LoadingButton
+                    className="btn btn-secondary btn-sm"
+                    loading={gmailSearch.isPending}
+                    loadingLabel="Loading..."
+                    icon="expand_more"
+                    onClick={() => gmailSearch.mutate(gmailPageToken)}
+                  >
+                    More
+                  </LoadingButton>
+                ) : null}
+              </div>
+              <div className="max-h-[360px] space-y-3 overflow-auto">
+                {gmailCandidates.candidates.length > 0 ? (
+                  gmailCandidates.candidates.map((candidate) => (
+                    <button
+                      key={candidate.id}
+                      type="button"
+                      disabled={gmailParse.isPending}
+                      onClick={() => gmailParse.mutate(candidate.id)}
+                      className="w-full rounded-lg border border-outline-variant bg-surface p-3 text-left transition hover:border-primary hover:bg-primary/5 disabled:opacity-60"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="line-clamp-2 font-body-md text-body-md font-semibold">{candidate.subject}</p>
+                          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{candidate.from}</p>
+                        </div>
+                        <span className="shrink-0 font-body-xs text-body-xs text-on-surface-variant">
+                          {new Date(candidate.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {candidate.snippet ? (
+                        <p className="mt-2 line-clamp-2 font-body-sm text-body-sm text-on-surface-variant">
+                          {candidate.snippet}
+                        </p>
+                      ) : null}
+                    </button>
+                  ))
+                ) : (
+                  <div className="rounded-lg border border-dashed border-outline-variant p-6 text-center text-on-surface-variant">
+                    No matching Gmail messages found.
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
         </section>
         <section className="panel p-6 lg:col-span-6">
           <div className="mb-4 flex items-center justify-between">

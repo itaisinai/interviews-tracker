@@ -187,6 +187,104 @@ export async function searchGmailMessages(input: {
   }
 }
 
+export async function findGmailOpportunityCandidates(input: {
+  auth0Email: string;
+  pageToken?: string | null;
+  maxResults?: number;
+}) {
+  const access = await getAccessTokenForEmail(input.auth0Email);
+
+  if (!access) {
+    throw new Error("Gmail is not connected.");
+  }
+
+  const maxResults = Math.min(Math.max(input.maxResults ?? 10, 5), 10);
+  const query = [
+    "newer_than:180d",
+    "(recruiter OR hiring OR founder OR co-founder OR interview OR opportunity OR role OR position OR job)",
+    "-category:promotions",
+  ].join(" ");
+
+  const params = new URLSearchParams({ q: query, maxResults: String(maxResults), includeSpamTrash: "false" });
+  if (input.pageToken) params.set("pageToken", input.pageToken);
+
+  const listResponse = await fetchJson<GmailListResponse & { nextPageToken?: string }>(
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${access.accessToken}` } }
+  );
+
+  const candidates = [];
+  for (const message of listResponse.messages ?? []) {
+    if (!message.id) continue;
+    const detailParams = new URLSearchParams();
+    detailParams.set("format", "metadata");
+    detailParams.append("metadataHeaders", "Subject");
+    detailParams.append("metadataHeaders", "From");
+    detailParams.append("metadataHeaders", "Date");
+    const detail = await fetchJson<GmailMessageResponse>(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}?${detailParams.toString()}`,
+      { headers: { Authorization: `Bearer ${access.accessToken}` } }
+    );
+    const candidate = mapMessageCandidate({ ...detail, threadId: detail.threadId ?? message.threadId ?? "" });
+    candidates.push({
+      ...candidate,
+      relevance: classifySearchCandidateFallback({
+        messageId: candidate.id,
+        companyName: "job opportunity",
+        companyAliases: [],
+        roleTitle: null,
+        subject: candidate.subject,
+        from: candidate.from,
+        snippet: candidate.snippet,
+        date: candidate.date,
+        senderDomain: senderDomainFromHeader(candidate.from),
+        searchQuery: query,
+      }),
+    });
+  }
+
+  return {
+    companyName: "Gmail",
+    roleTitle: null,
+    query,
+    candidates: sortGmailSearchCandidatesByDate(candidates),
+    nextPageToken: listResponse.nextPageToken ?? null,
+  };
+}
+
+export async function parseGmailEmailToOpportunity(input: { auth0Email: string; messageId: string }) {
+  const access = await getAccessTokenForEmail(input.auth0Email);
+
+  if (!access) {
+    throw new Error("Gmail is not connected.");
+  }
+
+  const detail = await fetchJson<GmailMessageResponse>(
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${input.messageId}?${new URLSearchParams({ format: "full" }).toString()}`,
+    { headers: { Authorization: `Bearer ${access.accessToken}` } }
+  );
+  const email = await parseStructuredGmailEmail({
+    message: detail,
+    attachmentFetcher: async (messageId, attachmentId) => {
+      const attachment = await fetchGmailAttachment(messageId, attachmentId, access.accessToken);
+      if (!attachment.data) return "";
+      return Buffer.from(attachment.data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+    },
+  });
+
+  const text = [
+    `Subject: ${email.subject}`,
+    `From: ${email.fromRaw}`,
+    `Date: ${email.dateHeader ?? email.internalDate}`,
+    email.snippet ? `Snippet: ${email.snippet}` : null,
+    email.plainText || email.htmlText || email.calendarText,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  return { email, parsed: await getAiParserService().parseJobDescription(text) };
+}
+
 export async function syncAttachedGmailInteractionData(input: { auth0Email: string; jobOpportunityId: string }) {
   const access = await getAccessTokenForEmail(input.auth0Email);
 
