@@ -319,13 +319,30 @@ export class OpenAiParserService implements AiParserService {
       senderDomain?: string | null;
     }>;
   }): Promise<Array<z.infer<typeof gmailEmailClassificationSchema>>> {
+    const isGeneralOpportunitySearch = input.companyName.toLowerCase() === "job opportunity";
+
     const outputText = await this.createStructuredOutput({
       name: "gmail_email_classification_batch",
       schema: gmailEmailClassificationBatchJsonSchema,
       systemPrompt: [
         "Classify each Gmail candidate for a job-search CRM.",
         "Relevant means the email likely matters for the hiring process, even if confidence is only medium.",
-        "Do not over-filter generic recruiter or scheduling email when it refers to the target company or role.",
+        isGeneralOpportunitySearch
+          ? [
+              "IMPORTANT: This is a general opportunity discovery search (not scoped to a specific company).",
+              "Mark as UNRELATED and isRelevant=false:",
+              "- Calendar notifications/reminders (from calendar-notification@, Google Calendar, etc.)",
+              "- System error notifications (PrismaClientValidationError, alerts, etc.)",
+              "- Meeting invitations that are NOT job interviews (personal meetings, existing team meetings, etc.)",
+              "- Automated system emails (from noreply@, no-reply@, donotreply@, notifications@)",
+              "- Event reminders for non-interview events",
+              "Mark as RELEVANT only if:",
+              "- Direct recruiter outreach about job opportunities",
+              "- Job interview invitations or scheduling",
+              "- Offer letters or employment discussions",
+              "- Actual job application follow-ups from companies",
+            ].join("\n")
+          : "Do not over-filter generic recruiter or scheduling email when it refers to the target company or role.",
         "Return results in the same order as the input candidates array.",
         `Company: ${input.companyName}`,
         input.roleTitle ? `Role: ${input.roleTitle}` : null,

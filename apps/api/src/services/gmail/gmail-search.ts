@@ -201,9 +201,35 @@ export async function findGmailOpportunityCandidates(input: {
   const maxResults = Math.min(Math.max(input.maxResults ?? 10, 5), 10);
   const query = [
     "newer_than:180d",
-    "(recruiter OR hiring OR founder OR co-founder OR interview OR opportunity OR role OR position OR job)",
+    "(recruiter OR hiring OR founder OR co-founder OR opportunity OR role OR position OR job)",
     "-category:promotions",
+    "-category:updates",
+    "-from:noreply",
+    "-from:no-reply",
+    "-from:donotreply",
+    "-from:notifications@",
+    "-from:calendar-notification@",
+    "-from:notification@",
+    "-subject:reminder",
+    "-subject:notification",
+    "-subject:alert",
+    "-subject:error",
+    "-subject:invited",
+    "-subject:invitation",
   ].join(" ");
+
+  // Get already processed emails to filter them out
+  const suppressedMessageIds = await (async () => {
+    const states = await prisma.gmailMessageState.findMany({
+      where: {
+        auth0Email: input.auth0Email,
+        status: { in: ["USED", "HIDDEN", "IGNORED"] },
+      },
+      select: { messageId: true },
+    });
+
+    return new Set(states.map((state) => state.messageId));
+  })();
 
   const params = new URLSearchParams({ q: query, maxResults: String(maxResults), includeSpamTrash: "false" });
   if (input.pageToken) params.set("pageToken", input.pageToken);
@@ -216,6 +242,12 @@ export async function findGmailOpportunityCandidates(input: {
   const candidates = [];
   for (const message of listResponse.messages ?? []) {
     if (!message.id) continue;
+
+    // Skip already processed emails
+    if (suppressedMessageIds.has(message.id)) {
+      continue;
+    }
+
     const detailParams = new URLSearchParams();
     detailParams.set("format", "metadata");
     detailParams.append("metadataHeaders", "Subject");
@@ -243,11 +275,59 @@ export async function findGmailOpportunityCandidates(input: {
     });
   }
 
+  // Use AI to classify and filter candidates
+  let classifications: Array<z.infer<typeof gmailEmailClassificationSchema>> = [];
+  try {
+    classifications = await getAiParserService().classifyGmailEmails({
+      companyName: "job opportunity",
+      roleTitle: null,
+      candidates: candidates.map((candidate) => ({
+        messageId: candidate.id,
+        subject: candidate.subject,
+        from: candidate.from,
+        snippet: candidate.snippet,
+        date: candidate.date,
+        senderDomain: senderDomainFromHeader(candidate.from),
+      })),
+    });
+  } catch (error) {
+    logInfo("gmail", "opportunity candidate classification fallback", {
+      error: error instanceof Error ? error.message : "unknown",
+    });
+  }
+
+  const classificationMap = new Map(classifications.map((item) => [item.messageId, item]));
+  const rankedCandidates = sortGmailSearchCandidatesByDate(
+    candidates
+      .map((candidate) => ({
+        ...candidate,
+        relevance: classificationMap.get(candidate.id) ?? candidate.relevance,
+      }))
+      // Filter out non-relevant emails (notifications, reminders, errors)
+      .filter((candidate) => {
+        const classification = classificationMap.get(candidate.id);
+        // If we have AI classification, use it; otherwise keep the candidate
+        if (!classification) return true;
+
+        // Filter out explicitly non-relevant emails and those with UNRELATED type
+        if (classification.isRelevant === false || classification.emailType === "UNRELATED") {
+          return false;
+        }
+
+        // Filter out very low confidence matches (< 0.3)
+        if (classification.confidence < 0.3) {
+          return false;
+        }
+
+        return true;
+      })
+  );
+
   return {
     companyName: "Gmail",
     roleTitle: null,
     query,
-    candidates: sortGmailSearchCandidatesByDate(candidates),
+    candidates: rankedCandidates,
     nextPageToken: listResponse.nextPageToken ?? null,
   };
 }
@@ -282,7 +362,26 @@ export async function parseGmailEmailToOpportunity(input: { auth0Email: string; 
     .filter(Boolean)
     .join("\n\n");
 
-  return { email, parsed: await getAiParserService().parseJobDescription(text) };
+  const parsed = await getAiParserService().parseJobDescription(text);
+
+  // Mark the email as USED so it doesn't appear in future searches
+  await prisma.gmailMessageState.upsert({
+    where: {
+      auth0Email_messageId: {
+        auth0Email: input.auth0Email,
+        messageId: input.messageId,
+      },
+    },
+    create: {
+      auth0Email: input.auth0Email,
+      messageId: input.messageId,
+      jobOpportunityId: null,
+      status: "USED",
+    },
+    update: { status: "USED" },
+  });
+
+  return { email, parsed };
 }
 
 export async function syncAttachedGmailInteractionData(input: { auth0Email: string; jobOpportunityId: string }) {

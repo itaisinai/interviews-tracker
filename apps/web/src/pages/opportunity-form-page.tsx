@@ -87,6 +87,7 @@ export function OpportunityFormPage() {
     ReturnType<typeof api.gmailFindOpportunityCandidates>
   > | null>(null);
   const [gmailPageToken, setGmailPageToken] = useState<string | null>(null);
+  const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
   const {
     data: options,
     isLoading,
@@ -225,6 +226,38 @@ export function OpportunityFormPage() {
       parseResult.prioritySuggestion ?? "MEDIUM",
     ].join(" · ");
   }, [parseResult]);
+
+  const groupedCandidates = useMemo(() => {
+    if (!gmailCandidates?.candidates) return new Map<string, typeof gmailCandidates.candidates>();
+
+    const groups = new Map<string, typeof gmailCandidates.candidates>();
+
+    for (const candidate of gmailCandidates.candidates) {
+      // Extract company from email domain
+      const emailMatch = candidate.from.match(/<([^>]+)>|([^\s<]+@[^\s>]+)/);
+      const email = emailMatch?.[1] || emailMatch?.[2] || candidate.from;
+      const domain = email.split("@")[1]?.toLowerCase() || "unknown";
+
+      // Clean up domain to get company name
+      let companyKey = domain.split(".")[0] || domain;
+
+      // Try to extract company from subject line as well
+      const subjectMatch = candidate.subject.match(/at\s+(\w+)|@\s+(\w+)|with\s+(\w+)/i);
+      if (subjectMatch) {
+        const subjectCompany = (subjectMatch[1] || subjectMatch[2] || subjectMatch[3])?.toLowerCase();
+        if (subjectCompany && subjectCompany.length > 2) {
+          companyKey = subjectCompany;
+        }
+      }
+
+      if (!groups.has(companyKey)) {
+        groups.set(companyKey, []);
+      }
+      groups.get(companyKey)!.push(candidate);
+    }
+
+    return groups;
+  }, [gmailCandidates]);
 
   const runParser = async (inputText: string) => {
     const trimmed = inputText.trim();
@@ -550,6 +583,96 @@ export function OpportunityFormPage() {
               Parsed fields will appear here.
             </div>
           )}
+          {gmailCandidates && Array.from(groupedCandidates.values()).some((candidates) => candidates.length > 1) ? (
+            <div className="mt-6">
+              <div className="mb-4">
+                <h3 className="font-title-md text-title-md font-bold">Opportunities by Company</h3>
+                <p className="mt-1 text-body-sm text-on-surface-variant">
+                  {Array.from(groupedCandidates.entries()).filter(([, candidates]) => candidates.length > 1).length}{" "}
+                  {Array.from(groupedCandidates.entries()).filter(([, candidates]) => candidates.length > 1).length ===
+                  1
+                    ? "company"
+                    : "companies"}{" "}
+                  with multiple emails
+                </p>
+              </div>
+              <div className="space-y-3">
+                {Array.from(groupedCandidates.entries())
+                  .filter(([, candidates]) => candidates.length > 1)
+                  .sort((a, b) => b[1].length - a[1].length)
+                  .map(([companyKey, candidates]) => {
+                    const isExpanded = expandedCompanies.has(companyKey);
+                    const displayName = companyKey.charAt(0).toUpperCase() + companyKey.slice(1);
+
+                    return (
+                      <div
+                        key={companyKey}
+                        className="rounded-lg border border-outline-variant bg-surface-container-low"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newExpanded = new Set(expandedCompanies);
+                            if (isExpanded) {
+                              newExpanded.delete(companyKey);
+                            } else {
+                              newExpanded.add(companyKey);
+                            }
+                            setExpandedCompanies(newExpanded);
+                          }}
+                          className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-surface-container"
+                        >
+                          <div className="flex items-center gap-3">
+                            <MaterialIcon name={isExpanded ? "expand_less" : "expand_more"} />
+                            <div>
+                              <p className="font-body-md text-body-md font-semibold">{displayName}</p>
+                              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                                {candidates.length} email{candidates.length !== 1 ? "s" : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="rounded-full bg-primary-container px-3 py-1 font-label-sm text-label-sm text-on-primary-container">
+                            {candidates.length}
+                          </span>
+                        </button>
+                        {isExpanded ? (
+                          <div className="space-y-2 border-t border-outline-variant p-3">
+                            {candidates.map((candidate) => (
+                              <button
+                                key={candidate.id}
+                                type="button"
+                                disabled={gmailParse.isPending}
+                                onClick={() => gmailParse.mutate(candidate.id)}
+                                className="w-full rounded-lg border border-outline-variant bg-surface p-3 text-left transition hover:border-primary hover:bg-primary/5 disabled:opacity-60"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="line-clamp-2 font-body-sm text-body-sm font-semibold">
+                                      {candidate.subject}
+                                    </p>
+                                    <p className="mt-1 font-body-xs text-body-xs text-on-surface-variant">
+                                      {candidate.from}
+                                    </p>
+                                  </div>
+                                  <span className="shrink-0 font-body-xs text-body-xs text-on-surface-variant">
+                                    {new Date(candidate.date).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                {candidate.snippet ? (
+                                  <p className="mt-2 line-clamp-2 font-body-xs text-body-xs text-on-surface-variant">
+                                    {candidate.snippet}
+                                  </p>
+                                ) : null}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          ) : null}
         </section>
       </div>
     </>
