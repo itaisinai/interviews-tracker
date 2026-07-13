@@ -69,6 +69,10 @@ export function OpportunityFormPage() {
       }));
       setGmailPageToken(result.nextPageToken);
     },
+    onError: () => {
+      // Invalidate gmailStatus to refresh connection state (e.g., after token expiry)
+      queryClient.invalidateQueries({ queryKey: ["gmail-status"] });
+    },
   });
 
   const gmailParse = useMutation({
