@@ -62,11 +62,6 @@ const NotificationsPage = lazy(() =>
     default: module.NotificationsPage,
   }))
 );
-const ParseJobPage = lazy(() =>
-  import("./pages/parse-job-page").then((module) => ({
-    default: module.ParseJobPage,
-  }))
-);
 const SearchPage = lazy(() =>
   import("./pages/search-page").then((module) => ({
     default: module.SearchPage,
@@ -91,7 +86,6 @@ function App() {
                   <Route path="/opportunities/:slug/edit" element={<Navigate to="/opportunities/:slug" replace />} />
                   <Route path="/interactions" element={<InteractionsPage />} />
                   <Route path="/search" element={<SearchPage />} />
-                  <Route path="/parse" element={<ParseJobPage />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Route>

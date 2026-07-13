@@ -92,6 +92,8 @@ export type GmailEmailClassification = {
 
 export type GmailSearchCandidate = GmailMessageCandidate & {
   relevance: GmailEmailClassification;
+  suppressionStatus?: "USED" | "HIDDEN" | "IGNORED" | null;
+  usedInOpportunitySlug?: string | null;
 };
 
 export type GmailSearchResponse = {

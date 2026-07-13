@@ -60,7 +60,9 @@ export {
   unmarkUsedGmailMessageState,
 } from "./gmail-message-state.js";
 export {
+  findGmailOpportunityCandidates,
   parseGmailEmailToInteraction,
+  parseGmailEmailToOpportunity,
   searchGmailMessages,
   syncAttachedGmailInteractionData,
 } from "./gmail-search.js";
