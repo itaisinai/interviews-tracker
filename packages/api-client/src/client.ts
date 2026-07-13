@@ -192,6 +192,8 @@ export const api = {
     request<{ ignoredMessages: Array<{ id: string; subject: string; date: string; opportunityId: string | null }> }>(
       "/gmail/ignored-messages"
     ),
+  gmailIgnoreGlobal: (messageId: string) =>
+    request<void>(`/gmail/ignored-messages/${encodeURIComponent(messageId)}`, { method: "POST" }),
   gmailUnignoreGlobal: (messageId: string) =>
     request<void>(`/gmail/ignored-messages/${encodeURIComponent(messageId)}`, { method: "DELETE" }),
   parseOpportunityInteractionText: (opportunitySlug: string, body: { text: string }) =>

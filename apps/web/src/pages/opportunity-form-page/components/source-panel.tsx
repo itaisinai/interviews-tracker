@@ -59,6 +59,7 @@ export function SourcePanel({
   onRefresh,
 }: SourcePanelProps) {
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(null);
+  const [ignoringMessageId, setIgnoringMessageId] = useState<string | null>(null);
 
   const restoreMutation = useMutation({
     mutationFn: (messageId: string) => api.gmailRestoreMessage(messageId),
@@ -71,9 +72,25 @@ export function SourcePanel({
     },
   });
 
+  const ignoreMutation = useMutation({
+    mutationFn: (messageId: string) => api.gmailIgnoreGlobal(messageId),
+    onSuccess: (_, messageId) => {
+      setIgnoringMessageId(null);
+      onRefresh();
+    },
+    onError: (error, messageId) => {
+      setIgnoringMessageId(null);
+    },
+  });
+
   const handleRestore = (messageId: string) => {
     setRestoringMessageId(messageId);
     restoreMutation.mutate(messageId);
+  };
+
+  const handleIgnore = (messageId: string) => {
+    setIgnoringMessageId(messageId);
+    ignoreMutation.mutate(messageId);
   };
 
   return (
@@ -291,7 +308,21 @@ export function SourcePanel({
                                       <MaterialIcon name="refresh" className="text-sm" />
                                       {restoringMessageId === candidate.id ? "Restoring..." : "Restore"}
                                     </button>
-                                  ) : null}
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleIgnore(candidate.id);
+                                      }}
+                                      disabled={ignoringMessageId === candidate.id}
+                                      className="flex items-center gap-1 whitespace-nowrap text-xs text-neutral-500 hover:text-neutral-700 hover:underline disabled:opacity-50"
+                                    >
+                                      <MaterialIcon name="block" className="text-sm" />
+                                      {ignoringMessageId === candidate.id ? "Ignoring..." : "Ignore"}
+                                    </button>
+                                  )}
                                 </div>
                               </label>
                             ))}
@@ -377,7 +408,21 @@ export function SourcePanel({
                             <MaterialIcon name="refresh" className="text-sm" />
                             {restoringMessageId === candidate.id ? "Restoring..." : "Restore"}
                           </button>
-                        ) : null}
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleIgnore(candidate.id);
+                            }}
+                            disabled={ignoringMessageId === candidate.id}
+                            className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-700 hover:underline disabled:opacity-50"
+                          >
+                            <MaterialIcon name="block" className="text-sm" />
+                            {ignoringMessageId === candidate.id ? "Ignoring..." : "Ignore"}
+                          </button>
+                        )}
                       </div>
                     </label>
                   ))}

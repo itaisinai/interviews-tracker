@@ -69,7 +69,7 @@ export async function searchGmailMessages(input: {
       const listResponse = await fetchJson<GmailListResponse>(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages?${new URLSearchParams({
           q: query,
-          maxResults: "10",
+          maxResults: "50",
           includeSpamTrash: "false",
         }).toString()}`,
         {
@@ -199,7 +199,7 @@ export async function findGmailOpportunityCandidates(input: {
     throw new Error("Gmail is not connected.");
   }
 
-  const maxResults = Math.min(Math.max(input.maxResults ?? 10, 5), 10);
+  const maxResults = Math.min(Math.max(input.maxResults ?? 50, 5), 50);
   const query = [
     "newer_than:180d",
     "(recruiter OR hiring OR founder OR co-founder OR opportunity OR role OR position OR job)",
