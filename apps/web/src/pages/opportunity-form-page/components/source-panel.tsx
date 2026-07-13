@@ -10,21 +10,10 @@ import type { GmailSearchCandidate, GmailSearchResponse, GmailStatus } from "../
 import type { GmailCandidatesResult, SourceMode } from "../types";
 import { formatDate } from "../utils";
 
-function StatusBadge({ status }: { status: "USED" | "HIDDEN" | "IGNORED" }) {
-  const styles = {
-    USED: "bg-surface-container-high text-on-surface-variant",
-    HIDDEN: "bg-error-container text-on-error-container",
-    IGNORED: "bg-warning-container text-on-warning-container",
-  };
-
-  const labels = {
-    USED: "Used",
-    HIDDEN: "Hidden",
-    IGNORED: "Ignored",
-  };
-
-  return <span className={`rounded px-2 py-0.5 text-xs font-medium ${styles[status]}`}>{labels[status]}</span>;
-}
+import { GmailConnectPrompt } from "./gmail-connect-prompt";
+import { GmailEmptyState } from "./gmail-empty-state";
+import { GmailLoadingState } from "./gmail-loading-state";
+import { StatusBadge } from "./status-badge";
 
 interface SourcePanelProps {
   sourceMode: SourceMode;
@@ -74,12 +63,10 @@ export function SourcePanel({
   const restoreMutation = useMutation({
     mutationFn: (messageId: string) => api.gmailRestoreMessage(messageId),
     onSuccess: (_, messageId) => {
-      console.log(`Restored message ${messageId}`);
       setRestoringMessageId(null);
       onRefresh();
     },
     onError: (error, messageId) => {
-      console.error(`Failed to restore message ${messageId}:`, error);
       setRestoringMessageId(null);
     },
   });
@@ -150,27 +137,9 @@ export function SourcePanel({
           <p className="mb-3 text-body-sm text-on-surface-variant">Search your emails and select the relevant ones</p>
 
           {!gmailStatus.data?.connected ? (
-            <div className="flex min-h-[300px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low p-8 text-center">
-              <MaterialIcon name="mail" className="mb-4 text-5xl text-on-surface-variant" />
-              <p className="mb-4 font-title-md text-title-md font-medium text-on-surface">Connect your Gmail account</p>
-              <LoadingButton
-                className="btn btn-primary"
-                loading={gmailConnect.isPending}
-                loadingLabel="Connecting..."
-                icon="link"
-                onClick={() => gmailConnect.mutate()}
-              >
-                Connect Gmail
-              </LoadingButton>
-            </div>
+            <GmailConnectPrompt gmailConnect={gmailConnect} />
           ) : gmailSearch.isPending && !gmailCandidates ? (
-            <div className="flex min-h-[300px] items-center justify-center rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low">
-              <div className="text-center">
-                <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <p className="text-body-sm text-on-surface-variant">Searching Gmail...</p>
-                <p className="mt-2 text-body-xs text-on-surface-variant">Looking for emails from the last 6 months</p>
-              </div>
-            </div>
+            <GmailLoadingState />
           ) : filteredCandidates.length > 0 ? (
             <>
               <div className="mb-3 flex items-center justify-between gap-4 text-body-sm text-on-surface-variant">
@@ -420,13 +389,7 @@ export function SourcePanel({
               </div>
             </>
           ) : (
-            <div className="flex min-h-[300px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low p-8 text-center">
-              <MaterialIcon name="inbox" className="mb-4 text-5xl text-on-surface-variant" />
-              <p className="mb-2 font-title-md text-title-md font-medium text-on-surface">No emails found</p>
-              <p className="text-body-sm text-on-surface-variant">
-                No job opportunity emails found in the last 6 months.
-              </p>
-            </div>
+            <GmailEmptyState />
           )}
 
           {gmailSearch.error ? (
