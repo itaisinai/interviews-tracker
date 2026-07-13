@@ -191,6 +191,7 @@ export async function findGmailOpportunityCandidates(input: {
   auth0Email: string;
   pageToken?: string | null;
   maxResults?: number;
+  includeSupressed?: boolean;
 }) {
   const access = await getAccessTokenForEmail(input.auth0Email);
 
@@ -218,18 +219,41 @@ export async function findGmailOpportunityCandidates(input: {
     "-subject:invitation",
   ].join(" ");
 
-  // Get already processed emails to filter them out
-  const suppressedMessageIds = await (async () => {
-    const states = await prisma.gmailMessageState.findMany({
-      where: {
-        auth0Email: input.auth0Email,
-        status: { in: ["USED", "HIDDEN", "IGNORED"] },
-      },
-      select: { messageId: true },
-    });
+  // Get already processed emails to filter them out (or just track their status if includeSupressed=true)
+  const messageStates = await prisma.gmailMessageState.findMany({
+    where: {
+      auth0Email: input.auth0Email,
+      status: { in: ["USED", "HIDDEN", "IGNORED"] },
+    },
+    select: {
+      messageId: true,
+      status: true,
+      jobOpportunityId: true,
+    },
+  });
 
-    return new Set(states.map((state) => state.messageId));
-  })();
+  // Get opportunity slugs for USED messages
+  const opportunityIds = [
+    ...new Set(messageStates.map((s) => s.jobOpportunityId).filter((id): id is string => id !== null)),
+  ];
+  const opportunities = await prisma.jobOpportunity.findMany({
+    where: { id: { in: opportunityIds } },
+    select: { id: true, slug: true },
+  });
+  const opportunitySlugById = new Map(opportunities.map((opp) => [opp.id, opp.slug]));
+
+  console.log(
+    `[Gmail Search] Found ${messageStates.length} suppressed messages (USED/HIDDEN/IGNORED) for ${input.auth0Email}${input.includeSupressed ? " - including them in results" : ""}`
+  );
+
+  const suppressedMessageIds = new Set(messageStates.map((state) => state.messageId));
+  const messageStatusMap = new Map(messageStates.map((state) => [state.messageId, state.status]));
+  const messageOpportunitySlugMap = new Map(
+    messageStates.map((state) => [
+      state.messageId,
+      state.jobOpportunityId ? (opportunitySlugById.get(state.jobOpportunityId) ?? null) : null,
+    ])
+  );
 
   const params = new URLSearchParams({ q: query, maxResults: String(maxResults), includeSpamTrash: "false" });
   if (input.pageToken) params.set("pageToken", input.pageToken);
@@ -239,13 +263,27 @@ export async function findGmailOpportunityCandidates(input: {
     { headers: { Authorization: `Bearer ${access.accessToken}` } }
   );
 
+  console.log(`[Gmail Search] Gmail API returned ${listResponse.messages?.length ?? 0} messages`);
+
   const candidates = [];
   for (const message of listResponse.messages ?? []) {
     if (!message.id) continue;
 
-    // Skip already processed emails
-    if (suppressedMessageIds.has(message.id)) {
+    const isSuppressed = suppressedMessageIds.has(message.id);
+    const suppressionStatus = messageStatusMap.get(message.id);
+
+    // Skip already processed emails (unless includeSupressed is true)
+    if (isSuppressed && !input.includeSupressed) {
+      console.log(
+        `[Gmail Search] ❌ SUPPRESSED message ${message.id} (status: ${suppressionStatus}) - hiding from results`
+      );
       continue;
+    }
+
+    if (isSuppressed) {
+      console.log(
+        `[Gmail Search] ⚠️  SUPPRESSED message ${message.id} (status: ${suppressionStatus}) - including due to includeSupressed=true`
+      );
     }
 
     const detailParams = new URLSearchParams();
@@ -258,8 +296,13 @@ export async function findGmailOpportunityCandidates(input: {
       { headers: { Authorization: `Bearer ${access.accessToken}` } }
     );
     const candidate = mapMessageCandidate({ ...detail, threadId: detail.threadId ?? message.threadId ?? "" });
+    console.log(
+      `[Gmail Search] ✅ KEPT message: ${candidate.subject} (from: ${candidate.from})${suppressionStatus ? ` [${suppressionStatus}]` : ""}`
+    );
     candidates.push({
       ...candidate,
+      suppressionStatus: suppressionStatus ?? null,
+      usedInOpportunitySlug: suppressionStatus === "USED" ? (messageOpportunitySlugMap.get(message.id) ?? null) : null,
       relevance: classifySearchCandidateFallback({
         messageId: candidate.id,
         companyName: "job opportunity",
@@ -275,25 +318,34 @@ export async function findGmailOpportunityCandidates(input: {
     });
   }
 
-  // Use AI to classify and filter candidates
+  console.log(`[Gmail Search] Collected ${candidates.length} candidates before AI classification`);
+
+  // Use AI to classify and filter candidates (unless includeSupressed is true)
   let classifications: Array<z.infer<typeof gmailEmailClassificationSchema>> = [];
-  try {
-    classifications = await getAiParserService().classifyGmailEmails({
-      companyName: "job opportunity",
-      roleTitle: null,
-      candidates: candidates.map((candidate) => ({
-        messageId: candidate.id,
-        subject: candidate.subject,
-        from: candidate.from,
-        snippet: candidate.snippet,
-        date: candidate.date,
-        senderDomain: senderDomainFromHeader(candidate.from),
-      })),
-    });
-  } catch (error) {
-    logInfo("gmail", "opportunity candidate classification fallback", {
-      error: error instanceof Error ? error.message : "unknown",
-    });
+
+  // IMPORTANT: If includeSupressed=true, skip AI classification entirely
+  // User wants to see EVERYTHING, not just "relevant" emails
+  if (input.includeSupressed) {
+    console.log(`[Gmail Search] Skipping AI classification because includeSupressed=true - showing all emails`);
+  } else {
+    try {
+      classifications = await getAiParserService().classifyGmailEmails({
+        companyName: "job opportunity",
+        roleTitle: null,
+        candidates: candidates.map((candidate) => ({
+          messageId: candidate.id,
+          subject: candidate.subject,
+          from: candidate.from,
+          snippet: candidate.snippet,
+          date: candidate.date,
+          senderDomain: senderDomainFromHeader(candidate.from),
+        })),
+      });
+    } catch (error) {
+      logInfo("gmail", "opportunity candidate classification fallback", {
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    }
   }
 
   const classificationMap = new Map(classifications.map((item) => [item.messageId, item]));
@@ -305,23 +357,44 @@ export async function findGmailOpportunityCandidates(input: {
       }))
       // Filter out non-relevant emails (notifications, reminders, errors)
       .filter((candidate) => {
+        // IMPORTANT: If this email has a suppressionStatus (USED/HIDDEN/IGNORED),
+        // it was already classified when first processed. Don't re-filter it!
+        if (candidate.suppressionStatus) {
+          console.log(
+            `[Gmail Search] ✅ KEEPING suppressed email (already classified): ${candidate.subject} [${candidate.suppressionStatus}]`
+          );
+          return true;
+        }
+
         const classification = classificationMap.get(candidate.id);
         // If we have AI classification, use it; otherwise keep the candidate
         if (!classification) return true;
 
         // Filter out explicitly non-relevant emails and those with UNRELATED type
         if (classification.isRelevant === false || classification.emailType === "UNRELATED") {
+          console.log(
+            `[Gmail Search] ❌ AI FILTERED OUT: ${candidate.subject} (isRelevant: ${classification.isRelevant}, emailType: ${classification.emailType})`
+          );
           return false;
         }
 
         // Filter out very low confidence matches (< 0.3)
         if (classification.confidence < 0.3) {
+          console.log(
+            `[Gmail Search] ❌ AI FILTERED OUT (low confidence): ${candidate.subject} (confidence: ${classification.confidence})`
+          );
           return false;
         }
+
+        console.log(
+          `[Gmail Search] ✅ AI KEPT: ${candidate.subject} (confidence: ${classification.confidence}, emailType: ${classification.emailType})`
+        );
 
         return true;
       })
   );
+
+  console.log(`[Gmail Search] Final result: ${rankedCandidates.length} candidates after AI filtering`);
 
   return {
     companyName: "Gmail",

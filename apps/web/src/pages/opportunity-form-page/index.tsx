@@ -22,6 +22,7 @@ export function OpportunityFormPage() {
   const [gmailPageToken, setGmailPageToken] = useState<string | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
+  const [showAllEmails, setShowAllEmails] = useState(false);
 
   const {
     parseResult,
@@ -60,7 +61,7 @@ export function OpportunityFormPage() {
   });
 
   const gmailSearch = useMutation({
-    mutationFn: (pageToken?: string | null) => api.gmailFindOpportunityCandidates(pageToken, 10),
+    mutationFn: (pageToken?: string | null) => api.gmailFindOpportunityCandidates(pageToken, 10, showAllEmails),
     onSuccess: (result, pageToken) => {
       setGmailCandidates((current) => ({
         ...result,
@@ -198,6 +199,12 @@ export function OpportunityFormPage() {
           setExpandedCompanies={setExpandedCompanies}
           selectedEmails={selectedEmails}
           setSelectedEmails={setSelectedEmails}
+          showAllEmails={showAllEmails}
+          setShowAllEmails={setShowAllEmails}
+          onRefresh={() => {
+            setGmailCandidates(null);
+            gmailSearch.mutate(null);
+          }}
         />
 
         <ReviewPanel

@@ -19,6 +19,8 @@ export { DrawerHeader } from "./components/drawer-header/index.js";
 export { FormField } from "./components/form-field/index.js";
 export type { IconButtonProps } from "./components/icon-button/index.js";
 export { IconButton } from "./components/icon-button/index.js";
+export type { IconLinkProps } from "./components/icon-link/index.js";
+export { IconLink } from "./components/icon-link/index.js";
 export type { InputProps } from "./components/input/index.js";
 export { Input } from "./components/input/index.js";
 export type {

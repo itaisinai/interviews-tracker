@@ -3,6 +3,7 @@ import { Router } from "express";
 
 import { asyncHandler } from "../lib/http.js";
 import { createTimer } from "../lib/logger.js";
+import { prisma } from "../lib/prisma.js";
 import { gmailConnectRequestSchema } from "../lib/schemas.js";
 import {
   createGmailAuthUrl,
@@ -108,10 +109,12 @@ gmailRouter.get(
     }
 
     const maxResults = request.query.maxResults ? Number(request.query.maxResults) : undefined;
+    const includeSupressed = request.query.includeSupressed === "true";
     const result = await findGmailOpportunityCandidates({
       auth0Email: request.auth.email,
       pageToken: typeof request.query.pageToken === "string" ? request.query.pageToken : null,
       maxResults,
+      includeSupressed,
     });
     timer.end({ count: result.candidates.length });
     response.json(result);
@@ -137,5 +140,31 @@ gmailRouter.post(
     const result = await parseGmailEmailToOpportunity({ auth0Email: request.auth.email, messageId });
     timer.end({ messageId });
     response.json(result);
+  })
+);
+
+gmailRouter.delete(
+  "/message-state/:messageId",
+  asyncHandler(async (request, response) => {
+    if (!request.auth?.email) {
+      response.status(401).json({ message: "Missing authenticated email." });
+      return;
+    }
+
+    const messageId = String(request.params.messageId ?? "");
+    if (!messageId) {
+      response.status(400).json({ message: "messageId is required." });
+      return;
+    }
+
+    // Delete the message state to "restore" it (it will show up in searches again)
+    await prisma.gmailMessageState.deleteMany({
+      where: {
+        auth0Email: request.auth.email,
+        messageId,
+      },
+    });
+
+    response.json({ success: true });
   })
 );
