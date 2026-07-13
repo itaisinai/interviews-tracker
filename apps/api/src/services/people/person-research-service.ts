@@ -30,7 +30,11 @@ export function getPersonResearchService() {
   const exa = new ExaProvider(exaApiKey);
 
   return {
-    async researchPerson(input: PersonResearchInput, opportunityId?: string): Promise<PersonResearchResult | null> {
+    async researchPerson(
+      input: PersonResearchInput,
+      opportunityId?: string,
+      ownerEmail?: string
+    ): Promise<PersonResearchResult | null> {
       const searchName = extractNameFromEmail(input.name);
 
       console.log("[RESEARCH] Query:", {
@@ -41,12 +45,16 @@ export function getPersonResearchService() {
       });
 
       // Get wrong candidates for this opportunity
-      const wrongCandidates = opportunityId
-        ? await prisma.wrongPersonCandidate.findMany({
-            where: { opportunityId },
-            select: { linkedinUrl: true },
-          })
-        : [];
+      const wrongCandidates =
+        opportunityId && ownerEmail
+          ? await prisma.wrongPersonCandidate.findMany({
+              where: {
+                opportunityId,
+                ownerEmail,
+              },
+              select: { linkedinUrl: true },
+            })
+          : [];
 
       const wrongLinkedinUrls = new Set(
         wrongCandidates.map((c) => c.linkedinUrl).filter((url): url is string => url !== null)

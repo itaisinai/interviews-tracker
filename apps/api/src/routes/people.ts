@@ -45,7 +45,7 @@ peopleRouter.post(
       opportunityId
     );
     const service = getPersonResearchService();
-    const result = await service.researchPerson(input, opportunityId);
+    const result = await service.researchPerson(input, opportunityId, request.auth.email);
 
     if (!result) {
       response.status(404).json({
@@ -371,15 +371,31 @@ peopleRouter.post(
       companyId = opportunity?.companyId || null;
     }
 
-    // Try to find existing person by email or linkedinUrl
+    // Try to find existing person by email or linkedinUrl (scoped to ownerEmail)
     let person = null;
 
     if (email) {
-      person = await prisma.person.findUnique({ where: { email }, include: { research: true, company: true } });
+      person = await prisma.person.findUnique({
+        where: {
+          ownerEmail_email: {
+            ownerEmail: request.auth.email,
+            email,
+          },
+        },
+        include: { research: true, company: true },
+      });
     }
 
     if (!person && linkedinUrl) {
-      person = await prisma.person.findUnique({ where: { linkedinUrl }, include: { research: true, company: true } });
+      person = await prisma.person.findUnique({
+        where: {
+          ownerEmail_linkedinUrl: {
+            ownerEmail: request.auth.email,
+            linkedinUrl,
+          },
+        },
+        include: { research: true, company: true },
+      });
     }
 
     if (!person) {
@@ -441,6 +457,7 @@ peopleRouter.post(
     // Create wrong candidate record
     const wrongCandidate = await prisma.wrongPersonCandidate.create({
       data: {
+        ownerEmail: request.auth.email,
         opportunityId,
         searchContext: searchContext || personName,
         personName,
@@ -503,6 +520,7 @@ peopleRouter.post(
     // Create wrong candidate record
     const wrongCandidate = await prisma.wrongPersonCandidate.create({
       data: {
+        ownerEmail: request.auth.email,
         opportunityId,
         searchContext: searchContext || person.name,
         personName: person.name,
@@ -527,11 +545,14 @@ peopleRouter.post(
 // Get wrong person candidates for an opportunity
 peopleRouter.get(
   "/wrong-candidates/:opportunityId",
-  asyncHandler(async (request, response) => {
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
     const { opportunityId } = request.params;
 
     const wrongCandidates = await prisma.wrongPersonCandidate.findMany({
-      where: { opportunityId },
+      where: {
+        opportunityId,
+        ownerEmail: request.auth.email,
+      },
       orderBy: { rejectedAt: "desc" },
     });
 
@@ -542,19 +563,22 @@ peopleRouter.get(
 // Search people
 peopleRouter.get(
   "/",
-  asyncHandler(async (request, response) => {
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
     const { q } = request.query;
 
     const people = await prisma.person.findMany({
-      where: q
-        ? {
-            OR: [
-              { name: { contains: q as string, mode: "insensitive" } },
-              { email: { contains: q as string, mode: "insensitive" } },
-              { company: { name: { contains: q as string, mode: "insensitive" } } },
-            ],
-          }
-        : undefined,
+      where: {
+        ownerEmail: request.auth.email,
+        ...(q
+          ? {
+              OR: [
+                { name: { contains: q as string, mode: "insensitive" } },
+                { email: { contains: q as string, mode: "insensitive" } },
+                { company: { name: { contains: q as string, mode: "insensitive" } } },
+              ],
+            }
+          : {}),
+      },
       include: { research: true, company: true },
       orderBy: { updatedAt: "desc" },
       take: 50,
