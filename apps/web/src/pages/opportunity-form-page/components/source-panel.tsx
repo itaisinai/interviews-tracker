@@ -27,6 +27,7 @@ interface SourcePanelProps {
   setGmailCandidates: (candidates: GmailCandidatesResult | null) => void;
   filteredCandidates: GmailSearchCandidate[];
   groupedCandidates: Map<string, GmailSearchCandidate[]>;
+  groupedEmailIds: Set<string>;
   emailDateRange: { oldest: string; newest: string } | null;
   gmailPageToken: string | null;
   expandedCompanies: Set<string>;
@@ -52,6 +53,7 @@ export function SourcePanel({
   setGmailCandidates,
   filteredCandidates,
   groupedCandidates,
+  groupedEmailIds,
   emailDateRange,
   gmailPageToken,
   expandedCompanies,
@@ -363,28 +365,9 @@ export function SourcePanel({
                     );
                   })}
 
-                {/* Single emails (not grouped) - only show emails NOT in groups with 2+ */}
+                {/* Single emails (not grouped) - only show emails NOT in any group */}
                 {filteredCandidates
-                  .filter((candidate) => {
-                    // Use the SAME logic as grouping to determine companyKey
-                    const emailMatch = candidate.from.match(/<([^>]+)>|([^\s<]+@[^\s>]+)/);
-                    const email = emailMatch?.[1] || emailMatch?.[2] || candidate.from;
-                    const domain = email.split("@")[1]?.toLowerCase() || "";
-                    let companyKey = domain.split(".")[0] || domain;
-
-                    // Try to extract company from subject line as well (same as grouping logic)
-                    const subjectMatch = candidate.subject.match(/at\s+(\w+)|@\s+(\w+)|with\s+(\w+)/i);
-                    if (subjectMatch) {
-                      const subjectCompany = (subjectMatch[1] || subjectMatch[2] || subjectMatch[3])?.toLowerCase();
-                      if (subjectCompany && subjectCompany.length > 2) {
-                        companyKey = subjectCompany;
-                      }
-                    }
-
-                    const grouped = groupedCandidates.get(companyKey);
-                    // Only show if NOT in a group with 2+ emails (those are shown in the grouped section above)
-                    return !grouped || grouped.length <= 1;
-                  })
+                  .filter((candidate) => !groupedEmailIds.has(candidate.id))
                   .map((candidate) => (
                     <label
                       key={candidate.id}

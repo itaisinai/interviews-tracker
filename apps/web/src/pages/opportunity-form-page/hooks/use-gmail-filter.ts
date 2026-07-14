@@ -27,12 +27,52 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
     // Also build a set of domain base names (e.g., "unframe" from "unframe.ai")
     const existingDomainBases = new Set(Array.from(existingDomains).map((d) => d.split(".")[0]));
 
-    const groups = new Map<string, typeof gmailCandidates.candidates>();
+    // First, group by thread ID to find conversation threads
+    const threadGroups = new Map<string, typeof gmailCandidates.candidates>();
 
     for (const candidate of gmailCandidates.candidates) {
-      // Extract company from email domain
-      const emailMatch = candidate.from.match(/<([^>]+)>|([^\s<]+@[^\s>]+)/);
-      const email = emailMatch?.[1] || emailMatch?.[2] || candidate.from;
+      if (!threadGroups.has(candidate.threadId)) {
+        threadGroups.set(candidate.threadId, []);
+      }
+      threadGroups.get(candidate.threadId)!.push(candidate);
+    }
+
+    // Debug: log thread information for vero-security emails
+    console.log(
+      "[Thread Debug] Thread groups:",
+      Array.from(threadGroups.entries()).map(([threadId, emails]) => ({
+        threadId,
+        count: emails.length,
+        subjects: emails.map((e) => e.subject),
+        froms: emails.map((e) => e.from),
+      }))
+    );
+
+    // Now group by company, using thread information
+    const groups = new Map<string, typeof gmailCandidates.candidates>();
+    const subjectToCompanyKey = new Map<string, string>(); // Track subject -> company mapping
+    const threadsWithoutCompany: (typeof gmailCandidates.candidates)[] = [];
+
+    // FIRST PASS: Process threads WITH company emails
+    for (const threadCandidates of threadGroups.values()) {
+      // Find the company email (not gmail.com) in the thread to determine the group key
+      const companyEmail = threadCandidates.find((c) => {
+        const emailMatch = c.from.match(/<([^>]+)>|([^\s<]+@[^\s>]+)/);
+        const email = emailMatch?.[1] || emailMatch?.[2] || c.from;
+        const domain = email.split("@")[1]?.toLowerCase() || "";
+        // Skip gmail.com, googlemail.com - these are user's own replies
+        return !domain.includes("gmail.com") && !domain.includes("googlemail.com");
+      });
+
+      // If no company email found (all are from user), defer to second pass
+      if (!companyEmail) {
+        threadsWithoutCompany.push(threadCandidates);
+        continue;
+      }
+
+      // Extract company from the company email
+      const emailMatch = companyEmail.from.match(/<([^>]+)>|([^\s<]+@[^\s>]+)/);
+      const email = emailMatch?.[1] || emailMatch?.[2] || companyEmail.from;
       const domain = email.split("@")[1]?.toLowerCase() || "unknown";
 
       // Skip if this domain matches an existing opportunity
@@ -49,7 +89,7 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
       }
 
       // Try to extract company from subject line as well
-      const subjectMatch = candidate.subject.match(/at\s+(\w+)|@\s+(\w+)|with\s+(\w+)/i);
+      const subjectMatch = companyEmail.subject.match(/at\s+(\w+)|@\s+(\w+)|with\s+(\w+)/i);
       if (subjectMatch) {
         const subjectCompany = (subjectMatch[1] || subjectMatch[2] || subjectMatch[3])?.toLowerCase();
         if (subjectCompany && subjectCompany.length > 2) {
@@ -62,10 +102,35 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
         continue;
       }
 
+      // Add all emails from this thread to the company group
       if (!groups.has(companyKey)) {
         groups.set(companyKey, []);
       }
-      groups.get(companyKey)!.push(candidate);
+      groups.get(companyKey)!.push(...threadCandidates);
+
+      // Track this subject for future matching
+      const normalizedSubject = companyEmail.subject
+        .replace(/^(Re|Fwd|Fw):\s*/gi, "")
+        .toLowerCase()
+        .trim();
+      subjectToCompanyKey.set(normalizedSubject, companyKey);
+    }
+
+    // SECOND PASS: Process threads WITHOUT company emails (only user replies)
+    for (const threadCandidates of threadsWithoutCompany) {
+      // Normalize subject (remove Re:, Fwd:, etc.)
+      const normalizedSubject = threadCandidates[0].subject
+        .replace(/^(Re|Fwd|Fw):\s*/gi, "")
+        .toLowerCase()
+        .trim();
+
+      // Check if we've seen this subject before
+      const existingCompanyKey = subjectToCompanyKey.get(normalizedSubject);
+      if (existingCompanyKey && groups.has(existingCompanyKey)) {
+        // Add to existing group
+        groups.get(existingCompanyKey)!.push(...threadCandidates);
+      }
+      // Otherwise skip - can't determine company
     }
 
     return groups;
@@ -134,10 +199,22 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
     };
   }, [filteredCandidates]);
 
+  // Build a set of all email IDs that are in groups (for filtering singles)
+  const groupedEmailIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const candidates of groupedCandidates.values()) {
+      for (const candidate of candidates) {
+        ids.add(candidate.id);
+      }
+    }
+    return ids;
+  }, [groupedCandidates]);
+
   return {
     groupedCandidates,
     filteredCandidates,
     emailDateRange,
+    groupedEmailIds,
   };
 }
 

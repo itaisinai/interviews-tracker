@@ -95,7 +95,7 @@ export function OpportunityFormPage() {
     },
   });
 
-  const { groupedCandidates, filteredCandidates, emailDateRange } = useGmailFilter(gmailCandidates);
+  const { groupedCandidates, filteredCandidates, emailDateRange, groupedEmailIds } = useGmailFilter(gmailCandidates);
 
   const companySizeOption = findMatchingOption(options?.companySizes, parseResult?.company?.employees);
   const companyStageOption = findMatchingOption(options?.companyStages, parseResult?.company?.stage);
@@ -200,6 +200,7 @@ export function OpportunityFormPage() {
           setGmailCandidates={setGmailCandidates}
           filteredCandidates={filteredCandidates}
           groupedCandidates={groupedCandidates}
+          groupedEmailIds={groupedEmailIds}
           emailDateRange={emailDateRange}
           gmailPageToken={gmailPageToken}
           expandedCompanies={expandedCompanies}
