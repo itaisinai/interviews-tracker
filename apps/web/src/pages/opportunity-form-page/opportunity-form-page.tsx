@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { LoadingButton, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+import { Button, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 import { PageIntro } from "../../components/app-layout";
 import { api } from "../../lib/api";
@@ -23,6 +23,7 @@ export function OpportunityFormPage() {
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [showAllEmails, setShowAllEmails] = useState(false);
+  const [daysBack, setDaysBack] = useState(7);
 
   const {
     parseResult,
@@ -61,7 +62,8 @@ export function OpportunityFormPage() {
   });
 
   const gmailSearch = useMutation({
-    mutationFn: (pageToken?: string | null) => api.gmailFindOpportunityCandidates(pageToken, 50, showAllEmails),
+    mutationFn: (pageToken?: string | null) =>
+      api.gmailFindOpportunityCandidates(pageToken, 50, showAllEmails, daysBack),
     onSuccess: (result, pageToken) => {
       setGmailCandidates((current) => ({
         ...result,
@@ -93,7 +95,7 @@ export function OpportunityFormPage() {
     },
   });
 
-  const { groupedCandidates, filteredCandidates, emailDateRange } = useGmailFilter(gmailCandidates);
+  const { groupedCandidates, filteredCandidates, emailDateRange, groupedEmailIds } = useGmailFilter(gmailCandidates);
 
   const companySizeOption = findMatchingOption(options?.companySizes, parseResult?.company?.employees);
   const companyStageOption = findMatchingOption(options?.companyStages, parseResult?.company?.stage);
@@ -195,8 +197,10 @@ export function OpportunityFormPage() {
           gmailConnect={gmailConnect}
           gmailSearch={gmailSearch}
           gmailCandidates={gmailCandidates}
+          setGmailCandidates={setGmailCandidates}
           filteredCandidates={filteredCandidates}
           groupedCandidates={groupedCandidates}
+          groupedEmailIds={groupedEmailIds}
           emailDateRange={emailDateRange}
           gmailPageToken={gmailPageToken}
           expandedCompanies={expandedCompanies}
@@ -205,6 +209,8 @@ export function OpportunityFormPage() {
           setSelectedEmails={setSelectedEmails}
           showAllEmails={showAllEmails}
           setShowAllEmails={setShowAllEmails}
+          daysBack={daysBack}
+          setDaysBack={setDaysBack}
           onRefresh={() => {
             setGmailCandidates(null);
             gmailSearch.mutate(null);
@@ -225,6 +231,11 @@ export function OpportunityFormPage() {
           workModelOption={workModelOption}
           parsedDomains={parsedDomains}
           canSave={canSave}
+          onUpdateParseResult={(updates) => {
+            if (parseResult) {
+              setParseResult({ ...parseResult, ...updates });
+            }
+          }}
         />
       </div>
 
@@ -234,23 +245,23 @@ export function OpportunityFormPage() {
           Cancel
         </button>
         {sourceMode === "raw-text" ? (
-          <LoadingButton
+          <Button
             className="btn btn-primary"
-            disabled={!text.trim() || isBusy}
+            disabled={!text.trim()}
             loading={isBusy}
             loadingLabel="Parsing..."
-            icon="auto_awesome"
+            leadingIcon="auto_awesome"
             onClick={() => void runParser(text)}
           >
             Parse Content
-          </LoadingButton>
+          </Button>
         ) : (
-          <LoadingButton
+          <Button
             className="btn btn-primary"
-            disabled={selectedEmails.size === 0 || gmailParse.isPending}
+            disabled={selectedEmails.size === 0}
             loading={gmailParse.isPending}
             loadingLabel="Adding..."
-            icon="arrow_forward"
+            leadingIcon="arrow_forward"
             onClick={() => {
               // Parse first selected email for now
               // TODO: Implement multi-email parsing
@@ -261,19 +272,19 @@ export function OpportunityFormPage() {
             }}
           >
             Add to Review ({selectedEmails.size})
-          </LoadingButton>
+          </Button>
         )}
         {parseResult ? (
-          <LoadingButton
+          <Button
             className="btn btn-primary"
             loading={create.isPending}
             loadingLabel="Saving..."
-            icon="save"
+            leadingIcon="save"
             disabled={!canSave}
             onClick={() => create.mutate()}
           >
             Save Opportunity
-          </LoadingButton>
+          </Button>
         ) : null}
       </div>
     </>

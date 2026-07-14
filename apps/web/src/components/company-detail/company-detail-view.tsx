@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { InlineLoadingState, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { getOpportunityProcessBadgeMeta, promoteOverdueInteractionsForRead } from "../../lib/interaction-status";
 import type { CompanyDetail } from "../../lib/types";
@@ -163,11 +163,11 @@ export function CompanyDetailView({
 
         <div className="flex shrink-0 items-center gap-3">
           {isRefreshing ? <InlineLoadingState label="Refreshing" /> : null}
-          <LoadingButton
+          <Button
             className="btn btn-secondary text-error hover:bg-error-container"
             loading={isDeletingCompany}
             loadingLabel="Deleting..."
-            icon="delete"
+            leadingIcon="delete"
             onClick={() => {
               if (window.confirm(`Delete ${company.name} and all its opportunities/interactions?`)) {
                 onDeleteCompany();
@@ -175,7 +175,7 @@ export function CompanyDetailView({
             }}
           >
             Delete Company
-          </LoadingButton>
+          </Button>
           <Link className="btn btn-secondary" to="/companies">
             <MaterialIcon name="arrow_back" />
             Companies

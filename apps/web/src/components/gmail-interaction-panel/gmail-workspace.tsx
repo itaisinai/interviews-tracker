@@ -1,10 +1,4 @@
-import {
-  Button,
-  InlineLoadingState,
-  LoadingButton,
-  MaterialIcon,
-  ProcessStateCard,
-} from "@interviews-tracker/design-system";
+import { Button, InlineLoadingState, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
 
 import type { GmailFlowState } from "../../lib/gmail";
 import { type GmailSearchCandidate } from "../../lib/types";
@@ -117,26 +111,26 @@ export function GmailWorkspace({
               <span className="rounded-full bg-primary-container px-3 py-1 text-label-md text-on-primary-container">
                 Gmail connected
               </span>
-              <LoadingButton
+              <Button
                 className="btn btn-primary"
                 loading={flowState === "searching_emails"}
                 loadingLabel="Searching..."
-                icon="search"
+                leadingIcon="search"
                 onClick={onSearch}
               >
                 Add interaction from Gmail
-              </LoadingButton>
+              </Button>
             </>
           ) : configured ? (
-            <LoadingButton
+            <Button
               className="btn btn-primary"
               loading={flowState === "connecting_gmail"}
               loadingLabel="Connecting..."
-              icon="link"
+              leadingIcon="link"
               onClick={onConnect}
             >
               {shouldReconnect ? "Reconnect Gmail" : "Connect Gmail"}
-            </LoadingButton>
+            </Button>
           ) : (
             <div className="rounded-lg border border-error/30 bg-error-container px-4 py-3 text-body-md text-on-error-container">
               Gmail OAuth is not configured on this environment.
@@ -161,13 +155,13 @@ export function GmailWorkspace({
           <p className="mt-1 font-body-md text-body-md">{error}</p>
           <div className="mt-3">
             {needsReconnect ? (
-              <LoadingButton className="btn btn-primary" loading={false} icon="link" onClick={onConnect}>
+              <Button className="btn btn-primary" loading={false} leadingIcon="link" onClick={onConnect}>
                 Reconnect Gmail
-              </LoadingButton>
+              </Button>
             ) : (
-              <LoadingButton className="btn btn-secondary" loading={false} icon="refresh" onClick={onRetry}>
+              <Button className="btn btn-secondary" loading={false} leadingIcon="refresh" onClick={onRetry}>
                 Retry
-              </LoadingButton>
+              </Button>
             )}
           </div>
         </div>
@@ -179,16 +173,16 @@ export function GmailWorkspace({
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="font-label-md text-label-md uppercase text-on-surface-variant">Candidate emails</p>
-                <LoadingButton
+                <Button
                   className="font-label-md text-label-md text-primary hover:underline"
                   disabled={Boolean(selectedCandidateId)}
                   loading={flowState === "searching_emails"}
                   loadingLabel="Searching..."
-                  icon="search"
+                  leadingIcon="search"
                   onClick={onSearch}
                 >
                   Search again
-                </LoadingButton>
+                </Button>
               </div>
               {searchResults.map((email) => {
                 const isSelected = selectedCandidateId === email.id;
@@ -211,27 +205,27 @@ export function GmailWorkspace({
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <p className="text-body-md text-on-surface-variant">{new Date(email.date).toLocaleString()}</p>
-                        <LoadingButton
+                        <Button
                           className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-50"
                           disabled={actionDisabled}
                           loading={ignoringEmailId === email.id}
                           loadingLabel=""
-                          icon="block"
+                          leadingIcon="block"
                           onClick={() => onIgnoreEmail(email)}
                           title="Ignore this email permanently"
                         >
                           <span className="sr-only">Ignore email</span>
-                        </LoadingButton>
-                        <LoadingButton
+                        </Button>
+                        <Button
                           className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-50"
                           disabled={actionDisabled}
                           loading={clearingEmailId === email.id}
                           loadingLabel=""
-                          icon="delete"
+                          leadingIcon="delete"
                           onClick={() => onClearEmail(email)}
                         >
                           <span className="sr-only">Clear email</span>
-                        </LoadingButton>
+                        </Button>
                       </div>
                     </div>
                     <p className="mt-3 text-body-md text-on-surface-variant">{email.snippet}</p>
@@ -252,16 +246,16 @@ export function GmailWorkspace({
                       </div>
                     ) : null}
                     <div className="mt-4 flex justify-end">
-                      <LoadingButton
+                      <Button
                         className="btn btn-primary"
                         disabled={actionDisabled}
                         loading={isParsing}
                         loadingLabel="Parsing..."
-                        icon="auto_awesome"
+                        leadingIcon="auto_awesome"
                         onClick={() => onParseEmail(email)}
                       >
                         Parse email
-                      </LoadingButton>
+                      </Button>
                     </div>
                   </div>
                 );
@@ -296,15 +290,15 @@ export function GmailWorkspace({
                           {new Date(email.date).toLocaleString()}
                         </p>
                       </div>
-                      <LoadingButton
+                      <Button
                         className="btn btn-secondary"
                         loading={clearingEmailId === email.id}
                         loadingLabel="Restoring..."
-                        icon="undo"
+                        leadingIcon="undo"
                         onClick={() => onRestoreEmail(email)}
                       >
                         Undo
-                      </LoadingButton>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -341,15 +335,15 @@ export function GmailWorkspace({
                       <span className="rounded-full bg-primary-container px-3 py-1 text-label-sm text-on-primary-container">
                         Picked
                       </span>
-                      <LoadingButton
+                      <Button
                         className="btn btn-secondary"
                         loading={clearingEmailId === email.id}
                         loadingLabel="Removing..."
-                        icon="delete"
+                        leadingIcon="delete"
                         onClick={() => onUnpickEmail(email)}
                       >
                         Remove
-                      </LoadingButton>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -382,15 +376,15 @@ export function GmailWorkspace({
                           {new Date(email.date).toLocaleString()}
                         </p>
                       </div>
-                      <LoadingButton
+                      <Button
                         className="btn btn-secondary"
                         loading={ignoringEmailId === email.id}
                         loadingLabel="Unignoring..."
-                        icon="undo"
+                        leadingIcon="undo"
                         onClick={() => onUnignoreEmail(email)}
                       >
                         Unignore
-                      </LoadingButton>
+                      </Button>
                     </div>
                   ))}
                 </div>

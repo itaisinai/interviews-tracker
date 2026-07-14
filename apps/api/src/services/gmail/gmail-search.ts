@@ -69,7 +69,7 @@ export async function searchGmailMessages(input: {
       const listResponse = await fetchJson<GmailListResponse>(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages?${new URLSearchParams({
           q: query,
-          maxResults: "10",
+          maxResults: "50",
           includeSpamTrash: "false",
         }).toString()}`,
         {
@@ -192,6 +192,7 @@ export async function findGmailOpportunityCandidates(input: {
   pageToken?: string | null;
   maxResults?: number;
   includeSupressed?: boolean;
+  daysBack?: number;
 }) {
   const access = await getAccessTokenForEmail(input.auth0Email);
 
@@ -199,25 +200,42 @@ export async function findGmailOpportunityCandidates(input: {
     throw new Error("Gmail is not connected.");
   }
 
-  const maxResults = Math.min(Math.max(input.maxResults ?? 10, 5), 10);
-  const query = [
-    "newer_than:180d",
-    "(recruiter OR hiring OR founder OR co-founder OR opportunity OR role OR position OR job)",
-    "-category:promotions",
-    "-category:updates",
-    "-from:noreply",
-    "-from:no-reply",
-    "-from:donotreply",
-    "-from:notifications@",
-    "-from:calendar-notification@",
-    "-from:notification@",
-    "-subject:reminder",
-    "-subject:notification",
-    "-subject:alert",
-    "-subject:error",
-    "-subject:invited",
-    "-subject:invitation",
-  ].join(" ");
+  const maxResults = Math.min(Math.max(input.maxResults ?? 50, 5), 50);
+  const daysBack = Math.max(1, Math.min(input.daysBack ?? 7, 365));
+
+  // Build query based on includeSupressed flag
+  // When includeSupressed=true, use a more relaxed search to catch more emails
+  const query = input.includeSupressed
+    ? [
+        `newer_than:${daysBack}d`,
+        // More relaxed: any email that might be job-related
+        "(recruiter OR hiring OR founder OR co-founder OR opportunity OR role OR position OR job OR interview OR candidate OR application OR offer OR team OR engineer OR developer OR designer)",
+        // Still exclude obvious spam/notifications
+        "-from:noreply",
+        "-from:no-reply",
+        "-from:donotreply",
+        "-from:notifications@",
+        "-from:calendar-notification@",
+        "-from:notification@",
+      ].join(" ")
+    : [
+        `newer_than:${daysBack}d`,
+        "(recruiter OR hiring OR founder OR co-founder OR opportunity OR role OR position OR job)",
+        "-category:promotions",
+        "-category:updates",
+        "-from:noreply",
+        "-from:no-reply",
+        "-from:donotreply",
+        "-from:notifications@",
+        "-from:calendar-notification@",
+        "-from:notification@",
+        "-subject:reminder",
+        "-subject:notification",
+        "-subject:alert",
+        "-subject:error",
+        "-subject:invited",
+        "-subject:invitation",
+      ].join(" ");
 
   // Get already processed emails to filter them out (or just track their status if includeSupressed=true)
   const messageStates = await prisma.gmailMessageState.findMany({

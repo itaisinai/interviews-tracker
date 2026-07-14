@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { CheckCircle2 } from "lucide-react";
 
-import { LoadingButton } from "@interviews-tracker/design-system";
+import { Button } from "@interviews-tracker/design-system";
 
 import { interactionStatusOptions, interactionTypeOptions } from "../../lib/enum-labels";
 import type { GmailEmailExtractionAnalysis, GmailInteractionDraft, GmailStructuredEmail } from "../../lib/types";
@@ -246,7 +246,7 @@ export function GmailCreateReview({
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-4 border-t border-neutral-200">
-          <LoadingButton
+          <Button
             onClick={handleAccept}
             loading={isAttaching || saveInteractionPending}
             loadingLabel="Saving..."
@@ -254,7 +254,7 @@ export function GmailCreateReview({
           >
             <CheckCircle2 className="w-4 h-4" />
             Create Interaction
-          </LoadingButton>
+          </Button>
 
           <button
             type="button"

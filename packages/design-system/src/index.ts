@@ -8,6 +8,8 @@ export type { CalendarEvent, CalendarProps } from "./components/calendar/index.j
 export { Calendar } from "./components/calendar/index.js";
 export type { CardProps } from "./components/card/index.js";
 export { Card } from "./components/card/index.js";
+export type { CheckboxProps } from "./components/checkbox/index.js";
+export { Checkbox } from "./components/checkbox/index.js";
 export type { CompactInfoRowProps } from "./components/compact-info-row/index.js";
 export { CompactInfoRow } from "./components/compact-info-row/index.js";
 export { DataTable } from "./components/data-table/index.js";
@@ -31,7 +33,6 @@ export type {
 export { JobHistoryTimeline } from "./components/job-history-timeline/index.js";
 export {
   InlineLoadingState,
-  LoadingButton,
   PageErrorState,
   PageLoadingState,
   ProcessStateCard,

@@ -78,6 +78,40 @@ gmailRouter.get(
   })
 );
 
+gmailRouter.post(
+  "/ignored-messages/:messageId",
+  asyncHandler(async (request, response) => {
+    const timer = createTimer("gmail", "ignore-global", { email: request.auth?.email ?? "unknown" });
+
+    if (!request.auth?.email) {
+      response.status(401).json({ message: "Missing authenticated email." });
+      return;
+    }
+
+    // Create a message state with IGNORED status (not tied to any opportunity)
+    await prisma.gmailMessageState.upsert({
+      where: {
+        auth0Email_messageId: {
+          auth0Email: request.auth.email,
+          messageId: request.params.messageId,
+        },
+      },
+      update: {
+        status: "IGNORED",
+      },
+      create: {
+        auth0Email: request.auth.email,
+        messageId: request.params.messageId,
+        status: "IGNORED",
+        jobOpportunityId: null,
+      },
+    });
+
+    timer.end();
+    response.status(204).end();
+  })
+);
+
 gmailRouter.delete(
   "/ignored-messages/:messageId",
   asyncHandler(async (request, response) => {
@@ -110,11 +144,13 @@ gmailRouter.get(
 
     const maxResults = request.query.maxResults ? Number(request.query.maxResults) : undefined;
     const includeSupressed = request.query.includeSupressed === "true";
+    const daysBack = request.query.daysBack ? Number(request.query.daysBack) : 7;
     const result = await findGmailOpportunityCandidates({
       auth0Email: request.auth.email,
       pageToken: typeof request.query.pageToken === "string" ? request.query.pageToken : null,
       maxResults,
       includeSupressed,
+      daysBack,
     });
     timer.end({ count: result.candidates.length });
     response.json(result);

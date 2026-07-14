@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { LoadingButton } from "@interviews-tracker/design-system";
+import { Button } from "@interviews-tracker/design-system";
 
 import { interactionStatusOptions, interactionTypeOptions } from "../../lib/enum-labels";
 import type {
@@ -77,35 +77,35 @@ export function GmailReviewPanel({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <LoadingButton
+          <Button
             className="btn btn-secondary"
             disabled={saveInteractionPending}
-            icon="close"
+            leadingIcon="close"
             onClick={onSelectAnotherEmail}
           >
             Select another email
-          </LoadingButton>
+          </Button>
           {!isAttachMode ? (
-            <LoadingButton
+            <Button
               className="btn btn-primary"
               loading={saveInteractionPending}
               loadingLabel="Saving..."
-              icon="save"
+              leadingIcon="save"
               onClick={onSaveInteraction}
             >
               Save interaction
-            </LoadingButton>
+            </Button>
           ) : (
-            <LoadingButton
+            <Button
               className="btn btn-primary"
               loading={isAttaching}
               loadingLabel={hasParsedInteractionChanges ? "Accepting..." : "Attaching..."}
-              icon="link"
+              leadingIcon="link"
               disabled={!draft || !selectedEmail || !attachTargetId}
               onClick={onAttachToExistingInteraction}
             >
               {hasParsedInteractionChanges ? "Accept changes" : "Attach email"}
-            </LoadingButton>
+            </Button>
           )}
         </div>
       </div>
@@ -159,16 +159,16 @@ export function GmailReviewPanel({
                 Update an existing interaction with this email instead of creating a new one.
               </p>
             </div>
-            <LoadingButton
+            <Button
               className="btn btn-secondary"
               loading={isAttaching}
               loadingLabel={hasParsedInteractionChanges ? "Accepting..." : "Attaching..."}
-              icon="link"
+              leadingIcon="link"
               disabled={!draft || !selectedEmail || !attachTargetId || saveInteractionPending}
               onClick={onAttachToExistingInteraction}
             >
               {hasParsedInteractionChanges ? "Accept changes" : "Attach email"}
-            </LoadingButton>
+            </Button>
           </div>
           {opportunityInteractions.length ? (
             <label className="mt-4 block space-y-1">

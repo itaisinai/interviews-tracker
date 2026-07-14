@@ -2,7 +2,7 @@ import { type ReactNode, useMemo, useState } from "react";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { Button, LoadingButton, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon, ProcessStateCard } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
@@ -129,26 +129,26 @@ export function InteractionTextParserPanel({
       </Field>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <LoadingButton
+        <Button
           className="btn btn-primary"
           loading={isParsing}
           loadingLabel="Parsing..."
-          icon="auto_awesome"
+          leadingIcon="auto_awesome"
           onClick={() => void parseText()}
           disabled={text.trim().length < 20}
         >
           {actionLabel}
-        </LoadingButton>
+        </Button>
         {draft ? (
-          <LoadingButton
+          <Button
             className="btn btn-secondary"
             loading={saveInteraction.isPending}
             loadingLabel="Saving..."
-            icon="save"
+            leadingIcon="save"
             onClick={() => void saveInteraction.mutate()}
           >
             Save interaction
-          </LoadingButton>
+          </Button>
         ) : null}
       </div>
 

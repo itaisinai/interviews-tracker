@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { DataTable, MaterialIcon } from "@interviews-tracker/design-system";
-import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+import { Button, InlineLoadingState, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 import { PageIntro } from "../components/app-layout";
 import { Badge } from "../components/badge";
@@ -84,11 +84,12 @@ export function CompaniesPage() {
     {
       header: "Delete",
       cell: ({ row }) => (
-        <LoadingButton
-          compact
+        <Button
+          variant="ghost"
+          size="sm"
           aria-label={`Delete ${row.original.name}`}
           className="text-error"
-          icon="delete"
+          leadingIcon="delete"
           loading={deleteCompany.isPending && deleteCompany.variables === row.original.name}
           onClick={() => {
             if (window.confirm(`Delete ${row.original.name} and all its opportunities/interactions?`))

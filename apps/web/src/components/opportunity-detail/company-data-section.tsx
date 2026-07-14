@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 
-import { Button, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { labelForPipelineType } from "../../lib/enum-labels";
 import type { Opportunity } from "../../lib/types";
@@ -46,20 +46,20 @@ export function CompanyDataSection({
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            <LoadingButton
+            <Button
               className={showResearch ? "btn btn-primary" : "btn btn-secondary"}
-              icon="travel_explore"
+              leadingIcon="travel_explore"
               onClick={onToggleResearch}
             >
               {showResearch ? "Hide company research" : "Company research"}
-            </LoadingButton>
-            <LoadingButton
+            </Button>
+            <Button
               className={showInteractionInput ? "btn btn-primary" : "btn btn-secondary"}
-              icon="add"
+              leadingIcon="add"
               onClick={onToggleInteractionInput}
             >
               {showInteractionInput ? "Hide add interaction" : "Add interaction"}
-            </LoadingButton>
+            </Button>
           </div>
         </div>
       </section>

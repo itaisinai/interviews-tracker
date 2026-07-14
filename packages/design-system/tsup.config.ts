@@ -7,9 +7,9 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   treeshake: true,
-  // Copy CSS files automatically
+  // Bundle CSS files
   loader: {
-    ".css": "copy",
+    ".css": "css",
   },
   publicDir: false,
 });

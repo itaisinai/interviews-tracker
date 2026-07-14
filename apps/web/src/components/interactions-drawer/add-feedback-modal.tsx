@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { LoadingButton, MaterialIcon, Modal } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
 type AddFeedbackModalProps = {
   isOpen: boolean;
@@ -81,7 +81,7 @@ export function AddFeedbackModal({ isOpen, onClose, onSubmit }: AddFeedbackModal
             >
               Cancel
             </button>
-            <LoadingButton
+            <Button
               loading={isSubmitting}
               loadingLabel="Parsing with AI..."
               onClick={handleSubmit}
@@ -90,7 +90,7 @@ export function AddFeedbackModal({ isOpen, onClose, onSubmit }: AddFeedbackModal
             >
               <MaterialIcon name="auto_awesome" className="text-[16px]" />
               Parse with AI
-            </LoadingButton>
+            </Button>
           </div>
         </div>
       </div>

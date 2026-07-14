@@ -1,4 +1,4 @@
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 type GmailConnectionPromptProps = {
   configured: boolean;
@@ -40,7 +40,7 @@ export function GmailConnectionPrompt({
             Gmail OAuth is not configured on this environment.
           </div>
         ) : (
-          <LoadingButton
+          <Button
             className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 transition-colors inline-flex items-center gap-2"
             loading={flowState === "connecting_gmail"}
             loadingLabel="Connecting..."
@@ -48,7 +48,7 @@ export function GmailConnectionPrompt({
           >
             <MaterialIcon name="link" className="text-[16px]" />
             {shouldReconnect ? "Reconnect Gmail" : "Connect Gmail"}
-          </LoadingButton>
+          </Button>
         )}
 
         {error && flowState === "failed" && (
@@ -56,13 +56,13 @@ export function GmailConnectionPrompt({
             <p className="font-medium text-sm text-red-900 mb-1">Connection failed</p>
             <p className="text-sm text-red-800">{error}</p>
             {needsReconnect && (
-              <LoadingButton
+              <Button
                 className="mt-3 px-4 py-2 rounded-lg bg-red-600 text-white font-medium text-sm hover:bg-red-700 transition-colors"
                 loading={false}
                 onClick={onConnect}
               >
                 Reconnect Gmail
-              </LoadingButton>
+              </Button>
             )}
           </div>
         )}

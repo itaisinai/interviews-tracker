@@ -23,13 +23,16 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "border border-transparent bg-primary text-on-primary shadow-none hover:brightness-110",
+  primary:
+    "border border-transparent bg-primary text-on-primary shadow-none hover:brightness-110 disabled:hover:brightness-100",
   secondary:
-    "border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low",
+    "border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container disabled:hover:bg-surface-container-lowest",
   outlined:
-    "border border-primary bg-transparent text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0",
-  ghost: "border border-transparent bg-transparent text-on-surface-variant hover:bg-surface-container-low",
-  danger: "border border-error bg-error-container text-on-error-container hover:brightness-95",
+    "border border-primary bg-transparent text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:hover:bg-transparent",
+  ghost:
+    "border border-transparent bg-transparent text-on-surface-variant hover:bg-surface-container disabled:hover:bg-transparent",
+  danger:
+    "border border-error bg-error-container text-on-error-container hover:brightness-95 disabled:hover:brightness-100",
 };
 
 export function Button({
@@ -54,7 +57,9 @@ export function Button({
       disabled={isDisabled}
       aria-busy={loading}
       className={[
-        "inline-flex items-center justify-center gap-2 rounded-lg font-body-md font-semibold transition-all active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center justify-center gap-2 rounded-lg font-body-md font-semibold transition-all cursor-pointer active:scale-[0.99]",
+        isDisabled && "cursor-not-allowed opacity-50",
+        loading && "cursor-wait",
         sizeClasses[size],
         variantClasses[variant],
         className,
@@ -66,7 +71,7 @@ export function Button({
       ) : leadingIcon ? (
         <MaterialIcon name={leadingIcon} filled={leadingIconFilled} className="text-[18px]" />
       ) : null}
-      {loading ? (loadingLabel ?? children) : children}
+      {loading ? (loadingLabel ?? "Loading...") : children}
       {!loading && trailingIcon ? <MaterialIcon name={trailingIcon} className="text-[18px]" /> : null}
     </button>
   );

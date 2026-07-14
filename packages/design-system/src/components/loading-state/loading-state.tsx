@@ -1,42 +1,8 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { Button } from "../button/index.js";
 import { MaterialIcon } from "../material-icon/index.js";
 import { Spinner } from "../spinner/index.js";
-
-export function LoadingButton({
-  loading = false,
-  loadingLabel,
-  icon,
-  iconFilled = false,
-  compact = false,
-  disabled,
-  className = "",
-  children,
-  type = "button",
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  loading?: boolean;
-  loadingLabel?: string;
-  icon?: string;
-  iconFilled?: boolean;
-  compact?: boolean;
-}) {
-  const isDisabled = disabled || loading;
-
-  return (
-    <button type={type} disabled={isDisabled} aria-busy={loading} className={className} {...props}>
-      <span className={`inline-flex items-center ${compact ? "" : "gap-2"}`}>
-        {loading ? (
-          <Spinner className="h-4 w-4" />
-        ) : icon ? (
-          <MaterialIcon name={icon} filled={iconFilled} className="text-[18px]" />
-        ) : null}
-        {!compact ? <span>{loading ? (loadingLabel ?? "Loading...") : children}</span> : null}
-      </span>
-    </button>
-  );
-}
 
 export function InlineLoadingState({ label = "Loading..." }: { label?: string }) {
   return (

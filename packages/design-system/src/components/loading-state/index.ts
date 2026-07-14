@@ -1,6 +1,5 @@
 export {
   InlineLoadingState,
-  LoadingButton,
   PageErrorState,
   PageLoadingState,
   ProcessStateCard,

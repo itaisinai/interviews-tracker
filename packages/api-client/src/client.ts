@@ -135,12 +135,18 @@ export const api = {
   gmailDisconnect: () => request<void>("/gmail/connection", { method: "DELETE" }),
   gmailSearch: (opportunitySlug: string) =>
     request<GmailSearchResponse>(`/opportunities/${opportunitySlug}/gmail/search`),
-  gmailFindOpportunityCandidates: (pageToken?: string | null, maxResults = 10, includeSupressed = false) =>
+  gmailFindOpportunityCandidates: (
+    pageToken?: string | null,
+    maxResults = 10,
+    includeSupressed = false,
+    daysBack = 7
+  ) =>
     request<GmailSearchResponse & { nextPageToken: string | null }>(
       `/gmail/opportunity-candidates?${new URLSearchParams({
         maxResults: String(maxResults),
         ...(pageToken ? { pageToken } : {}),
         ...(includeSupressed ? { includeSupressed: "true" } : {}),
+        daysBack: String(daysBack),
       }).toString()}`
     ),
   gmailParseOpportunityCandidate: (messageId: string) =>
@@ -192,6 +198,8 @@ export const api = {
     request<{ ignoredMessages: Array<{ id: string; subject: string; date: string; opportunityId: string | null }> }>(
       "/gmail/ignored-messages"
     ),
+  gmailIgnoreGlobal: (messageId: string) =>
+    request<void>(`/gmail/ignored-messages/${encodeURIComponent(messageId)}`, { method: "POST" }),
   gmailUnignoreGlobal: (messageId: string) =>
     request<void>(`/gmail/ignored-messages/${encodeURIComponent(messageId)}`, { method: "DELETE" }),
   parseOpportunityInteractionText: (opportunitySlug: string, body: { text: string }) =>

@@ -1,4 +1,4 @@
-import { Button, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { CompanyResearchExistingData, CompanyResearchResult } from "../../lib/types";
 
@@ -51,15 +51,15 @@ export function CompanyResearchReview({
           <span className="rounded-full bg-primary-container px-3 py-1 font-label-md text-label-md text-on-primary-container">
             {research.confidence} confidence
           </span>
-          <LoadingButton
+          <Button
             className="btn btn-primary"
             loading={isSaving}
             loadingLabel="Saving..."
-            icon="save"
+            leadingIcon="save"
             onClick={onSave}
           >
             Save research
-          </LoadingButton>
+          </Button>
         </div>
       </div>
 

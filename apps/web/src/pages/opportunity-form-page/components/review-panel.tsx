@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { ParserLoadingState } from "../../../components/parser-loading-state/parser-loading-state";
 import { labelForJobStatus, labelForPipelineType, labelForPriority } from "../../../lib/enum-labels";
@@ -25,6 +25,7 @@ interface ReviewPanelProps {
   workModelOption: Option | null;
   parsedDomains: string[];
   canSave: boolean;
+  onUpdateParseResult: (updates: Partial<ParsedJobDescription>) => void;
 }
 
 export function ReviewPanel({
@@ -41,7 +42,13 @@ export function ReviewPanel({
   workModelOption,
   parsedDomains,
   canSave,
+  onUpdateParseResult,
 }: ReviewPanelProps) {
+  const [editingCompany, setEditingCompany] = useState(false);
+  const [editingRole, setEditingRole] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [roleTitle, setRoleTitle] = useState("");
+
   const pipelineType = (parseResult?.pipelineType ?? "POTENTIAL") as PipelineType;
   const priority = (parseResult?.prioritySuggestion ?? "MEDIUM") as Priority;
 
@@ -99,8 +106,110 @@ export function ReviewPanel({
             </div>
           ) : null}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <ValueRow label="Company" value={parseResult.companyName ?? "-"} />
-            <ValueRow label="Role" value={parseResult.roleTitle ?? "-"} />
+            <div>
+              <p className="label mb-2">Company</p>
+              {editingCompany ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                    placeholder="Company name"
+                    autoFocus
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon="check"
+                    onClick={() => {
+                      onUpdateParseResult({ companyName: companyName.trim() });
+                      setEditingCompany(false);
+                    }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon="close"
+                    onClick={() => {
+                      setEditingCompany(false);
+                      setCompanyName(parseResult.companyName ?? "");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="value flex-1">{parseResult.companyName ?? "-"}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon="edit"
+                    onClick={() => {
+                      setCompanyName(parseResult.companyName ?? "");
+                      setEditingCompany(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="label mb-2">Role</p>
+              {editingRole ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={roleTitle}
+                    onChange={(e) => setRoleTitle(e.target.value)}
+                    className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                    placeholder="Role title"
+                    autoFocus
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon="check"
+                    onClick={() => {
+                      onUpdateParseResult({ roleTitle: roleTitle.trim() });
+                      setEditingRole(false);
+                    }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon="close"
+                    onClick={() => {
+                      setEditingRole(false);
+                      setRoleTitle(parseResult.roleTitle ?? "");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="value flex-1">{parseResult.roleTitle ?? "-"}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon="edit"
+                    onClick={() => {
+                      setRoleTitle(parseResult.roleTitle ?? "");
+                      setEditingRole(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              )}
+            </div>
             <ValueRow label="Status" value={labelForJobStatus(normalizeJobStatus(parseResult.status))} />
             <ValueRow label="Priority" value={labelForPriority(priority)} />
             <ValueRow label="Company size" value={companySizeOption?.label ?? parseResult.company.employees ?? "-"} />
