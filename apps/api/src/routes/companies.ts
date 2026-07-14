@@ -160,10 +160,21 @@ companiesRouter.post(
 
     const enrichment = await getAiParserService().parseCompanyEnrichment(text);
 
-    const employeesRange = enrichment.employees
+    // Normalize employees count to remove "Approximately", "~", etc.
+    const normalizeEmployees = (value: string | null | undefined): string | null => {
+      if (!value) return null;
+      const cleaned = value
+        .replace(/^(approximately|around|about|~|roughly)\s*/i, "")
+        .replace(/\s+(employees?|people|team members?)\s*$/i, "")
+        .trim();
+      return cleaned || null;
+    };
+
+    const employeesLabel = normalizeEmployees(enrichment.employees);
+    const employeesRange = employeesLabel
       ? await prisma.companySizeOption.upsert({
-          where: { label: enrichment.employees },
-          create: { label: enrichment.employees },
+          where: { label: employeesLabel },
+          create: { label: employeesLabel },
           update: {},
         })
       : null;
@@ -251,7 +262,17 @@ companiesRouter.post(
       return;
     }
 
-    const employeesLabel = research.employees?.trim();
+    // Normalize employees count to remove "Approximately", "~", etc.
+    const normalizeEmployees = (value: string | null | undefined): string | null => {
+      if (!value) return null;
+      const cleaned = value
+        .replace(/^(approximately|around|about|~|roughly)\s*/i, "")
+        .replace(/\s+(employees?|people|team members?)\s*$/i, "")
+        .trim();
+      return cleaned || null;
+    };
+
+    const employeesLabel = normalizeEmployees(research.employees);
     const employeesRange = employeesLabel
       ? await prisma.companySizeOption.upsert({
           where: { label: employeesLabel },
@@ -275,6 +296,8 @@ companiesRouter.post(
         name: isPresent(research.companyName) ? research.companyName : company.name,
         searchName: isPresent(research.companySearchName) ? research.companySearchName : company.searchName,
         funding: isPresent(company.funding) ? company.funding : research.funding,
+        totalRaised: isPresent(company.totalRaised) ? company.totalRaised : research.totalRaised,
+        latestRound: isPresent(company.latestRound) ? company.latestRound : research.latestRound,
         employeesRangeId: company.employeesRangeId ?? employeesRange?.id ?? undefined,
         location: isPresent(company.location) ? company.location : research.location,
         linkedinUrl: isPresent(company.linkedinUrl) ? company.linkedinUrl : research.linkedinUrl,

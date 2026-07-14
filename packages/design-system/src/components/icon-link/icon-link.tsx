@@ -31,10 +31,10 @@ export function IconLink({
       onClick={onClick}
       target={target}
       rel={rel}
-      className={`inline-flex items-center gap-1 whitespace-nowrap text-xs text-primary ${className}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap text-primary ${className}`}
     >
       <MaterialIcon name={icon} className="text-xs" />
-      <span className="border-b border-transparent transition-colors hover:border-primary">{children}</span>
+      <span className="border-b border-transparent transition-colors text-sm hover:border-primary">{children}</span>
     </a>
   );
 }

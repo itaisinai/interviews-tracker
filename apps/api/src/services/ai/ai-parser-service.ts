@@ -97,9 +97,20 @@ export interface AiParserService {
 const parsedJobDescriptionJsonSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["companyName", "roleTitle", "pipelineType", "status", "company", "role", "process", "rawImportantNotes"],
+  required: [
+    "companyName",
+    "product",
+    "roleTitle",
+    "pipelineType",
+    "status",
+    "company",
+    "role",
+    "process",
+    "rawImportantNotes",
+  ],
   properties: {
     companyName: { type: ["string", "null"] },
+    product: { type: ["string", "null"] },
     roleTitle: { type: ["string", "null"] },
     pipelineType: { type: ["string", "null"], enum: ["POTENTIAL", "ACTIVE_PROCESS", null] },
     status: { type: ["string", "null"] },
@@ -263,20 +274,43 @@ export class OpenAiParserService implements AiParserService {
   ) {}
 
   async parseJobDescription(text: string): Promise<ParsedJobDescription> {
+    console.log("=== JOB PARSER START ===");
+    console.log("[PARSER INPUT] Text length:", text.length);
+    console.log("[PARSER INPUT] Text preview:", text.slice(0, 300));
+
+    const systemPrompt = [
+      buildJobParserSystemPrompt(),
+      "This is an ingestion engine, not a summary generator.",
+      "Preserve every explicit fact that could help the user later, even if the result is verbose.",
+      "Put any useful leftover details into rawImportantNotes or suggestedNextStep instead of discarding them.",
+      "Return only data that matches the provided JSON schema.",
+    ].join("\n\n");
+
+    console.log("[PARSER PROMPT] System prompt length:", systemPrompt.length);
+    console.log("[PARSER PROMPT] System prompt preview:", systemPrompt.slice(0, 500));
+
     const outputText = await this.createStructuredOutput({
       name: "parsed_job_description",
       schema: parsedJobDescriptionJsonSchema,
-      systemPrompt: [
-        buildJobParserSystemPrompt(),
-        "This is an ingestion engine, not a summary generator.",
-        "Preserve every explicit fact that could help the user later, even if the result is verbose.",
-        "Put any useful leftover details into rawImportantNotes or suggestedNextStep instead of discarding them.",
-        "Return only data that matches the provided JSON schema.",
-      ].join("\n\n"),
+      systemPrompt,
       text,
     });
 
-    return aiParseResponseSchema.parse(JSON.parse(outputText));
+    console.log("[PARSER OUTPUT] Raw AI response:", outputText);
+
+    const parsed = JSON.parse(outputText);
+    console.log("[PARSER OUTPUT] Parsed JSON - companyName:", parsed.companyName);
+    console.log("[PARSER OUTPUT] Parsed JSON - product:", parsed.product);
+    console.log("[PARSER OUTPUT] Parsed JSON - roleTitle:", parsed.roleTitle);
+    console.log("[PARSER OUTPUT] Parsed JSON - status:", parsed.status);
+    console.log("[PARSER OUTPUT] Full parsed object:", JSON.stringify(parsed, null, 2));
+
+    const validated = aiParseResponseSchema.parse(parsed);
+    console.log("[PARSER OUTPUT] Validated - companyName:", validated.companyName);
+    console.log("[PARSER OUTPUT] Validated - product:", validated.product);
+    console.log("=== JOB PARSER END ===");
+
+    return validated;
   }
 
   async parseCompanyEnrichment(text: string): Promise<CompanyEnrichment> {

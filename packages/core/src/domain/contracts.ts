@@ -23,6 +23,8 @@ export const companyInputSchema = z.object({
   websiteUrl: z.string().url().nullish(),
   location: z.string().nullish(),
   funding: z.string().nullish(),
+  totalRaised: z.string().nullish(),
+  latestRound: z.string().nullish(),
   employeesRangeId: z.string().nullish(),
   companyStageId: z.string().nullish(),
   description: z.string().nullish(),
@@ -125,6 +127,8 @@ export type Company = {
   websiteUrl?: string | null;
   location?: string | null;
   funding?: string | null;
+  totalRaised?: string | null;
+  latestRound?: string | null;
   employeesRangeId?: string | null;
   companyStageId?: string | null;
   description?: string | null;
@@ -227,6 +231,8 @@ export type CompanyDetail = {
   websiteUrl?: string | null;
   location?: string | null;
   funding?: string | null;
+  totalRaised?: string | null;
+  latestRound?: string | null;
   description?: string | null;
   productDescription?: string | null;
   customersTraction?: string | null;

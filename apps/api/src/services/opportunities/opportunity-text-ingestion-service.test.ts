@@ -6,6 +6,7 @@ import { buildOpportunityInputFromParsedJobDescription } from "./opportunity-tex
 test("buildOpportunityInputFromParsedJobDescription maps parser output to opportunity input", async () => {
   const input = await buildOpportunityInputFromParsedJobDescription({
     companyName: "ExampleCo",
+    product: null,
     roleTitle: "Senior Backend Engineer",
     pipelineType: "ACTIVE_PROCESS",
     status: "RECRUITER_REACHED_OUT",
@@ -59,6 +60,7 @@ test("buildOpportunityInputFromParsedJobDescription maps parser output to opport
 test("buildOpportunityInputFromParsedJobDescription supplies safe defaults", async () => {
   const input = await buildOpportunityInputFromParsedJobDescription({
     companyName: null,
+    product: null,
     roleTitle: null,
     pipelineType: null,
     status: null,

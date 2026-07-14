@@ -295,46 +295,66 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
           </p>
         </div>
 
-        <div className="space-y-3">
-          <DiffReviewRow label="Date" currentValue="" newValue={formatDateTime(draft.date)} isChanged={true} />
+        {/* Clean form-like view for new interactions */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4">
+              <p className="mb-2 text-label-sm font-medium uppercase tracking-wider text-on-surface-variant">Date</p>
+              <p className="text-body-md text-on-surface">{formatDateTime(draft.date)}</p>
+            </div>
 
-          {draft.endDate && (
-            <DiffReviewRow label="End Date" currentValue="" newValue={formatDateTime(draft.endDate)} isChanged={true} />
-          )}
+            {draft.endDate && (
+              <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4">
+                <p className="mb-2 text-label-sm font-medium uppercase tracking-wider text-on-surface-variant">
+                  End Date
+                </p>
+                <p className="text-body-md text-on-surface">{formatDateTime(draft.endDate)}</p>
+              </div>
+            )}
 
-          <DiffReviewRow label="Type" currentValue="" newValue={draft.type} isChanged={true} />
+            <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4">
+              <p className="mb-2 text-label-sm font-medium uppercase tracking-wider text-on-surface-variant">Type</p>
+              <p className="text-body-md text-on-surface">{draft.type}</p>
+            </div>
 
-          {draft.stage && <DiffReviewRow label="Stage" currentValue="" newValue={draft.stage} isChanged={true} />}
+            {draft.stage && (
+              <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4">
+                <p className="mb-2 text-label-sm font-medium uppercase tracking-wider text-on-surface-variant">Stage</p>
+                <p className="text-body-md text-on-surface">{draft.stage}</p>
+              </div>
+            )}
+          </div>
 
           {draft.personName && (
-            <DiffReviewRow label="Participants" currentValue="" newValue={draft.personName} isChanged={true} />
+            <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4">
+              <p className="mb-2 text-label-sm font-medium uppercase tracking-wider text-on-surface-variant">
+                Participants
+              </p>
+              <p className="text-body-md text-on-surface">{draft.personName}</p>
+            </div>
           )}
 
           {draft.meetingLink && (
-            <DiffReviewRow
-              label="Meeting Link"
-              currentValue=""
-              newValue={
-                <a
-                  href={draft.meetingLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-600 hover:underline break-all"
-                >
-                  {draft.meetingLink}
-                </a>
-              }
-              isChanged={true}
-            />
+            <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4">
+              <p className="mb-2 text-label-sm font-medium uppercase tracking-wider text-on-surface-variant">
+                Meeting Link
+              </p>
+              <a
+                href={draft.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-all text-body-md text-primary hover:underline"
+              >
+                {draft.meetingLink}
+              </a>
+            </div>
           )}
 
           {draft.agenda && (
-            <DiffReviewRow
-              label="Agenda"
-              currentValue=""
-              newValue={<span className="whitespace-pre-wrap">{draft.agenda}</span>}
-              isChanged={true}
-            />
+            <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4">
+              <p className="mb-2 text-label-sm font-medium uppercase tracking-wider text-on-surface-variant">Agenda</p>
+              <p className="whitespace-pre-wrap text-body-md text-on-surface">{draft.agenda}</p>
+            </div>
           )}
         </div>
 
@@ -361,32 +381,54 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
   }
 
   if (step === "no-results" || searchResults?.candidates.length === 0) {
+    // When there are no new candidates, pass empty array but still show tabs with picked/ignored
+    // This will let users manage their picked/ignored emails through the tab interface
+    const transformedMessageStates = messageStates
+      ? {
+          pickedEmails: messageStates.pickedEmails.map((e) => ({
+            id: e.id,
+            subject: e.subject,
+            date: e.date,
+          })),
+          removedEmails: messageStates.removedEmails.map((e) => ({
+            id: e.id,
+            subject: e.subject,
+            date: e.date,
+          })),
+          ignoredEmails: messageStates.ignoredEmails.map((e) => ({
+            id: e.id,
+            subject: e.subject,
+            date: e.date,
+          })),
+        }
+      : undefined;
+
     return (
-      <div className="space-y-6">
-        <div className="py-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
-            <MaterialIcon name="inbox" className="text-[32px] text-neutral-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-neutral-900">No emails found</h3>
-          <p className="mt-2 text-sm text-neutral-600">We couldn't find any recent emails for {companyName}.</p>
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <Button
-              onClick={() => {
-                setStep("searching");
-                void refetchSearch();
-              }}
-              variant="secondary"
-            >
-              <MaterialIcon name="refresh" />
-              Refresh Search
-            </Button>
-            <Button onClick={onBack} variant="secondary">
-              <MaterialIcon name="arrow_back" />
-              Back
-            </Button>
-          </div>
-        </div>
-      </div>
+      <GmailEmailSelector
+        candidates={[]} // Empty candidates array
+        isLoading={false}
+        emptyMessage="No new emails found"
+        emptySubMessage={`All emails for this opportunity have been processed.`}
+        onSubmit={handleSubmitSelected}
+        onCancel={onBack}
+        submitLabel="Import Selected"
+        submitIcon="download"
+        isSubmitting={isParsing}
+        allowMultiSelect={true}
+        messageStates={transformedMessageStates}
+        onUnpick={(messageId) => unpickEmail.mutate(messageId)}
+        onRestore={(messageId) => restoreEmail.mutate(messageId)}
+        onIgnore={(messageId) => ignoreEmail.mutate(messageId)}
+        onUnignore={(messageId) => unignoreEmail.mutate(messageId)}
+        isUnpickPending={unpickEmail.isPending}
+        isRestorePending={restoreEmail.isPending}
+        isIgnorePending={ignoreEmail.isPending}
+        isUnignorePending={unignoreEmail.isPending}
+        showDebugSection={false}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefetching}
+        lastSyncTime={lastSyncTime}
+      />
     );
   }
 

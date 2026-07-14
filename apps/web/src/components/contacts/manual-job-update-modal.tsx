@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { MaterialIcon, Modal } from "@interviews-tracker/design-system";
+import { IconLink, MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
 import type { Person } from "../../lib/types";
 
@@ -50,15 +50,9 @@ export function ManualJobUpdateModal({
             {person.linkedinUrl && (
               <div>
                 <label className="label mb-2">LinkedIn Profile</label>
-                <a
-                  href={person.linkedinUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-sm text-primary hover:bg-surface-container"
-                >
-                  <MaterialIcon name="open_in_new" className="text-[18px]" />
-                  Open LinkedIn Profile
-                </a>
+                <div className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2">
+                  <IconLink href={person.linkedinUrl}>Open LinkedIn Profile</IconLink>
+                </div>
               </div>
             )}
 
