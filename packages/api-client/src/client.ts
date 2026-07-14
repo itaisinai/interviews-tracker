@@ -149,10 +149,12 @@ export const api = {
         daysBack: String(daysBack),
       }).toString()}`
     ),
-  gmailParseOpportunityCandidate: (messageId: string) =>
+  gmailParseOpportunityCandidate: (messageIdOrIds: string | string[]) =>
     request<{ email: GmailStructuredEmail; parsed: ParsedJobDescription }>("/gmail/opportunity-candidates/parse", {
       method: "POST",
-      body: JSON.stringify({ messageId }),
+      body: JSON.stringify(
+        typeof messageIdOrIds === "string" ? { messageId: messageIdOrIds } : { messageIds: messageIdOrIds }
+      ),
     }),
   gmailRestoreMessage: (messageId: string) =>
     request<{ success: boolean }>(`/gmail/message-state/${messageId}`, {
