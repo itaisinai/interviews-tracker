@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button, MaterialIcon, Spinner } from "@interviews-tracker/design-system";
 
+import { useLocalStorage } from "../hooks/use-local-storage";
 import { api } from "../lib/api";
 
 import styles from "./telegram-bot.module.css";
@@ -138,6 +139,13 @@ export function TelegramBot() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Store button position in localStorage
+  const [position, setPosition] = useLocalStorage<{ x: number; y: number }>("chatbot-position", { x: 24, y: 24 });
 
   const handleClose = () => {
     if (isClosing) return; // Prevent multiple close calls
@@ -245,12 +253,88 @@ export function TelegramBot() {
     setMessages([]);
   };
 
+  // Drag functionality
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPosX = position.x;
+    const startPosY = position.y;
+    let hasMoved = false;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = startX - moveEvent.clientX; // Inverted: moving right = decreasing x
+      const deltaY = startY - moveEvent.clientY; // Inverted: moving down = decreasing y
+
+      // Only start dragging if moved more than 3px (to distinguish from clicks)
+      if (!hasMoved && (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3)) {
+        hasMoved = true;
+        isDraggingRef.current = true;
+        setIsDragging(true);
+      }
+
+      if (hasMoved && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+
+        // Position is distance from right/bottom edges
+        const newX = startPosX + deltaX;
+        const newY = startPosY + deltaY;
+
+        // Clamp to keep button within viewport
+        const clampedX = Math.max(8, Math.min(newX, window.innerWidth - rect.width - 8));
+        const clampedY = Math.max(8, Math.min(newY, window.innerHeight - rect.height - 8));
+
+        setPosition({ x: clampedX, y: clampedY });
+      }
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      setIsDragging(false);
+
+      // Small delay to prevent click event if dragged
+      if (hasMoved) {
+        setTimeout(() => {
+          isDraggingRef.current = false;
+        }, 100);
+      } else {
+        isDraggingRef.current = false;
+      }
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Prevent opening if we just finished dragging
+    if (isDraggingRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    handleOpen();
+  };
+
   return (
     <>
       {/* Floating button */}
       {!isOpen && !isClosing && (
-        <button type="button" className={styles.floatingButton} onClick={handleOpen} aria-label="Open Telegram bot">
-          <MaterialIcon name="chat" className={styles.floatingIcon} />
+        <button
+          ref={buttonRef}
+          type="button"
+          className={`${styles.floatingButton} ${isDragging ? styles.dragging : ""}`}
+          style={{
+            right: `${position.x}px`,
+            bottom: `${position.y}px`,
+          }}
+          onMouseDown={handleMouseDown}
+          onClick={handleClick}
+          aria-label="Open AI chatbot"
+        >
+          <div className={styles.floatingIconWrapper}>
+            <MaterialIcon name="auto_awesome" className={styles.floatingIcon} />
+          </div>
         </button>
       )}
 
