@@ -254,41 +254,61 @@ export function ReviewPanel({
             </div>
             <ValueRow label="Status" value={labelForJobStatus(normalizeJobStatus(parseResult.status))} />
             <ValueRow label="Priority" value={labelForPriority(priority)} />
-            <ValueRow label="Company size" value={companySizeOption?.label ?? parseResult.company.employees ?? "-"} />
-            <ValueRow label="Stage" value={companyStageOption?.label ?? parseResult.company.stage ?? "-"} />
-            <ValueRow label="Work model" value={workModelOption?.label ?? parseResult.company.workModel ?? "-"} />
-            <ValueRow label="Location" value={parseResult.company.location ?? "-"} />
-            <ValueRow label="Known contact" value={parseResult.process.knownContact ?? "-"} />
-            <ValueRow label="Next step" value={parseResult.process.suggestedNextStep ?? "-"} />
-            <ValueRow label="Company description" value={parseResult.company.companyDescription ?? "-"} />
-            <ValueRow label="Product description" value={parseResult.company.productDescription ?? "-"} />
+            {(companySizeOption?.label || parseResult.company.employees) && (
+              <ValueRow label="Company size" value={companySizeOption?.label ?? parseResult.company.employees ?? "-"} />
+            )}
+            {(companyStageOption?.label || parseResult.company.stage) && (
+              <ValueRow label="Stage" value={companyStageOption?.label ?? parseResult.company.stage ?? "-"} />
+            )}
+            {(workModelOption?.label || parseResult.company.workModel) && (
+              <ValueRow label="Work model" value={workModelOption?.label ?? parseResult.company.workModel ?? "-"} />
+            )}
+            {parseResult.company.location && <ValueRow label="Location" value={parseResult.company.location} />}
+            {parseResult.process.knownContact && (
+              <ValueRow label="Known contact" value={parseResult.process.knownContact} />
+            )}
+            {parseResult.process.suggestedNextStep && (
+              <ValueRow label="Next step" value={parseResult.process.suggestedNextStep} />
+            )}
+            {parseResult.company.companyDescription && (
+              <ValueRow label="Company description" value={parseResult.company.companyDescription} />
+            )}
+            {parseResult.company.productDescription && (
+              <ValueRow label="Product description" value={parseResult.company.productDescription} />
+            )}
           </div>
-          <div className="mt-4">
-            <p className="label">Domains</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {parsedDomains.length > 0 ? (
-                parsedDomains.map((domain) => (
+          {parsedDomains.length > 0 && (
+            <div className="mt-4">
+              <p className="label">Domains</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {parsedDomains.map((domain) => (
                   <span
                     key={domain}
                     className="rounded-full bg-secondary-container px-3 py-1 font-label-md text-label-md text-on-secondary-container"
                   >
                     {domain}
                   </span>
-                ))
-              ) : (
-                <span className="text-body-md text-on-surface-variant">-</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {(parseResult.role.techStack.length > 0 ||
+            parseResult.role.backendFrontendSplit ||
+            parseResult.role.compensation ||
+            parseResult.company.customersTraction) && (
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {parseResult.role.techStack.length > 0 && (
+                <ValueRow label="Tech stack" value={parseResult.role.techStack.join(", ")} />
+              )}
+              {parseResult.role.backendFrontendSplit && (
+                <ValueRow label="Backend / frontend split" value={parseResult.role.backendFrontendSplit} />
+              )}
+              {parseResult.role.compensation && <ValueRow label="Compensation" value={parseResult.role.compensation} />}
+              {parseResult.company.customersTraction && (
+                <ValueRow label="Customers / traction" value={parseResult.company.customersTraction} />
               )}
             </div>
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <ValueRow
-              label="Tech stack"
-              value={parseResult.role.techStack.length > 0 ? parseResult.role.techStack.join(", ") : "-"}
-            />
-            <ValueRow label="Backend / frontend split" value={parseResult.role.backendFrontendSplit ?? "-"} />
-            <ValueRow label="Compensation" value={parseResult.role.compensation ?? "-"} />
-            <ValueRow label="Customers / traction" value={parseResult.company.customersTraction ?? "-"} />
-          </div>
+          )}
           {parseResult.rawImportantNotes.length > 0 ? (
             <div className="mt-4">
               <p className="label">Important notes</p>

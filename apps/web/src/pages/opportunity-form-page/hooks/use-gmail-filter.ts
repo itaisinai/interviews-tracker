@@ -199,12 +199,16 @@ export function useGmailFilter(gmailCandidates: GmailCandidatesResult | null) {
     };
   }, [filteredCandidates]);
 
-  // Build a set of all email IDs that are in groups (for filtering singles)
+  // Build a set of all email IDs that are in groups WITH MORE THAN 1 EMAIL (for filtering singles)
+  // Single-email groups should appear in the singles list instead
   const groupedEmailIds = useMemo(() => {
     const ids = new Set<string>();
     for (const candidates of groupedCandidates.values()) {
-      for (const candidate of candidates) {
-        ids.add(candidate.id);
+      // Only include emails from groups with multiple emails
+      if (candidates.length > 1) {
+        for (const candidate of candidates) {
+          ids.add(candidate.id);
+        }
       }
     }
     return ids;
