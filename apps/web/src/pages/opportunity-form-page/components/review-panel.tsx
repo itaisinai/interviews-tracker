@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { Button, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, IconButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { ParserLoadingState } from "../../../components/parser-loading-state/parser-loading-state";
 import { labelForJobStatus, labelForPipelineType, labelForPriority } from "../../../lib/enum-labels";
@@ -118,43 +118,37 @@ export function ReviewPanel({
                     placeholder="Company name"
                     autoFocus
                   />
-                  <Button
+                  <IconButton
                     variant="ghost"
-                    size="sm"
-                    leadingIcon="check"
+                    icon="check"
                     onClick={() => {
                       onUpdateParseResult({ companyName: companyName.trim() });
                       setEditingCompany(false);
                     }}
-                  >
-                    Save
-                  </Button>
-                  <Button
+                    label="Save"
+                  />
+                  <IconButton
                     variant="ghost"
-                    size="sm"
-                    leadingIcon="close"
+                    icon="close"
                     onClick={() => {
                       setEditingCompany(false);
                       setCompanyName(parseResult.companyName ?? "");
                     }}
-                  >
-                    Cancel
-                  </Button>
+                    label="Cancel"
+                  />
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <p className="value flex-1">{parseResult.companyName ?? "-"}</p>
-                  <Button
+                  <IconButton
                     variant="ghost"
-                    size="sm"
-                    leadingIcon="edit"
+                    icon="edit"
                     onClick={() => {
                       setCompanyName(parseResult.companyName ?? "");
                       setEditingCompany(true);
                     }}
-                  >
-                    Edit
-                  </Button>
+                    label="Edit"
+                  />
                 </div>
               )}
             </div>
@@ -170,43 +164,37 @@ export function ReviewPanel({
                     placeholder="Role title"
                     autoFocus
                   />
-                  <Button
+                  <IconButton
                     variant="ghost"
-                    size="sm"
-                    leadingIcon="check"
+                    icon="check"
                     onClick={() => {
                       onUpdateParseResult({ roleTitle: roleTitle.trim() });
                       setEditingRole(false);
                     }}
-                  >
-                    Save
-                  </Button>
-                  <Button
+                    label="Save"
+                  />
+                  <IconButton
                     variant="ghost"
-                    size="sm"
-                    leadingIcon="close"
+                    icon="close"
                     onClick={() => {
                       setEditingRole(false);
                       setRoleTitle(parseResult.roleTitle ?? "");
                     }}
-                  >
-                    Cancel
-                  </Button>
+                    label="Cancel"
+                  />
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <p className="value flex-1">{parseResult.roleTitle ?? "-"}</p>
-                  <Button
+                  <IconButton
                     variant="ghost"
-                    size="sm"
-                    leadingIcon="edit"
+                    icon="edit"
                     onClick={() => {
                       setRoleTitle(parseResult.roleTitle ?? "");
                       setEditingRole(true);
                     }}
-                  >
-                    Edit
-                  </Button>
+                    label="Edit"
+                  />
                 </div>
               )}
             </div>
