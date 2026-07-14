@@ -6,6 +6,7 @@ type CompanyDetailFieldProps = {
   icon?: string;
   className?: string;
   href?: string | null;
+  truncate?: boolean;
 };
 
 /**
@@ -21,7 +22,7 @@ function isSafeUrl(value: string): boolean {
   }
 }
 
-export function CompanyDetailField({ label, value, icon, className, href }: CompanyDetailFieldProps) {
+export function CompanyDetailField({ label, value, icon, className, href, truncate = false }: CompanyDetailFieldProps) {
   // Validate both explicit href prop and inferred URL from value
   const effectiveHref = (href && isSafeUrl(href) ? href : null) || (isSafeUrl(value) ? value : null);
 
@@ -39,7 +40,10 @@ export function CompanyDetailField({ label, value, icon, className, href }: Comp
             <IconLink href={effectiveHref}>{value}</IconLink>
           </div>
         ) : (
-          <p className="mt-0.5 truncate text-body-md text-on-background" title={value}>
+          <p
+            className={`mt-0.5 text-body-md text-on-background ${truncate ? "truncate" : ""}`}
+            title={truncate ? value : undefined}
+          >
             {value}
           </p>
         )}

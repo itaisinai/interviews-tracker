@@ -78,6 +78,8 @@ model Company {
   websiteUrl           String?
   location             String?
   funding              String?
+  totalRaised          String?
+  latestRound          String?
   employeesRangeId     String?
   companyStageId       String?
   description          String?

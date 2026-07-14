@@ -113,7 +113,6 @@ export function CompanyDetailView({
   ];
   const summaryDomain = domains.find((domain) => !domain.includes(".")) ?? domains[0] ?? "-";
   const summaryFacts = [
-    { label: "Industry", value: summaryDomain, icon: "work" },
     { label: "Location", value: company.location ?? "-", icon: "location_on" },
     {
       label: "Size",
@@ -121,12 +120,16 @@ export function CompanyDetailView({
       icon: "groups",
     },
     {
-      label: "Stage",
-      value: company.companyStage?.label ?? "-",
-      icon: "route",
+      label: "Total Raised",
+      value: company.totalRaised ?? "-",
+      icon: "payments",
     },
-    { label: "Funding", value: company.funding ?? "-", icon: "payments" },
-    { label: "Domain", value: domains.join(", ") || "-", icon: "public" },
+    {
+      label: "Latest Round",
+      value: company.latestRound ?? "-",
+      icon: "trending_up",
+    },
+    { label: "Funding", value: company.funding ?? "-", icon: "account_balance" },
   ] as const;
 
   const researchExistingData = {
@@ -275,6 +278,8 @@ export function CompanyDetailView({
               { label: "Location", value: company.location ?? "-" },
               { label: "Size", value: company.employeesRange?.label ?? "-" },
               { label: "Stage", value: company.companyStage?.label ?? "-" },
+              { label: "Total Raised", value: company.totalRaised ?? "-" },
+              { label: "Latest Round", value: company.latestRound ?? "-" },
               { label: "Funding / Rounds", value: company.funding ?? "-" },
               {
                 label: "Customers / Traction",
