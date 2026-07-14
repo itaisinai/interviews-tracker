@@ -21,7 +21,20 @@ export function getOpportunity(id: string, ownerEmail: string) {
   return getOpportunityRecord(id, ownerEmail);
 }
 
-export async function createOpportunity(input: OpportunityInput, ownerEmail: string) {
+export async function createOpportunity(
+  input: OpportunityInput & {
+    location?: string | null;
+    funding?: string | null;
+    employeesRangeId?: string | null;
+    companyStageId?: string | null;
+    companyDescription?: string | null;
+    productDescription?: string | null;
+    customersTraction?: string | null;
+    techStack?: string | null;
+    backendFrontendSplit?: string | null;
+  },
+  ownerEmail: string
+) {
   // Resolve companyId: use provided companyId, or create/find company by name
   let companyId: string;
 
@@ -40,8 +53,52 @@ export async function createOpportunity(input: OpportunityInput, ownerEmail: str
     throw new Error("Either companyId or companyName must be provided");
   }
 
+  // Enrich company with parsed data if provided
+  const {
+    location,
+    funding,
+    employeesRangeId,
+    companyStageId,
+    companyDescription,
+    productDescription,
+    customersTraction,
+    techStack,
+    backendFrontendSplit,
+    ...opportunityInput
+  } = input;
+
+  if (
+    location ||
+    funding ||
+    employeesRangeId ||
+    companyStageId ||
+    companyDescription ||
+    productDescription ||
+    customersTraction ||
+    techStack ||
+    backendFrontendSplit
+  ) {
+    const { updateCompanyRecord } = await import("../../repositories/company-repository.js");
+    await updateCompanyRecord(
+      companyId,
+      {
+        location,
+        funding,
+        employeesRangeId,
+        companyStageId,
+        description: companyDescription,
+        productDescription,
+        customersTraction,
+        techStack,
+        backendFrontendSplit,
+      },
+      ownerEmail
+    );
+    logger.operational("company_enriched_from_opportunity_creation", { companyId });
+  }
+
   logger.operational("create_opportunity_started", { companyId });
-  const opportunity = await createOpportunityRecord(input, ownerEmail, companyId);
+  const opportunity = await createOpportunityRecord(opportunityInput, ownerEmail, companyId);
   logger.operational("create_opportunity_completed", {
     opportunityId: opportunity.id,
     companyId,

@@ -118,6 +118,7 @@ export function OpportunityFormPage() {
         throw new Error("The parser must extract both a company name and a role title before saving.");
       }
 
+      // Auto-create domains if not found
       const domainIds = new Set<string>();
       for (const label of parsedDomains) {
         const existing = options?.domains.find(
@@ -135,6 +136,29 @@ export function OpportunityFormPage() {
         domainIds.add(created.id);
       }
 
+      // Auto-create company size option if not found
+      let employeesRangeId = companySizeOption?.id;
+      if (!employeesRangeId && parseResult.company.employees?.trim()) {
+        const created = (await api.addOption("company-size", parseResult.company.employees.trim())) as {
+          id: string;
+        };
+        employeesRangeId = created.id;
+      }
+
+      // Auto-create company stage option if not found
+      let companyStageId = companyStageOption?.id;
+      if (!companyStageId && parseResult.company.stage?.trim()) {
+        const created = (await api.addOption("company-stage", parseResult.company.stage.trim())) as { id: string };
+        companyStageId = created.id;
+      }
+
+      // Auto-create work model option if not found
+      let workModelId = workModelOption?.id;
+      if (!workModelId && parseResult.company.workModel?.trim()) {
+        const created = (await api.addOption("work-model", parseResult.company.workModel.trim())) as { id: string };
+        workModelId = created.id;
+      }
+
       return api.createOpportunity({
         companyName,
         roleTitle,
@@ -145,9 +169,9 @@ export function OpportunityFormPage() {
         source: "AI parsed job description",
         nextStep: parseResult.process.suggestedNextStep,
         notes: parseResult.rawImportantNotes.join("\n"),
-        employeesRangeId: companySizeOption?.id,
-        companyStageId: companyStageOption?.id,
-        workModelId: workModelOption?.id,
+        employeesRangeId,
+        companyStageId,
+        workModelId,
         location: parseResult.company.location,
         funding: parseResult.company.funding,
         companyDescription: parseResult.company.companyDescription,
@@ -263,11 +287,15 @@ export function OpportunityFormPage() {
             loadingLabel="Adding..."
             leadingIcon="arrow_forward"
             onClick={() => {
-              // Parse first selected email for now
-              // TODO: Implement multi-email parsing
-              const firstEmail = Array.from(selectedEmails)[0];
-              if (firstEmail) {
-                gmailParse.mutate(firstEmail);
+              const messageIds = Array.from(selectedEmails);
+              if (messageIds.length > 0) {
+                // If single email, use existing single-message flow
+                if (messageIds.length === 1) {
+                  gmailParse.mutate(messageIds[0]);
+                } else {
+                  // For multiple emails, send array to backend
+                  gmailParse.mutate(messageIds);
+                }
               }
             }}
           >

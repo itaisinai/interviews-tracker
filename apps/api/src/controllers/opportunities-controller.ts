@@ -20,7 +20,6 @@ import {
   unignoreGmailMessage,
   unmarkUsedGmailMessageState,
 } from "../services/gmail/gmail-service.js";
-import { attachEmailToInteraction } from "../services/interactions/interaction-email-service.js";
 import { createInteraction as createInteractionRecord } from "../services/interactions/interaction-service.js";
 import {
   createOpportunity,
@@ -37,7 +36,45 @@ export function listOpportunitiesHandler(request: AuthenticatedRequest) {
 }
 
 export function createOpportunityHandler(request: AuthenticatedRequest) {
-  return createOpportunity(opportunityInputSchema.parse(request.body), request.auth.email);
+  // Parse with extended schema that allows company enrichment fields
+  // We need to manually define the schema since opportunityInputSchema uses .refine() which doesn't support .extend()
+  const extendedSchema = z
+    .object({
+      companyId: z.string().min(1).optional(),
+      companyName: z.string().min(1).optional(),
+      roleTitle: z.string().min(1),
+      pipelineType: z.enum(["POTENTIAL", "ACTIVE_PROCESS", "ARCHIVED"]),
+      status: z.string(),
+      priority: z.enum(["HIGH", "MEDIUM", "LOW", "MAYBE"]),
+      referrerOrConnection: z.string().nullish(),
+      source: z.string().nullish(),
+      jobUrl: z.string().nullish(),
+      linkedinUrl: z.string().url().nullish(),
+      linkedinJobId: z.string().nullish(),
+      sourceUrl: z.string().url().nullish(),
+      nextStep: z.string().nullish(),
+      notes: z.string().nullish(),
+      workModelId: z.string().nullish(),
+      compensationNotes: z.string().nullish(),
+      domainIds: z.array(z.string()).default([]),
+      // Company enrichment fields (these will be used to update the company entity)
+      location: z.string().nullish(),
+      funding: z.string().nullish(),
+      employeesRangeId: z.string().nullish(),
+      companyStageId: z.string().nullish(),
+      companyDescription: z.string().nullish(),
+      productDescription: z.string().nullish(),
+      customersTraction: z.string().nullish(),
+      techStack: z.string().nullish(),
+      backendFrontendSplit: z.string().nullish(),
+    })
+    .refine((data) => data.companyId || data.companyName, {
+      message: "Either companyId or companyName must be provided",
+      path: ["companyId"],
+    });
+
+  const input = extendedSchema.parse(request.body) as any;
+  return createOpportunity(input, request.auth.email);
 }
 
 export function getOpportunityHandler(request: AuthenticatedRequest) {

@@ -5,6 +5,7 @@ import { asyncHandler } from "../lib/http.js";
 import { createTimer } from "../lib/logger.js";
 import { prisma } from "../lib/prisma.js";
 import { gmailConnectRequestSchema } from "../lib/schemas.js";
+import { getAiParserService } from "../services/ai/ai-parser-service.js";
 import {
   createGmailAuthUrl,
   disconnectGmail,
@@ -167,15 +168,62 @@ gmailRouter.post(
       return;
     }
 
-    const messageId = String(request.body?.messageId ?? "");
-    if (!messageId) {
-      response.status(400).json({ message: "messageId is required." });
+    // Support both single messageId and array of messageIds
+    const singleMessageId = request.body?.messageId;
+    const multipleMessageIds = request.body?.messageIds;
+
+    if (!singleMessageId && !multipleMessageIds) {
+      response.status(400).json({ message: "messageId or messageIds is required." });
       return;
     }
 
-    const result = await parseGmailEmailToOpportunity({ auth0Email: request.auth.email, messageId });
-    timer.end({ messageId });
-    response.json(result);
+    // If single message, use existing flow
+    if (singleMessageId) {
+      const result = await parseGmailEmailToOpportunity({ auth0Email: request.auth.email, messageId: singleMessageId });
+      timer.end({ messageId: singleMessageId });
+      response.json(result);
+      return;
+    }
+
+    // For multiple messages, parse each and merge
+    const messageIds = Array.isArray(multipleMessageIds) ? multipleMessageIds : [multipleMessageIds];
+    if (messageIds.length === 0) {
+      response.status(400).json({ message: "messageIds array cannot be empty." });
+      return;
+    }
+
+    // Parse all emails
+    const results = await Promise.all(
+      messageIds.map((messageId: string) =>
+        parseGmailEmailToOpportunity({ auth0Email: request.auth!.email, messageId })
+      )
+    );
+
+    // For opportunity creation, we just need the merged text from all emails
+    // Combine all email texts for the AI to parse as one opportunity description
+    const combinedText = results
+      .map((result) => {
+        const email = result.email;
+        return [
+          `Subject: ${email.subject}`,
+          `From: ${email.fromRaw}`,
+          `Date: ${email.dateHeader ?? email.internalDate}`,
+          email.plainText || email.htmlText || email.snippet,
+        ]
+          .filter(Boolean)
+          .join("\n\n");
+      })
+      .join("\n\n---\n\n");
+
+    // Parse the combined text as a single job description
+    const parsed = await getAiParserService().parseJobDescription(combinedText);
+
+    // Return the first email structure (for display) with the merged parsed data
+    timer.end({ messageIds: messageIds.join(","), count: messageIds.length });
+    response.json({
+      email: results[0].email,
+      parsed,
+    });
   })
 );
 
