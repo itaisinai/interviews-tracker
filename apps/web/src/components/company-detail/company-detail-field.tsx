@@ -1,4 +1,4 @@
-import { MaterialIcon } from "@interviews-tracker/design-system";
+import { IconLink, MaterialIcon } from "@interviews-tracker/design-system";
 
 type CompanyDetailFieldProps = {
   label: string;
@@ -35,16 +35,9 @@ export function CompanyDetailField({ label, value, icon, className, href }: Comp
       <div className="min-w-0">
         <p className="truncate font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">{label}</p>
         {effectiveHref ? (
-          <a
-            href={effectiveHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-0.5 inline-flex items-center gap-1 truncate text-body-md text-primary hover:underline"
-            title={value}
-          >
-            {value}
-            <MaterialIcon name="open_in_new" className="text-[16px]" />
-          </a>
+          <div className="mt-0.5">
+            <IconLink href={effectiveHref}>{value}</IconLink>
+          </div>
         ) : (
           <p className="mt-0.5 truncate text-body-md text-on-background" title={value}>
             {value}

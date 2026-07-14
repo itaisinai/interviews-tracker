@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type { CompanyExperience } from "@interviews-tracker/design-system";
-import { Button, Checkbox, JobHistoryTimeline, MaterialIcon, Modal } from "@interviews-tracker/design-system";
+import { Button, Checkbox, IconLink, JobHistoryTimeline, MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
 import type { PersonResearchResult } from "../../lib/types";
 
@@ -64,15 +64,9 @@ export function ConfirmResearchModal({ isOpen, onClose, person, onStartResearch 
               </p>
             ) : null}
             {person.linkedinUrl ? (
-              <a
-                href={person.linkedinUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 text-body-sm text-primary transition-colors hover:text-primary/80"
-              >
-                <MaterialIcon name="open_in_new" className="flex-shrink-0" />
-                <span className="underline">LinkedIn</span>
-              </a>
+              <div className="mt-2">
+                <IconLink href={person.linkedinUrl}>LinkedIn</IconLink>
+              </div>
             ) : null}
           </div>
         </div>
@@ -231,15 +225,9 @@ export function ReviewResearchModal({
               </p>
             ) : null}
             {person.linkedinUrl ? (
-              <a
-                href={person.linkedinUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 text-body-sm text-primary transition-colors hover:text-primary/80"
-              >
-                <MaterialIcon name="open_in_new" className="flex-shrink-0" />
-                <span className="underline">LinkedIn</span>
-              </a>
+              <div className="mt-2">
+                <IconLink href={person.linkedinUrl}>LinkedIn</IconLink>
+              </div>
             ) : null}
           </div>
         </div>
@@ -339,16 +327,9 @@ export function ReviewResearchModal({
             <h3 className="font-title-sm text-title-sm font-bold uppercase tracking-wide text-on-surface">Sources</h3>
             <div className="mt-2 space-y-1">
               {research.sources.map((source: { label: string; url: string }, index: number) => (
-                <a
-                  key={index}
-                  href={source.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 text-body-sm text-primary hover:underline"
-                >
-                  <MaterialIcon name="open_in_new" className="text-[14px]" />
+                <IconLink key={index} href={source.url}>
                   {source.label}
-                </a>
+                </IconLink>
               ))}
             </div>
           </div>

@@ -5,7 +5,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 
-import { Button, DataTable, InlineLoadingState, MaterialIcon, PageErrorState } from "@interviews-tracker/design-system";
+import {
+  Button,
+  DataTable,
+  IconLink,
+  InlineLoadingState,
+  MaterialIcon,
+  PageErrorState,
+} from "@interviews-tracker/design-system";
 
 import { PageIntro } from "../components/app-layout";
 import { Badge } from "../components/badge";
@@ -241,16 +248,7 @@ export function OpportunitiesPage() {
         size: 140,
         cell: ({ row }) =>
           row.original.jobUrl ? (
-            <a
-              className="inline-flex w-fit items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-1 font-label-sm text-[11px] font-medium text-primary transition-colors hover:bg-surface-container-high/80"
-              href={row.original.jobUrl}
-              target="_blank"
-              rel="noreferrer"
-              title={`Open job link for ${row.original.company.name}`}
-            >
-              <MaterialIcon name="open_in_new" className="text-[15px]" />
-              Job link
-            </a>
+            <IconLink href={row.original.jobUrl}>Job link</IconLink>
           ) : (
             <span className="text-body-md text-on-surface-variant">-</span>
           ),

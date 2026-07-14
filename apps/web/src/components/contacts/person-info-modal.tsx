@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ChevronDown, Linkedin } from "lucide-react";
 
 import type { CompanyExperience } from "@interviews-tracker/design-system";
-import { JobHistoryTimeline, MaterialIcon, Modal } from "@interviews-tracker/design-system";
+import { IconLink, JobHistoryTimeline, MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
 import type { Person } from "../../lib/types";
 
@@ -198,16 +198,9 @@ export function PersonInfoModal({
                     </h3>
                     <p className="text-body-md leading-relaxed text-on-surface">{person.research.about}</p>
                     {person.linkedinUrl && (
-                      <a
-                        href={person.linkedinUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 inline-flex items-center gap-1.5 text-body-md font-medium text-primary transition-colors hover:text-primary/80"
-                      >
-                        <MaterialIcon name="link" className="text-[18px]" />
-                        View LinkedIn Profile
-                        <MaterialIcon name="open_in_new" className="text-[16px]" />
-                      </a>
+                      <div className="mt-3">
+                        <IconLink href={person.linkedinUrl}>View LinkedIn Profile</IconLink>
+                      </div>
                     )}
                   </div>
                 )}
