@@ -54,13 +54,13 @@ export function DashboardPage() {
     };
   }, [interactions, selectedInteraction]);
 
-  const mobilePriorityItems = useMemo(() => {
+  const mobileAdvancedStatusItems = useMemo(() => {
     if (!data) {
       return [];
     }
 
     const seen = new Set<string>();
-    return [...data.activeProcesses, ...data.highPriorityPotential]
+    return [...data.activeProcesses, ...data.advancedStatusOpportunities]
       .filter((item) => {
         if (seen.has(item.slug)) {
           return false;
@@ -150,13 +150,13 @@ export function DashboardPage() {
 
         <section className="mb-8">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-title-md text-title-md font-bold">High Priority</h2>
+            <h2 className="font-title-md text-title-md font-bold">In-Process Interviews</h2>
             <Link className="font-label-md text-label-md text-primary" to="/opportunities">
               View All
             </Link>
           </div>
           <div className="space-y-3">
-            {mobilePriorityItems.map((item) => {
+            {mobileAdvancedStatusItems.map((item) => {
               const nextInteraction = item.interactions?.find(
                 (interaction) => new Date(interaction.date) >= new Date()
               );
@@ -192,7 +192,6 @@ export function DashboardPage() {
                       />
                       <span className="truncate">{item.referrerOrConnection ?? "Recent activity"}</span>
                     </div>
-                    <Badge value={item.priority} />
                     <div className="ml-auto font-label-md text-label-md font-semibold text-primary">
                       {item.nextStep ?? nextInteraction?.type ?? "Review"}
                     </div>
@@ -338,16 +337,19 @@ export function DashboardPage() {
             </section>
 
             <section className="panel p-6">
-              <h3 className="mb-4 font-title-md text-title-md font-bold">High Priority Potential</h3>
+              <h3 className="mb-4 font-title-md text-title-md font-bold">Advanced Interviews</h3>
               <div className="space-y-3">
-                {data.highPriorityPotential.map((item) => (
+                {data.advancedStatusOpportunities.map((item) => (
                   <Link
                     key={item.slug}
                     to={`/opportunities/${item.slug}`}
                     className="flex items-center justify-between rounded-lg border border-outline-variant bg-white p-4 hover:bg-surface-container-low"
                   >
-                    <span className="font-medium">{item.company.name}</span>
-                    <Badge value={item.priority} />
+                    <div>
+                      <span className="font-medium">{item.company.name}</span>
+                      <p className="text-sm text-on-surface-variant">{item.roleTitle}</p>
+                    </div>
+                    <Badge value={item.status} />
                   </Link>
                 ))}
               </div>

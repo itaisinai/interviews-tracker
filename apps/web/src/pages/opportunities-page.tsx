@@ -17,7 +17,7 @@ import {
 import { PageIntro } from "../components/app-layout";
 import { Badge } from "../components/badge";
 import { api } from "../lib/api";
-import { jobStatusOptions, pipelineTypeOptions, priorityOptions } from "../lib/enum-labels";
+import { jobStatusOptions, pipelineTypeOptions } from "../lib/enum-labels";
 import { formatDate, titleize } from "../lib/format";
 import type { Opportunity } from "../lib/types";
 
@@ -70,7 +70,6 @@ export function OpportunitiesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [pipeline, setPipeline] = useState("ACTIVE_PROCESS"); // Default to Active Process
-  const [priority, setPriority] = useState("");
   const [domainId, setDomainId] = useState("");
   const [sort, setSort] = useState("updated");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -93,12 +92,11 @@ export function OpportunitiesPage() {
     if (search) params.set("search", search);
     if (status) params.set("status", status);
     if (pipeline) params.set("pipeline", pipeline);
-    if (priority) params.set("priority", priority);
     if (domainId) params.set("domainId", domainId);
     if (sort) params.set("sort", sort);
     const value = params.toString();
     return value ? `?${value}` : "";
-  }, [domainId, pipeline, priority, search, sort, status]);
+  }, [domainId, pipeline, search, sort, status]);
   const {
     data = [],
     isLoading,
@@ -311,11 +309,10 @@ export function OpportunitiesPage() {
           <div className="flex flex-wrap gap-3 pb-1 hide-scrollbar">
             <button
               type="button"
-              className={`whitespace-nowrap rounded-full px-4 py-2 font-label-md ${!status && !pipeline && !priority && !domainId ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"}`}
+              className={`whitespace-nowrap rounded-full px-4 py-2 font-label-md ${!status && !pipeline && !domainId ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant"}`}
               onClick={() => {
                 setStatus("");
                 setPipeline("");
-                setPriority("");
                 setDomainId("");
               }}
             >
@@ -323,7 +320,6 @@ export function OpportunitiesPage() {
             </button>
             <FilterChip label="Status" value={status} onChange={setStatus} options={jobStatusOptions} />
             <FilterChip label="Pipeline" value={pipeline} onChange={setPipeline} options={pipelineTypeOptions} />
-            <FilterChip label="Priority" value={priority} onChange={setPriority} options={priorityOptions} />
           </div>
         </section>
 
@@ -362,7 +358,6 @@ export function OpportunitiesPage() {
                     <MaterialIcon name={item.referrerOrConnection ? "account_tree" : "mail"} className="text-[18px]" />
                     <span className="truncate">{item.referrerOrConnection ?? "Recent activity"}</span>
                   </div>
-                  <Badge value={item.priority} />
                   <div className="ml-auto font-label-md text-label-md font-semibold text-primary">
                     {mobileOpportunityMeta(item)}
                   </div>
@@ -430,16 +425,6 @@ export function OpportunitiesPage() {
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
             ) : null}
-            {priority ? (
-              <button
-                type="button"
-                className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-[#d8f3f0] px-3.5 py-2 text-[13px] font-medium text-[#0d5f56] hover:bg-[#c5ede8] transition-colors"
-                onClick={() => setPriority("")}
-              >
-                <span>priority: {priorityOptions.find((opt) => opt.value === priority)?.label.toLowerCase()}</span>
-                <MaterialIcon name="close" className="text-[16px]" />
-              </button>
-            ) : null}
             {domainId ? (
               <button
                 type="button"
@@ -450,19 +435,18 @@ export function OpportunitiesPage() {
                 <MaterialIcon name="close" className="text-[16px]" />
               </button>
             ) : null}
-            {!pipeline && !status && !priority && !domainId ? (
+            {!pipeline && !status && !domainId ? (
               <span className="text-[13px] text-on-surface-variant">No filters applied</span>
             ) : null}
           </div>
 
-          {pipeline || status || priority || domainId ? (
+          {pipeline || status || domainId ? (
             <button
               type="button"
               className="flex flex-shrink-0 items-center gap-2 text-[14px] font-medium text-on-surface-variant hover:text-error transition-colors"
               onClick={() => {
                 setStatus("");
                 setPipeline("");
-                setPriority("");
                 setDomainId("");
               }}
             >

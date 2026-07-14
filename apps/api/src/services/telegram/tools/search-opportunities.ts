@@ -59,7 +59,6 @@ export async function searchOpportunities(ownerEmail: string, searchTerm: string
     roleTitle: opp.roleTitle,
     status: opp.status,
     pipelineType: opp.pipelineType,
-    priority: opp.priority,
     nextStep: opp.nextStep,
     interactionCount: opp._count.interactions,
     nextScheduledInteraction: opp.interactions[0]

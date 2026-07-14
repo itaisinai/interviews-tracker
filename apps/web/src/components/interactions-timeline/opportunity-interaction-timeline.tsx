@@ -12,7 +12,7 @@ type OpportunityInteractionTimelineProps = {
   companyName: string;
   roleTitle: string;
   interactions: Interaction[];
-  opportunity?: Pick<any, "slug" | "roleTitle" | "status" | "priority" | "pipelineType"> | null;
+  opportunity?: Pick<any, "slug" | "roleTitle" | "status" | "pipelineType"> | null;
   selectedInteractionSlug: string | null;
   onSelectInteraction: (interactionSlug: string) => void;
   onDeleteInteraction?: (interactionSlug: string) => void;

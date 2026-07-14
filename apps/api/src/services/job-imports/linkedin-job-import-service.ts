@@ -286,7 +286,6 @@ export class LinkedinJobImportService {
         roleTitle: normalized.opportunity.title,
         pipelineType: "POTENTIAL",
         status: "RESEARCH_LEAD",
-        priority: "MEDIUM",
         source: "linkedin",
         jobUrl: input.sourceUrl,
         sourceUrl: input.sourceUrl,

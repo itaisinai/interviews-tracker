@@ -52,9 +52,6 @@ companiesRouter.get(
         potentialOpportunities: company.opportunities.filter((opp) => opp.pipelineType === "POTENTIAL").length,
         interactionsCount: interactions.length,
         nextInteraction: nextInteraction ? serializeInteraction(nextInteraction) : null,
-        priority: company.opportunities.some((opp) => opp.priority === "HIGH")
-          ? "HIGH"
-          : (primaryOpportunity?.priority ?? "MEDIUM"),
         status: primaryOpportunity?.status ?? "RESEARCH_LEAD",
         employees: company.employeesRange?.label ?? null,
         stage: company.companyStage?.label ?? null,

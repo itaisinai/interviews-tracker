@@ -81,7 +81,7 @@ export const api = {
       counts: Record<string, number>;
       upcomingInteractions: Interaction[];
       activeProcesses: Opportunity[];
-      highPriorityPotential: Opportunity[];
+      advancedStatusOpportunities: Opportunity[];
       needingFollowUp: Opportunity[];
     }>("/dashboard"),
   options: () => request<OptionsResponse>("/options"),

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { pipelineTypeSchema, prioritySchema } from "@interviews-tracker/core";
+import { pipelineTypeSchema } from "@interviews-tracker/core";
 
 export const aiParseResponseSchema = z.object({
   companyName: z.string().nullable(),
@@ -8,7 +8,6 @@ export const aiParseResponseSchema = z.object({
   roleTitle: z.string().nullable(),
   pipelineType: pipelineTypeSchema.nullable(),
   status: z.string().nullable(),
-  prioritySuggestion: prioritySchema.nullable(),
   company: z.object({
     employees: z.string().nullable(),
     stage: z.string().nullable(),

@@ -179,7 +179,6 @@ export function OpportunityFormPage() {
         roleTitle,
         pipelineType: parseResult.pipelineType ?? "POTENTIAL",
         status: normalizeJobStatus(parseResult.status),
-        priority: parseResult.prioritySuggestion ?? "MEDIUM",
         referrerOrConnection: parseResult.process.knownContact,
         source: "AI parsed job description",
         nextStep: parseResult.process.suggestedNextStep,

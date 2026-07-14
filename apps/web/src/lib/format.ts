@@ -1,4 +1,4 @@
-import type { JobStatus, PipelineType, Priority } from "./types";
+import type { JobStatus, PipelineType } from "./types";
 
 export function titleize(value?: string | null) {
   if (!value) return "-";
@@ -94,13 +94,6 @@ export function statusTone(status: JobStatus | string) {
   if (status === "NOT_RELEVANT") return "muted";
   if (status === "HOME_ASSIGNMENT" || status === "ASSIGNMENT_SUBMITTED" || status === "FINAL_STAGE") return "violet";
   return "blue";
-}
-
-export function priorityTone(priority: Priority | string) {
-  if (priority === "HIGH") return "red";
-  if (priority === "MEDIUM") return "neutral";
-  if (priority === "MAYBE") return "violet";
-  return "muted";
 }
 
 export function pipelineTone(pipeline: PipelineType | string) {

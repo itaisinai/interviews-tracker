@@ -13,13 +13,6 @@ enum PipelineType {
   ARCHIVED
 }
 
-enum Priority {
-  HIGH
-  MEDIUM
-  LOW
-  MAYBE
-}
-
 enum JobStatus {
   RESEARCH_LEAD
   TO_APPLY
@@ -127,7 +120,6 @@ model JobOpportunity {
   roleTitle            String
   pipelineType         PipelineType
   status               JobStatus
-  priority             Priority
   referrerOrConnection String?
   source               String?
   jobUrl               String?
@@ -157,7 +149,6 @@ model JobOpportunity {
   @@index([ownerEmail, status])
   @@index([pipelineType])
   @@index([status])
-  @@index([priority])
 }
 
 model Interaction {
@@ -249,7 +240,6 @@ model Task {
   interactionId    String?
   title            String
   status           TaskStatus
-  priority         Priority
   dueDate          DateTime?
   notes            String?
   createdAt        DateTime        @default(now())

@@ -41,7 +41,6 @@ export function CompanyDataSection({
             <p className="mt-1 text-body-md text-on-surface-variant">{opportunity.roleTitle}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge value={opportunity.status} />
-              <Badge value={opportunity.priority} />
               <Badge value={opportunity.pipelineType}>{labelForPipelineType(opportunity.pipelineType)}</Badge>
             </div>
           </div>

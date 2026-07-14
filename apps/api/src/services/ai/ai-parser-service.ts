@@ -103,7 +103,6 @@ const parsedJobDescriptionJsonSchema = {
     "roleTitle",
     "pipelineType",
     "status",
-    "prioritySuggestion",
     "company",
     "role",
     "process",
@@ -115,7 +114,6 @@ const parsedJobDescriptionJsonSchema = {
     roleTitle: { type: ["string", "null"] },
     pipelineType: { type: ["string", "null"], enum: ["POTENTIAL", "ACTIVE_PROCESS", null] },
     status: { type: ["string", "null"] },
-    prioritySuggestion: { type: ["string", "null"], enum: ["HIGH", "MEDIUM", "LOW", "MAYBE", null] },
     company: {
       type: "object",
       additionalProperties: false,
@@ -286,7 +284,6 @@ export class OpenAiParserService implements AiParserService {
       "Preserve every explicit fact that could help the user later, even if the result is verbose.",
       "Put any useful leftover details into rawImportantNotes or suggestedNextStep instead of discarding them.",
       "Return only data that matches the provided JSON schema.",
-      "Normalize prioritySuggestion based on seniority, fit signals, company quality, and urgency.",
     ].join("\n\n");
 
     console.log("[PARSER PROMPT] System prompt length:", systemPrompt.length);

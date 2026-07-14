@@ -80,7 +80,6 @@ export function CompaniesPage() {
         </span>
       ),
     },
-    { header: "Priority", cell: ({ row }) => <Badge value={row.original.priority} /> },
     {
       header: "Delete",
       cell: ({ row }) => (
@@ -160,9 +159,6 @@ export function CompaniesPage() {
                     Next: {formatDate(company.nextInteraction.date)} {company.nextInteraction.type}
                   </div>
                 )}
-                <div className="mt-2">
-                  <Badge value={company.priority} />
-                </div>
               </div>
             </div>
           </Link>

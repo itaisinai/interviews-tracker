@@ -26,7 +26,6 @@ export type {
   Option,
   OptionsResponse,
   PipelineType,
-  Priority,
   TaskStatus,
 } from "@interviews-tracker/core";
 export type {

@@ -44,7 +44,6 @@ export function serializeInteraction<T extends Record<string, any>>(interaction:
       roleTitle: opp.roleTitle,
       pipelineType: opp.pipelineType,
       status: opp.status,
-      priority: opp.priority,
       updatedAt: opp.updatedAt,
       company: opp.company
         ? {

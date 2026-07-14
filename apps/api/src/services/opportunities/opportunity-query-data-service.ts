@@ -59,7 +59,6 @@ export async function getOpportunitiesDataForQuery(ownerEmail: string) {
     roleTitle: opp.roleTitle,
     status: opp.status,
     pipelineType: opp.pipelineType,
-    priority: opp.priority,
     nextStep: opp.nextStep,
     interactions: opp.interactions.map((interaction) => ({
       id: interaction.id,

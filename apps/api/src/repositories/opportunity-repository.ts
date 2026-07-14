@@ -113,9 +113,6 @@ export async function listOpportunityRecords(query: Record<string, string | unde
     status: query.status
       ? { equals: query.status as Prisma.EnumJobStatusFilter<"JobOpportunity">["equals"] }
       : undefined,
-    priority: query.priority
-      ? { equals: query.priority as Prisma.EnumPriorityFilter<"JobOpportunity">["equals"] }
-      : undefined,
     OR: query.search
       ? [
           { company: { name: { contains: query.search, mode: "insensitive" } } },

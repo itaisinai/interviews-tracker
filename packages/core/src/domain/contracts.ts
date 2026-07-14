@@ -12,8 +12,6 @@ import {
   type Option,
   type PipelineType,
   pipelineTypeSchema,
-  type Priority,
-  prioritySchema,
   type TaskStatus,
   taskStatusSchema,
 } from "./enums.js";
@@ -47,7 +45,6 @@ export const opportunityInputSchema = z
     roleTitle: z.string().min(1),
     pipelineType: pipelineTypeSchema,
     status: jobStatusSchema,
-    priority: prioritySchema,
     referrerOrConnection: z.string().nullish(),
     source: z.string().nullish(),
     jobUrl: z.string().nullish(),
@@ -104,7 +101,6 @@ export const taskInputSchema = z.object({
   interactionId: z.string().nullish(),
   title: z.string().min(1),
   status: taskStatusSchema,
-  priority: prioritySchema,
   dueDate: z.string().nullish(),
   notes: z.string().nullish(),
 });
@@ -158,7 +154,6 @@ export type Opportunity = {
   roleTitle: string;
   pipelineType: PipelineType;
   status: JobStatus;
-  priority: Priority;
   referrerOrConnection?: string | null;
   source?: string | null;
   jobUrl?: string | null;
@@ -218,7 +213,6 @@ export type CompanySummary = {
   potentialOpportunities: number;
   interactionsCount: number;
   nextInteraction?: Interaction | null;
-  priority: Priority;
   status: JobStatus;
   employees?: string | null;
   stage?: string | null;
@@ -280,7 +274,6 @@ export type Task = {
   interactionId?: string | null;
   title: string;
   status: TaskStatus;
-  priority: Priority;
   dueDate?: string | null;
   notes?: string | null;
   createdAt: string;
