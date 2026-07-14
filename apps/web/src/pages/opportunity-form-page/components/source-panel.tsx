@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 
-import { IconLink, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, Checkbox, IconLink, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { api } from "../../../lib/api";
 import type { GmailSearchCandidate, GmailSearchResponse, GmailStatus } from "../../../lib/types";
@@ -24,6 +24,7 @@ interface SourcePanelProps {
   gmailConnect: UseMutationResult<{ authUrl: string }, Error, void>;
   gmailSearch: UseMutationResult<GmailSearchResponse, Error, string | null | undefined>;
   gmailCandidates: GmailCandidatesResult | null;
+  setGmailCandidates: (candidates: GmailCandidatesResult | null) => void;
   filteredCandidates: GmailSearchCandidate[];
   groupedCandidates: Map<string, GmailSearchCandidate[]>;
   emailDateRange: { oldest: string; newest: string } | null;
@@ -34,6 +35,8 @@ interface SourcePanelProps {
   setSelectedEmails: (emails: Set<string>) => void;
   showAllEmails: boolean;
   setShowAllEmails: (show: boolean) => void;
+  daysBack: number;
+  setDaysBack: (days: number) => void;
   onRefresh: () => void;
 }
 
@@ -46,6 +49,7 @@ export function SourcePanel({
   gmailConnect,
   gmailSearch,
   gmailCandidates,
+  setGmailCandidates,
   filteredCandidates,
   groupedCandidates,
   emailDateRange,
@@ -56,6 +60,8 @@ export function SourcePanel({
   setSelectedEmails,
   showAllEmails,
   setShowAllEmails,
+  daysBack,
+  setDaysBack,
   onRefresh,
 }: SourcePanelProps) {
   const [restoringMessageId, setRestoringMessageId] = useState<string | null>(null);
@@ -116,12 +122,7 @@ export function SourcePanel({
         </button>
         <button
           type="button"
-          onClick={() => {
-            setSourceMode("search-gmail");
-            if (!gmailCandidates && gmailStatus.data?.connected) {
-              gmailSearch.mutate(null);
-            }
-          }}
+          onClick={() => setSourceMode("search-gmail")}
           className={`flex items-center gap-2 border-b-2 px-4 py-2 font-medium transition ${
             sourceMode === "search-gmail"
               ? "border-primary text-primary"
@@ -151,12 +152,54 @@ export function SourcePanel({
       ) : (
         /* Search Gmail Tab Content */
         <div>
-          <p className="mb-3 text-body-sm text-on-surface-variant">Search your emails and select the relevant ones</p>
+          <div className="mb-3 space-y-2">
+            <p className="text-body-sm text-on-surface-variant">Search your emails and select the relevant ones</p>
+
+            {gmailStatus.data?.connected && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="days-back" className="text-body-sm text-on-surface-variant whitespace-nowrap">
+                    Last
+                  </label>
+                  <input
+                    id="days-back"
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={daysBack}
+                    onChange={(e) => {
+                      const value = Math.max(1, Math.min(365, Number(e.target.value) || 30));
+                      setDaysBack(value);
+                    }}
+                    className="w-16 rounded border border-outline-variant bg-surface-container-low px-2 py-1 text-body-sm text-center outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                  />
+                  <span className="text-body-sm text-on-surface-variant whitespace-nowrap">days</span>
+                </div>
+                <Checkbox
+                  label="Show All"
+                  checked={showAllEmails}
+                  onChange={(e) => setShowAllEmails(e.target.checked)}
+                />
+                <LoadingButton
+                  className="btn btn-primary btn-sm"
+                  loading={gmailSearch.isPending}
+                  loadingLabel="Searching..."
+                  icon="search"
+                  onClick={() => {
+                    setGmailCandidates(null);
+                    gmailSearch.mutate(null);
+                  }}
+                >
+                  Search
+                </LoadingButton>
+              </div>
+            )}
+          </div>
 
           {!gmailStatus.data?.connected ? (
             <GmailConnectPrompt gmailConnect={gmailConnect} />
           ) : gmailSearch.isPending && !gmailCandidates ? (
-            <GmailLoadingState />
+            <GmailLoadingState daysBack={daysBack} />
           ) : filteredCandidates.length > 0 ? (
             <>
               <div className="mb-3 flex items-center justify-between gap-4 text-body-sm text-on-surface-variant">
@@ -199,18 +242,6 @@ export function SourcePanel({
                     </LoadingButton>
                   ) : null}
                 </div>
-                <label className="flex cursor-pointer items-center gap-2 whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={showAllEmails}
-                    onChange={(e) => {
-                      setShowAllEmails(e.target.checked);
-                      onRefresh();
-                    }}
-                    className="h-4 w-4 rounded border-outline-variant"
-                  />
-                  <span className="text-body-sm font-medium">Show All</span>
-                </label>
               </div>
 
               {/* Email list with grouped companies */}
@@ -255,20 +286,20 @@ export function SourcePanel({
                                 key={candidate.id}
                                 className="flex cursor-pointer gap-3 rounded-lg p-2 hover:bg-surface-container"
                               >
-                                <input
-                                  type="checkbox"
-                                  checked={selectedEmails.has(candidate.id)}
-                                  onChange={(e) => {
-                                    const newSelected = new Set(selectedEmails);
-                                    if (e.target.checked) {
-                                      newSelected.add(candidate.id);
-                                    } else {
-                                      newSelected.delete(candidate.id);
-                                    }
-                                    setSelectedEmails(newSelected);
-                                  }}
-                                  className="mt-1"
-                                />
+                                <div className="mt-1">
+                                  <Checkbox
+                                    checked={selectedEmails.has(candidate.id)}
+                                    onChange={(e) => {
+                                      const newSelected = new Set(selectedEmails);
+                                      if (e.target.checked) {
+                                        newSelected.add(candidate.id);
+                                      } else {
+                                        newSelected.delete(candidate.id);
+                                      }
+                                      setSelectedEmails(newSelected);
+                                    }}
+                                  />
+                                </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2">
                                     <p className="line-clamp-1 text-body-sm font-medium">{candidate.subject}</p>
@@ -309,19 +340,19 @@ export function SourcePanel({
                                       {restoringMessageId === candidate.id ? "Restoring..." : "Restore"}
                                     </button>
                                   ) : (
-                                    <button
-                                      type="button"
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      leadingIcon="block"
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         handleIgnore(candidate.id);
                                       }}
                                       disabled={ignoringMessageId === candidate.id}
-                                      className="flex items-center gap-1 whitespace-nowrap text-xs text-neutral-500 hover:text-neutral-700 hover:underline disabled:opacity-50"
                                     >
-                                      <MaterialIcon name="block" className="text-sm" />
                                       {ignoringMessageId === candidate.id ? "Ignoring..." : "Ignore"}
-                                    </button>
+                                    </Button>
                                   )}
                                 </div>
                               </label>
@@ -359,20 +390,20 @@ export function SourcePanel({
                       key={candidate.id}
                       className="flex cursor-pointer gap-3 rounded-lg border border-outline-variant bg-surface p-3 hover:border-primary"
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedEmails.has(candidate.id)}
-                        onChange={(e) => {
-                          const newSelected = new Set(selectedEmails);
-                          if (e.target.checked) {
-                            newSelected.add(candidate.id);
-                          } else {
-                            newSelected.delete(candidate.id);
-                          }
-                          setSelectedEmails(newSelected);
-                        }}
-                        className="mt-1"
-                      />
+                      <div className="mt-1">
+                        <Checkbox
+                          checked={selectedEmails.has(candidate.id)}
+                          onChange={(e) => {
+                            const newSelected = new Set(selectedEmails);
+                            if (e.target.checked) {
+                              newSelected.add(candidate.id);
+                            } else {
+                              newSelected.delete(candidate.id);
+                            }
+                            setSelectedEmails(newSelected);
+                          }}
+                        />
+                      </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="line-clamp-2 font-body-sm font-semibold">{candidate.subject}</p>
@@ -409,19 +440,19 @@ export function SourcePanel({
                             {restoringMessageId === candidate.id ? "Restoring..." : "Restore"}
                           </button>
                         ) : (
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            leadingIcon="block"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               handleIgnore(candidate.id);
                             }}
                             disabled={ignoringMessageId === candidate.id}
-                            className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-700 hover:underline disabled:opacity-50"
                           >
-                            <MaterialIcon name="block" className="text-sm" />
                             {ignoringMessageId === candidate.id ? "Ignoring..." : "Ignore"}
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </label>
@@ -434,7 +465,7 @@ export function SourcePanel({
               </div>
             </>
           ) : (
-            <GmailEmptyState />
+            <GmailEmptyState daysBack={daysBack} />
           )}
 
           {gmailSearch.error ? (

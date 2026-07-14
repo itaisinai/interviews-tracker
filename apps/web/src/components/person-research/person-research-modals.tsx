@@ -3,7 +3,14 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type { CompanyExperience } from "@interviews-tracker/design-system";
-import { Button, JobHistoryTimeline, LoadingButton, MaterialIcon, Modal } from "@interviews-tracker/design-system";
+import {
+  Button,
+  Checkbox,
+  JobHistoryTimeline,
+  LoadingButton,
+  MaterialIcon,
+  Modal,
+} from "@interviews-tracker/design-system";
 
 import type { PersonResearchResult } from "../../lib/types";
 
@@ -125,21 +132,13 @@ export function ConfirmResearchModal({ isOpen, onClose, person, onStartResearch 
           </label>
         </div>
 
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="saveForLater"
-            checked={saveForLater}
-            onChange={(e) => setSaveForLater(e.target.checked)}
-            className="h-5 w-5 rounded border-outline accent-primary"
-          />
-          <label htmlFor="saveForLater" className="flex-1 cursor-pointer">
-            <span className="block font-label-md text-label-md">Save research for later</span>
-            <span className="mt-0.5 block text-body-sm text-on-surface-variant">
-              You'll be able to view it anytime from the person profile.
-            </span>
-          </label>
-        </div>
+        <Checkbox
+          id="saveForLater"
+          checked={saveForLater}
+          onChange={(e) => setSaveForLater(e.target.checked)}
+          label="Save research for later"
+          description="You'll be able to view it anytime from the person profile."
+        />
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-3">

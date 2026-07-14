@@ -144,11 +144,13 @@ gmailRouter.get(
 
     const maxResults = request.query.maxResults ? Number(request.query.maxResults) : undefined;
     const includeSupressed = request.query.includeSupressed === "true";
+    const daysBack = request.query.daysBack ? Number(request.query.daysBack) : 7;
     const result = await findGmailOpportunityCandidates({
       auth0Email: request.auth.email,
       pageToken: typeof request.query.pageToken === "string" ? request.query.pageToken : null,
       maxResults,
       includeSupressed,
+      daysBack,
     });
     timer.end({ count: result.candidates.length });
     response.json(result);

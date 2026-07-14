@@ -192,6 +192,7 @@ export async function findGmailOpportunityCandidates(input: {
   pageToken?: string | null;
   maxResults?: number;
   includeSupressed?: boolean;
+  daysBack?: number;
 }) {
   const access = await getAccessTokenForEmail(input.auth0Email);
 
@@ -200,12 +201,13 @@ export async function findGmailOpportunityCandidates(input: {
   }
 
   const maxResults = Math.min(Math.max(input.maxResults ?? 50, 5), 50);
+  const daysBack = Math.max(1, Math.min(input.daysBack ?? 7, 365));
 
   // Build query based on includeSupressed flag
   // When includeSupressed=true, use a more relaxed search to catch more emails
   const query = input.includeSupressed
     ? [
-        "newer_than:180d",
+        `newer_than:${daysBack}d`,
         // More relaxed: any email that might be job-related
         "(recruiter OR hiring OR founder OR co-founder OR opportunity OR role OR position OR job OR interview OR candidate OR application OR offer OR team OR engineer OR developer OR designer)",
         // Still exclude obvious spam/notifications
@@ -217,7 +219,7 @@ export async function findGmailOpportunityCandidates(input: {
         "-from:notification@",
       ].join(" ")
     : [
-        "newer_than:180d",
+        `newer_than:${daysBack}d`,
         "(recruiter OR hiring OR founder OR co-founder OR opportunity OR role OR position OR job)",
         "-category:promotions",
         "-category:updates",

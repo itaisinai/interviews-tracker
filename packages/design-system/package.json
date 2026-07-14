@@ -12,7 +12,8 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
-    "./styles/tokens.css": "./src/styles/tokens.css"
+    "./styles/tokens.css": "./src/styles/tokens.css",
+    "./src/components/checkbox/checkbox.css": "./src/components/checkbox/checkbox.css"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
