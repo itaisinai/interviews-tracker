@@ -257,40 +257,61 @@ export function SourcePanel({
                   .map(([companyKey, candidates]) => {
                     const isExpanded = expandedCompanies.has(companyKey);
                     const displayName = companyKey.charAt(0).toUpperCase() + companyKey.slice(1);
+                    const allGroupSelected = candidates.every((c) => selectedEmails.has(c.id));
+                    const someGroupSelected = candidates.some((c) => selectedEmails.has(c.id));
 
                     return (
                       <div
                         key={companyKey}
                         className="rounded-lg border border-outline-variant bg-surface-container-low"
                       >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newExpanded = new Set(expandedCompanies);
-                            if (isExpanded) {
-                              newExpanded.delete(companyKey);
-                            } else {
-                              newExpanded.add(companyKey);
-                            }
-                            setExpandedCompanies(newExpanded);
-                          }}
-                          className="flex w-full items-center gap-3 p-3 text-left hover:bg-surface-container"
-                        >
-                          <MaterialIcon name={isExpanded ? "expand_less" : "expand_more"} />
-                          <div className="flex-1">
-                            <p className="font-body-md font-semibold">{displayName}</p>
-                            <p className="text-body-sm text-on-surface-variant">{candidates.length} emails</p>
-                          </div>
-                          <span className="rounded-full bg-on-surface/10 px-2 py-1 text-xs">{candidates.length}</span>
-                        </button>
+                        <div className="flex w-full items-center gap-3 p-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newExpanded = new Set(expandedCompanies);
+                              if (isExpanded) {
+                                newExpanded.delete(companyKey);
+                              } else {
+                                newExpanded.add(companyKey);
+                              }
+                              setExpandedCompanies(newExpanded);
+                            }}
+                            className="flex flex-1 items-center gap-3 text-left hover:opacity-80"
+                          >
+                            <MaterialIcon name={isExpanded ? "expand_less" : "expand_more"} />
+                            <div className="flex-1">
+                              <p className="font-body-md font-semibold">{displayName}</p>
+                              <p className="text-body-sm text-on-surface-variant">{candidates.length} emails</p>
+                            </div>
+                            <span className="rounded-full bg-on-surface/10 px-2 py-1 text-xs">{candidates.length}</span>
+                          </button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            leadingIcon={allGroupSelected ? "remove_done" : "done_all"}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const newSelected = new Set(selectedEmails);
+                              if (allGroupSelected) {
+                                // Deselect all
+                                candidates.forEach((c) => newSelected.delete(c.id));
+                              } else {
+                                // Select all
+                                candidates.forEach((c) => newSelected.add(c.id));
+                              }
+                              setSelectedEmails(newSelected);
+                            }}
+                          >
+                            {allGroupSelected ? "Deselect All" : "Select All"}
+                          </Button>
+                        </div>
 
                         {isExpanded ? (
                           <div className="space-y-2 border-t border-outline-variant p-2">
                             {candidates.map((candidate) => (
-                              <label
-                                key={candidate.id}
-                                className="flex cursor-pointer gap-3 rounded-lg p-2 hover:bg-surface-container"
-                              >
+                              <label key={candidate.id} className="flex cursor-pointer gap-3 rounded-lg p-2">
                                 <div className="mt-1">
                                   <Checkbox
                                     checked={selectedEmails.has(candidate.id)}
@@ -376,7 +397,7 @@ export function SourcePanel({
                   .map((candidate) => (
                     <label
                       key={candidate.id}
-                      className="flex cursor-pointer gap-3 rounded-lg border border-outline-variant bg-surface p-3 hover:border-primary"
+                      className="flex cursor-pointer gap-3 rounded-lg border border-outline-variant bg-surface p-3"
                     >
                       <div className="mt-1">
                         <Checkbox

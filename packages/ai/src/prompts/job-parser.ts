@@ -18,6 +18,15 @@ export const jobParserSkill = `
 - Then: contacts, notes, interesting signals, competitive advantages, culture hints.
 - Preserve any explicit detail that would help the user later during the hiring process.
 
+## Known Contact Extraction
+
+CRITICAL: The knownContact field should contain the name of the person who reached out or is the primary contact for this opportunity.
+- If parsing an email: Extract the sender's name (from the "From:" field), NOT the recipient
+- The contact is NEVER the user/candidate themselves
+- Extract the full name from the sender field (e.g., "elad tessler <elad-tessler@vero-security.com>" → "Elad Tessler")
+- If the sender name is clearly a personal name, normalize capitalization (e.g., "elad tessler" → "Elad Tessler")
+- If no sender name is available or it's clearly automated, set to null
+
 ## Extraction Principles
 
 - Extract only what is explicitly present in the text.

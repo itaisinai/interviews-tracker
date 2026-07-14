@@ -113,7 +113,8 @@ function OptionList({ title, kind, icon, items }: { title: string; kind: string;
           >
             {item.label}
             <Button
-              compact
+              variant="ghost"
+              size="sm"
               aria-label={`Delete option ${item.label}`}
               className="text-error"
               leadingIcon="close"

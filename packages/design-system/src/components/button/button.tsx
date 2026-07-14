@@ -23,13 +23,16 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "border border-transparent bg-primary text-on-primary shadow-none hover:brightness-110",
+  primary:
+    "border border-transparent bg-primary text-on-primary shadow-none hover:brightness-110 disabled:hover:brightness-100",
   secondary:
-    "border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low",
+    "border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container disabled:hover:bg-surface-container-lowest",
   outlined:
-    "border border-primary bg-transparent text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0",
-  ghost: "border border-transparent bg-transparent text-on-surface-variant hover:bg-surface-container-low",
-  danger: "border border-error bg-error-container text-on-error-container hover:brightness-95",
+    "border border-primary bg-transparent text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0 disabled:hover:bg-transparent",
+  ghost:
+    "border border-transparent bg-transparent text-on-surface-variant hover:bg-surface-container disabled:hover:bg-transparent",
+  danger:
+    "border border-error bg-error-container text-on-error-container hover:brightness-95 disabled:hover:brightness-100",
 };
 
 export function Button({

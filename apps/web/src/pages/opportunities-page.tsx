@@ -5,8 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 
-import { Button, DataTable, MaterialIcon } from "@interviews-tracker/design-system";
-import { Button, InlineLoadingState, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+import { Button, DataTable, InlineLoadingState, MaterialIcon, PageErrorState } from "@interviews-tracker/design-system";
 
 import { PageIntro } from "../components/app-layout";
 import { Badge } from "../components/badge";
@@ -261,7 +260,8 @@ export function OpportunitiesPage() {
         size: 110,
         cell: ({ row }) => (
           <Button
-            compact
+            variant="ghost"
+            size="sm"
             aria-label={`Delete ${row.original.company.name} / ${row.original.roleTitle}`}
             className="text-error"
             leadingIcon="delete"

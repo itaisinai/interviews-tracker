@@ -231,6 +231,11 @@ export function OpportunityFormPage() {
           workModelOption={workModelOption}
           parsedDomains={parsedDomains}
           canSave={canSave}
+          onUpdateParseResult={(updates) => {
+            if (parseResult) {
+              setParseResult({ ...parseResult, ...updates });
+            }
+          }}
         />
       </div>
 

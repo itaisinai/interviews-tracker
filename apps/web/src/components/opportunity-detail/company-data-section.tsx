@@ -145,7 +145,7 @@ export function CompanyDataSection({
       <section className="panel mt-6 p-6">
         <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <SectionTitle title="Company Details" leadingIcon="business" />
+            <SectionTitle title="Company Details" icon="business" />
             <Detail label="LinkedIn" value={opportunity.linkedinUrl} />
             <Detail label="English Search Name" value={opportunity.company.searchName} />
             <Detail label="Size" value={opportunity.company.employeesRange?.label} />
@@ -159,7 +159,7 @@ export function CompanyDataSection({
           </div>
 
           <div className="lg:col-span-4">
-            <SectionTitle title="Role Details" leadingIcon="work" />
+            <SectionTitle title="Role Details" icon="work" />
             <div className="mt-4">
               <p className="label">Job Posting</p>
               {opportunity.jobUrl ? (
@@ -184,7 +184,7 @@ export function CompanyDataSection({
           </div>
 
           <div className="lg:col-span-4">
-            <SectionTitle title="Next Step" leadingIcon="flag" />
+            <SectionTitle title="Next Step" icon="flag" />
             <p className="mt-4 rounded-lg bg-surface-container-low p-4 text-body-md font-medium text-on-background">
               {opportunity.nextStep ?? "No next step set."}
             </p>

@@ -85,7 +85,8 @@ export function CompaniesPage() {
       header: "Delete",
       cell: ({ row }) => (
         <Button
-          compact
+          variant="ghost"
+          size="sm"
           aria-label={`Delete ${row.original.name}`}
           className="text-error"
           leadingIcon="delete"
