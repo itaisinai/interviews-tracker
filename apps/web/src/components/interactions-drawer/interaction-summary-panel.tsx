@@ -3,7 +3,7 @@ import { type Dispatch, type SetStateAction, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Save } from "lucide-react";
 
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import type { Interaction, InteractionDraft, Person } from "../../lib/types";
@@ -152,7 +152,7 @@ export function InteractionSummaryPanel({
         <div className="p-6 rounded-lg border border-neutral-200 bg-neutral-50 space-y-4">
           <InteractionDraftFields draft={draft} setDraft={onDraftChange} />
           <div className="flex gap-3">
-            <LoadingButton
+            <Button
               loading={isSaving}
               loadingLabel="Saving..."
               onClick={onSave}
@@ -160,7 +160,7 @@ export function InteractionSummaryPanel({
               title="Save changes"
             >
               <Save className="h-5 w-5" />
-            </LoadingButton>
+            </Button>
             <button
               type="button"
               onClick={onCancelEditing}

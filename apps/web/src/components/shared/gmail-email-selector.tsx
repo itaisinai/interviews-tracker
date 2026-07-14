@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { GmailSearchCandidate } from "../../lib/types";
 
@@ -556,7 +556,7 @@ export function GmailEmailSelector({
               Cancel
             </button>
           )}
-          <LoadingButton
+          <Button
             loading={isSubmitting}
             loadingLabel="Importing..."
             onClick={handleSubmit}
@@ -568,7 +568,7 @@ export function GmailEmailSelector({
             {selectedEmailIds.size > 0
               ? ` ${selectedEmailIds.size} Email${selectedEmailIds.size === 1 ? "" : "s"}`
               : " Emails"}
-          </LoadingButton>
+          </Button>
         </div>
       </div>
     </div>

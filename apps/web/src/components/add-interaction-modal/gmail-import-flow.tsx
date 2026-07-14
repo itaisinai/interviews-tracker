@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Button, DiffReviewRow, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, DiffReviewRow, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import { formatDateTime } from "../../lib/format";
@@ -339,7 +339,7 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
         </div>
 
         <div className="flex gap-3 border-t border-neutral-200 pt-6">
-          <LoadingButton
+          <Button
             loading={createInteraction.isPending}
             loadingLabel="Saving..."
             onClick={() => createInteraction.mutate()}
@@ -347,7 +347,7 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
           >
             <MaterialIcon name="check" />
             Accept Changes
-          </LoadingButton>
+          </Button>
           <Button
             onClick={() => setStep("select-candidate")}
             variant="secondary"

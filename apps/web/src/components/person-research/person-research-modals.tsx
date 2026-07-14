@@ -3,14 +3,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import type { CompanyExperience } from "@interviews-tracker/design-system";
-import {
-  Button,
-  Checkbox,
-  JobHistoryTimeline,
-  LoadingButton,
-  MaterialIcon,
-  Modal,
-} from "@interviews-tracker/design-system";
+import { Button, Checkbox, JobHistoryTimeline, MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
 import type { PersonResearchResult } from "../../lib/types";
 
@@ -375,10 +368,10 @@ export function ReviewResearchModal({
           <Button variant="secondary" onClick={onDiscard}>
             Discard
           </Button>
-          <LoadingButton className="btn btn-primary" loading={isSaving} loadingLabel="Saving..." onClick={onSave}>
+          <Button className="btn btn-primary" loading={isSaving} loadingLabel="Saving..." onClick={onSave}>
             <MaterialIcon name="save" />
             {saveForLater ? "Save research" : "Done"}
-          </LoadingButton>
+          </Button>
         </div>
       </div>
     </Modal>

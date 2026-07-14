@@ -1,6 +1,6 @@
 import { Calendar, CheckCircle2, Clock, MapPin, MessageSquare, Sparkles, User, Video } from "lucide-react";
 
-import { LoadingButton } from "@interviews-tracker/design-system";
+import { Button } from "@interviews-tracker/design-system";
 
 import type {
   GmailEmailExtractionAnalysis,
@@ -186,7 +186,7 @@ export function GmailChangesReview({
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-4 border-t border-neutral-200">
-          <LoadingButton
+          <Button
             onClick={onAcceptChanges}
             loading={isAttaching || saveInteractionPending}
             loadingLabel="Saving..."
@@ -194,7 +194,7 @@ export function GmailChangesReview({
           >
             <CheckCircle2 className="w-4 h-4" />
             Accept {isAttachMode && hasParsedInteractionChanges ? "changes" : "all"}
-          </LoadingButton>
+          </Button>
 
           <button
             type="button"

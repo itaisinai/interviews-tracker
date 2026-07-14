@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  Button,
   InlineLoadingState,
-  LoadingButton,
   MaterialIcon,
   PageErrorState,
   PageLoadingState,
@@ -95,15 +95,15 @@ function OptionList({ title, kind, icon, items }: { title: string; kind: string;
           onChange={(event) => setLabel(event.target.value)}
           placeholder="Add option"
         />
-        <LoadingButton
+        <Button
           className="btn btn-primary"
           loading={mutation.isPending}
           loadingLabel="Adding..."
           onClick={() => mutation.mutate()}
-          icon="add"
+          leadingIcon="add"
         >
           Add
-        </LoadingButton>
+        </Button>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         {items.map((item) => (
@@ -112,11 +112,11 @@ function OptionList({ title, kind, icon, items }: { title: string; kind: string;
             className="inline-flex items-center gap-2 rounded-full bg-surface-container-low px-3 py-1 font-label-md text-label-md text-on-surface-variant"
           >
             {item.label}
-            <LoadingButton
+            <Button
               compact
               aria-label={`Delete option ${item.label}`}
               className="text-error"
-              icon="close"
+              leadingIcon="close"
               loading={deleteOption.isPending && deleteOption.variables === item.id}
               onClick={() => {
                 if (window.confirm(`Delete option "${item.label}"? Existing records will be detached from it.`))
@@ -204,27 +204,27 @@ function GmailIntegrationCard({
           {isLoading || isFetching ? <InlineLoadingState label="Refreshing" /> : null}
           {configured ? (
             <>
-              <LoadingButton
+              <Button
                 className="btn btn-primary"
                 loading={connect.isPending}
                 loadingLabel="Opening..."
-                icon="link"
+                leadingIcon="link"
                 onClick={() => connect.mutate()}
               >
                 {needsReconnect ? "Reconnect Gmail" : connected ? "Reconnect" : "Connect Gmail"}
-              </LoadingButton>
+              </Button>
               {connected ? (
-                <LoadingButton
+                <Button
                   className="btn btn-secondary"
                   loading={disconnect.isPending}
                   loadingLabel="Disconnecting..."
-                  icon="link_off"
+                  leadingIcon="link_off"
                   onClick={() => {
                     if (window.confirm("Disconnect Gmail? You can reconnect later from Settings.")) disconnect.mutate();
                   }}
                 >
                   Disconnect
-                </LoadingButton>
+                </Button>
               ) : null}
             </>
           ) : null}
@@ -292,11 +292,11 @@ function IgnoredEmailsCard() {
                   {email.opportunityId && " · Added from opportunity"}
                 </p>
               </div>
-              <LoadingButton
+              <Button
                 className="btn btn-secondary"
                 loading={unignoreMutation.isPending && unignoreMutation.variables === email.id}
                 loadingLabel="Unignoring..."
-                icon="undo"
+                leadingIcon="undo"
                 onClick={() => {
                   if (window.confirm(`Unignore "${email.subject}"? It will appear in future Gmail searches.`)) {
                     unignoreMutation.mutate(email.id);
@@ -304,7 +304,7 @@ function IgnoredEmailsCard() {
                 }}
               >
                 Unignore
-              </LoadingButton>
+              </Button>
             </div>
           ))}
         </div>

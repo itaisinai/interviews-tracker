@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 
-import { Button, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { labelForPipelineType } from "../../lib/enum-labels";
 import type { Opportunity } from "../../lib/types";
@@ -46,20 +46,20 @@ export function CompanyDataSection({
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            <LoadingButton
+            <Button
               className={showResearch ? "btn btn-primary" : "btn btn-secondary"}
-              icon="travel_explore"
+              leadingIcon="travel_explore"
               onClick={onToggleResearch}
             >
               {showResearch ? "Hide company research" : "Company research"}
-            </LoadingButton>
-            <LoadingButton
+            </Button>
+            <Button
               className={showInteractionInput ? "btn btn-primary" : "btn btn-secondary"}
-              icon="add"
+              leadingIcon="add"
               onClick={onToggleInteractionInput}
             >
               {showInteractionInput ? "Hide add interaction" : "Add interaction"}
-            </LoadingButton>
+            </Button>
           </div>
         </div>
       </section>
@@ -145,7 +145,7 @@ export function CompanyDataSection({
       <section className="panel mt-6 p-6">
         <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <SectionTitle title="Company Details" icon="business" />
+            <SectionTitle title="Company Details" leadingIcon="business" />
             <Detail label="LinkedIn" value={opportunity.linkedinUrl} />
             <Detail label="English Search Name" value={opportunity.company.searchName} />
             <Detail label="Size" value={opportunity.company.employeesRange?.label} />
@@ -159,7 +159,7 @@ export function CompanyDataSection({
           </div>
 
           <div className="lg:col-span-4">
-            <SectionTitle title="Role Details" icon="work" />
+            <SectionTitle title="Role Details" leadingIcon="work" />
             <div className="mt-4">
               <p className="label">Job Posting</p>
               {opportunity.jobUrl ? (
@@ -184,7 +184,7 @@ export function CompanyDataSection({
           </div>
 
           <div className="lg:col-span-4">
-            <SectionTitle title="Next Step" icon="flag" />
+            <SectionTitle title="Next Step" leadingIcon="flag" />
             <p className="mt-4 rounded-lg bg-surface-container-low p-4 text-body-md font-medium text-on-background">
               {opportunity.nextStep ?? "No next step set."}
             </p>

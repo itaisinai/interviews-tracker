@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Button, DataTable, MaterialIcon } from "@interviews-tracker/design-system";
-import { InlineLoadingState, LoadingButton, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+import { Button, InlineLoadingState, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 import { PageIntro } from "../components/app-layout";
 import { Badge } from "../components/badge";
@@ -260,11 +260,11 @@ export function OpportunitiesPage() {
         header: "Delete",
         size: 110,
         cell: ({ row }) => (
-          <LoadingButton
+          <Button
             compact
             aria-label={`Delete ${row.original.company.name} / ${row.original.roleTitle}`}
             className="text-error"
-            icon="delete"
+            leadingIcon="delete"
             loading={deleteOpportunity.isPending && deleteOpportunity.variables === row.original.slug}
             onClick={() => {
               if (window.confirm(`Delete ${row.original.company.name} / ${row.original.roleTitle}?`))

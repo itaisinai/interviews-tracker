@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { Button, LoadingButton } from "@interviews-tracker/design-system";
+import { Button } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import type { InteractionDraft } from "../../lib/types";
@@ -70,14 +70,14 @@ export function ManualInteractionForm({
       <InteractionDraftFields draft={draft} setDraft={setDraft as any} />
 
       <div className="flex gap-3 border-t border-neutral-200 pt-6">
-        <LoadingButton
+        <Button
           loading={createInteraction.isPending}
           loadingLabel="Saving..."
           onClick={() => createInteraction.mutate()}
           className="btn btn-primary"
         >
           Save Interaction
-        </LoadingButton>
+        </Button>
         <Button onClick={onCancel} variant="secondary">
           Cancel
         </Button>

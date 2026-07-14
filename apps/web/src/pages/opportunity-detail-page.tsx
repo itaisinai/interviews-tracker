@@ -7,7 +7,6 @@ import type { FormEvent } from "react";
 import {
   Button,
   InlineLoadingState,
-  LoadingButton,
   MaterialIcon,
   PageErrorState,
   PageLoadingState,
@@ -158,13 +157,13 @@ export function OpportunityDetailPage() {
           <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
         </div>
         <div className="mt-4 flex gap-2">
-          <LoadingButton
+          <Button
             className="btn btn-secondary flex-1"
-            icon="add"
+            leadingIcon="add"
             onClick={() => setShowAddInteractionModal(true)}
           >
             Add Interaction
-          </LoadingButton>
+          </Button>
         </div>
       </div>
 
@@ -205,14 +204,14 @@ export function OpportunityDetailPage() {
                 <Badge value={data.priority} />
                 <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
               </div>
-              <LoadingButton className="btn btn-secondary" icon="add" onClick={() => setShowAddInteractionModal(true)}>
+              <Button className="btn btn-secondary" leadingIcon="add" onClick={() => setShowAddInteractionModal(true)}>
                 Add Interaction
-              </LoadingButton>
-              <LoadingButton
+              </Button>
+              <Button
                 className="btn btn-secondary text-error hover:bg-error-container"
                 loading={deleteOpportunity.isPending}
                 loadingLabel="Deleting..."
-                icon="delete"
+                leadingIcon="delete"
                 onClick={() => {
                   if (
                     window.confirm(
@@ -223,7 +222,7 @@ export function OpportunityDetailPage() {
                 }}
               >
                 Delete
-              </LoadingButton>
+              </Button>
             </>
           }
         />

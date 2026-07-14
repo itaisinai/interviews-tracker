@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import type { InteractionDraft } from "../../lib/types";
@@ -103,7 +103,7 @@ Looking forward to speaking with you!`}
         >
           Cancel
         </button>
-        <LoadingButton
+        <Button
           onClick={handleParse}
           loading={parseMutation.isPending}
           loadingLabel="Parsing..."
@@ -112,7 +112,7 @@ Looking forward to speaking with you!`}
         >
           <MaterialIcon name="auto_awesome" className="text-[18px]" />
           Parse with AI
-        </LoadingButton>
+        </Button>
       </div>
     </div>
   );
