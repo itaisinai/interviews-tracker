@@ -1,12 +1,4 @@
-import type {
-  InteractionStatus,
-  InteractionType,
-  JobStatus,
-  OfferStatus,
-  PipelineType,
-  Priority,
-  TaskStatus,
-} from "./types";
+import type { InteractionStatus, InteractionType, JobStatus, OfferStatus, PipelineType, TaskStatus } from "./types";
 
 type LabeledOption<T extends string> = {
   value: T;
@@ -21,13 +13,6 @@ export const pipelineTypeLabels: Record<PipelineType, string> = {
   POTENTIAL: "potential / research",
   ACTIVE_PROCESS: "active process",
   ARCHIVED: "archived / rejected",
-};
-
-export const priorityLabels: Record<Priority, string> = {
-  HIGH: "high",
-  MEDIUM: "medium",
-  LOW: "low",
-  MAYBE: "maybe",
 };
 
 export const jobStatusLabels: Record<JobStatus, string> = {
@@ -100,7 +85,6 @@ export const taskStatusLabels: Record<TaskStatus, string> = {
 };
 
 export const pipelineTypeOptions = createOptions(pipelineTypeLabels);
-export const priorityOptions = createOptions(priorityLabels);
 export const jobStatusOptions = createOptions(jobStatusLabels);
 export const offerStatusOptions = createOptions(offerStatusLabels);
 export const interactionStatusOptions = createOptions(interactionStatusLabels);
@@ -109,10 +93,6 @@ export const taskStatusOptions = createOptions(taskStatusLabels);
 
 export function labelForPipelineType(value: PipelineType) {
   return pipelineTypeLabels[value];
-}
-
-export function labelForPriority(value: Priority) {
-  return priorityLabels[value];
 }
 
 export function labelForJobStatus(value: JobStatus) {
@@ -152,7 +132,6 @@ export function labelForTaskStatus(value: TaskStatus) {
 
 export function displayLabelForEnumValue(value: string) {
   if (value in pipelineTypeLabels) return pipelineTypeLabels[value as PipelineType];
-  if (value in priorityLabels) return priorityLabels[value as Priority];
   if (value in jobStatusLabels) return jobStatusLabels[value as JobStatus];
   if (value in offerStatusLabels) return offerStatusLabels[value as OfferStatus];
   if (value in taskStatusLabels) return taskStatusLabels[value as TaskStatus];

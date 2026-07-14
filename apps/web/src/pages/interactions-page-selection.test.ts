@@ -17,7 +17,6 @@ const baseOpportunity = {
   roleTitle: "Engineer",
   pipelineType: "ACTIVE_PROCESS",
   status: "TECHNICAL_SCHEDULED",
-  priority: "HIGH",
   updatedAt: "2026-06-10T00:00:00.000Z",
   domains: [],
   interactions: [],

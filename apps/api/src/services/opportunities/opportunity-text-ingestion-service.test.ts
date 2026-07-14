@@ -9,7 +9,6 @@ test("buildOpportunityInputFromParsedJobDescription maps parser output to opport
     roleTitle: "Senior Backend Engineer",
     pipelineType: "ACTIVE_PROCESS",
     status: "RECRUITER_REACHED_OUT",
-    prioritySuggestion: "HIGH",
     company: {
       employees: null,
       stage: null,
@@ -41,7 +40,6 @@ test("buildOpportunityInputFromParsedJobDescription maps parser output to opport
   assert.equal(input.roleTitle, "Senior Backend Engineer");
   assert.equal(input.pipelineType, "ACTIVE_PROCESS");
   assert.equal(input.status, "RECRUITER_REACHED_OUT");
-  assert.equal(input.priority, "HIGH");
   assert.equal(input.source, "Telegram opportunity webhook");
   assert.equal(input.referrerOrConnection, "Jane Recruiter");
   assert.equal(input.nextStep, "Reply with availability");
@@ -64,7 +62,6 @@ test("buildOpportunityInputFromParsedJobDescription supplies safe defaults", asy
     roleTitle: null,
     pipelineType: null,
     status: null,
-    prioritySuggestion: null,
     company: {
       employees: null,
       stage: null,
@@ -96,6 +93,5 @@ test("buildOpportunityInputFromParsedJobDescription supplies safe defaults", asy
   assert.equal(input.roleTitle, "Software Engineer");
   assert.equal(input.pipelineType, "POTENTIAL");
   assert.equal(input.status, "RESEARCH_LEAD");
-  assert.equal(input.priority, "MEDIUM");
   assert.deepEqual(input.domainIds, []);
 });

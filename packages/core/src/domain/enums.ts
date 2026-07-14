@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export const pipelineTypeSchema = z.enum(["POTENTIAL", "ACTIVE_PROCESS", "ARCHIVED"]);
-export const prioritySchema = z.enum(["HIGH", "MEDIUM", "LOW", "MAYBE"]);
 export const jobStatusSchema = z.enum([
   "RESEARCH_LEAD",
   "TO_APPLY",
@@ -44,7 +43,6 @@ export const offerStatusSchema = z.enum([
 ]);
 
 export type PipelineType = z.infer<typeof pipelineTypeSchema>;
-export type Priority = z.infer<typeof prioritySchema>;
 export type JobStatus = z.infer<typeof jobStatusSchema>;
 export type InteractionStatus = z.infer<typeof interactionStatusSchema>;
 export type InteractionType = z.infer<typeof interactionTypeSchema>;

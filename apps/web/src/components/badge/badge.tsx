@@ -8,10 +8,9 @@ import {
   jobStatusLabels,
   offerStatusLabels,
   pipelineTypeLabels,
-  priorityLabels,
   taskStatusLabels,
 } from "../../lib/enum-labels";
-import { pipelineTone, priorityTone, statusTone } from "../../lib/format";
+import { pipelineTone, statusTone } from "../../lib/format";
 
 type BadgeProps = {
   value?: string | null;
@@ -23,10 +22,6 @@ type BadgeProps = {
 function toneForValue(value?: string | null): BadgeTone | undefined {
   if (!value) {
     return undefined;
-  }
-
-  if (value in priorityLabels) {
-    return priorityTone(value);
   }
 
   if (value in pipelineTypeLabels) {

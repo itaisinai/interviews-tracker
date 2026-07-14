@@ -30,7 +30,6 @@ test("preserveLinkedinMetadataForUpdate keeps existing LinkedIn metadata when up
     roleTitle: "Engineer",
     pipelineType: "POTENTIAL",
     status: "RESEARCH_LEAD",
-    priority: "MEDIUM",
     domainIds: [],
   } satisfies OpportunityInput;
 
@@ -49,7 +48,6 @@ test("preserveLinkedinMetadataForUpdate allows explicit clearing of LinkedIn met
     roleTitle: "Engineer",
     pipelineType: "POTENTIAL",
     status: "RESEARCH_LEAD",
-    priority: "MEDIUM",
     linkedinJobId: null,
     sourceUrl: null,
     domainIds: [],

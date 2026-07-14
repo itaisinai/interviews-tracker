@@ -45,7 +45,6 @@ export function createOpportunityHandler(request: AuthenticatedRequest) {
       roleTitle: z.string().min(1),
       pipelineType: z.enum(["POTENTIAL", "ACTIVE_PROCESS", "ARCHIVED"]),
       status: z.string(),
-      priority: z.enum(["HIGH", "MEDIUM", "LOW", "MAYBE"]),
       referrerOrConnection: z.string().nullish(),
       source: z.string().nullish(),
       jobUrl: z.string().nullish(),

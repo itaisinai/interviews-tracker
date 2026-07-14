@@ -32,7 +32,6 @@ export async function buildOpportunityInputFromParsedJobDescription(
     roleTitle: parsed.roleTitle ?? "Software Engineer",
     pipelineType: parsed.pipelineType ?? "POTENTIAL",
     status: parsed.status ?? "RESEARCH_LEAD",
-    priority: parsed.prioritySuggestion ?? "MEDIUM",
     referrerOrConnection: parsed.process.knownContact,
     source: "Telegram opportunity webhook",
     nextStep: parsed.process.suggestedNextStep,

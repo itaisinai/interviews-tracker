@@ -14,7 +14,6 @@ export interface OpportunitySummary {
   roleTitle: string | null;
   status: string;
   pipelineType: string;
-  priority: string | null;
   nextStep: string | null;
   interactionCount: number;
   nextScheduledInteraction: {
@@ -78,7 +77,6 @@ export async function getOpportunitiesByStatus(
     roleTitle: opp.roleTitle,
     status: opp.status,
     pipelineType: opp.pipelineType,
-    priority: opp.priority,
     nextStep: opp.nextStep,
     interactionCount: opp._count.interactions,
     nextScheduledInteraction: opp.interactions[0]

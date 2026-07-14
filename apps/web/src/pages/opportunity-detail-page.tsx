@@ -153,7 +153,6 @@ export function OpportunityDetailPage() {
         <p className="mt-1 text-body-md text-on-surface-variant">{data.roleTitle}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge value={data.status} />
-          <Badge value={data.priority} />
           <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
         </div>
         <div className="mt-4 flex gap-2">
@@ -201,7 +200,6 @@ export function OpportunityDetailPage() {
               {isFetching ? <InlineLoadingState label="Refreshing" /> : null}
               <div className="flex items-center gap-2">
                 <Badge value={data.status} />
-                <Badge value={data.priority} />
                 <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
               </div>
               <Button className="btn btn-secondary" leadingIcon="add" onClick={() => setShowAddInteractionModal(true)}>
@@ -401,7 +399,6 @@ function buildOpportunityInput(opportunity: Opportunity, updates: Pick<Opportuni
     roleTitle: updates.roleTitle,
     pipelineType: opportunity.pipelineType,
     status: opportunity.status,
-    priority: opportunity.priority,
     referrerOrConnection: opportunity.referrerOrConnection ?? null,
     source: opportunity.source ?? null,
     jobUrl: opportunity.jobUrl ?? null,

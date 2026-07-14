@@ -22,7 +22,6 @@ export {
   offerStatusSchema,
   opportunityInputSchema,
   pipelineTypeSchema,
-  prioritySchema,
   taskInputSchema,
   taskStatusSchema,
 } from "@interviews-tracker/core";

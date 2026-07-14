@@ -3,9 +3,9 @@ import { useMemo, useState } from "react";
 import { Button, IconButton, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { ParserLoadingState } from "../../../components/parser-loading-state/parser-loading-state";
-import { labelForJobStatus, labelForPipelineType, labelForPriority } from "../../../lib/enum-labels";
+import { labelForJobStatus, labelForPipelineType } from "../../../lib/enum-labels";
 import type { ParserRunState } from "../../../lib/parser-run";
-import type { Option, PipelineType, Priority } from "../../../lib/types";
+import type { Option, PipelineType } from "../../../lib/types";
 import type { ParsedJobDescription, SourceMode } from "../types";
 import { normalizeJobStatus } from "../utils";
 
@@ -50,7 +50,6 @@ export function ReviewPanel({
   const [roleTitle, setRoleTitle] = useState("");
 
   const pipelineType = (parseResult?.pipelineType ?? "POTENTIAL") as PipelineType;
-  const priority = (parseResult?.prioritySuggestion ?? "MEDIUM") as Priority;
 
   return (
     <section className="panel p-6">
@@ -95,9 +94,6 @@ export function ReviewPanel({
             </span>
             <span className="rounded-full bg-surface-container-high px-3 py-1 font-label-md text-label-md text-on-surface-variant">
               {labelForJobStatus(normalizeJobStatus(parseResult.status))}
-            </span>
-            <span className="rounded-full bg-surface-container-high px-3 py-1 font-label-md text-label-md text-on-surface-variant">
-              {labelForPriority(priority)}
             </span>
           </div>
           {!canSave ? (
@@ -199,7 +195,6 @@ export function ReviewPanel({
               )}
             </div>
             <ValueRow label="Status" value={labelForJobStatus(normalizeJobStatus(parseResult.status))} />
-            <ValueRow label="Priority" value={labelForPriority(priority)} />
             <ValueRow label="Company size" value={companySizeOption?.label ?? parseResult.company.employees ?? "-"} />
             <ValueRow label="Stage" value={companyStageOption?.label ?? parseResult.company.stage ?? "-"} />
             <ValueRow label="Work model" value={workModelOption?.label ?? parseResult.company.workModel ?? "-"} />

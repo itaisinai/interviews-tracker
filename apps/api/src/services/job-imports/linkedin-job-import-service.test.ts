@@ -94,7 +94,6 @@ test("valid LinkedIn import maps LLM output into createOpportunity input", async
     roleTitle: "Senior Full Stack Engineer",
     pipelineType: "POTENTIAL",
     status: "RESEARCH_LEAD",
-    priority: "MEDIUM",
     source: "linkedin",
     jobUrl: "https://www.linkedin.com/jobs/view/4428934873/",
     sourceUrl: "https://www.linkedin.com/jobs/view/4428934873/",

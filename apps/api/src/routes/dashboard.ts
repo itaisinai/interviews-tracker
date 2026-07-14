@@ -44,6 +44,17 @@ dashboardRouter.get(
       }),
     ]);
 
+    const advancedStatusOpportunities = opportunities.filter(
+      (item) =>
+        item.status === "PHONE_SCHEDULED" ||
+        item.status === "PHONE_DONE" ||
+        item.status === "TECHNICAL_SCHEDULED" ||
+        item.status === "TECHNICAL_DONE" ||
+        item.status === "HOME_ASSIGNMENT" ||
+        item.status === "ASSIGNMENT_SUBMITTED" ||
+        item.status === "FINAL_STAGE"
+    );
+
     response.json({
       counts: {
         activeProcesses: opportunities.filter((item) => item.pipelineType === "ACTIVE_PROCESS").length,
@@ -51,15 +62,13 @@ dashboardRouter.get(
         upcomingInteractions: interactions.length,
         offers: opportunities.filter((item) => item.status === "OFFER").length,
         rejections: opportunities.filter((item) => item.status === "REJECTED").length,
-        highPriority: opportunities.filter((item) => item.priority === "HIGH").length,
+        advancedStatus: advancedStatusOpportunities.length,
       },
       upcomingInteractions: serializeInteractions(interactions),
       activeProcesses: serializeOpportunities(
         opportunities.filter((item) => item.pipelineType === "ACTIVE_PROCESS").slice(0, 8)
       ),
-      highPriorityPotential: serializeOpportunities(
-        opportunities.filter((item) => item.pipelineType === "POTENTIAL" && item.priority === "HIGH").slice(0, 8)
-      ),
+      advancedStatusOpportunities: serializeOpportunities(advancedStatusOpportunities.slice(0, 8)),
       needingFollowUp: serializeOpportunities(
         opportunities
           .filter((item) => item.interactions.some((interaction) => interaction.status === "NEEDS_FOLLOW_UP"))
