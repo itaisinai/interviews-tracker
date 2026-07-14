@@ -45,8 +45,10 @@ export function ReviewPanel({
   onUpdateParseResult,
 }: ReviewPanelProps) {
   const [editingCompany, setEditingCompany] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(false);
   const [editingRole, setEditingRole] = useState(false);
   const [companyName, setCompanyName] = useState("");
+  const [product, setProduct] = useState("");
   const [roleTitle, setRoleTitle] = useState("");
 
   const pipelineType = (parseResult?.pipelineType ?? "POTENTIAL") as PipelineType;
@@ -151,6 +153,58 @@ export function ReviewPanel({
                     onClick={() => {
                       setCompanyName(parseResult.companyName ?? "");
                       setEditingCompany(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="label mb-2">Product / Division</p>
+              {editingProduct ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={product}
+                    onChange={(e) => setProduct(e.target.value)}
+                    className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                    placeholder="Product or division (optional)"
+                    autoFocus
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon="check"
+                    onClick={() => {
+                      onUpdateParseResult({ product: product.trim() || null });
+                      setEditingProduct(false);
+                    }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon="close"
+                    onClick={() => {
+                      setEditingProduct(false);
+                      setProduct(parseResult.product ?? "");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="value flex-1">{parseResult.product ?? "-"}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leadingIcon="edit"
+                    onClick={() => {
+                      setProduct(parseResult.product ?? "");
+                      setEditingProduct(true);
                     }}
                   >
                     Edit

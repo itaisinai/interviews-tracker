@@ -27,6 +27,14 @@ export async function buildOpportunityInputFromParsedJobDescription(
       .map(async (label) => (await createDomainOption(label)).id)
   );
 
+  // Enhance product description with product/division name if present
+  const productDescriptionEnhanced = [
+    parsed.product ? `Product/Division: ${parsed.product}` : null,
+    parsed.company.productDescription,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
   return opportunityInputSchema.parse({
     companyName: parsed.companyName ?? "Unknown company",
     roleTitle: parsed.roleTitle ?? "Software Engineer",
@@ -40,7 +48,7 @@ export async function buildOpportunityInputFromParsedJobDescription(
     location: parsed.company.location,
     funding: parsed.company.funding,
     companyDescription: parsed.company.companyDescription,
-    productDescription: parsed.company.productDescription,
+    productDescription: productDescriptionEnhanced || parsed.company.productDescription,
     customersTraction: parsed.company.customersTraction,
     techStack: parsed.role.techStack.join(", "),
     backendFrontendSplit: parsed.role.backendFrontendSplit,

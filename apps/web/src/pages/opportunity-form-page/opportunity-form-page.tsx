@@ -135,6 +135,21 @@ export function OpportunityFormPage() {
         domainIds.add(created.id);
       }
 
+      console.log("[OPPORTUNITY CREATE] parseResult:", parseResult);
+      console.log("[OPPORTUNITY CREATE] companyName:", companyName);
+      console.log("[OPPORTUNITY CREATE] product:", parseResult.product);
+      console.log("[OPPORTUNITY CREATE] roleTitle:", roleTitle);
+
+      // Enhance product description with the product name if present
+      const productDescriptionEnhanced = [
+        parseResult.product ? `Product/Division: ${parseResult.product}` : null,
+        parseResult.company.productDescription,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+
+      console.log("[OPPORTUNITY CREATE] productDescriptionEnhanced:", productDescriptionEnhanced);
+
       return api.createOpportunity({
         companyName,
         roleTitle,
@@ -151,7 +166,7 @@ export function OpportunityFormPage() {
         location: parseResult.company.location,
         funding: parseResult.company.funding,
         companyDescription: parseResult.company.companyDescription,
-        productDescription: parseResult.company.productDescription,
+        productDescription: productDescriptionEnhanced || parseResult.company.productDescription,
         customersTraction: parseResult.company.customersTraction,
         techStack: parseResult.role.techStack.join(", "),
         backendFrontendSplit: parseResult.role.backendFrontendSplit,
