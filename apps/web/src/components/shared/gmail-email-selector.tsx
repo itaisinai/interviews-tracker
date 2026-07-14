@@ -203,15 +203,13 @@ export function GmailEmailSelector({
           }`}
         >
           Suggested
-          {suggestedCount > 0 && (
-            <span
-              className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                activeTab === "suggested" ? "bg-blue-100 text-blue-700" : "bg-neutral-100 text-neutral-600"
-              }`}
-            >
-              {suggestedCount}
-            </span>
-          )}
+          <span
+            className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+              activeTab === "suggested" ? "bg-blue-100 text-blue-700" : "bg-neutral-100 text-neutral-600"
+            }`}
+          >
+            {suggestedCount}
+          </span>
         </button>
         {pickedCount > 0 && (
           <button
@@ -308,9 +306,18 @@ export function GmailEmailSelector({
           {/* Empty state */}
           {!isLoading && availableCandidates.length === 0 && (
             <div className="text-center py-12">
-              <MaterialIcon name="mail_outline" className="text-[48px] text-neutral-300 mb-3" />
-              <p className="text-sm text-neutral-500">{emptyMessage}</p>
-              {emptySubMessage && <p className="text-xs text-neutral-400 mt-1">{emptySubMessage}</p>}
+              <MaterialIcon name="mail_outline" className="text-[48px] text-neutral-400 mb-4" />
+              <p className="text-base font-medium text-neutral-700 mb-2">{emptyMessage}</p>
+              {emptySubMessage && <p className="text-sm text-neutral-600 mt-2">{emptySubMessage}</p>}
+              {(pickedCount > 0 || ignoredCount > 0) && (
+                <p className="text-sm text-neutral-600 mt-3">
+                  {pickedCount > 0 && ignoredCount > 0
+                    ? "Check the Picked and Ignored tabs to release or restore emails."
+                    : pickedCount > 0
+                      ? "Check the Picked tab to release previously imported emails."
+                      : "Check the Ignored tab to restore hidden emails."}
+                </p>
+              )}
             </div>
           )}
 

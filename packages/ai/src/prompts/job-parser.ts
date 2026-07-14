@@ -13,10 +13,25 @@ export const jobParserSkill = `
 
 ## Extraction Priorities
 
-- Highest priority: company name, role title, process stage, recruiter or company reached out, next expected action.
+- Highest priority: company name (actual employer), product/division (if mentioned), role title, process stage, recruiter or company reached out, next expected action.
 - Then: location, work model, office policy, company size, company age, funding, customers, product, domain, tech stack.
 - Then: contacts, notes, interesting signals, competitive advantages, culture hints.
 - Preserve any explicit detail that would help the user later during the hiring process.
+
+## Company vs Product/Division Detection
+
+CRITICAL: When a message mentions both a large company AND a specific product/division/team:
+- Extract the LARGER/PARENT company as companyName (this is who actually employs you)
+- Extract the product/division/team name as product
+- Examples:
+  - "We're Prompt Security, part of SentinelOne" → companyName: "SentinelOne", product: "Prompt Security"
+  - "While we're part of SentinelOne, we operate with startup autonomy" → companyName: "SentinelOne", product: "Prompt Security" (if mentioned in context)
+  - "Join our team at Google Cloud" → companyName: "Google", product: "Google Cloud"
+  - "Meta's WhatsApp team is hiring" → companyName: "Meta", product: "WhatsApp"
+  - "AWS is looking for engineers on the S3 team" → companyName: "Amazon" (or "AWS"), product: "S3"
+- If only one company is mentioned with no product/division context, set product to null
+- Look for phrases like: "part of", "within", "at [BigCo]", "acquired by", "subsidiary of", "[BigCo]'s [Product]", "team at [BigCo]", "division of"
+- The user should understand: "Working at [companyName] on the [product] team/product"
 
 ## Known Contact Extraction
 
@@ -136,6 +151,23 @@ Expected highlights:
 - workModel: Hybrid
 - location: Tel Aviv
 - techStack: Node.js, TypeScript, PostgreSQL
+
+### Example 3 (Company vs Product Detection)
+
+Input:
+
+> Hi Itai, I am looking for a strong, AI-first engineer to join our core team at Prompt Security. The role involves scaling our existing, market leading GenAI security platform while also helping build new initiatives in the agentic area. While we're part of SentinelOne, we operate with the autonomy, speed, and ownership mindset of a startup.
+
+Expected highlights:
+
+- companyName: SentinelOne (the actual employer)
+- product: Prompt Security (the product/division)
+- roleTitle: AI-first Engineer or similar
+- status: RECRUITER_REACHED_OUT
+- productDescription: GenAI security platform
+- rawImportantNotes: ["Operates with startup autonomy", "Agentic initiatives"]
+
+Reasoning: User is applying to SentinelOne, working on the Prompt Security product.
 `.trim();
 
 export function buildJobParserSystemPrompt() {

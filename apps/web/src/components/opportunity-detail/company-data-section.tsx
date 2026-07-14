@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 
-import { Button, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, IconLink, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { labelForPipelineType } from "../../lib/enum-labels";
 import type { Opportunity } from "../../lib/types";
@@ -163,15 +163,9 @@ export function CompanyDataSection({
             <div className="mt-4">
               <p className="label">Job Posting</p>
               {opportunity.jobUrl ? (
-                <a
-                  className="mt-1 inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:underline"
-                  href={opportunity.jobUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <MaterialIcon name="open_in_new" className="text-[18px]" />
-                  Open job posting
-                </a>
+                <div className="mt-1">
+                  <IconLink href={opportunity.jobUrl}>Open job posting</IconLink>
+                </div>
               ) : (
                 <p className="mt-1 text-body-md text-on-surface-variant">-</p>
               )}

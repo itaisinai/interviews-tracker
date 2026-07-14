@@ -84,6 +84,10 @@ export function SourcePanel({
     mutationFn: (messageId: string) => api.gmailIgnoreGlobal(messageId),
     onSuccess: (_, messageId) => {
       setIgnoringMessageId(null);
+      // Remove the ignored message from selection
+      const newSelected = new Set(selectedEmails);
+      newSelected.delete(messageId);
+      setSelectedEmails(newSelected);
       onRefresh();
     },
     onError: (error, messageId) => {

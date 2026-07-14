@@ -4,6 +4,7 @@ import { pipelineTypeSchema, prioritySchema } from "@interviews-tracker/core";
 
 export const aiParseResponseSchema = z.object({
   companyName: z.string().nullable(),
+  product: z.string().nullable(),
   roleTitle: z.string().nullable(),
   pipelineType: pipelineTypeSchema.nullable(),
   status: z.string().nullable(),

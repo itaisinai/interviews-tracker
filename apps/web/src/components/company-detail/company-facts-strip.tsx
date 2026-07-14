@@ -26,6 +26,7 @@ export function CompanyFactsStrip({ facts, onResearchClick }: CompanyFactsStripP
               icon={fact.icon}
               label={fact.label}
               value={fact.label === "Funding" ? formatCompactFunding(fact.value) : fact.value}
+              truncate
             />
           ))}
         </div>

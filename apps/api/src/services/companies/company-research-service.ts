@@ -173,6 +173,20 @@ function sortSearchResults(results: SearchResult[]) {
   });
 }
 
+function normalizeEmployeesCount(value: string | null | undefined): string | null {
+  if (!value) return null;
+
+  // Remove common prefixes/words
+  const cleaned = value
+    .replace(/^(approximately|around|about|~|roughly)\s*/i, "")
+    .replace(/\s+(employees?|people|team members?)\s*$/i, "")
+    .trim();
+
+  // Extract just the number or range
+  const match = cleaned.match(/^(\d+(?:[,.]\d+)?(?:\s*-\s*\d+(?:[,.]\d+)?)?|\d+\+)$/);
+  return match ? match[1].replace(/,/g, "") : cleaned;
+}
+
 function extractEmployeesFromText(text: string) {
   const normalized = text.replace(/\s+/g, " ").trim();
   const patterns = [
@@ -383,7 +397,9 @@ function mergeResearchResult(
   const funding = mergeValue(existing.funding, extracted.funding);
   const investmentRounds = mergeValue(existing.investmentRounds, extracted.investmentRounds);
   const inferredEmployees = existing.employees ? null : inferEmployeesFromEvidence(evidence);
-  const employees = mergeValue(existing.employees, extracted.employees ?? inferredEmployees?.employees ?? null);
+  const employees = normalizeEmployeesCount(
+    mergeValue(existing.employees, extracted.employees ?? inferredEmployees?.employees ?? null)
+  );
   const location = mergeValue(existing.location, extracted.location);
   const customersTraction = mergeValue(existing.customersTraction, extracted.customersTraction);
   const companyDescription = mergeValue(existing.companyDescription, extracted.companyDescription);
@@ -405,12 +421,7 @@ function mergeResearchResult(
     companyDescription,
     productDescription,
     sourceUrls,
-    rawImportantNotes: unique([
-      ...extracted.rawImportantNotes,
-      linkedinUrl.length > 0 ? `LinkedIn URL: ${linkedinUrl}` : null,
-      inferredEmployees?.note ?? null,
-      sourceUrls.length > 0 ? `Source URLs: ${sourceUrls.join(", ")}` : null,
-    ]),
+    rawImportantNotes: unique([...extracted.rawImportantNotes, inferredEmployees?.note ?? null]),
     confidence: extracted.confidence,
   };
 
@@ -423,7 +434,17 @@ function mergeResearchResult(
   return result;
 }
 
+function truncateText(text: string | null, maxLength: number): string | null {
+  if (!text) return null;
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + "... [truncated]";
+}
+
 function createEvidencePayload(evidence: ResearchEvidence[]) {
+  const MAX_TEXT_LENGTH = 2000; // ~500 tokens per result
+  const MAX_HIGHLIGHTS_PER_RESULT = 5;
+  const MAX_HIGHLIGHT_LENGTH = 500;
+
   return evidence.map((item) => ({
     query: item.query,
     results: item.results.map((result) => ({
@@ -431,8 +452,10 @@ function createEvidencePayload(evidence: ResearchEvidence[]) {
       url: result.url,
       publishedDate: result.publishedDate,
       author: result.author,
-      text: result.text,
-      highlights: result.highlights,
+      text: truncateText(result.text, MAX_TEXT_LENGTH),
+      highlights: result.highlights
+        .slice(0, MAX_HIGHLIGHTS_PER_RESULT)
+        .map((h) => truncateText(h, MAX_HIGHLIGHT_LENGTH) ?? h),
     })),
   }));
 }
@@ -481,7 +504,8 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
                   "If evidence is weak or conflicting, be conservative, return nulls, and mention uncertainty in rawImportantNotes.",
                   "If existing company data is already present, preserve it unless the evidence is clearly more specific.",
                   "If a LinkedIn URL is provided, treat it as a strong identifier and include it in linkedinUrl in the response unless the evidence proves a different official LinkedIn company page.",
-                  "For important funding and investor claims, include supporting URLs in rawImportantNotes.",
+                  "For employees field: return ONLY the number or range. Valid formats: '2800', '1-10', '51-200', '10000+'. Do NOT add words like 'Approximately', '~', 'around', 'about'. Just the raw number or range.",
+                  "rawImportantNotes should only contain genuinely important information that doesn't fit in other fields (e.g., conflicting data, unique insights, warnings). Do NOT repeat URLs, LinkedIn links, or data that's already captured in other fields. Keep it concise and only include truly noteworthy items.",
                   "Return compact but useful CRM data.",
                 ].join(" "),
               },
@@ -521,8 +545,19 @@ function createOpenAiResearchExtractor(): ResearchExtractor {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
       timer.fail(new Error(`OpenAI company research failed: ${response.status}`), { company: companyName });
-      throw new Error(`OpenAI company research failed: ${response.status} ${await response.text()}`);
+
+      // Check if it's a context length error
+      if (errorText.includes("context_length_exceeded") || errorText.includes("context window")) {
+        throw new Error(
+          `OpenAI company research failed: Input too large for model ${model}. ` +
+            `Try reducing the number of search results or using a model with a larger context window. ` +
+            `Error: ${errorText}`
+        );
+      }
+
+      throw new Error(`OpenAI company research failed: ${response.status} ${errorText}`);
     }
 
     const payload = (await response.json()) as {
@@ -626,10 +661,12 @@ export class CompanyResearchService {
   }
 
   private async collectEvidence(queries: string[]): Promise<ResearchEvidence[]> {
+    const MAX_RESULTS_PER_QUERY = 5; // Limit results per query to control payload size
+
     const results = await Promise.all(
       queries.map(async (query) => ({
         query,
-        results: sortSearchResults(await this.provider.search(query)),
+        results: sortSearchResults(await this.provider.search(query)).slice(0, MAX_RESULTS_PER_QUERY),
       }))
     );
 

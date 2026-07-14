@@ -58,6 +58,11 @@ export function useParser() {
       setStatusMessage("The AI is extracting company, role, and process details.");
 
       const parsed = await parsePromise;
+      console.log("[PARSER HOOK] Received parsed result:", parsed);
+      console.log("[PARSER HOOK] companyName:", parsed.companyName);
+      console.log("[PARSER HOOK] product:", parsed.product);
+      console.log("[PARSER HOOK] Full object:", JSON.stringify(parsed, null, 2));
+
       setRunState("normalizing_result");
       setStatusMessage("Normalizing the structured result for review.");
       setProgress(90);

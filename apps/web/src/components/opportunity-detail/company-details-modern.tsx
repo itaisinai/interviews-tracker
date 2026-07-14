@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { CompactInfoRow, MaterialIcon, SectionHeader } from "@interviews-tracker/design-system";
+import { CompactInfoRow, IconLink, MaterialIcon, SectionHeader } from "@interviews-tracker/design-system";
 
 import type { Opportunity } from "../../lib/types";
 
@@ -39,17 +39,7 @@ export function CompanyDetailsModern({ opportunity, className = "" }: CompanyDet
             {opportunity.linkedinUrl && (
               <CompactInfoRow
                 label="LinkedIn"
-                value={
-                  <a
-                    href={opportunity.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-emerald-600 hover:underline"
-                  >
-                    View profile
-                    <MaterialIcon name="open_in_new" className="text-[14px]" />
-                  </a>
-                }
+                value={<IconLink href={opportunity.linkedinUrl}>View profile</IconLink>}
               />
             )}
             <CompactInfoRow label="Stage" value={opportunity.company.companyStage?.label || "Not specified"} />
@@ -121,20 +111,7 @@ export function CompanyDetailsModern({ opportunity, className = "" }: CompanyDet
         >
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {opportunity.jobUrl && (
-              <CompactInfoRow
-                label="Job Posting"
-                value={
-                  <a
-                    href={opportunity.jobUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-emerald-600 hover:underline"
-                  >
-                    View posting
-                    <MaterialIcon name="open_in_new" className="text-[14px]" />
-                  </a>
-                }
-              />
+              <CompactInfoRow label="Job Posting" value={<IconLink href={opportunity.jobUrl}>View posting</IconLink>} />
             )}
           </div>
 

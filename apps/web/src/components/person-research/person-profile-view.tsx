@@ -1,4 +1,4 @@
-import { Button, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, IconLink, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { Badge } from "../badge";
 
@@ -75,15 +75,9 @@ export function PersonProfileView({ person, onUpdateResearch }: PersonProfileVie
                 </a>
               ) : null}
               {person.linkedinUrl ? (
-                <a
-                  href={person.linkedinUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 flex items-center gap-1 text-body-md text-primary hover:underline"
-                >
-                  <MaterialIcon name="open_in_new" className="text-[18px]" />
-                  LinkedIn Profile
-                </a>
+                <div className="mt-1">
+                  <IconLink href={person.linkedinUrl}>LinkedIn Profile</IconLink>
+                </div>
               ) : null}
             </div>
           </div>
@@ -172,16 +166,9 @@ export function PersonProfileView({ person, onUpdateResearch }: PersonProfileVie
               <h2 className="label">Sources</h2>
               <div className="mt-3 space-y-2">
                 {research.sources.map((source, index) => (
-                  <a
-                    key={index}
-                    href={source.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-body-md text-primary hover:underline"
-                  >
-                    <MaterialIcon name="open_in_new" className="text-[18px]" />
+                  <IconLink key={index} href={source.url}>
                     {source.label}
-                  </a>
+                  </IconLink>
                 ))}
               </div>
             </div>

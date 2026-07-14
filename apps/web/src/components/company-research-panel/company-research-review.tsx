@@ -1,4 +1,6 @@
-import { Button, MaterialIcon } from "@interviews-tracker/design-system";
+import { useState } from "react";
+
+import { Button, IconLink, MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { CompanyResearchExistingData, CompanyResearchResult } from "../../lib/types";
 
@@ -36,6 +38,8 @@ export function CompanyResearchReview({
   onUpdateListField,
   onUpdateRoundsCount,
 }: CompanyResearchReviewProps) {
+  const [isSourceUrlsExpanded, setIsSourceUrlsExpanded] = useState(false);
+
   return (
     <div className="mt-6 rounded-2xl border border-outline-variant bg-surface-container-low p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -216,29 +220,46 @@ export function CompanyResearchReview({
         />
       </div>
 
-      <div className="mt-5">
-        <EditableDetail
-          label="Source URLs"
-          value={research.sourceUrls.join("\n")}
-          editing={editingField === "sourceUrls"}
-          onEdit={() => onEditField("sourceUrls")}
-          onDone={() => onEditField(null)}
-          onChange={(value) => onUpdateListField("sourceUrls", value ?? "")}
-          multiline
-        />
-      </div>
+      {research.sourceUrls.length > 0 && (
+        <div className="mt-5">
+          <button
+            type="button"
+            onClick={() => setIsSourceUrlsExpanded(!isSourceUrlsExpanded)}
+            className="flex w-full items-center justify-between rounded-lg p-3 transition-colors hover:bg-surface-container-high"
+          >
+            <div className="flex items-center gap-2">
+              <p className="label">Source URLs</p>
+              <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-label-sm text-on-surface-variant">
+                {research.sourceUrls.length}
+              </span>
+            </div>
+            <MaterialIcon name={isSourceUrlsExpanded ? "expand_less" : "expand_more"} className="text-[20px]" />
+          </button>
+          {isSourceUrlsExpanded && (
+            <div className="mt-2 flex flex-col gap-1 pl-3">
+              {research.sourceUrls.map((url, index) => (
+                <IconLink key={`${url}-${index.toString()}`} href={url}>
+                  {url}
+                </IconLink>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-      <div className="mt-5">
-        <EditableDetail
-          label="Important notes"
-          value={research.rawImportantNotes.join("\n")}
-          editing={editingField === "rawImportantNotes"}
-          onEdit={() => onEditField("rawImportantNotes")}
-          onDone={() => onEditField(null)}
-          onChange={(value) => onUpdateListField("rawImportantNotes", value ?? "")}
-          multiline
-        />
-      </div>
+      {research.rawImportantNotes.length > 0 && (
+        <div className="mt-5">
+          <EditableDetail
+            label="Important notes"
+            value={research.rawImportantNotes.join("\n")}
+            editing={editingField === "rawImportantNotes"}
+            onEdit={() => onEditField("rawImportantNotes")}
+            onDone={() => onEditField(null)}
+            onChange={(value) => onUpdateListField("rawImportantNotes", value ?? "")}
+            multiline
+          />
+        </div>
+      )}
     </div>
   );
 }
