@@ -3,30 +3,81 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: rgb(var(--color-action-primary));
-  color: rgb(var(--color-action-primary-foreground));
-  border: none;
-  cursor: pointer;
+  background: transparent;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  color: rgba(100, 116, 139, 0.4);
+  cursor: grab;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   z-index: 1000;
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    backdrop-filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  pointer-events: auto;
+}
+
+.floatingButton.dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.floatingButton:active {
+  cursor: grabbing;
+}
+
+.floatingIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .floatingIcon {
-  font-size: 24px;
+  font-size: 28px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .floatingButton:hover {
-  transform: scale(1.05);
-  box-shadow: 0 12px 32px rgb(16 32 43 / 0.12);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+  transform: scale(1.08) rotate(3deg);
+  box-shadow:
+    0 12px 48px rgba(102, 126, 234, 0.4),
+    0 4px 16px rgba(118, 75, 162, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px);
+  cursor: grab;
+}
+
+.floatingButton:hover .floatingIconWrapper {
+  animation: sparkle 0.8s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.floatingButton:hover .floatingIcon {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 }
 
 .floatingButton:active {
@@ -403,10 +454,14 @@
   font-size: 22px;
 }
 
-/* Mobile: fixed corner position */
+/* Mobile: adjust size and position */
 @media (max-width: 767px) {
   .floatingButton {
-    bottom: 80px; /* Fixed position above bottom nav */
-    right: 16px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .floatingIcon {
+    font-size: 24px;
   }
 }
