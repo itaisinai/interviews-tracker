@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 
-import { Button, Checkbox, IconLink, LoadingButton, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, Checkbox, IconLink, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { api } from "../../../lib/api";
 import type { GmailSearchCandidate, GmailSearchResponse, GmailStatus } from "../../../lib/types";
@@ -182,18 +182,19 @@ export function SourcePanel({
                   checked={showAllEmails}
                   onChange={(e) => setShowAllEmails(e.target.checked)}
                 />
-                <LoadingButton
+                <Button
                   className="btn btn-primary btn-sm"
+                  size="sm"
                   loading={gmailSearch.isPending}
                   loadingLabel="Searching..."
-                  icon="search"
+                  leadingIcon="search"
                   onClick={() => {
                     setGmailCandidates(null);
                     gmailSearch.mutate(null);
                   }}
                 >
                   Search
-                </LoadingButton>
+                </Button>
               </div>
             )}
           </div>
@@ -233,15 +234,17 @@ export function SourcePanel({
                     })()}
                   </span>
                   {gmailPageToken ? (
-                    <LoadingButton
+                    <Button
                       className="btn btn-secondary btn-sm"
+                      size="sm"
+                      variant="secondary"
                       loading={gmailSearch.isPending}
                       loadingLabel="Loading..."
-                      icon="refresh"
+                      leadingIcon="refresh"
                       onClick={() => gmailSearch.mutate(gmailPageToken)}
                     >
                       Load More
-                    </LoadingButton>
+                    </Button>
                   ) : null}
                 </div>
               </div>
@@ -328,19 +331,20 @@ export function SourcePanel({
                                       View Opportunity
                                     </IconLink>
                                   ) : candidate.suppressionStatus ? (
-                                    <button
-                                      type="button"
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      leadingIcon="refresh"
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         handleRestore(candidate.id);
                                       }}
-                                      disabled={restoringMessageId === candidate.id}
-                                      className="flex items-center gap-1 whitespace-nowrap text-xs text-primary hover:underline disabled:opacity-50"
+                                      loading={restoringMessageId === candidate.id}
+                                      loadingLabel="Restoring..."
                                     >
-                                      <MaterialIcon name="refresh" className="text-sm" />
-                                      {restoringMessageId === candidate.id ? "Restoring..." : "Restore"}
-                                    </button>
+                                      Restore
+                                    </Button>
                                   ) : (
                                     <Button
                                       variant="ghost"
@@ -351,9 +355,10 @@ export function SourcePanel({
                                         e.stopPropagation();
                                         handleIgnore(candidate.id);
                                       }}
-                                      disabled={ignoringMessageId === candidate.id}
+                                      loading={ignoringMessageId === candidate.id}
+                                      loadingLabel="Ignoring..."
                                     >
-                                      {ignoringMessageId === candidate.id ? "Ignoring..." : "Ignore"}
+                                      Ignore
                                     </Button>
                                   )}
                                 </div>
@@ -409,19 +414,20 @@ export function SourcePanel({
                             View Opportunity
                           </IconLink>
                         ) : candidate.suppressionStatus ? (
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            leadingIcon="refresh"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               handleRestore(candidate.id);
                             }}
-                            disabled={restoringMessageId === candidate.id}
-                            className="flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"
+                            loading={restoringMessageId === candidate.id}
+                            loadingLabel="Restoring..."
                           >
-                            <MaterialIcon name="refresh" className="text-sm" />
-                            {restoringMessageId === candidate.id ? "Restoring..." : "Restore"}
-                          </button>
+                            Restore
+                          </Button>
                         ) : (
                           <Button
                             variant="ghost"
@@ -432,9 +438,10 @@ export function SourcePanel({
                               e.stopPropagation();
                               handleIgnore(candidate.id);
                             }}
-                            disabled={ignoringMessageId === candidate.id}
+                            loading={ignoringMessageId === candidate.id}
+                            loadingLabel="Ignoring..."
                           >
-                            {ignoringMessageId === candidate.id ? "Ignoring..." : "Ignore"}
+                            Ignore
                           </Button>
                         )}
                       </div>

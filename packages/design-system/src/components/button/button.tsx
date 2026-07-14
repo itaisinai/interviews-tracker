@@ -54,7 +54,9 @@ export function Button({
       disabled={isDisabled}
       aria-busy={loading}
       className={[
-        "inline-flex items-center justify-center gap-2 rounded-lg font-body-md font-semibold transition-all active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center justify-center gap-2 rounded-lg font-body-md font-semibold transition-all cursor-pointer active:scale-[0.99]",
+        isDisabled && "cursor-not-allowed opacity-50",
+        loading && "cursor-wait",
         sizeClasses[size],
         variantClasses[variant],
         className,
@@ -66,7 +68,7 @@ export function Button({
       ) : leadingIcon ? (
         <MaterialIcon name={leadingIcon} filled={leadingIconFilled} className="text-[18px]" />
       ) : null}
-      {loading ? (loadingLabel ?? children) : children}
+      {loading ? (loadingLabel ?? "Loading...") : children}
       {!loading && trailingIcon ? <MaterialIcon name={trailingIcon} className="text-[18px]" /> : null}
     </button>
   );

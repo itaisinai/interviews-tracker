@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { LoadingButton, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
+import { Button, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 import { PageIntro } from "../../components/app-layout";
 import { api } from "../../lib/api";
@@ -240,23 +240,23 @@ export function OpportunityFormPage() {
           Cancel
         </button>
         {sourceMode === "raw-text" ? (
-          <LoadingButton
+          <Button
             className="btn btn-primary"
-            disabled={!text.trim() || isBusy}
+            disabled={!text.trim()}
             loading={isBusy}
             loadingLabel="Parsing..."
-            icon="auto_awesome"
+            leadingIcon="auto_awesome"
             onClick={() => void runParser(text)}
           >
             Parse Content
-          </LoadingButton>
+          </Button>
         ) : (
-          <LoadingButton
+          <Button
             className="btn btn-primary"
-            disabled={selectedEmails.size === 0 || gmailParse.isPending}
+            disabled={selectedEmails.size === 0}
             loading={gmailParse.isPending}
             loadingLabel="Adding..."
-            icon="arrow_forward"
+            leadingIcon="arrow_forward"
             onClick={() => {
               // Parse first selected email for now
               // TODO: Implement multi-email parsing
@@ -267,19 +267,19 @@ export function OpportunityFormPage() {
             }}
           >
             Add to Review ({selectedEmails.size})
-          </LoadingButton>
+          </Button>
         )}
         {parseResult ? (
-          <LoadingButton
+          <Button
             className="btn btn-primary"
             loading={create.isPending}
             loadingLabel="Saving..."
-            icon="save"
+            leadingIcon="save"
             disabled={!canSave}
             onClick={() => create.mutate()}
           >
             Save Opportunity
-          </LoadingButton>
+          </Button>
         ) : null}
       </div>
     </>

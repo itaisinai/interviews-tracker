@@ -25,7 +25,18 @@ export function LoadingButton({
   const isDisabled = disabled || loading;
 
   return (
-    <button type={type} disabled={isDisabled} aria-busy={loading} className={className} {...props}>
+    <button
+      type={type}
+      disabled={isDisabled}
+      aria-busy={loading}
+      className={[
+        className,
+        "cursor-pointer",
+        isDisabled && "cursor-not-allowed opacity-50",
+        loading && "cursor-wait",
+      ].join(" ")}
+      {...props}
+    >
       <span className={`inline-flex items-center ${compact ? "" : "gap-2"}`}>
         {loading ? (
           <Spinner className="h-4 w-4" />
