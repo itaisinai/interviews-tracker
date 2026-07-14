@@ -16,7 +16,6 @@ export async function fetchInteractionWithEmails(interactionId: string) {
           roleTitle: true,
           pipelineType: true,
           status: true,
-          priority: true,
           updatedAt: true,
           company: {
             select: {
