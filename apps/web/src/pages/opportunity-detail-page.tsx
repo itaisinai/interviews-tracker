@@ -57,10 +57,10 @@ export function OpportunityDetailPage() {
   });
   const updateOpportunityTitle = useMutation({
     mutationFn: (updates: Pick<Opportunity, "roleTitle">) => {
-      if (!data) {
-        throw new Error("Opportunity is not loaded");
-      }
-      return api.updateOpportunity(opportunitySlug, buildOpportunityInput(data, updates));
+      // Only send what changed - not the entire opportunity
+      return api.updateOpportunity(opportunitySlug, {
+        roleTitle: updates.roleTitle,
+      });
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(["opportunity", slug], updated);
@@ -390,28 +390,6 @@ function EditableTitleField({
       />
     </button>
   );
-}
-
-function buildOpportunityInput(opportunity: Opportunity, updates: Pick<Opportunity, "roleTitle">) {
-  // ONLY send opportunity fields - not company enrichment data
-  // Company enrichment (location, funding, etc.) causes expensive updates
-  return {
-    companyName: opportunity.company.name, // Backend requires either companyId or companyName
-    roleTitle: updates.roleTitle,
-    pipelineType: opportunity.pipelineType,
-    status: opportunity.status,
-    referrerOrConnection: opportunity.referrerOrConnection ?? null,
-    source: opportunity.source ?? null,
-    jobUrl: opportunity.jobUrl ?? null,
-    linkedinUrl: opportunity.linkedinUrl ?? null,
-    linkedinJobId: opportunity.linkedinJobId ?? null,
-    sourceUrl: opportunity.sourceUrl ?? null,
-    nextStep: opportunity.nextStep ?? null,
-    notes: opportunity.notes ?? null,
-    workModelId: opportunity.workModel?.id ?? null,
-    compensationNotes: opportunity.compensationNotes ?? null,
-    domainIds: opportunity.domains.map((item) => item.domain.id),
-  };
 }
 
 function FocusedInteractionCard({

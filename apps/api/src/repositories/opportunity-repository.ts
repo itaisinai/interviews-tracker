@@ -242,14 +242,14 @@ export async function createOpportunityRecord(input: OpportunityInput, ownerEmai
 
 export async function updateOpportunityRecord(
   slugOrId: string,
-  input: OpportunityInput,
+  input: Partial<OpportunityInput>,
   ownerEmail: string,
   companyId?: string
 ) {
   const id = await resolveOpportunityId(slugOrId, ownerEmail);
   if (!id) throw new Error("Opportunity not found");
 
-  // Optimized: Use longer transaction timeout and avoid unnecessary work
+  // Optimized: Support partial updates, avoid unnecessary operations
   const opportunity = await prisma.$transaction(
     async (tx) => {
       const existing = await tx.jobOpportunity.findFirst({
@@ -262,13 +262,13 @@ export async function updateOpportunityRecord(
 
       if (!existing) throw new Error("Opportunity not found");
 
-      const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input, existing);
+      const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input as OpportunityInput, existing);
       const finalCompanyId = companyId || existing.companyId;
 
-      // Only regenerate slug if company or role changed
+      // Only regenerate slug if company or role actually changed
       let slug = existing.slug;
       const companyChanged = companyId && companyId !== existing.companyId;
-      const roleChanged = inputWithPreservedMetadata.roleTitle !== existing.roleTitle;
+      const roleChanged = input.roleTitle !== undefined && input.roleTitle !== existing.roleTitle;
 
       if (!slug || companyChanged || roleChanged) {
         let companyName = existing.company.name;
@@ -277,22 +277,46 @@ export async function updateOpportunityRecord(
           if (!company) throw new Error("Company not found");
           companyName = company.name;
         }
-        slug = await createUniqueOpportunitySlug(companyName, inputWithPreservedMetadata.roleTitle, ownerEmail, tx, id);
+        const newRoleTitle = input.roleTitle ?? existing.roleTitle;
+        slug = await createUniqueOpportunitySlug(companyName, newRoleTitle, ownerEmail, tx, id);
       }
 
-      const data = toWrite({ ...inputWithPreservedMetadata, companyId: finalCompanyId }, ownerEmail);
+      // Build update data - only include provided fields
+      const updateData: Prisma.JobOpportunityUpdateInput = {
+        slug,
+        ...(input.roleTitle !== undefined && { roleTitle: input.roleTitle }),
+        ...(input.pipelineType !== undefined && { pipelineType: input.pipelineType }),
+        ...(input.status !== undefined && { status: input.status }),
+        ...(input.referrerOrConnection !== undefined && { referrerOrConnection: input.referrerOrConnection }),
+        ...(input.source !== undefined && { source: input.source }),
+        ...(input.jobUrl !== undefined && { jobUrl: input.jobUrl }),
+        ...(input.linkedinUrl !== undefined && { linkedinUrl: input.linkedinUrl }),
+        ...(input.linkedinJobId !== undefined && { linkedinJobId: inputWithPreservedMetadata.linkedinJobId }),
+        ...(input.sourceUrl !== undefined && { sourceUrl: inputWithPreservedMetadata.sourceUrl }),
+        ...(input.nextStep !== undefined && { nextStep: input.nextStep }),
+        ...(input.notes !== undefined && { notes: input.notes }),
+        ...(input.compensationNotes !== undefined && { compensationNotes: input.compensationNotes }),
+        ...(input.workModelId !== undefined && {
+          workModel: input.workModelId ? { connect: { id: input.workModelId } } : { disconnect: true },
+        }),
+      };
 
-      // Only update domains if they actually changed
-      const existingDomainIds = new Set(existing.domains.map((d) => d.domainId));
-      const newDomainIds = new Set(input.domainIds);
-      const domainsChanged =
-        existingDomainIds.size !== newDomainIds.size || [...existingDomainIds].some((id) => !newDomainIds.has(id));
+      // Only handle domains if they were provided in the input
+      if (input.domainIds !== undefined) {
+        const existingDomainIds = new Set(existing.domains.map((d) => d.domainId));
+        const newDomainIds = new Set(input.domainIds);
+        const domainsChanged =
+          existingDomainIds.size !== newDomainIds.size || [...existingDomainIds].some((id) => !newDomainIds.has(id));
 
-      if (domainsChanged) {
-        await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
+        if (domainsChanged) {
+          await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
+          updateData.domains = {
+            create: input.domainIds.map((domainId) => ({ ownerEmail, domain: { connect: { id: domainId } } })),
+          };
+        }
       }
 
-      return tx.jobOpportunity.update({ where: { id }, data: { ...data, slug }, include: opportunityInclude });
+      return tx.jobOpportunity.update({ where: { id }, data: updateData, include: opportunityInclude });
     },
     {
       timeout: 10000, // 10 seconds instead of default 5

@@ -112,8 +112,8 @@ export async function createOpportunity(
   return opportunity;
 }
 
-export async function updateOpportunity(id: string, input: OpportunityInput, ownerEmail: string) {
-  // Handle company change if companyName provided
+export async function updateOpportunity(id: string, input: Partial<OpportunityInput>, ownerEmail: string) {
+  // Handle company change if companyName provided (optional for partial updates)
   let companyId: string | undefined;
 
   if (input.companyName) {
