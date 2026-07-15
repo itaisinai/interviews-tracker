@@ -147,6 +147,11 @@ export const api = {
       }>
     >("/companies/lightweight"),
   company: (companyName: string) => request<CompanyDetail>(`/companies/${encodeURIComponent(companyName)}`),
+  updateCompany: (slugOrId: string, body: unknown) =>
+    request<CompanyDetail>(`/companies/${encodeURIComponent(slugOrId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
   enrichCompany: (companyName: string, text: string) =>
     request<{ enrichment: CompanyEnrichment; updatedOpportunities: number }>(
       `/companies/${encodeURIComponent(companyName)}/enrich`,

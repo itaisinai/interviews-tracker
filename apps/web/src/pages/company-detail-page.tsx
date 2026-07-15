@@ -27,12 +27,24 @@ export function CompanyDetailPage() {
     onSuccess: () => navigate("/companies"),
   });
 
+  const updateCompanyName = useMutation({
+    mutationFn: (name: string) => api.updateCompany(decodedSlugOrId, { name }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["company", decodedSlugOrId], updated);
+      void queryClient.invalidateQueries({ queryKey: ["companies-lightweight"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-lightweight"] });
+      if (updated.slug && updated.slug !== decodedSlugOrId) {
+        navigate(`/companies/${encodeURIComponent(updated.slug)}`, { replace: true });
+      }
+    },
+  });
+
   const deleteInteraction = useMutation({
     mutationFn: (interactionSlug: string) => api.deleteInteraction(interactionSlug),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["company", decodedSlugOrId] });
-      void queryClient.invalidateQueries({ queryKey: ["companies"] });
-      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies-lightweight"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-lightweight"] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
@@ -73,6 +85,8 @@ export function CompanyDetailPage() {
     <CompanyDetailView
       company={data}
       isRefreshing={isFetching}
+      isSavingName={updateCompanyName.isPending}
+      onSaveName={(name) => updateCompanyName.mutate(name)}
       isDeletingCompany={deleteCompany.isPending}
       onDeleteCompany={() => deleteCompany.mutate()}
       onDeleteInteraction={(interactionSlug) => deleteInteraction.mutate(interactionSlug)}
@@ -86,7 +100,7 @@ export function CompanyDetailPage() {
         } else {
           // Slug unchanged, just refresh data
           void queryClient.invalidateQueries({ queryKey: ["company", decodedSlugOrId] });
-          void queryClient.invalidateQueries({ queryKey: ["companies"] });
+          void queryClient.invalidateQueries({ queryKey: ["companies-lightweight"] });
         }
       }}
     />
