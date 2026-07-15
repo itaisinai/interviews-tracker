@@ -170,17 +170,12 @@ export function OpportunityDetailPage() {
       <div className="hidden md:block">
         <PageIntro
           title={
-            <EditableTitleField
-              ariaLabel="Company name"
-              className="font-headline-lg text-headline-lg text-on-background"
-              value={data.company.name}
-              isSaving={updateOpportunityTitle.isPending}
-              onSave={(companyName) =>
-                updateOpportunityTitle.mutate({
-                  roleTitle: data.roleTitle,
-                })
-              }
-            />
+            <Link
+              to={`/companies/${data.company.slug}`}
+              className="font-headline-lg text-headline-lg text-on-background hover:text-primary transition-colors"
+            >
+              {data.company.name}
+            </Link>
           }
           description={
             <EditableTitleField
