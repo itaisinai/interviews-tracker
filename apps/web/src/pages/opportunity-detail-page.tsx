@@ -64,8 +64,8 @@ export function OpportunityDetailPage() {
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(["opportunity", slug], updated);
-      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-lightweight"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies-lightweight"] });
       if (updated.slug && updated.slug !== slug) {
         navigate(`/opportunities/${updated.slug}`, { replace: true });
       }
@@ -396,7 +396,7 @@ function buildOpportunityInput(opportunity: Opportunity, updates: Pick<Opportuni
   // ONLY send opportunity fields - not company enrichment data
   // Company enrichment (location, funding, etc.) causes expensive updates
   return {
-    companyId: opportunity.company.id, // Use companyId instead of name to avoid company lookup
+    companyName: opportunity.company.name, // Backend requires either companyId or companyName
     roleTitle: updates.roleTitle,
     pipelineType: opportunity.pipelineType,
     status: opportunity.status,
