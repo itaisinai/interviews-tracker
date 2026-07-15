@@ -29,19 +29,54 @@ export function preserveLinkedinMetadataForUpdate(
   };
 }
 
+// Optimized include - select only needed fields to reduce query time
+// With cloud databases (Neon), each include adds 100-200ms latency
 export const opportunityInclude = {
   company: {
-    include: {
-      employeesRange: true,
-      companyStage: true,
-      domains: { include: { domain: true } },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      searchName: true,
+      linkedinUrl: true,
+      websiteUrl: true,
+      location: true,
+      funding: true,
+      totalRaised: true,
+      latestRound: true,
+      description: true,
+      productDescription: true,
+      customersTraction: true,
+      techStack: true,
+      backendFrontendSplit: true,
+      isWatchlisted: true,
+      employeesRange: { select: { id: true, label: true } },
+      companyStage: { select: { id: true, label: true } },
+      domains: {
+        select: {
+          domain: { select: { id: true, label: true } },
+        },
+      },
     },
   },
-  workModel: true,
-  domains: { include: { domain: true } },
-  interactions: { orderBy: { date: "asc" as const } },
-  notesList: { orderBy: { createdAt: "desc" as const } },
-  tasks: { orderBy: { dueDate: "asc" as const } },
+  workModel: { select: { id: true, label: true } },
+  domains: {
+    select: {
+      domain: { select: { id: true, label: true } },
+    },
+  },
+  interactions: {
+    orderBy: { date: "asc" as const },
+    // Load all fields - needed for detail page
+  },
+  notesList: {
+    orderBy: { createdAt: "desc" as const },
+    // Load all fields - needed for detail page
+  },
+  tasks: {
+    orderBy: { dueDate: "asc" as const },
+    // Load all fields - needed for detail page
+  },
   compensation: true,
 } satisfies Prisma.JobOpportunityInclude;
 
@@ -104,59 +139,11 @@ export async function resolveOpportunityId(slugOrId: string, ownerEmail: string)
   return bySlug?.id ?? null;
 }
 
-export async function listOpportunityRecords(query: Record<string, string | undefined>, ownerEmail: string) {
-  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
-  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
-
-  const where: Prisma.JobOpportunityWhereInput = {
-    ownerEmail,
-    status: query.status
-      ? { equals: query.status as Prisma.EnumJobStatusFilter<"JobOpportunity">["equals"] }
-      : undefined,
-    OR: query.search
-      ? [
-          { company: { name: { contains: query.search, mode: "insensitive" } } },
-          { roleTitle: { contains: query.search, mode: "insensitive" } },
-        ]
-      : undefined,
-    domains: query.domainId ? { some: { domainId: query.domainId } } : undefined,
-  };
-
-  // Custom pipeline filtering logic
-  if (query.pipeline === "POTENTIAL") {
-    // POTENTIAL: Only leads WITHOUT any interactions
-    where.interactions = { none: {} };
-    where.pipelineType = "POTENTIAL";
-  } else if (query.pipeline === "ACTIVE_PROCESS") {
-    // ACTIVE_PROCESS: Any process WITH interactions (exclude REJECTED status)
-    where.interactions = { some: {} };
-    // Preserve any existing status filter, or default to excluding REJECTED
-    if (!where.status) {
-      where.status = { not: "REJECTED" };
-    }
-  } else if (query.pipeline === "ARCHIVED") {
-    // ARCHIVED: Rejected or closed opportunities (pipeline=ARCHIVED or relevant statuses)
-    // Keep opportunities with pipelineType=ARCHIVED even if status isn't explicitly REJECTED
-    where.pipelineType = "ARCHIVED";
-  } else if (query.pipeline) {
-    // Fallback for other pipeline types
-    where.pipelineType = query.pipeline as PipelineType;
-  }
-
-  const opportunities = await prisma.jobOpportunity.findMany({
-    where,
-    include: opportunityInclude,
-    orderBy: query.sort === "nextInteraction" ? { interactions: { _count: "desc" } } : { updatedAt: "desc" },
-  });
-
-  return opportunities.map((opportunity) => promoteOpportunityInteractionsForRead(opportunity));
-}
-
 /**
- * Lightweight list function for table view - fetches only necessary fields
+ * List opportunities with only necessary fields for table view
  * No status sync, no nested includes, optimized for client-side filtering
  */
-export async function listOpportunityRecordsLightweight(ownerEmail: string) {
+export async function listOpportunityRecords(ownerEmail: string) {
   const opportunities = await prisma.jobOpportunity.findMany({
     where: { ownerEmail },
     select: {
