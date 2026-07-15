@@ -249,33 +249,55 @@ export async function updateOpportunityRecord(
   const id = await resolveOpportunityId(slugOrId, ownerEmail);
   if (!id) throw new Error("Opportunity not found");
 
-  const opportunity = await prisma.$transaction(async (tx) => {
-    const existing = await tx.jobOpportunity.findFirst({
-      where: { id, ownerEmail },
-      include: { company: { select: { name: true } } },
-    });
+  // Optimized: Use longer transaction timeout and avoid unnecessary work
+  const opportunity = await prisma.$transaction(
+    async (tx) => {
+      const existing = await tx.jobOpportunity.findFirst({
+        where: { id, ownerEmail },
+        include: {
+          company: { select: { name: true } },
+          domains: { select: { domainId: true } },
+        },
+      });
 
-    if (!existing) throw new Error("Opportunity not found");
+      if (!existing) throw new Error("Opportunity not found");
 
-    const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input, existing);
-    const finalCompanyId = companyId || existing.companyId;
+      const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input, existing);
+      const finalCompanyId = companyId || existing.companyId;
 
-    // Get company name for slug regeneration if needed
-    let companyName = existing.company.name;
-    if (companyId && companyId !== existing.companyId) {
-      const company = await tx.company.findUnique({ where: { id: companyId }, select: { name: true } });
-      if (!company) throw new Error("Company not found");
-      companyName = company.name;
+      // Only regenerate slug if company or role changed
+      let slug = existing.slug;
+      const companyChanged = companyId && companyId !== existing.companyId;
+      const roleChanged = inputWithPreservedMetadata.roleTitle !== existing.roleTitle;
+
+      if (!slug || companyChanged || roleChanged) {
+        let companyName = existing.company.name;
+        if (companyChanged) {
+          const company = await tx.company.findUnique({ where: { id: companyId }, select: { name: true } });
+          if (!company) throw new Error("Company not found");
+          companyName = company.name;
+        }
+        slug = await createUniqueOpportunitySlug(companyName, inputWithPreservedMetadata.roleTitle, ownerEmail, tx, id);
+      }
+
+      const data = toWrite({ ...inputWithPreservedMetadata, companyId: finalCompanyId }, ownerEmail);
+
+      // Only update domains if they actually changed
+      const existingDomainIds = new Set(existing.domains.map((d) => d.domainId));
+      const newDomainIds = new Set(input.domainIds);
+      const domainsChanged =
+        existingDomainIds.size !== newDomainIds.size || [...existingDomainIds].some((id) => !newDomainIds.has(id));
+
+      if (domainsChanged) {
+        await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
+      }
+
+      return tx.jobOpportunity.update({ where: { id }, data: { ...data, slug }, include: opportunityInclude });
+    },
+    {
+      timeout: 10000, // 10 seconds instead of default 5
     }
-
-    const slug =
-      existing.slug ||
-      (await createUniqueOpportunitySlug(companyName, inputWithPreservedMetadata.roleTitle, ownerEmail, tx, id));
-    const data = toWrite({ ...inputWithPreservedMetadata, companyId: finalCompanyId }, ownerEmail);
-
-    await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
-    return tx.jobOpportunity.update({ where: { id }, data: { ...data, slug }, include: opportunityInclude });
-  });
+  );
 
   return promoteOpportunityInteractionsForRead(opportunity);
 }

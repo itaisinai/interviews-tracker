@@ -393,9 +393,10 @@ function EditableTitleField({
 }
 
 function buildOpportunityInput(opportunity: Opportunity, updates: Pick<Opportunity, "roleTitle">) {
+  // ONLY send opportunity fields - not company enrichment data
+  // Company enrichment (location, funding, etc.) causes expensive updates
   return {
-    companyName: opportunity.company.name,
-    companySearchName: opportunity.company.searchName ?? null,
+    companyId: opportunity.company.id, // Use companyId instead of name to avoid company lookup
     roleTitle: updates.roleTitle,
     pipelineType: opportunity.pipelineType,
     status: opportunity.status,
@@ -407,16 +408,7 @@ function buildOpportunityInput(opportunity: Opportunity, updates: Pick<Opportuni
     sourceUrl: opportunity.sourceUrl ?? null,
     nextStep: opportunity.nextStep ?? null,
     notes: opportunity.notes ?? null,
-    employeesRangeId: opportunity.company.employeesRange?.id ?? null,
-    companyStageId: opportunity.company.companyStage?.id ?? null,
     workModelId: opportunity.workModel?.id ?? null,
-    location: opportunity.company.location ?? null,
-    funding: opportunity.company.funding ?? null,
-    companyDescription: opportunity.company.description ?? null,
-    productDescription: opportunity.company.productDescription ?? null,
-    customersTraction: opportunity.company.customersTraction ?? null,
-    techStack: opportunity.company.techStack ?? null,
-    backendFrontendSplit: opportunity.company.backendFrontendSplit ?? null,
     compensationNotes: opportunity.compensationNotes ?? null,
     domainIds: opportunity.domains.map((item) => item.domain.id),
   };
