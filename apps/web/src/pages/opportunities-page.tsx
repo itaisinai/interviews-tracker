@@ -21,7 +21,22 @@ import { jobStatusOptions, pipelineTypeOptions } from "../lib/enum-labels";
 import { formatDate, titleize } from "../lib/format";
 import type { Opportunity } from "../lib/types";
 
-function mobileOpportunityState(item: Opportunity) {
+// Lightweight opportunity type for table view - matches API response
+type OpportunityListItem = {
+  id: string;
+  slug: string;
+  roleTitle: string;
+  status: string;
+  pipelineType: string;
+  referrerOrConnection: string | null;
+  nextStep: string | null;
+  jobUrl: string | null;
+  updatedAt: string;
+  company: { id: string; name: string };
+  interactions: Array<{ id: string; date: string; type: string }>;
+};
+
+function mobileOpportunityState(item: OpportunityListItem) {
   if (item.pipelineType === "ACTIVE_PROCESS")
     return {
       label: "ACTIVE",
@@ -60,7 +75,7 @@ function mobileOpportunityState(item: Opportunity) {
   };
 }
 
-function mobileOpportunityMeta(item: Opportunity) {
+function mobileOpportunityMeta(item: OpportunityListItem) {
   if (item.nextStep?.trim()) return item.nextStep;
   if (item.referrerOrConnection?.trim()) return item.referrerOrConnection;
   return formatDate(item.updatedAt);
@@ -87,32 +102,76 @@ export function OpportunitiesPage() {
     queryFn: api.options,
     staleTime: Infinity,
   });
-  const query = useMemo(() => {
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (status) params.set("status", status);
-    if (pipeline) params.set("pipeline", pipeline);
-    if (domainId) params.set("domainId", domainId);
-    if (sort) params.set("sort", sort);
-    const value = params.toString();
-    return value ? `?${value}` : "";
-  }, [domainId, pipeline, search, sort, status]);
+  // Fetch all opportunities once - client-side filtering will be instant
   const {
-    data = [],
+    data: allOpportunities = [],
     isLoading,
     isError,
     error,
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["opportunities", query],
-    queryFn: () => api.opportunities(query),
-    staleTime: 30_000,
+    queryKey: ["opportunities-lightweight"],
+    queryFn: api.opportunitiesLightweight,
+    staleTime: 5 * 60 * 1000, // 5 minutes - aggressive caching since we filter client-side
   });
+
+  // Client-side filtering and sorting - instant performance
+  const data = useMemo(() => {
+    let filtered = [...allOpportunities];
+
+    // Search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(
+        (opp) =>
+          opp.company.name.toLowerCase().includes(searchLower) || opp.roleTitle.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Status filter
+    if (status) {
+      filtered = filtered.filter((opp) => opp.status === status);
+    }
+
+    // Pipeline filter
+    if (pipeline === "POTENTIAL") {
+      filtered = filtered.filter((opp) => opp.pipelineType === "POTENTIAL" && opp.interactions.length === 0);
+    } else if (pipeline === "ACTIVE_PROCESS") {
+      filtered = filtered.filter((opp) => opp.interactions.length > 0 && opp.status !== "REJECTED");
+    } else if (pipeline === "ARCHIVED") {
+      filtered = filtered.filter((opp) => opp.pipelineType === "ARCHIVED");
+    } else if (pipeline) {
+      filtered = filtered.filter((opp) => opp.pipelineType === pipeline);
+    }
+
+    // Sorting
+    if (sort === "company") {
+      filtered.sort((a, b) => {
+        const comparison = a.company.name.localeCompare(b.company.name);
+        return sortDirection === "asc" ? comparison : -comparison;
+      });
+    } else if (sort === "role") {
+      filtered.sort((a, b) => {
+        const comparison = a.roleTitle.localeCompare(b.roleTitle);
+        return sortDirection === "asc" ? comparison : -comparison;
+      });
+    } else if (sort === "updated") {
+      filtered.sort((a, b) => {
+        const comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+        return sortDirection === "asc" ? comparison : -comparison;
+      });
+    } else {
+      // Default: sort by updatedAt desc
+      filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    }
+
+    return filtered;
+  }, [allOpportunities, search, status, pipeline, sort, sortDirection]);
   const deleteOpportunity = useMutation({
     mutationFn: (id: string) => api.deleteOpportunity(id),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-lightweight"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       void queryClient.invalidateQueries({ queryKey: ["companies"] });
     },
@@ -129,7 +188,7 @@ export function OpportunitiesPage() {
     [sort, sortDirection]
   );
 
-  const columns = useMemo<ColumnDef<Opportunity>[]>(
+  const columns = useMemo<ColumnDef<OpportunityListItem>[]>(
     () => [
       {
         id: "company",

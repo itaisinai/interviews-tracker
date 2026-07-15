@@ -26,6 +26,7 @@ import {
   deleteOpportunity,
   getOpportunity,
   listOpportunities,
+  listOpportunitiesLightweight,
   updateOpportunity,
 } from "../services/opportunities/opportunity-service.js";
 
@@ -33,6 +34,10 @@ type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export function listOpportunitiesHandler(request: AuthenticatedRequest) {
   return listOpportunities(request.query as Record<string, string | undefined>, request.auth.email);
+}
+
+export function listOpportunitiesLightweightHandler(request: AuthenticatedRequest) {
+  return listOpportunitiesLightweight(request.auth.email);
 }
 
 export function createOpportunityHandler(request: AuthenticatedRequest) {

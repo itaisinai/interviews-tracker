@@ -8,6 +8,7 @@ import {
   findCompanyRecord,
   findOrCreateCompanyByName,
   listCompanyRecords,
+  listCompanyRecordsLightweight,
   resolveCompanyId,
   updateCompanyRecord,
 } from "../../repositories/company-repository.js";
@@ -15,6 +16,10 @@ import {
 export class CompanyService {
   async list(query: Record<string, string | undefined>, ownerEmail: string) {
     return listCompanyRecords(query, ownerEmail);
+  }
+
+  async listLightweight(ownerEmail: string) {
+    return listCompanyRecordsLightweight(ownerEmail);
   }
 
   async get(slugOrId: string, ownerEmail: string) {

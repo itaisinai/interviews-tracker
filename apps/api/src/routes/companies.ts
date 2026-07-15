@@ -11,8 +11,6 @@ import {
   serializeCompanySummary,
   serializeInteraction,
 } from "../lib/serializers.js";
-import { normalizeOverdueScheduledInteractionsForRead } from "../repositories/interaction-read-normalizer.js";
-import { syncOpportunityStatusRecord } from "../repositories/opportunity-repository.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
 import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";
 import { getCompanyService } from "../services/companies/company-service.js";
@@ -67,6 +65,16 @@ companiesRouter.get(
   })
 );
 
+// Lightweight list for table view - optimized for client-side filtering
+companiesRouter.get(
+  "/lightweight",
+  asyncHandler(async (request, response) => {
+    const ownerEmail = (request as AuthenticatedRequest).auth.email;
+    const companies = await getCompanyService().listLightweight(ownerEmail);
+    response.json(companies);
+  })
+);
+
 // Get single company by slug
 companiesRouter.get(
   "/:slugOrId",
@@ -74,8 +82,8 @@ companiesRouter.get(
     const ownerEmail = (request as AuthenticatedRequest).auth.email;
     const slugOrId = request.params.slugOrId;
 
-    const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
-    await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
+    // Removed expensive status sync from read path - queries ALL user interactions
+    // Status sync should happen on write operations (create/update interaction), not reads
 
     const company = await getCompanyService().get(slugOrId, ownerEmail);
 

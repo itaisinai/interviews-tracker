@@ -152,21 +152,61 @@ export async function listOpportunityRecords(query: Record<string, string | unde
   return opportunities.map((opportunity) => promoteOpportunityInteractionsForRead(opportunity));
 }
 
+/**
+ * Lightweight list function for table view - fetches only necessary fields
+ * No status sync, no nested includes, optimized for client-side filtering
+ */
+export async function listOpportunityRecordsLightweight(ownerEmail: string) {
+  const opportunities = await prisma.jobOpportunity.findMany({
+    where: { ownerEmail },
+    select: {
+      id: true,
+      slug: true,
+      roleTitle: true,
+      status: true,
+      pipelineType: true,
+      referrerOrConnection: true,
+      nextStep: true,
+      jobUrl: true,
+      updatedAt: true,
+      company: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      interactions: {
+        select: {
+          id: true,
+          date: true,
+          type: true,
+        },
+        orderBy: { date: "asc" },
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  return opportunities;
+}
+
 export async function getOpportunityRecord(slugOrId: string, ownerEmail: string) {
-  const id = await resolveOpportunityId(slugOrId, ownerEmail);
-  if (!id) {
+  // Optimized: Single query with OR condition instead of two separate queries
+  const opportunity = await prisma.jobOpportunity.findFirst({
+    where: {
+      ownerEmail,
+      OR: [{ id: slugOrId }, { slug: slugOrId }],
+    },
+    include: opportunityInclude,
+  });
+
+  if (!opportunity) {
     throw new Error("Opportunity not found");
   }
 
-  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
-  if (opportunityIds.includes(id)) {
-    await syncOpportunityStatusRecord(id, ownerEmail);
-  }
+  // Removed expensive status sync from read path - this was querying ALL user interactions
+  // Status sync should happen on write operations (create/update interaction), not reads
 
-  const opportunity = await prisma.jobOpportunity.findFirstOrThrow({
-    where: { id, ownerEmail },
-    include: opportunityInclude,
-  });
   return promoteOpportunityInteractionsForRead(opportunity);
 }
 

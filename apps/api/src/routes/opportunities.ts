@@ -8,6 +8,7 @@ import {
   hideOpportunityGmailMessageHandler,
   ignoreOpportunityGmailMessageHandler,
   listOpportunitiesHandler,
+  listOpportunitiesLightweightHandler,
   listOpportunityInteractionsHandler,
   listTrackedOpportunityGmailMessagesHandler,
   parseOpportunityGmailEmailHandler,
@@ -38,6 +39,14 @@ opportunitiesRouter.get(
   asyncHandler(async (request, response) => {
     const opportunities = await listOpportunitiesHandler(request as AuthenticatedRequest);
     response.json(serializeOpportunities(opportunities));
+  })
+);
+
+opportunitiesRouter.get(
+  "/lightweight",
+  asyncHandler(async (request, response) => {
+    const opportunities = await listOpportunitiesLightweightHandler(request as AuthenticatedRequest);
+    response.json(opportunities);
   })
 );
 

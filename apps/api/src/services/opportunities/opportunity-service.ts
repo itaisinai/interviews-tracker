@@ -8,6 +8,7 @@ import {
   deleteOpportunityRecord,
   getOpportunityRecord,
   listOpportunityRecords,
+  listOpportunityRecordsLightweight,
   updateOpportunityRecord,
 } from "../../repositories/opportunity-repository.js";
 
@@ -15,6 +16,10 @@ type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
 export function listOpportunities(query: Record<string, string | undefined>, ownerEmail: string) {
   return listOpportunityRecords(query, ownerEmail);
+}
+
+export function listOpportunitiesLightweight(ownerEmail: string) {
+  return listOpportunityRecordsLightweight(ownerEmail);
 }
 
 export function getOpportunity(id: string, ownerEmail: string) {
