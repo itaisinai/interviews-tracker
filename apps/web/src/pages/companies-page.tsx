@@ -15,7 +15,7 @@ import { formatDate, initials } from "../lib/format";
 export function CompaniesPage() {
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
-  // Use lightweight endpoint - much faster, already does client-side filtering
+  // Use list endpoint - much faster, already does client-side filtering
   const {
     data = [],
     isLoading,
@@ -24,15 +24,15 @@ export function CompaniesPage() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["companies-lightweight"],
-    queryFn: api.companiesLightweight,
+    queryKey: ["companies-list"],
+    queryFn: api.companiesList,
     staleTime: 5 * 60 * 1000, // 5 minutes - aggressive caching since we filter client-side
   });
   const deleteCompany = useMutation({
     mutationFn: (companyName: string) => api.deleteCompany(companyName),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["companies-lightweight"] });
-      void queryClient.invalidateQueries({ queryKey: ["opportunities-lightweight"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies-list"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-list"] });
     },
   });
   const rows = data.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()));

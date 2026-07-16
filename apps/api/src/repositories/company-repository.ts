@@ -83,32 +83,12 @@ export async function resolveCompanyId(slugOrId: string, ownerEmail: string) {
   return bySlug?.id ?? null;
 }
 
-export async function listCompanyRecords(query: Record<string, string | undefined>, ownerEmail: string) {
-  const where: Prisma.CompanyWhereInput = {
-    ownerEmail,
-    isWatchlisted: query.watchlisted === "true" ? true : undefined,
-    OR: query.search
-      ? [
-          { name: { contains: query.search, mode: "insensitive" } },
-          { searchName: { contains: query.search, mode: "insensitive" } },
-        ]
-      : undefined,
-  };
-
-  const companies = await prisma.company.findMany({
-    where,
-    include: companyInclude,
-    orderBy: { updatedAt: "desc" },
-  });
-
-  return companies;
-}
-
 /**
- * Lightweight list function for table view - fetches only necessary fields with aggregated counts
- * No nested opportunities/interactions loading, optimized for client-side filtering
+ * List companies with only necessary fields for table view
+ * Fetches aggregated counts, no nested opportunities/interactions loading
+ * Optimized for client-side filtering
  */
-export async function listCompanyRecordsLightweight(ownerEmail: string) {
+export async function listCompanyRecords(ownerEmail: string) {
   const companies = await prisma.company.findMany({
     where: { ownerEmail },
     select: {

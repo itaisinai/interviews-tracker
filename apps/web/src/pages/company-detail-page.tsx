@@ -31,8 +31,8 @@ export function CompanyDetailPage() {
     mutationFn: (name: string) => api.updateCompany(decodedSlugOrId, { name }),
     onSuccess: (updated) => {
       queryClient.setQueryData(["company", decodedSlugOrId], updated);
-      void queryClient.invalidateQueries({ queryKey: ["companies-lightweight"] });
-      void queryClient.invalidateQueries({ queryKey: ["opportunities-lightweight"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies-list"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-list"] });
       if (updated.slug && updated.slug !== decodedSlugOrId) {
         navigate(`/companies/${encodeURIComponent(updated.slug)}`, { replace: true });
       }
@@ -43,8 +43,8 @@ export function CompanyDetailPage() {
     mutationFn: (interactionSlug: string) => api.deleteInteraction(interactionSlug),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["company", decodedSlugOrId] });
-      void queryClient.invalidateQueries({ queryKey: ["companies-lightweight"] });
-      void queryClient.invalidateQueries({ queryKey: ["opportunities-lightweight"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies-list"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-list"] });
       void queryClient.invalidateQueries({ queryKey: ["interactions"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
@@ -100,7 +100,7 @@ export function CompanyDetailPage() {
         } else {
           // Slug unchanged, just refresh data
           void queryClient.invalidateQueries({ queryKey: ["company", decodedSlugOrId] });
-          void queryClient.invalidateQueries({ queryKey: ["companies-lightweight"] });
+          void queryClient.invalidateQueries({ queryKey: ["companies-list"] });
         }
       }}
     />

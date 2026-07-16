@@ -111,8 +111,8 @@ export function OpportunitiesPage() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["opportunities-lightweight"],
-    queryFn: api.opportunitiesLightweight,
+    queryKey: ["opportunities-list"],
+    queryFn: api.opportunitiesList,
     staleTime: 5 * 60 * 1000, // 5 minutes - aggressive caching since we filter client-side
   });
 
@@ -171,9 +171,9 @@ export function OpportunitiesPage() {
   const deleteOpportunity = useMutation({
     mutationFn: (id: string) => api.deleteOpportunity(id),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["opportunities-lightweight"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-list"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies-list"] });
     },
   });
   const handleSort = useCallback(

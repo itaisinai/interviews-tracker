@@ -64,8 +64,8 @@ export function OpportunityDetailPage() {
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(["opportunity", slug], updated);
-      void queryClient.invalidateQueries({ queryKey: ["opportunities-lightweight"] });
-      void queryClient.invalidateQueries({ queryKey: ["companies-lightweight"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-list"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies-list"] });
       if (updated.slug && updated.slug !== slug) {
         navigate(`/opportunities/${updated.slug}`, { replace: true });
       }

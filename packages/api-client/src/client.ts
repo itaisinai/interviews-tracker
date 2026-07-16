@@ -89,7 +89,7 @@ export const api = {
   addOption: (kind: string, label: string) =>
     request(`/options/${kind}`, { method: "POST", body: JSON.stringify({ label }) }),
   opportunities: (query = "") => request<Opportunity[]>(`/opportunities${query}`),
-  opportunitiesLightweight: () =>
+  opportunitiesList: () =>
     request<
       Array<{
         id: string;
@@ -104,7 +104,7 @@ export const api = {
         company: { id: string; name: string };
         interactions: Array<{ id: string; date: string; type: string }>;
       }>
-    >("/opportunities/lightweight"),
+    >("/opportunities/list"),
   opportunity: (slug: string) => request<Opportunity>(`/opportunities/${slug}`),
   createOpportunity: (body: unknown) =>
     request<Opportunity>("/opportunities", { method: "POST", body: JSON.stringify(body) }),
@@ -124,7 +124,7 @@ export const api = {
     request<Interaction>("/interactions", { method: "POST", body: JSON.stringify(body) }),
   deleteInteraction: (slug: string) => request<void>(`/interactions/${slug}`, { method: "DELETE" }),
   companies: () => request<CompanySummary[]>("/companies"),
-  companiesLightweight: () =>
+  companiesList: () =>
     request<
       Array<{
         id: string;
@@ -145,7 +145,7 @@ export const api = {
         nextInteraction: { date: string; type: string } | null;
         status: string;
       }>
-    >("/companies/lightweight"),
+    >("/companies/list"),
   company: (companyName: string) => request<CompanyDetail>(`/companies/${encodeURIComponent(companyName)}`),
   updateCompany: (slugOrId: string, body: unknown) =>
     request<CompanyDetail>(`/companies/${encodeURIComponent(slugOrId)}`, {
