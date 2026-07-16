@@ -214,7 +214,7 @@ export function AppLayout() {
           </div>
         </aside>
         <header
-          className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm md:z-40"
+          className="fixed inset-x-0 z-50 flex h-16 items-center border-b border-outline-variant bg-background/80 backdrop-blur-sm"
           style={{
             top: "var(--dev-banner-height, 0)",
             left: isDesktop ? `${sidebarWidth}px` : "0",

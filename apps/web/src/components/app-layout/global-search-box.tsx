@@ -108,7 +108,7 @@ export function GlobalSearchBox({ placeholder = "Search..." }: { placeholder?: s
         </button>
       ) : null}
       {shouldShowDropdown ? (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-xl">
+        <div className="absolute left-0 top-[calc(100%+8px)] z-[9999] w-full overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest shadow-xl">
           <div className="max-h-[420px] overflow-auto py-3">
             {isLoading ? (
               <p className="px-5 py-8 text-center text-body-md text-on-surface-variant">Searching...</p>
