@@ -2,7 +2,7 @@ import type { Request } from "express";
 import { z } from "zod";
 
 import { createTimer } from "../lib/logger.js";
-import { interactionInputSchema, opportunityInputSchema } from "../lib/schemas.js";
+import { interactionInputSchema, jobStatusSchema } from "../lib/schemas.js";
 import {
   getOpportunityRecord,
   getOpportunitySummaryRecord,
@@ -86,7 +86,7 @@ export function updateOpportunityHandler(request: AuthenticatedRequest) {
   const partialSchema = z.object({
     roleTitle: z.string().min(1).optional(),
     pipelineType: z.enum(["POTENTIAL", "ACTIVE_PROCESS", "ARCHIVED"]).optional(),
-    status: z.string().optional(),
+    status: jobStatusSchema.optional(),
     referrerOrConnection: z.string().nullish(),
     source: z.string().nullish(),
     jobUrl: z.string().nullish(),
