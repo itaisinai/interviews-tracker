@@ -34,10 +34,10 @@ type AuthenticatedRequest = Request & { auth: { email: string } };
 export const opportunitiesRouter = Router();
 
 opportunitiesRouter.get(
-  "/",
+  "/list",
   asyncHandler(async (request, response) => {
     const opportunities = await listOpportunitiesHandler(request as AuthenticatedRequest);
-    response.json(serializeOpportunities(opportunities));
+    response.json(opportunities);
   })
 );
 

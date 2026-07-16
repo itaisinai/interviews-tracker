@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useQueryClient } from "@tanstack/react-query";
+import type { FormEvent } from "react";
 
 import { Button, InlineLoadingState, MaterialIcon } from "@interviews-tracker/design-system";
 
@@ -20,6 +21,8 @@ import { CompanySummaryCard } from "./company-summary-card";
 type CompanyDetailViewProps = {
   company: CompanyDetail;
   isRefreshing: boolean;
+  isSavingName?: boolean;
+  onSaveName?: (name: string) => void;
   isDeletingCompany: boolean;
   onDeleteCompany: () => void;
   onDeleteInteraction: (interactionSlug: string) => void;
@@ -31,6 +34,8 @@ type CompanyDetailViewProps = {
 export function CompanyDetailView({
   company,
   isRefreshing,
+  isSavingName,
+  onSaveName,
   isDeletingCompany,
   onDeleteCompany,
   onDeleteInteraction,
@@ -153,7 +158,17 @@ export function CompanyDetailView({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="truncate font-title-lg text-title-lg font-bold text-on-background">{company.name}</h1>
+            {onSaveName ? (
+              <EditableTitleField
+                ariaLabel="Company name"
+                className="truncate font-title-lg text-title-lg font-bold text-on-background"
+                value={company.name}
+                isSaving={isSavingName || false}
+                onSave={onSaveName}
+              />
+            ) : (
+              <h1 className="truncate font-title-lg text-title-lg font-bold text-on-background">{company.name}</h1>
+            )}
             {companyBadge ? <Badge tone={companyBadge.tone}>{companyBadge.label}</Badge> : null}
           </div>
           <p className="mt-1 text-body-md text-on-surface-variant">
@@ -315,5 +330,96 @@ export function CompanyDetailView({
         onSelectInteraction={setSelectedInteractionSlug}
       />
     </>
+  );
+}
+
+function EditableTitleField({
+  ariaLabel,
+  className,
+  value,
+  isSaving,
+  onSave,
+}: {
+  ariaLabel: string;
+  className: string;
+  value: string;
+  isSaving: boolean;
+  onSave: (value: string) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraft(value);
+    }
+  }, [isEditing, value]);
+
+  const cancel = () => {
+    setDraft(value);
+    setIsEditing(false);
+  };
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const trimmed = draft.trim();
+    if (!trimmed || trimmed === value) {
+      cancel();
+      return;
+    }
+    onSave(trimmed);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <form className="group/title-edit flex max-w-full items-center gap-1" onSubmit={submit}>
+        <input
+          aria-label={ariaLabel}
+          className={`${className} min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-1 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20`}
+          disabled={isSaving}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              cancel();
+            }
+          }}
+        />
+        <button
+          type="submit"
+          aria-label={`Save ${ariaLabel.toLowerCase()}`}
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition-colors hover:brightness-110 disabled:opacity-50"
+          disabled={isSaving || !draft.trim()}
+        >
+          <MaterialIcon name="check" className="text-[16px]" />
+        </button>
+        <button
+          type="button"
+          aria-label={`Cancel ${ariaLabel.toLowerCase()} edit`}
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-outline-variant/30 text-on-surface-variant transition-colors hover:bg-outline-variant/50"
+          disabled={isSaving}
+          onClick={cancel}
+        >
+          <MaterialIcon name="close" className="text-[16px]" />
+        </button>
+      </form>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="group/title-edit inline-flex max-w-full items-center gap-2 rounded-lg transition-colors hover:bg-surface-container-low/50"
+      onClick={() => setIsEditing(true)}
+      aria-label={`Edit ${ariaLabel.toLowerCase()}`}
+      disabled={isSaving}
+    >
+      <span className={className}>{value}</span>
+      <MaterialIcon
+        name="edit"
+        className="shrink-0 text-[18px] text-on-surface-variant opacity-0 transition-opacity group-hover/title-edit:opacity-100 group-focus/title-edit:opacity-100"
+      />
+    </button>
   );
 }

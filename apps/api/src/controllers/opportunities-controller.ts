@@ -2,7 +2,7 @@ import type { Request } from "express";
 import { z } from "zod";
 
 import { createTimer } from "../lib/logger.js";
-import { interactionInputSchema, opportunityInputSchema } from "../lib/schemas.js";
+import { interactionInputSchema, jobStatusSchema } from "../lib/schemas.js";
 import {
   getOpportunityRecord,
   getOpportunitySummaryRecord,
@@ -32,7 +32,7 @@ import {
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export function listOpportunitiesHandler(request: AuthenticatedRequest) {
-  return listOpportunities(request.query as Record<string, string | undefined>, request.auth.email);
+  return listOpportunities(request.auth.email);
 }
 
 export function createOpportunityHandler(request: AuthenticatedRequest) {
@@ -81,7 +81,26 @@ export function getOpportunityHandler(request: AuthenticatedRequest) {
 }
 
 export function updateOpportunityHandler(request: AuthenticatedRequest) {
-  return updateOpportunity(request.params.slugOrId, opportunityInputSchema.parse(request.body), request.auth.email);
+  // Support partial updates (PATCH-style)
+  // Don't validate companyId/companyName requirement for updates - repository will use existing
+  const partialSchema = z.object({
+    roleTitle: z.string().min(1).optional(),
+    pipelineType: z.enum(["POTENTIAL", "ACTIVE_PROCESS", "ARCHIVED"]).optional(),
+    status: jobStatusSchema.optional(),
+    referrerOrConnection: z.string().nullish(),
+    source: z.string().nullish(),
+    jobUrl: z.string().nullish(),
+    linkedinUrl: z.string().url().nullish(),
+    linkedinJobId: z.string().nullish(),
+    sourceUrl: z.string().url().nullish(),
+    nextStep: z.string().nullish(),
+    notes: z.string().nullish(),
+    workModelId: z.string().nullish(),
+    compensationNotes: z.string().nullish(),
+    domainIds: z.array(z.string()).optional(),
+  });
+
+  return updateOpportunity(request.params.slugOrId, partialSchema.parse(request.body), request.auth.email);
 }
 
 export function deleteOpportunityHandler(request: AuthenticatedRequest) {

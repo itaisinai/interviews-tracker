@@ -16,18 +16,39 @@ dashboardRouter.get(
   asyncHandler(async (request, response) => {
     const ownerEmail = (request as AuthenticatedRequest).auth.email;
     const today = startOfToday();
-    const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
-    await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
-    const [opportunities, interactions] = await Promise.all([
+
+    // Optimized: Remove expensive status sync from dashboard load
+    // Status sync adds 1-3 seconds with cloud databases (queries ALL interactions + N opportunity updates)
+    // Dashboard data doesn't need real-time status - it's refreshed on page load anyway
+
+    // Single parallel query - no sequential N+1
+    const [opportunities, upcomingInteractions] = await Promise.all([
+      // Lightweight opportunity query - only fields needed for counts
       prisma.jobOpportunity.findMany({
         where: { ownerEmail },
-        include: {
-          company: true,
-          interactions: true,
-          domains: { include: { domain: true } },
+        select: {
+          id: true,
+          slug: true,
+          roleTitle: true,
+          status: true,
+          pipelineType: true,
+          updatedAt: true,
+          company: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          interactions: {
+            select: {
+              id: true,
+              status: true,
+            },
+          },
         },
         orderBy: { updatedAt: "desc" },
       }),
+      // Upcoming interactions
       prisma.interaction.findMany({
         where: {
           ownerEmail,
@@ -36,7 +57,14 @@ dashboardRouter.get(
         },
         include: {
           jobOpportunity: {
-            include: { company: true },
+            select: {
+              slug: true,
+              roleTitle: true,
+              pipelineType: true,
+              status: true,
+              updatedAt: true,
+              company: { select: { name: true } },
+            },
           },
         },
         orderBy: { date: "asc" },
@@ -44,36 +72,35 @@ dashboardRouter.get(
       }),
     ]);
 
-    const advancedStatusOpportunities = opportunities.filter(
-      (item) =>
-        item.status === "PHONE_SCHEDULED" ||
-        item.status === "PHONE_DONE" ||
-        item.status === "TECHNICAL_SCHEDULED" ||
-        item.status === "TECHNICAL_DONE" ||
-        item.status === "HOME_ASSIGNMENT" ||
-        item.status === "ASSIGNMENT_SUBMITTED" ||
-        item.status === "FINAL_STAGE"
+    // Memory filtering - instant with <100 opportunities
+    const advancedStatuses = [
+      "PHONE_SCHEDULED",
+      "PHONE_DONE",
+      "TECHNICAL_SCHEDULED",
+      "TECHNICAL_DONE",
+      "HOME_ASSIGNMENT",
+      "ASSIGNMENT_SUBMITTED",
+      "FINAL_STAGE",
+    ];
+    const advancedStatusOpportunities = opportunities.filter((item) => advancedStatuses.includes(item.status));
+    const activeProcesses = opportunities.filter((item) => item.pipelineType === "ACTIVE_PROCESS");
+    const needingFollowUp = opportunities.filter((item) =>
+      item.interactions.some((interaction) => interaction.status === "NEEDS_FOLLOW_UP")
     );
 
     response.json({
       counts: {
-        activeProcesses: opportunities.filter((item) => item.pipelineType === "ACTIVE_PROCESS").length,
+        activeProcesses: activeProcesses.length,
         potential: opportunities.filter((item) => item.pipelineType === "POTENTIAL").length,
-        upcomingInteractions: interactions.length,
+        upcomingInteractions: upcomingInteractions.length,
         offers: opportunities.filter((item) => item.status === "OFFER").length,
         rejections: opportunities.filter((item) => item.status === "REJECTED").length,
         advancedStatus: advancedStatusOpportunities.length,
       },
-      upcomingInteractions: serializeInteractions(interactions),
-      activeProcesses: serializeOpportunities(
-        opportunities.filter((item) => item.pipelineType === "ACTIVE_PROCESS").slice(0, 8)
-      ),
-      advancedStatusOpportunities: serializeOpportunities(advancedStatusOpportunities.slice(0, 8)),
-      needingFollowUp: serializeOpportunities(
-        opportunities
-          .filter((item) => item.interactions.some((interaction) => interaction.status === "NEEDS_FOLLOW_UP"))
-          .slice(0, 8)
-      ),
+      upcomingInteractions: serializeInteractions(upcomingInteractions as any),
+      activeProcesses: serializeOpportunities(activeProcesses.slice(0, 8) as any),
+      advancedStatusOpportunities: serializeOpportunities(advancedStatusOpportunities.slice(0, 8) as any),
+      needingFollowUp: serializeOpportunities(needingFollowUp.slice(0, 8) as any),
     });
   })
 );

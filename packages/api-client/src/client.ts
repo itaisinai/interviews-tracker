@@ -89,6 +89,22 @@ export const api = {
   addOption: (kind: string, label: string) =>
     request(`/options/${kind}`, { method: "POST", body: JSON.stringify({ label }) }),
   opportunities: (query = "") => request<Opportunity[]>(`/opportunities${query}`),
+  opportunitiesList: () =>
+    request<
+      Array<{
+        id: string;
+        slug: string;
+        roleTitle: string;
+        status: string;
+        pipelineType: string;
+        referrerOrConnection: string | null;
+        nextStep: string | null;
+        jobUrl: string | null;
+        updatedAt: string;
+        company: { id: string; name: string };
+        interactions: Array<{ id: string; date: string; type: string }>;
+      }>
+    >("/opportunities/list"),
   opportunity: (slug: string) => request<Opportunity>(`/opportunities/${slug}`),
   createOpportunity: (body: unknown) =>
     request<Opportunity>("/opportunities", { method: "POST", body: JSON.stringify(body) }),
@@ -108,7 +124,34 @@ export const api = {
     request<Interaction>("/interactions", { method: "POST", body: JSON.stringify(body) }),
   deleteInteraction: (slug: string) => request<void>(`/interactions/${slug}`, { method: "DELETE" }),
   companies: () => request<CompanySummary[]>("/companies"),
+  companiesList: () =>
+    request<
+      Array<{
+        id: string;
+        slug: string;
+        name: string;
+        isWatchlisted: boolean;
+        location: string | null;
+        funding: string | null;
+        lastResearchedAt: string | null;
+        updatedAt: string;
+        employees: string | null;
+        stage: string | null;
+        domains: string[];
+        rolesCount: number;
+        activeProcesses: number;
+        potentialOpportunities: number;
+        interactionsCount: number;
+        nextInteraction: { date: string; type: string } | null;
+        status: string;
+      }>
+    >("/companies/list"),
   company: (companyName: string) => request<CompanyDetail>(`/companies/${encodeURIComponent(companyName)}`),
+  updateCompany: (slugOrId: string, body: unknown) =>
+    request<CompanyDetail>(`/companies/${encodeURIComponent(slugOrId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
   enrichCompany: (companyName: string, text: string) =>
     request<{ enrichment: CompanyEnrichment; updatedOpportunities: number }>(
       `/companies/${encodeURIComponent(companyName)}/enrich`,

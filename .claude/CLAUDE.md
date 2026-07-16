@@ -4,6 +4,28 @@ This document provides the primary context for Claude Code sessions working on t
 
 ---
 
+# ⛔ CRITICAL RULE #1 - NEVER COMMIT WITHOUT PERMISSION ⛔
+
+**BEFORE ANY `git commit` OR `git push` COMMAND:**
+
+1. Show the user the git diff
+2. Show the user the proposed commit message
+3. Show what branch you're on
+4. Ask explicitly: "Should I commit this?"
+5. **WAIT** for user to respond "yes" or "proceed"
+
+**NO EXCEPTIONS. NO MATTER HOW OBVIOUS THE COMMIT SEEMS.**
+
+This rule has been violated multiple times. Do not commit even if:
+- The user asked to "fix and commit"
+- You already committed earlier in the session
+- The changes seem safe or small
+- You think the user would approve
+
+**ALWAYS ASK FIRST.**
+
+---
+
 ## 🚨 CRITICAL SAFETY PROTOCOLS 🚨
 
 **READ THIS FIRST - These rules override all other instructions.**
