@@ -29,19 +29,54 @@ export function preserveLinkedinMetadataForUpdate(
   };
 }
 
+// Optimized include - select only needed fields to reduce query time
+// With cloud databases (Neon), each include adds 100-200ms latency
 export const opportunityInclude = {
   company: {
-    include: {
-      employeesRange: true,
-      companyStage: true,
-      domains: { include: { domain: true } },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      searchName: true,
+      linkedinUrl: true,
+      websiteUrl: true,
+      location: true,
+      funding: true,
+      totalRaised: true,
+      latestRound: true,
+      description: true,
+      productDescription: true,
+      customersTraction: true,
+      techStack: true,
+      backendFrontendSplit: true,
+      isWatchlisted: true,
+      employeesRange: { select: { id: true, label: true } },
+      companyStage: { select: { id: true, label: true } },
+      domains: {
+        select: {
+          domain: { select: { id: true, label: true } },
+        },
+      },
     },
   },
-  workModel: true,
-  domains: { include: { domain: true } },
-  interactions: { orderBy: { date: "asc" as const } },
-  notesList: { orderBy: { createdAt: "desc" as const } },
-  tasks: { orderBy: { dueDate: "asc" as const } },
+  workModel: { select: { id: true, label: true } },
+  domains: {
+    select: {
+      domain: { select: { id: true, label: true } },
+    },
+  },
+  interactions: {
+    orderBy: { date: "asc" as const },
+    // Load all fields - needed for detail page
+  },
+  notesList: {
+    orderBy: { createdAt: "desc" as const },
+    // Load all fields - needed for detail page
+  },
+  tasks: {
+    orderBy: { dueDate: "asc" as const },
+    // Load all fields - needed for detail page
+  },
   compensation: true,
 } satisfies Prisma.JobOpportunityInclude;
 
@@ -104,69 +139,61 @@ export async function resolveOpportunityId(slugOrId: string, ownerEmail: string)
   return bySlug?.id ?? null;
 }
 
-export async function listOpportunityRecords(query: Record<string, string | undefined>, ownerEmail: string) {
-  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
-  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
-
-  const where: Prisma.JobOpportunityWhereInput = {
-    ownerEmail,
-    status: query.status
-      ? { equals: query.status as Prisma.EnumJobStatusFilter<"JobOpportunity">["equals"] }
-      : undefined,
-    OR: query.search
-      ? [
-          { company: { name: { contains: query.search, mode: "insensitive" } } },
-          { roleTitle: { contains: query.search, mode: "insensitive" } },
-        ]
-      : undefined,
-    domains: query.domainId ? { some: { domainId: query.domainId } } : undefined,
-  };
-
-  // Custom pipeline filtering logic
-  if (query.pipeline === "POTENTIAL") {
-    // POTENTIAL: Only leads WITHOUT any interactions
-    where.interactions = { none: {} };
-    where.pipelineType = "POTENTIAL";
-  } else if (query.pipeline === "ACTIVE_PROCESS") {
-    // ACTIVE_PROCESS: Any process WITH interactions (exclude REJECTED status)
-    where.interactions = { some: {} };
-    // Preserve any existing status filter, or default to excluding REJECTED
-    if (!where.status) {
-      where.status = { not: "REJECTED" };
-    }
-  } else if (query.pipeline === "ARCHIVED") {
-    // ARCHIVED: Rejected or closed opportunities (pipeline=ARCHIVED or relevant statuses)
-    // Keep opportunities with pipelineType=ARCHIVED even if status isn't explicitly REJECTED
-    where.pipelineType = "ARCHIVED";
-  } else if (query.pipeline) {
-    // Fallback for other pipeline types
-    where.pipelineType = query.pipeline as PipelineType;
-  }
-
+/**
+ * List opportunities with only necessary fields for table view
+ * No status sync, no nested includes, optimized for client-side filtering
+ */
+export async function listOpportunityRecords(ownerEmail: string) {
   const opportunities = await prisma.jobOpportunity.findMany({
-    where,
-    include: opportunityInclude,
-    orderBy: query.sort === "nextInteraction" ? { interactions: { _count: "desc" } } : { updatedAt: "desc" },
+    where: { ownerEmail },
+    select: {
+      id: true,
+      slug: true,
+      roleTitle: true,
+      status: true,
+      pipelineType: true,
+      referrerOrConnection: true,
+      nextStep: true,
+      jobUrl: true,
+      updatedAt: true,
+      company: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      interactions: {
+        select: {
+          id: true,
+          date: true,
+          type: true,
+        },
+        orderBy: { date: "asc" },
+      },
+    },
+    orderBy: { updatedAt: "desc" },
   });
 
-  return opportunities.map((opportunity) => promoteOpportunityInteractionsForRead(opportunity));
+  return opportunities;
 }
 
 export async function getOpportunityRecord(slugOrId: string, ownerEmail: string) {
-  const id = await resolveOpportunityId(slugOrId, ownerEmail);
-  if (!id) {
+  // Optimized: Single query with OR condition instead of two separate queries
+  const opportunity = await prisma.jobOpportunity.findFirst({
+    where: {
+      ownerEmail,
+      OR: [{ id: slugOrId }, { slug: slugOrId }],
+    },
+    include: opportunityInclude,
+  });
+
+  if (!opportunity) {
     throw new Error("Opportunity not found");
   }
 
-  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
-  if (opportunityIds.includes(id)) {
-    await syncOpportunityStatusRecord(id, ownerEmail);
-  }
+  // Removed expensive status sync from read path - this was querying ALL user interactions
+  // Status sync should happen on write operations (create/update interaction), not reads
 
-  const opportunity = await prisma.jobOpportunity.findFirstOrThrow({
-    where: { id, ownerEmail },
-    include: opportunityInclude,
-  });
   return promoteOpportunityInteractionsForRead(opportunity);
 }
 
@@ -202,40 +229,86 @@ export async function createOpportunityRecord(input: OpportunityInput, ownerEmai
 
 export async function updateOpportunityRecord(
   slugOrId: string,
-  input: OpportunityInput,
+  input: Partial<OpportunityInput>,
   ownerEmail: string,
   companyId?: string
 ) {
   const id = await resolveOpportunityId(slugOrId, ownerEmail);
   if (!id) throw new Error("Opportunity not found");
 
-  const opportunity = await prisma.$transaction(async (tx) => {
-    const existing = await tx.jobOpportunity.findFirst({
-      where: { id, ownerEmail },
-      include: { company: { select: { name: true } } },
-    });
+  // Optimized: Support partial updates, avoid unnecessary operations
+  const opportunity = await prisma.$transaction(
+    async (tx) => {
+      const existing = await tx.jobOpportunity.findFirst({
+        where: { id, ownerEmail },
+        include: {
+          company: { select: { name: true } },
+          domains: { select: { domainId: true } },
+        },
+      });
 
-    if (!existing) throw new Error("Opportunity not found");
+      if (!existing) throw new Error("Opportunity not found");
 
-    const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input, existing);
-    const finalCompanyId = companyId || existing.companyId;
+      const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input as OpportunityInput, existing);
+      const finalCompanyId = companyId || existing.companyId;
 
-    // Get company name for slug regeneration if needed
-    let companyName = existing.company.name;
-    if (companyId && companyId !== existing.companyId) {
-      const company = await tx.company.findUnique({ where: { id: companyId }, select: { name: true } });
-      if (!company) throw new Error("Company not found");
-      companyName = company.name;
+      // Only regenerate slug if company or role actually changed
+      let slug = existing.slug;
+      const companyChanged = companyId && companyId !== existing.companyId;
+      const roleChanged = input.roleTitle !== undefined && input.roleTitle !== existing.roleTitle;
+
+      if (!slug || companyChanged || roleChanged) {
+        let companyName = existing.company.name;
+        if (companyChanged) {
+          const company = await tx.company.findUnique({ where: { id: companyId }, select: { name: true } });
+          if (!company) throw new Error("Company not found");
+          companyName = company.name;
+        }
+        const newRoleTitle = input.roleTitle ?? existing.roleTitle;
+        slug = await createUniqueOpportunitySlug(companyName, newRoleTitle, ownerEmail, tx, id);
+      }
+
+      // Build update data - only include provided fields
+      const updateData: Prisma.JobOpportunityUpdateInput = {
+        slug,
+        ...(input.roleTitle !== undefined && { roleTitle: input.roleTitle }),
+        ...(input.pipelineType !== undefined && { pipelineType: input.pipelineType }),
+        ...(input.status !== undefined && { status: input.status }),
+        ...(input.referrerOrConnection !== undefined && { referrerOrConnection: input.referrerOrConnection }),
+        ...(input.source !== undefined && { source: input.source }),
+        ...(input.jobUrl !== undefined && { jobUrl: input.jobUrl }),
+        ...(input.linkedinUrl !== undefined && { linkedinUrl: input.linkedinUrl }),
+        ...(input.linkedinJobId !== undefined && { linkedinJobId: inputWithPreservedMetadata.linkedinJobId }),
+        ...(input.sourceUrl !== undefined && { sourceUrl: inputWithPreservedMetadata.sourceUrl }),
+        ...(input.nextStep !== undefined && { nextStep: input.nextStep }),
+        ...(input.notes !== undefined && { notes: input.notes }),
+        ...(input.compensationNotes !== undefined && { compensationNotes: input.compensationNotes }),
+        ...(input.workModelId !== undefined && {
+          workModel: input.workModelId ? { connect: { id: input.workModelId } } : { disconnect: true },
+        }),
+      };
+
+      // Only handle domains if they were provided in the input
+      if (input.domainIds !== undefined) {
+        const existingDomainIds = new Set(existing.domains.map((d) => d.domainId));
+        const newDomainIds = new Set(input.domainIds);
+        const domainsChanged =
+          existingDomainIds.size !== newDomainIds.size || [...existingDomainIds].some((id) => !newDomainIds.has(id));
+
+        if (domainsChanged) {
+          await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
+          updateData.domains = {
+            create: input.domainIds.map((domainId) => ({ ownerEmail, domain: { connect: { id: domainId } } })),
+          };
+        }
+      }
+
+      return tx.jobOpportunity.update({ where: { id }, data: updateData, include: opportunityInclude });
+    },
+    {
+      timeout: 10000, // 10 seconds instead of default 5
     }
-
-    const slug =
-      existing.slug ||
-      (await createUniqueOpportunitySlug(companyName, inputWithPreservedMetadata.roleTitle, ownerEmail, tx, id));
-    const data = toWrite({ ...inputWithPreservedMetadata, companyId: finalCompanyId }, ownerEmail);
-
-    await tx.jobOpportunityDomain.deleteMany({ where: { jobOpportunityId: id, ownerEmail } });
-    return tx.jobOpportunity.update({ where: { id }, data: { ...data, slug }, include: opportunityInclude });
-  });
+  );
 
   return promoteOpportunityInteractionsForRead(opportunity);
 }

@@ -57,15 +57,15 @@ export function OpportunityDetailPage() {
   });
   const updateOpportunityTitle = useMutation({
     mutationFn: (updates: Pick<Opportunity, "roleTitle">) => {
-      if (!data) {
-        throw new Error("Opportunity is not loaded");
-      }
-      return api.updateOpportunity(opportunitySlug, buildOpportunityInput(data, updates));
+      // Only send what changed - not the entire opportunity
+      return api.updateOpportunity(opportunitySlug, {
+        roleTitle: updates.roleTitle,
+      });
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(["opportunity", slug], updated);
-      void queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+      void queryClient.invalidateQueries({ queryKey: ["opportunities-list"] });
+      void queryClient.invalidateQueries({ queryKey: ["companies-list"] });
       if (updated.slug && updated.slug !== slug) {
         navigate(`/opportunities/${updated.slug}`, { replace: true });
       }
@@ -170,17 +170,12 @@ export function OpportunityDetailPage() {
       <div className="hidden md:block">
         <PageIntro
           title={
-            <EditableTitleField
-              ariaLabel="Company name"
-              className="font-headline-lg text-headline-lg text-on-background"
-              value={data.company.name}
-              isSaving={updateOpportunityTitle.isPending}
-              onSave={(companyName) =>
-                updateOpportunityTitle.mutate({
-                  roleTitle: data.roleTitle,
-                })
-              }
-            />
+            <Link
+              to={`/companies/${data.company.slug}`}
+              className="font-headline-lg text-headline-lg text-on-background hover:text-primary transition-colors"
+            >
+              {data.company.name}
+            </Link>
           }
           description={
             <EditableTitleField
@@ -390,36 +385,6 @@ function EditableTitleField({
       />
     </button>
   );
-}
-
-function buildOpportunityInput(opportunity: Opportunity, updates: Pick<Opportunity, "roleTitle">) {
-  return {
-    companyName: opportunity.company.name,
-    companySearchName: opportunity.company.searchName ?? null,
-    roleTitle: updates.roleTitle,
-    pipelineType: opportunity.pipelineType,
-    status: opportunity.status,
-    referrerOrConnection: opportunity.referrerOrConnection ?? null,
-    source: opportunity.source ?? null,
-    jobUrl: opportunity.jobUrl ?? null,
-    linkedinUrl: opportunity.linkedinUrl ?? null,
-    linkedinJobId: opportunity.linkedinJobId ?? null,
-    sourceUrl: opportunity.sourceUrl ?? null,
-    nextStep: opportunity.nextStep ?? null,
-    notes: opportunity.notes ?? null,
-    employeesRangeId: opportunity.company.employeesRange?.id ?? null,
-    companyStageId: opportunity.company.companyStage?.id ?? null,
-    workModelId: opportunity.workModel?.id ?? null,
-    location: opportunity.company.location ?? null,
-    funding: opportunity.company.funding ?? null,
-    companyDescription: opportunity.company.description ?? null,
-    productDescription: opportunity.company.productDescription ?? null,
-    customersTraction: opportunity.company.customersTraction ?? null,
-    techStack: opportunity.company.techStack ?? null,
-    backendFrontendSplit: opportunity.company.backendFrontendSplit ?? null,
-    compensationNotes: opportunity.compensationNotes ?? null,
-    domainIds: opportunity.domains.map((item) => item.domain.id),
-  };
 }
 
 function FocusedInteractionCard({

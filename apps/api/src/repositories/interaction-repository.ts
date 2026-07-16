@@ -54,8 +54,10 @@ export async function resolveInteractionId(slugOrId: string, ownerEmail: string)
 }
 
 export async function listInteractionRecords(ownerEmail: string) {
-  const opportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
-  await Promise.all(opportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
+  // Optimized: Remove expensive status sync from list endpoint
+  // Status sync queries ALL interactions + updates N opportunities sequentially
+  // Adds 1-3 seconds latency with cloud databases
+  // Client can handle overdue status promotion without DB updates
 
   const interactions = await prisma.interaction.findMany({
     where: { ownerEmail },

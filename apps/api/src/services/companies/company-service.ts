@@ -13,8 +13,8 @@ import {
 } from "../../repositories/company-repository.js";
 
 export class CompanyService {
-  async list(query: Record<string, string | undefined>, ownerEmail: string) {
-    return listCompanyRecords(query, ownerEmail);
+  async list(ownerEmail: string) {
+    return listCompanyRecords(ownerEmail);
   }
 
   async get(slugOrId: string, ownerEmail: string) {

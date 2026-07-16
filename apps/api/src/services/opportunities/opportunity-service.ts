@@ -13,8 +13,8 @@ import {
 
 type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
-export function listOpportunities(query: Record<string, string | undefined>, ownerEmail: string) {
-  return listOpportunityRecords(query, ownerEmail);
+export function listOpportunities(ownerEmail: string) {
+  return listOpportunityRecords(ownerEmail);
 }
 
 export function getOpportunity(id: string, ownerEmail: string) {
@@ -107,8 +107,8 @@ export async function createOpportunity(
   return opportunity;
 }
 
-export async function updateOpportunity(id: string, input: OpportunityInput, ownerEmail: string) {
-  // Handle company change if companyName provided
+export async function updateOpportunity(id: string, input: Partial<OpportunityInput>, ownerEmail: string) {
+  // Handle company change if companyName provided (optional for partial updates)
   let companyId: string | undefined;
 
   if (input.companyName) {

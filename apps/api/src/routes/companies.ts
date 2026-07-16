@@ -11,8 +11,6 @@ import {
   serializeCompanySummary,
   serializeInteraction,
 } from "../lib/serializers.js";
-import { normalizeOverdueScheduledInteractionsForRead } from "../repositories/interaction-read-normalizer.js";
-import { syncOpportunityStatusRecord } from "../repositories/opportunity-repository.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
 import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";
 import { getCompanyService } from "../services/companies/company-service.js";
@@ -25,45 +23,13 @@ function isPresent(value: string | null | undefined) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-// List all companies (real Company entities, not aggregated from opportunities)
+// List companies - optimized for client-side filtering
 companiesRouter.get(
-  "/",
+  "/list",
   asyncHandler(async (request, response) => {
     const ownerEmail = (request as AuthenticatedRequest).auth.email;
-    const query = request.query as Record<string, string | undefined>;
-
-    const companies = await getCompanyService().list(query, ownerEmail);
-
-    const companySummaries = companies.map((company) => {
-      const interactions = company.opportunities.flatMap((opp) => opp.interactions);
-      const nextInteraction =
-        interactions.filter((interaction) => interaction.date >= new Date()).sort((a, b) => +a.date - +b.date)[0] ??
-        null;
-
-      const primaryOpportunity = company.opportunities[0];
-
-      return serializeCompanySummary({
-        id: company.id,
-        slug: company.slug,
-        name: company.name,
-        isWatchlisted: company.isWatchlisted,
-        rolesCount: company.opportunities.length,
-        activeProcesses: company.opportunities.filter((opp) => opp.pipelineType === "ACTIVE_PROCESS").length,
-        potentialOpportunities: company.opportunities.filter((opp) => opp.pipelineType === "POTENTIAL").length,
-        interactionsCount: interactions.length,
-        nextInteraction: nextInteraction ? serializeInteraction(nextInteraction) : null,
-        status: primaryOpportunity?.status ?? "RESEARCH_LEAD",
-        employees: company.employeesRange?.label ?? null,
-        stage: company.companyStage?.label ?? null,
-        domains: company.domains.map((d) => d.domain.label),
-        location: company.location ?? null,
-        funding: company.funding ?? null,
-        lastResearchedAt: company.lastResearchedAt ?? null,
-        updatedAt: company.updatedAt,
-      });
-    });
-
-    response.json(companySummaries);
+    const companies = await getCompanyService().list(ownerEmail);
+    response.json(companies);
   })
 );
 
@@ -74,8 +40,8 @@ companiesRouter.get(
     const ownerEmail = (request as AuthenticatedRequest).auth.email;
     const slugOrId = request.params.slugOrId;
 
-    const overdueOpportunityIds = await normalizeOverdueScheduledInteractionsForRead(ownerEmail);
-    await Promise.all(overdueOpportunityIds.map((id) => syncOpportunityStatusRecord(id, ownerEmail)));
+    // Removed expensive status sync from read path - queries ALL user interactions
+    // Status sync should happen on write operations (create/update interaction), not reads
 
     const company = await getCompanyService().get(slugOrId, ownerEmail);
 

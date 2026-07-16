@@ -83,25 +83,87 @@ export async function resolveCompanyId(slugOrId: string, ownerEmail: string) {
   return bySlug?.id ?? null;
 }
 
-export async function listCompanyRecords(query: Record<string, string | undefined>, ownerEmail: string) {
-  const where: Prisma.CompanyWhereInput = {
-    ownerEmail,
-    isWatchlisted: query.watchlisted === "true" ? true : undefined,
-    OR: query.search
-      ? [
-          { name: { contains: query.search, mode: "insensitive" } },
-          { searchName: { contains: query.search, mode: "insensitive" } },
-        ]
-      : undefined,
-  };
-
+/**
+ * List companies with only necessary fields for table view
+ * Fetches aggregated counts, no nested opportunities/interactions loading
+ * Optimized for client-side filtering
+ */
+export async function listCompanyRecords(ownerEmail: string) {
   const companies = await prisma.company.findMany({
-    where,
-    include: companyInclude,
+    where: { ownerEmail },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      isWatchlisted: true,
+      location: true,
+      funding: true,
+      lastResearchedAt: true,
+      updatedAt: true,
+      employeesRange: {
+        select: { label: true },
+      },
+      companyStage: {
+        select: { label: true },
+      },
+      domains: {
+        select: {
+          domain: { select: { label: true } },
+        },
+      },
+      opportunities: {
+        select: {
+          id: true,
+          status: true,
+          pipelineType: true,
+          interactions: {
+            select: {
+              id: true,
+              date: true,
+              type: true,
+            },
+            where: {
+              date: { gte: new Date() },
+            },
+            orderBy: { date: "asc" },
+            take: 1, // Only get next upcoming interaction
+          },
+        },
+      },
+    },
     orderBy: { updatedAt: "desc" },
   });
 
-  return companies;
+  // Transform to include aggregated counts
+  return companies.map((company) => {
+    const allInteractions = company.opportunities.flatMap((opp) => opp.interactions);
+    const nextInteraction = allInteractions.sort((a, b) => a.date.getTime() - b.date.getTime())[0] || null;
+
+    return {
+      id: company.id,
+      slug: company.slug,
+      name: company.name,
+      isWatchlisted: company.isWatchlisted,
+      location: company.location,
+      funding: company.funding,
+      lastResearchedAt: company.lastResearchedAt,
+      updatedAt: company.updatedAt,
+      employees: company.employeesRange?.label || null,
+      stage: company.companyStage?.label || null,
+      domains: company.domains.map((d) => d.domain.label),
+      rolesCount: company.opportunities.length,
+      activeProcesses: company.opportunities.filter((opp) => opp.pipelineType === "ACTIVE_PROCESS").length,
+      potentialOpportunities: company.opportunities.filter((opp) => opp.pipelineType === "POTENTIAL").length,
+      interactionsCount: allInteractions.length,
+      nextInteraction: nextInteraction
+        ? {
+            date: nextInteraction.date.toISOString(),
+            type: nextInteraction.type,
+          }
+        : null,
+      status: company.opportunities[0]?.status || "RESEARCH_LEAD",
+    };
+  });
 }
 
 export async function findCompanyRecord(slugOrId: string, ownerEmail: string) {
