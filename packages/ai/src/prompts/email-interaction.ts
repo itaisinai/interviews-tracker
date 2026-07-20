@@ -17,6 +17,11 @@ export const emailInteractionParserSkill = `
 - Use the email Date header only as a fallback for email timestamp, not meeting time.
 - Never shift timezone manually if the input already includes an ISO date from calendar parsing.
 - Sender name and sender email should come from the parsed From header.
+- If the From header is an automated sender (noreply@, no-reply@, notifications@), look for the actual person's name in:
+  - Email signature (name at the end)
+  - "From:" or "Sent by:" mentions in the body
+  - Calendar organizer if available
+  - Do NOT use the company name as the person name
 - If sender name or email exists, do not call them unknown.
 - Keep notes focused on the actual hiring interaction and preserve important details.
 - Put the human-readable result of the interaction in outcome.
