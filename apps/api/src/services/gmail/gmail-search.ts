@@ -124,25 +124,134 @@ export async function searchGmailMessages(input: {
 
     const executedQueries = [...queries, ...relatedDomainQueries];
 
-    const candidates = Array.from(messageMap.values()).map((message) => {
-      const candidate = mapMessageCandidate(message);
-      return {
-        ...candidate,
-        threadId: candidate.threadId || message.threadId || "",
-        relevance: classifySearchCandidateFallback({
-          messageId: candidate.id,
-          companyName: input.companyName,
-          companyAliases: [input.companySearchName],
-          roleTitle: input.roleTitle ?? null,
-          subject: candidate.subject,
-          from: candidate.from,
-          snippet: candidate.snippet,
-          date: candidate.date,
-          senderDomain: senderDomainFromHeader(candidate.from),
-          searchQuery: message.query,
-        }),
-      };
-    });
+    const candidates = Array.from(messageMap.values())
+      .map((message) => {
+        const candidate = mapMessageCandidate(message);
+        const senderDomain = senderDomainFromHeader(candidate.from);
+        return {
+          ...candidate,
+          threadId: candidate.threadId || message.threadId || "",
+          senderDomain,
+          relevance: classifySearchCandidateFallback({
+            messageId: candidate.id,
+            companyName: input.companyName,
+            companyAliases: [input.companySearchName],
+            roleTitle: input.roleTitle ?? null,
+            subject: candidate.subject,
+            from: candidate.from,
+            snippet: candidate.snippet,
+            date: candidate.date,
+            senderDomain,
+            searchQuery: message.query,
+          }),
+        };
+      })
+      .filter((candidate) => {
+        // Pre-filter: Remove obvious automated emails before AI classification
+        const from = candidate.from.toLowerCase();
+        const subject = candidate.subject.toLowerCase();
+        const senderDomain = candidate.senderDomain?.toLowerCase() ?? "";
+
+        // Helper: Check if subject has meaningful job-related content
+        const hasMeaningfulContent = () => {
+          const meaningfulKeywords = [
+            "opportunity",
+            "position",
+            "role",
+            "application",
+            "offer",
+            "interview",
+            "assignment",
+            "assessment",
+            "take-home",
+            "challenge",
+            "recruiter",
+            "hiring",
+            "join our team",
+            "we're looking for",
+          ];
+          return meaningfulKeywords.some((keyword) => subject.includes(keyword));
+        };
+
+        // 1. Google Calendar notifications - always filter
+        if (from.includes("calendar-notification@google.com") || from.includes("calendar@google.com")) {
+          logInfo("gmail", "pre-filtered google calendar", {
+            company: input.companyName,
+            subject: candidate.subject,
+            from: candidate.from,
+            reason: "google calendar notification",
+          });
+          return false;
+        }
+
+        // 2. Pure reminder/notification subjects - filter regardless of sender
+        if (subject.startsWith("notification:") || subject.startsWith("reminder:") || subject.startsWith("alert:")) {
+          logInfo("gmail", "pre-filtered notification subject", {
+            company: input.companyName,
+            subject: candidate.subject,
+            from: candidate.from,
+            reason: "notification/reminder subject prefix",
+          });
+          return false;
+        }
+
+        // 3. Vendor notification platforms (e.g., comeet-notifications.com)
+        // Only filter if it's from the "notifications@" sender AND has no meaningful content
+        if (senderDomain.includes("-notifications.com") || senderDomain.includes("-notification.com")) {
+          // Always filter if from "notifications@" or "notification@" sender
+          if (from.includes("notifications@") || from.includes("notification@")) {
+            logInfo("gmail", "pre-filtered vendor notification sender", {
+              company: input.companyName,
+              subject: candidate.subject,
+              from: candidate.from,
+              reason: "vendor notifications@ sender",
+            });
+            return false;
+          }
+          // For other senders on notification domains (like no-reply@), check content
+          // If it has meaningful keywords, keep it (it's actual recruiting content)
+          if (hasMeaningfulContent()) {
+            logInfo("gmail", "kept vendor platform email with content", {
+              company: input.companyName,
+              subject: candidate.subject,
+              from: candidate.from,
+              reason: "has meaningful job-related content",
+            });
+            return true;
+          }
+        }
+
+        // 4. Generic automated senders - but only if no meaningful content
+        const strictAutomatedPatterns = ["donotreply@", "do-not-reply@", "alerts@", "mailer@", "automated@", "system@"];
+        if (strictAutomatedPatterns.some((pattern) => from.includes(pattern))) {
+          logInfo("gmail", "pre-filtered strict automated sender", {
+            company: input.companyName,
+            subject: candidate.subject,
+            from: candidate.from,
+            reason: "strict automated sender pattern",
+          });
+          return false;
+        }
+
+        // 5. Common unrelated patterns
+        const unrelatedPatterns = ["receipt", "invoice", "order confirmation", "shipping", "delivery"];
+        if (
+          unrelatedPatterns.some((pattern) => subject.includes(pattern)) &&
+          !subject.includes("interview") &&
+          !subject.includes("recruiter")
+        ) {
+          logInfo("gmail", "pre-filtered unrelated content", {
+            company: input.companyName,
+            subject: candidate.subject,
+            from: candidate.from,
+            reason: "unrelated subject pattern",
+          });
+          return false;
+        }
+
+        // Keep everything else (including noreply@ if it might be recruiting)
+        return true;
+      });
 
     let classifications: Array<z.infer<typeof gmailEmailClassificationSchema>> = [];
 
@@ -314,6 +423,93 @@ export async function findGmailOpportunityCandidates(input: {
       { headers: { Authorization: `Bearer ${access.accessToken}` } }
     );
     const candidate = mapMessageCandidate({ ...detail, threadId: detail.threadId ?? message.threadId ?? "" });
+
+    // Pre-filter: Remove obvious automated emails before AI classification
+    // Skip this for suppressed messages (they were already classified)
+    if (!isSuppressed) {
+      const from = candidate.from.toLowerCase();
+      const subject = candidate.subject.toLowerCase();
+      const senderDomain = senderDomainFromHeader(candidate.from)?.toLowerCase() ?? "";
+
+      // Helper: Check if subject has meaningful job-related content
+      const hasMeaningfulContent = () => {
+        const meaningfulKeywords = [
+          "opportunity",
+          "position",
+          "role",
+          "application",
+          "offer",
+          "interview",
+          "assignment",
+          "assessment",
+          "take-home",
+          "challenge",
+          "recruiter",
+          "hiring",
+          "join our team",
+          "we're looking for",
+        ];
+        return meaningfulKeywords.some((keyword) => subject.includes(keyword));
+      };
+
+      // 1. Google Calendar notifications - always filter
+      if (from.includes("calendar-notification@google.com") || from.includes("calendar@google.com")) {
+        console.log(`[Gmail Search] ❌ PRE-FILTERED (google calendar): ${candidate.subject} (from: ${candidate.from})`);
+        continue;
+      }
+
+      // 2. Pure reminder/notification subjects
+      if (subject.startsWith("notification:") || subject.startsWith("reminder:") || subject.startsWith("alert:")) {
+        console.log(
+          `[Gmail Search] ❌ PRE-FILTERED (notification subject): ${candidate.subject} (from: ${candidate.from})`
+        );
+        continue;
+      }
+
+      // 3. Vendor notification platforms - smarter filtering
+      if (senderDomain.includes("-notifications.com") || senderDomain.includes("-notification.com")) {
+        // Always filter notifications@ sender
+        if (from.includes("notifications@") || from.includes("notification@")) {
+          console.log(
+            `[Gmail Search] ❌ PRE-FILTERED (vendor notifications@ sender): ${candidate.subject} (from: ${candidate.from})`
+          );
+          continue;
+        }
+        // For other senders (like no-reply@), check if it has meaningful content
+        if (hasMeaningfulContent()) {
+          console.log(
+            `[Gmail Search] ✅ KEPT (vendor platform with content): ${candidate.subject} (from: ${candidate.from})`
+          );
+          // Fall through - keep this email
+        } else {
+          console.log(
+            `[Gmail Search] ❌ PRE-FILTERED (vendor platform no content): ${candidate.subject} (from: ${candidate.from})`
+          );
+          continue;
+        }
+      }
+
+      // 4. Strict automated senders
+      const strictAutomatedPatterns = ["donotreply@", "do-not-reply@", "alerts@", "mailer@", "automated@", "system@"];
+      if (strictAutomatedPatterns.some((pattern) => from.includes(pattern))) {
+        console.log(
+          `[Gmail Search] ❌ PRE-FILTERED (strict automated): ${candidate.subject} (from: ${candidate.from})`
+        );
+        continue;
+      }
+
+      // 5. Common unrelated patterns
+      const unrelatedPatterns = ["receipt", "invoice", "order confirmation", "shipping", "delivery"];
+      if (
+        unrelatedPatterns.some((pattern) => subject.includes(pattern)) &&
+        !subject.includes("interview") &&
+        !subject.includes("recruiter")
+      ) {
+        console.log(`[Gmail Search] ❌ PRE-FILTERED (unrelated): ${candidate.subject} (from: ${candidate.from})`);
+        continue;
+      }
+    }
+
     console.log(
       `[Gmail Search] ✅ KEPT message: ${candidate.subject} (from: ${candidate.from})${suppressionStatus ? ` [${suppressionStatus}]` : ""}`
     );

@@ -143,16 +143,10 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
       return;
     }
 
+    // Always show selection UI, even for 1 email
+    // This allows the user to review before importing
     if (searchResults.candidates.length > 0) {
-      const highConfidenceEmail = searchResults.candidates[0];
-
-      if (searchResults.candidates.length === 1) {
-        // Store the message ID so it gets attached after creation
-        setAllGmailMessageIds([highConfidenceEmail.id]);
-        parseEmail.mutate(highConfidenceEmail.id);
-      } else {
-        setStep("select-candidate");
-      }
+      setStep("select-candidate");
     }
   }, [searchResults]);
 
