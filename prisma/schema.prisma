@@ -61,6 +61,16 @@ enum GmailMessageStateStatus {
   IGNORED
 }
 
+enum OpportunitySource {
+  GMAIL        // Imported from Gmail
+  TELEGRAM     // Posted via Telegram bot
+  LINKEDIN     // Imported from LinkedIn
+  MANUAL       // Manually entered/raw text with AI parsing
+  API          // Created via API
+  CHATBOT      // From chatbot interface
+  OTHER        // Other sources
+}
+
 model Company {
   id                   String              @id @default(cuid())
   ownerEmail           String
@@ -121,7 +131,7 @@ model JobOpportunity {
   pipelineType         PipelineType
   status               JobStatus
   referrerOrConnection String?
-  source               String?
+  source               OpportunitySource?
   jobUrl               String?
   linkedinUrl          String?
   linkedinJobId        String?

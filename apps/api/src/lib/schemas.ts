@@ -21,6 +21,7 @@ export {
   noteInputSchema,
   offerStatusSchema,
   opportunityInputSchema,
+  opportunitySourceSchema,
   pipelineTypeSchema,
   taskInputSchema,
   taskStatusSchema,

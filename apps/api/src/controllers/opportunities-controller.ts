@@ -2,7 +2,7 @@ import type { Request } from "express";
 import { z } from "zod";
 
 import { createTimer } from "../lib/logger.js";
-import { interactionInputSchema, jobStatusSchema } from "../lib/schemas.js";
+import { interactionInputSchema, jobStatusSchema, opportunitySourceSchema } from "../lib/schemas.js";
 import {
   getOpportunityRecord,
   getOpportunitySummaryRecord,
@@ -88,7 +88,7 @@ export function updateOpportunityHandler(request: AuthenticatedRequest) {
     pipelineType: z.enum(["POTENTIAL", "ACTIVE_PROCESS", "ARCHIVED"]).optional(),
     status: jobStatusSchema.optional(),
     referrerOrConnection: z.string().nullish(),
-    source: z.string().nullish(),
+    source: opportunitySourceSchema.nullish(),
     jobUrl: z.string().nullish(),
     linkedinUrl: z.string().url().nullish(),
     linkedinJobId: z.string().nullish(),
