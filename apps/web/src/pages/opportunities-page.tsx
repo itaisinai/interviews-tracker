@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 
+import type { OpportunitySource } from "@interviews-tracker/core";
 import {
   Button,
   DataTable,
@@ -16,6 +17,7 @@ import {
 
 import { PageIntro } from "../components/app-layout";
 import { Badge } from "../components/badge";
+import { SourceBadge } from "../components/opportunity-detail/source-badge";
 import { api } from "../lib/api";
 import { jobStatusOptions, pipelineTypeOptions } from "../lib/enum-labels";
 import { formatDate, titleize } from "../lib/format";
@@ -28,6 +30,7 @@ type OpportunityListItem = {
   roleTitle: string;
   status: string;
   pipelineType: string;
+  source?: OpportunitySource | null;
   referrerOrConnection: string | null;
   nextStep: string | null;
   jobUrl: string | null;
@@ -251,6 +254,11 @@ export function OpportunitiesPage() {
         ),
         size: 200,
         cell: ({ row }) => <Badge value={row.original.pipelineType} />,
+      },
+      {
+        header: "Source",
+        size: 120,
+        cell: ({ row }) => <SourceBadge source={row.original.source} />,
       },
       {
         header: "Referrer / Connection",

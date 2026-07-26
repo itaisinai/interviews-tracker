@@ -43,7 +43,7 @@ const normalized: NormalizedLinkedinJob = {
     originalJobDescription: null,
   },
   metadata: {
-    source: "linkedin",
+    source: "LINKEDIN",
     sourceUrl: validPayload.sourceUrl,
     linkedinJobId: "4428934873",
     extractedAt: validPayload.extractedAt,

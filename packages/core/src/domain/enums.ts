@@ -41,6 +41,7 @@ export const offerStatusSchema = z.enum([
   "ACCEPTED",
   "DECLINED",
 ]);
+export const opportunitySourceSchema = z.enum(["GMAIL", "TELEGRAM", "LINKEDIN", "MANUAL", "API", "CHATBOT", "OTHER"]);
 
 export type PipelineType = z.infer<typeof pipelineTypeSchema>;
 export type JobStatus = z.infer<typeof jobStatusSchema>;
@@ -48,6 +49,7 @@ export type InteractionStatus = z.infer<typeof interactionStatusSchema>;
 export type InteractionType = z.infer<typeof interactionTypeSchema>;
 export type TaskStatus = z.infer<typeof taskStatusSchema>;
 export type OfferStatus = z.infer<typeof offerStatusSchema>;
+export type OpportunitySource = z.infer<typeof opportunitySourceSchema>;
 
 export type Option = {
   id: string;

@@ -9,6 +9,8 @@ import {
   jobStatusSchema,
   type OfferStatus,
   offerStatusSchema,
+  type OpportunitySource,
+  opportunitySourceSchema,
   type Option,
   type PipelineType,
   pipelineTypeSchema,
@@ -46,7 +48,7 @@ export const opportunityInputSchema = z
     pipelineType: pipelineTypeSchema,
     status: jobStatusSchema,
     referrerOrConnection: z.string().nullish(),
-    source: z.string().nullish(),
+    source: opportunitySourceSchema.nullish(),
     jobUrl: z.string().nullish(),
     linkedinUrl: z.string().url().nullish(),
     linkedinJobId: z.string().nullish(),
@@ -155,7 +157,7 @@ export type Opportunity = {
   pipelineType: PipelineType;
   status: JobStatus;
   referrerOrConnection?: string | null;
-  source?: string | null;
+  source?: OpportunitySource | null;
   jobUrl?: string | null;
   linkedinUrl?: string | null;
   linkedinJobId?: string | null;

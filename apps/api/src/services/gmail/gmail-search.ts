@@ -173,13 +173,25 @@ export async function searchGmailMessages(input: {
           return meaningfulKeywords.some((keyword) => subject.includes(keyword));
         };
 
-        // 1. Google Calendar notifications - always filter
+        // 1. Google Calendar notifications - filter only pure notifications/reminders
+        // Allow interview invitations through to AI classification
         if (from.includes("calendar-notification@google.com") || from.includes("calendar@google.com")) {
-          logInfo("gmail", "pre-filtered google calendar", {
+          // Keep if it looks like an interview invitation
+          if (subject.toLowerCase().includes("invitation:") && hasMeaningfulContent()) {
+            logInfo("gmail", "kept google calendar interview invitation", {
+              company: input.companyName,
+              subject: candidate.subject,
+              from: candidate.from,
+              reason: "calendar invitation with interview content",
+            });
+            return true;
+          }
+          // Filter out pure reminders/notifications
+          logInfo("gmail", "pre-filtered google calendar notification", {
             company: input.companyName,
             subject: candidate.subject,
             from: candidate.from,
-            reason: "google calendar notification",
+            reason: "google calendar notification without interview content",
           });
           return false;
         }
@@ -224,11 +236,21 @@ export async function searchGmailMessages(input: {
         // 4. Generic automated senders - but only if no meaningful content
         const strictAutomatedPatterns = ["donotreply@", "do-not-reply@", "alerts@", "mailer@", "automated@", "system@"];
         if (strictAutomatedPatterns.some((pattern) => from.includes(pattern))) {
+          // Check if it has meaningful job-related content
+          if (hasMeaningfulContent()) {
+            logInfo("gmail", "kept automated sender with content", {
+              company: input.companyName,
+              subject: candidate.subject,
+              from: candidate.from,
+              reason: "automated sender but has meaningful job-related content",
+            });
+            return true;
+          }
           logInfo("gmail", "pre-filtered strict automated sender", {
             company: input.companyName,
             subject: candidate.subject,
             from: candidate.from,
-            reason: "strict automated sender pattern",
+            reason: "automated sender without meaningful content",
           });
           return false;
         }
@@ -452,10 +474,22 @@ export async function findGmailOpportunityCandidates(input: {
         return meaningfulKeywords.some((keyword) => subject.includes(keyword));
       };
 
-      // 1. Google Calendar notifications - always filter
+      // 1. Google Calendar notifications - filter only pure notifications/reminders
+      // Allow interview invitations through to AI classification
       if (from.includes("calendar-notification@google.com") || from.includes("calendar@google.com")) {
-        console.log(`[Gmail Search] ❌ PRE-FILTERED (google calendar): ${candidate.subject} (from: ${candidate.from})`);
-        continue;
+        // Keep if it looks like an interview invitation
+        if (subject.toLowerCase().includes("invitation:") && hasMeaningfulContent()) {
+          console.log(
+            `[Gmail Search] ✅ KEPT (google calendar interview invitation): ${candidate.subject} (from: ${candidate.from})`
+          );
+          // Fall through - keep this email
+        } else {
+          // Filter out pure reminders/notifications
+          console.log(
+            `[Gmail Search] ❌ PRE-FILTERED (google calendar notification): ${candidate.subject} (from: ${candidate.from})`
+          );
+          continue;
+        }
       }
 
       // 2. Pure reminder/notification subjects
@@ -489,13 +523,21 @@ export async function findGmailOpportunityCandidates(input: {
         }
       }
 
-      // 4. Strict automated senders
+      // 4. Strict automated senders - but only if no meaningful content
       const strictAutomatedPatterns = ["donotreply@", "do-not-reply@", "alerts@", "mailer@", "automated@", "system@"];
       if (strictAutomatedPatterns.some((pattern) => from.includes(pattern))) {
-        console.log(
-          `[Gmail Search] ❌ PRE-FILTERED (strict automated): ${candidate.subject} (from: ${candidate.from})`
-        );
-        continue;
+        // Check if it has meaningful job-related content
+        if (hasMeaningfulContent()) {
+          console.log(
+            `[Gmail Search] ✅ KEPT (automated sender with content): ${candidate.subject} (from: ${candidate.from})`
+          );
+          // Fall through - keep this email
+        } else {
+          console.log(
+            `[Gmail Search] ❌ PRE-FILTERED (strict automated): ${candidate.subject} (from: ${candidate.from})`
+          );
+          continue;
+        }
       }
 
       // 5. Common unrelated patterns

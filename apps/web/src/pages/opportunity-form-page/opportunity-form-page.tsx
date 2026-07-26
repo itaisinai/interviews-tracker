@@ -180,7 +180,7 @@ export function OpportunityFormPage() {
         pipelineType: parseResult.pipelineType ?? "POTENTIAL",
         status: normalizeJobStatus(parseResult.status),
         referrerOrConnection: parseResult.process.knownContact,
-        source: "AI parsed job description",
+        source: sourceMode === "search-gmail" ? "GMAIL" : "MANUAL",
         nextStep: parseResult.process.suggestedNextStep,
         notes: parseResult.rawImportantNotes.join("\n"),
         employeesRangeId,

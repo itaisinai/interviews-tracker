@@ -77,7 +77,7 @@ export async function forwardOpportunityTextToBackend(input: {
     },
     body: JSON.stringify({
       text: input.text,
-      source: "telegram",
+      source: "TELEGRAM",
       telegramMessageId: input.telegramMessageId,
       fromUserId: input.fromUserId,
       username: input.username,

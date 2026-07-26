@@ -31,7 +31,7 @@ const normalized: NormalizedLinkedinJob = {
     originalJobDescription: "Original LinkedIn description",
   },
   metadata: {
-    source: "linkedin",
+    source: "LINKEDIN",
     sourceUrl: "https://www.linkedin.com/jobs/view/4428934873/",
     linkedinJobId: "4428934873",
     extractedAt: "2026-06-28T12:00:00.000Z",
@@ -94,7 +94,7 @@ test("valid LinkedIn import maps LLM output into createOpportunity input", async
     roleTitle: "Senior Full Stack Engineer",
     pipelineType: "POTENTIAL",
     status: "RESEARCH_LEAD",
-    source: "linkedin",
+    source: "LINKEDIN",
     jobUrl: "https://www.linkedin.com/jobs/view/4428934873/",
     sourceUrl: "https://www.linkedin.com/jobs/view/4428934873/",
     linkedinUrl: "https://www.linkedin.com/company/example/",
@@ -165,7 +165,7 @@ test("missing optional normalized fields do not break import", async () => {
       originalJobDescription: null,
     },
     metadata: {
-      source: "linkedin",
+      source: "LINKEDIN",
       sourceUrl: "https://www.linkedin.com/jobs/view/1/",
       linkedinJobId: "1",
       extractedAt: "2026-06-28T12:00:00.000Z",
@@ -199,7 +199,7 @@ test("OpenAiLinkedinJobNormalizer keeps extractor metadata even if model returns
       JSON.stringify({
         ...normalized,
         metadata: {
-          source: "linkedin",
+          source: "LINKEDIN",
           sourceUrl: "https://evil.example/jobs/1",
           linkedinJobId: "evil",
           extractedAt: "2020-01-01T00:00:00.000Z",

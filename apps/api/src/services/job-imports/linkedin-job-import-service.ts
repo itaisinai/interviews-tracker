@@ -73,7 +73,7 @@ const normalizedLinkedinJobSchema = z.object({
     originalJobDescription: z.string().nullable().optional(),
   }),
   metadata: z.object({
-    source: z.literal("linkedin"),
+    source: z.literal("LINKEDIN"),
     sourceUrl: z.string().url(),
     linkedinJobId: z.string().nullable().optional(),
     extractedAt: z.string().datetime(),
@@ -142,7 +142,7 @@ const linkedinJobImportJsonSchema = {
       additionalProperties: false,
       required: ["source", "sourceUrl", "linkedinJobId", "extractedAt"],
       properties: {
-        source: { type: "string", enum: ["linkedin"] },
+        source: { type: "string", enum: ["LINKEDIN"] },
         sourceUrl: { type: "string" },
         linkedinJobId: { type: ["string", "null"] },
         extractedAt: { type: "string" },
@@ -164,11 +164,11 @@ export class OpenAiLinkedinJobNormalizer implements LinkedinJobNormalizer {
       try {
         const output = await this.createStructuredOutput(input);
         const parsed = normalizedLinkedinJobSchema.parse(JSON.parse(output));
-        timer.end({ source: "linkedin", attempt });
+        timer.end({ source: "LINKEDIN", attempt });
         return {
           ...parsed,
           metadata: {
-            source: "linkedin" as const,
+            source: "LINKEDIN" as const,
             sourceUrl: input.sourceUrl,
             linkedinJobId: input.linkedinJobId ?? null,
             extractedAt: input.extractedAt,
@@ -286,7 +286,7 @@ export class LinkedinJobImportService {
         roleTitle: normalized.opportunity.title,
         pipelineType: "POTENTIAL",
         status: "RESEARCH_LEAD",
-        source: "linkedin",
+        source: "LINKEDIN",
         jobUrl: input.sourceUrl,
         sourceUrl: input.sourceUrl,
         linkedinJobId: input.linkedinJobId ?? undefined,
@@ -302,8 +302,8 @@ export class LinkedinJobImportService {
 
   private async findDuplicate(input: LinkedinJobImportInput, ownerEmail: string) {
     const where = input.linkedinJobId
-      ? { ownerEmail, source: "linkedin", linkedinJobId: input.linkedinJobId }
-      : { ownerEmail, source: "linkedin", sourceUrl: input.sourceUrl };
+      ? { ownerEmail, source: "LINKEDIN" as const, linkedinJobId: input.linkedinJobId }
+      : { ownerEmail, source: "LINKEDIN" as const, sourceUrl: input.sourceUrl };
     return prisma.jobOpportunity.findFirst({ where });
   }
 
@@ -330,7 +330,7 @@ export class LinkedinJobImportService {
       companyName: opportunity.companyName ?? undefined,
       created,
       duplicate,
-      source: "linkedin" as const,
+      source: "LINKEDIN" as const,
       sourceUrl: opportunity.sourceUrl ?? opportunity.jobUrl ?? input.sourceUrl,
       linkedinJobId: opportunity.linkedinJobId ?? input.linkedinJobId ?? null,
       warnings,

@@ -20,6 +20,7 @@ import { InteractionsDrawer } from "../components/interactions-drawer";
 import { ParticipantsCard } from "../components/interactions-drawer/participants-card";
 import { InterviewPreparation } from "../components/interview-preparation";
 import { CompanyDetailsModern } from "../components/opportunity-detail/company-details-modern";
+import { SourceBadge } from "../components/opportunity-detail/source-badge";
 import { Timeline } from "../components/timeline";
 import { api } from "../lib/api";
 import { labelForPipelineType } from "../lib/enum-labels";
@@ -154,6 +155,7 @@ export function OpportunityDetailPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge value={data.status} />
           <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
+          <SourceBadge source={data.source} />
         </div>
         <div className="mt-4 flex gap-2">
           <Button
@@ -196,6 +198,7 @@ export function OpportunityDetailPage() {
               <div className="flex items-center gap-2">
                 <Badge value={data.status} />
                 <Badge value={data.pipelineType}>{labelForPipelineType(data.pipelineType)}</Badge>
+                <SourceBadge source={data.source} />
               </div>
               <Button className="btn btn-secondary" leadingIcon="add" onClick={() => setShowAddInteractionModal(true)}>
                 Add Interaction
