@@ -152,6 +152,7 @@ export async function listOpportunityRecords(ownerEmail: string) {
       roleTitle: true,
       status: true,
       pipelineType: true,
+      source: true,
       referrerOrConnection: true,
       nextStep: true,
       jobUrl: true,

@@ -41,7 +41,7 @@ test("buildOpportunityInputFromParsedJobDescription maps parser output to opport
   assert.equal(input.roleTitle, "Senior Backend Engineer");
   assert.equal(input.pipelineType, "ACTIVE_PROCESS");
   assert.equal(input.status, "RECRUITER_REACHED_OUT");
-  assert.equal(input.source, "Telegram opportunity webhook");
+  assert.equal(input.source, "TELEGRAM");
   assert.equal(input.referrerOrConnection, "Jane Recruiter");
   assert.equal(input.nextStep, "Reply with availability");
   // Company fields moved to Company entity (no longer on Opportunity)
