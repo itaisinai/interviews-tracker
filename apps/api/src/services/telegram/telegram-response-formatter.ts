@@ -138,7 +138,29 @@ export function formatDuplicateOpportunityMessage(
 export function formatErrorMessage(error: Error | string): string {
   const errorText = typeof error === "string" ? error : error.message;
 
-  return `❌ *Error*\n\n${escapeMarkdownV2(errorText)}\n\nPlease try again or check the format of your message\\.`;
+  // Clean up Telegram API errors to be more user-friendly
+  let cleanErrorText: string;
+
+  // Extract user-friendly message from Telegram API errors
+  if (errorText.includes("Telegram API") && errorText.includes('"description"')) {
+    try {
+      // Try to extract the description from the JSON error
+      const match = errorText.match(/"description":"([^"]+)"/);
+      if (match) {
+        cleanErrorText = escapeMarkdownV2(match[1]);
+      } else {
+        // Fallback: just say there was an API error
+        cleanErrorText = "Failed to send message\\. Please try again\\.";
+      }
+    } catch {
+      cleanErrorText = "Failed to send message\\. Please try again\\.";
+    }
+  } else {
+    // For other errors, escape them normally
+    cleanErrorText = escapeMarkdownV2(errorText);
+  }
+
+  return `❌ *Error*\n\n${cleanErrorText}\n\nPlease try again or check the format of your message\\.`;
 }
 
 /**
