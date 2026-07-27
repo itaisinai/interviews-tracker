@@ -350,7 +350,7 @@ export function TelegramBot() {
           <div className={styles.header}>
             <div className={styles.headerTitle}>
               <MaterialIcon name="smart_toy" className={styles.headerIcon} />
-              <span>Telegram Bot</span>
+              <span>Chat Bot</span>
             </div>
             <div className={styles.headerActions}>
               {messages.length > 0 && (

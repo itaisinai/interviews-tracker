@@ -29,7 +29,7 @@ export async function createOpportunityFromWebhookHandler(request: Request) {
   });
 
   try {
-    const opportunity = await createOpportunityFromText(input.text);
+    const opportunity = await createOpportunityFromText(input.text, undefined, "TELEGRAM");
     timer.end({ opportunityId: opportunity.id, company: opportunity.company.name });
     return { opportunity };
   } catch (error) {

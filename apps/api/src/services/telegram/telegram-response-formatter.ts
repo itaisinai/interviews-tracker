@@ -97,6 +97,42 @@ export function formatOpportunityCreatedMessage(
 }
 
 /**
+ * Formats a duplicate opportunity message with link to existing opportunity
+ */
+export function formatDuplicateOpportunityMessage(
+  opportunity: {
+    id?: string;
+    slug?: string;
+    company?: { name?: string };
+    roleTitle?: string;
+    status?: string;
+  },
+  webAppBaseUrl: string
+): string {
+  const companyName = escapeMarkdownV2(opportunity.company?.name || "Unknown Company");
+  const roleTitle = escapeMarkdownV2(opportunity.roleTitle || "Position");
+  const slug = opportunity.slug || opportunity.id;
+  const status = opportunity.status ? escapeMarkdownV2(opportunity.status.replace(/_/g, " ")) : "";
+
+  let message = `⚠️ *Opportunity Already Exists*\n\n`;
+  message += `📊 *${companyName}*\n`;
+  message += `💼 ${roleTitle}\n`;
+  if (status) {
+    message += `📍 Status: ${status}\n`;
+  }
+  message += `\n`;
+
+  if (slug) {
+    const url = `${webAppBaseUrl}/opportunities/${slug}`;
+    message += `[View Existing Opportunity](${url})\n\n`;
+  }
+
+  message += `This position is already in your tracker. Click the link above to view or update it.`;
+
+  return message;
+}
+
+/**
  * Formats error messages for Telegram
  */
 export function formatErrorMessage(error: Error | string): string {

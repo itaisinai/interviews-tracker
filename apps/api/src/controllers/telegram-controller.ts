@@ -6,6 +6,7 @@ import { createOpportunityFromText } from "../services/opportunities/opportunity
 import { classifyMessageIntent } from "../services/telegram/telegram-intent-classifier.js";
 import { answerOpportunityQuery } from "../services/telegram/telegram-query-answerer.js";
 import {
+  formatDuplicateOpportunityMessage,
   formatErrorMessage,
   formatOpportunityCreatedMessage,
   formatQueryResponseForTelegram,
@@ -67,11 +68,18 @@ export async function telegramMessageHandler(request: Request, response: Respons
         const opportunity = await createOpportunityFromText(input.text);
         botResponse = formatOpportunityCreatedMessage(opportunity, webAppBaseUrl);
         opportunityData = opportunity;
-      } catch (error) {
+      } catch (error: any) {
         logError("telegram", "Failed to create opportunity", {
           error: error instanceof Error ? error.message : "Unknown error",
         });
-        botResponse = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");
+
+        // Handle duplicate opportunity error specially
+        if (error.code === "DUPLICATE_OPPORTUNITY" && error.existingOpportunity) {
+          botResponse = formatDuplicateOpportunityMessage(error.existingOpportunity, webAppBaseUrl);
+          opportunityData = error.existingOpportunity;
+        } else {
+          botResponse = formatErrorMessage(error instanceof Error ? error : "An unknown error occurred");
+        }
         success = false;
       }
     } else {
