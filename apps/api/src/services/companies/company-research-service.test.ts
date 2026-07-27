@@ -123,3 +123,69 @@ test("promotes company size from evidence when the model misses it", async () =>
     )
   );
 });
+
+test("filters malformed URLs from evidence results", async () => {
+  const provider: CompanySearchProvider = {
+    async search() {
+      return [
+        {
+          title: "Valid Result",
+          url: "https://example.com/company",
+          publishedDate: null,
+          author: null,
+          text: "Valid company info",
+          highlights: [],
+        },
+        {
+          title: "Malformed URL Result",
+          url: "https://",
+          publishedDate: null,
+          author: null,
+          text: "Another result",
+          highlights: [],
+        },
+        {
+          title: "Empty hostname",
+          url: "http://",
+          publishedDate: null,
+          author: null,
+          text: "More info",
+          highlights: [],
+        },
+      ];
+    },
+  };
+
+  const service = new CompanyResearchService(provider, async () => ({
+    companyName: "Test Company",
+    companySearchName: null,
+    linkedinUrl: null,
+    funding: null,
+    totalRaised: null,
+    roundsCount: null,
+    latestRound: null,
+    investors: [],
+    investmentRounds: null,
+    employees: null,
+    location: null,
+    domains: [],
+    customersTraction: null,
+    companyDescription: null,
+    productDescription: null,
+    sourceUrls: ["https://", "http://valid-extracted.com"],
+    confidence: "LOW",
+    rawImportantNotes: [],
+  }));
+
+  const result = await service.research({
+    companyName: "Test Company",
+    existingCompanyData: {},
+  });
+
+  // Should only include valid URLs from evidence and extracted sources
+  assert.ok(result.sourceUrls.includes("https://example.com/company"));
+  assert.ok(result.sourceUrls.includes("http://valid-extracted.com"));
+  assert.ok(!result.sourceUrls.includes("https://"));
+  assert.ok(!result.sourceUrls.includes("http://"));
+  assert.equal(result.sourceUrls.length, 2);
+});
