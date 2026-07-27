@@ -41,7 +41,7 @@ test("buildOpportunityInputFromParsedJobDescription maps parser output to opport
   assert.equal(input.roleTitle, "Senior Backend Engineer");
   assert.equal(input.pipelineType, "ACTIVE_PROCESS");
   assert.equal(input.status, "RECRUITER_REACHED_OUT");
-  assert.equal(input.source, "TELEGRAM");
+  assert.equal(input.source, "CHATBOT");
   assert.equal(input.referrerOrConnection, "Jane Recruiter");
   assert.equal(input.nextStep, "Reply with availability");
   // Company fields moved to Company entity (no longer on Opportunity)
@@ -55,6 +55,46 @@ test("buildOpportunityInputFromParsedJobDescription maps parser output to opport
   assert.equal(input.compensationNotes, "Competitive");
   assert.equal(input.notes, "Recruiter reached out\nRemote friendly");
   assert.deepEqual(input.domainIds, []);
+});
+
+test("buildOpportunityInputFromParsedJobDescription with explicit TELEGRAM source", async () => {
+  const input = await buildOpportunityInputFromParsedJobDescription(
+    {
+      companyName: "ExampleCo",
+      product: null,
+      roleTitle: "Senior Backend Engineer",
+      pipelineType: "ACTIVE_PROCESS",
+      status: "RECRUITER_REACHED_OUT",
+      company: {
+        employees: null,
+        stage: null,
+        domains: [],
+        workModel: null,
+        location: null,
+        funding: null,
+        customersTraction: null,
+        companyDescription: null,
+        productDescription: null,
+      },
+      role: {
+        techStack: [],
+        backendFrontendSplit: null,
+        responsibilities: [],
+        requirements: [],
+        niceToHave: [],
+        compensation: null,
+      },
+      process: {
+        knownNextInteraction: null,
+        knownContact: null,
+        suggestedNextStep: null,
+      },
+      rawImportantNotes: [],
+    },
+    "TELEGRAM"
+  );
+
+  assert.equal(input.source, "TELEGRAM");
 });
 
 test("buildOpportunityInputFromParsedJobDescription supplies safe defaults", async () => {
