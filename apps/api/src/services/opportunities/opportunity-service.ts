@@ -10,6 +10,7 @@ import {
   listOpportunityRecords,
   updateOpportunityRecord,
 } from "../../repositories/opportunity-repository.js";
+import { companyResearchJobService } from "../background-jobs/company-research-job-service.js";
 
 type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
@@ -103,6 +104,13 @@ export async function createOpportunity(
     opportunityId: opportunity.id,
     companyId,
     companyName: opportunity.company.name,
+  });
+  companyResearchJobService.enqueue({
+    companyId,
+    companyName: opportunity.company.name,
+    opportunityId: opportunity.id,
+    roleTitle: opportunity.roleTitle,
+    ownerEmail,
   });
   return opportunity;
 }

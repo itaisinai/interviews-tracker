@@ -34,6 +34,19 @@ export type GmailParsedEmailResponse = {
   analysis: import("@interviews-tracker/ai").GmailEmailExtractionAnalysis;
 };
 
+export type PersistentNotification = {
+  id: string;
+  type: "COMPANY_RESEARCH_COMPLETED" | "COMPANY_RESEARCH_FAILED" | string;
+  title: string;
+  message: string;
+  entityType: string | null;
+  entityId: string | null;
+  metadata: { companySlug?: string; companyName?: string; opportunityId?: string } | null;
+  readAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 let accessTokenGetter: AccessTokenGetter | undefined;
 
 export function setAccessTokenGetter(getter: AccessTokenGetter | undefined) {
@@ -76,6 +89,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  notificationUnreadCount: () => request<{ count: number }>("/notifications/unread-count"),
+  notifications: () => request<PersistentNotification[]>("/notifications"),
+  markNotificationRead: (id: string) => request<void>(`/notifications/${id}/read`, { method: "PATCH" }),
+  markAllNotificationsRead: () => request<void>("/notifications/read-all", { method: "PATCH" }),
   dashboard: () =>
     request<{
       counts: Record<string, number>;

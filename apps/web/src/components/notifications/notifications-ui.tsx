@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { AppNotification } from "../../lib/notifications";
+import { notificationTarget } from "../../lib/notifications";
 
 import { useNotifications } from "./notifications-context";
 
@@ -51,7 +52,11 @@ export function NotificationsDropdown({ onClose }: { onClose: () => void }) {
               type="button"
               key={item.key}
               className="flex w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-surface-container-low"
-              onClick={() => markAsRead(item.key)}
+              onClick={() => {
+                markAsRead(item.key);
+                onClose();
+                navigate(notificationTarget(item));
+              }}
             >
               <NotificationWarningIcon />
               <span className="min-w-0 flex-1">
@@ -104,7 +109,7 @@ export function NotificationRow({ notification, onClick }: { notification: AppNo
 }
 
 export function NotificationsBell() {
-  const { unreadCount } = useNotifications();
+  const { refetchNotifications, unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -112,7 +117,12 @@ export function NotificationsBell() {
         type="button"
         aria-label="Open notifications"
         className={`relative rounded-full p-2 text-on-surface-variant transition-all hover:bg-surface-variant ${open ? "bg-surface-container-lowest shadow-sm" : ""}`}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() =>
+          setOpen((value) => {
+            if (!value) refetchNotifications();
+            return !value;
+          })
+        }
       >
         <MaterialIcon name="notifications" />
         {unreadCount > 0 ? (

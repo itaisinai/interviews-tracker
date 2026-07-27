@@ -32,6 +32,7 @@ function renderWithNotifications(children: React.ReactNode, value?: Partial<Noti
     unreadCount: 1,
     markAllAsRead: () => undefined,
     markAsRead: () => undefined,
+    refetchNotifications: () => undefined,
     ...value,
   };
   return renderToString(

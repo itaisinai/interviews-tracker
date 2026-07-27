@@ -1,6 +1,6 @@
 import type { Interaction, Opportunity } from "./types";
 
-export type NotificationType = "unlinked_interactions";
+export type NotificationType = "unlinked_interactions" | "company_research_completed" | "company_research_failed";
 export type NotificationStatus = "unread" | "read" | "resolved";
 
 export type AppNotification = {
@@ -16,6 +16,31 @@ export type AppNotification = {
   createdAt: string;
   updatedAt: string;
 };
+
+export function fromPersistentNotification(
+  notification: import("@interviews-tracker/api-client").PersistentNotification
+): AppNotification {
+  const companySlug = notification.metadata?.companySlug ?? notification.entityId ?? "";
+  return {
+    id: notification.id,
+    key: `persistent:${notification.id}`,
+    type: notification.type === "COMPANY_RESEARCH_COMPLETED" ? "company_research_completed" : "company_research_failed",
+    opportunitySlug: companySlug,
+    opportunityName: notification.metadata?.companyName ?? "Company",
+    count: 1,
+    title: notification.title,
+    message: notification.message,
+    status: notification.readAt ? "read" : "unread",
+    createdAt: notification.createdAt,
+    updatedAt: notification.updatedAt,
+  };
+}
+
+export function notificationTarget(notification: AppNotification) {
+  return notification.type.startsWith("company_research_")
+    ? `/companies/${encodeURIComponent(notification.opportunitySlug)}`
+    : `/opportunities/${notification.opportunitySlug}`;
+}
 
 export const NOTIFICATIONS_STORAGE_KEY = "careerflow.notifications";
 export const UNLINKED_INTERACTIONS_MESSAGE = "Update interactions to keep your timeline in sync";

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { MaterialIcon } from "@interviews-tracker/design-system";
@@ -6,6 +6,7 @@ import { MaterialIcon } from "@interviews-tracker/design-system";
 import { useNotifications } from "../components/notifications/notifications-context";
 import { NotificationRow } from "../components/notifications/notifications-ui";
 import type { AppNotification } from "../lib/notifications";
+import { notificationTarget } from "../lib/notifications";
 
 const filters = ["All", "Unread", "Interactions", "Opportunities", "System"] as const;
 
@@ -27,10 +28,11 @@ export function filterNotifications(notifications: readonly AppNotification[], f
 }
 
 export function NotificationsPage() {
-  const { active, markAllAsRead, markAsRead } = useNotifications();
+  const { active, markAllAsRead, markAsRead, refetchNotifications } = useNotifications();
   const [selectedFilter, setSelectedFilter] = useState<NotificationFilter>("All");
   const navigate = useNavigate();
   const visibleNotifications = useMemo(() => filterNotifications(active, selectedFilter), [active, selectedFilter]);
+  useEffect(() => refetchNotifications(), [refetchNotifications]);
 
   return (
     <section>
@@ -78,7 +80,7 @@ export function NotificationsPage() {
                 notification={notification}
                 onClick={() => {
                   markAsRead(notification.key);
-                  navigate(`/opportunities/${notification.opportunitySlug}`);
+                  navigate(notificationTarget(notification));
                 }}
               />
             ))}

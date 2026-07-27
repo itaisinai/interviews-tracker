@@ -45,6 +45,7 @@ test("notifications page renders filters, mark all as read, and list", () => {
     unreadCount: 1,
     markAllAsRead: () => undefined,
     markAsRead: () => undefined,
+    refetchNotifications: () => undefined,
   };
   const html = renderToString(
     <MemoryRouter>

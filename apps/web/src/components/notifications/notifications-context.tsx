@@ -8,6 +8,7 @@ export type NotificationsContextValue = {
   unreadCount: number;
   markAllAsRead: () => void;
   markAsRead: (key: string) => void;
+  refetchNotifications: () => void;
 };
 
 export const NotificationsContext = createContext<NotificationsContextValue | null>(null);
