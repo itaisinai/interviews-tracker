@@ -13,6 +13,9 @@ export type CompanyResearchJobInput = {
 };
 
 export type CompanyResearchJobExecutor = (input: CompanyResearchJobInput) => Promise<void>;
+export interface CompanyResearchJobService {
+  enqueue(input: CompanyResearchJobInput): void;
+}
 const RECENT_RESEARCH_MS = 7 * 24 * 60 * 60 * 1000;
 const inFlight = new Set<string>();
 
@@ -95,7 +98,7 @@ export const executeCompanyResearchJob: CompanyResearchJobExecutor = async (inpu
   }
 };
 
-export class InProcessCompanyResearchJobService {
+export class InProcessCompanyResearchJobService implements CompanyResearchJobService {
   constructor(private readonly executor: CompanyResearchJobExecutor = executeCompanyResearchJob) {}
 
   enqueue(input: CompanyResearchJobInput): void {
@@ -115,4 +118,4 @@ export class InProcessCompanyResearchJobService {
 }
 
 /** Queue seam: replace this implementation without changing opportunity creation. */
-export const companyResearchJobService = new InProcessCompanyResearchJobService();
+export const companyResearchJobService: CompanyResearchJobService = new InProcessCompanyResearchJobService();

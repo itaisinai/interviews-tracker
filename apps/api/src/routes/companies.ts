@@ -12,16 +12,13 @@ import {
   serializeInteraction,
 } from "../lib/serializers.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
+import { applyCompanyResearch } from "../services/companies/company-research-apply-service.js";
 import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";
 import { getCompanyService } from "../services/companies/company-service.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 
 export const companiesRouter = Router();
-
-function isPresent(value: string | null | undefined) {
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 // List companies - optimized for client-side filtering
 companiesRouter.get(
@@ -228,59 +225,11 @@ companiesRouter.post(
       return;
     }
 
-    // Normalize employees count to remove "Approximately", "~", etc.
-    const normalizeEmployees = (value: string | null | undefined): string | null => {
-      if (!value) return null;
-      const cleaned = value
-        .replace(/^(approximately|around|about|~|roughly)\s*/i, "")
-        .replace(/\s+(employees?|people|team members?)\s*$/i, "")
-        .trim();
-      return cleaned || null;
-    };
-
-    const employeesLabel = normalizeEmployees(research.employees);
-    const employeesRange = employeesLabel
-      ? await prisma.companySizeOption.upsert({
-          where: { label: employeesLabel },
-          create: { label: employeesLabel },
-          update: {},
-        })
-      : null;
-    const domains =
-      research.domains.length > 0
-        ? await Promise.all(
-            research.domains.map((label: string) =>
-              prisma.domainOption.upsert({ where: { label }, create: { label }, update: {} })
-            )
-          )
-        : [];
-
-    // Update the Company entity
-    await getCompanyService().update(
-      slugOrId,
-      {
-        name: isPresent(research.companyName) ? research.companyName : company.name,
-        searchName: isPresent(research.companySearchName) ? research.companySearchName : company.searchName,
-        funding: isPresent(company.funding) ? company.funding : research.funding,
-        totalRaised: isPresent(company.totalRaised) ? company.totalRaised : research.totalRaised,
-        latestRound: isPresent(company.latestRound) ? company.latestRound : research.latestRound,
-        employeesRangeId: company.employeesRangeId ?? employeesRange?.id ?? undefined,
-        location: isPresent(company.location) ? company.location : research.location,
-        linkedinUrl: isPresent(company.linkedinUrl) ? company.linkedinUrl : research.linkedinUrl,
-        description: isPresent(company.description) ? company.description : research.companyDescription,
-        productDescription: isPresent(company.productDescription)
-          ? company.productDescription
-          : research.productDescription,
-        customersTraction: isPresent(company.customersTraction)
-          ? company.customersTraction
-          : research.customersTraction,
-        domainIds:
-          domains.length > 0
-            ? [...new Set([...company.domains.map((d) => d.domainId), ...domains.map((d) => d.id)])]
-            : undefined,
-      },
-      ownerEmail
-    );
+    const updatedCompany = await applyCompanyResearch(company.id, ownerEmail, research);
+    if (!updatedCompany) {
+      response.status(404).json({ message: "Company not found" });
+      return;
+    }
 
     // Create note on specific opportunity or first opportunity
     const targetOpportunity = targetOpportunitySlug
@@ -310,7 +259,7 @@ companiesRouter.post(
       });
     }
 
-    timer.end({ companyId: company.id });
-    response.json({ research, company: serializeCompany(company) });
+    timer.end({ companyId: updatedCompany.id });
+    response.json({ research, company: serializeCompany(updatedCompany) });
   })
 );

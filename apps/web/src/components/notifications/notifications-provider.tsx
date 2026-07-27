@@ -46,7 +46,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const persistentQuery = useQuery({
     queryKey: ["notifications", "list"],
     queryFn: api.notifications,
-    refetchOnWindowFocus: true,
+    enabled: false,
     staleTime: 20_000,
   });
 
@@ -73,17 +73,37 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [interactionsQuery.data, persistentQuery.data]);
 
   useEffect(() => {
-    if (unreadQuery.data && unreadQuery.data.count > unreadNotificationsCount(notifications)) {
+    const loadedPersistentUnread = notifications.filter(
+      (notification) => notification.key.startsWith("persistent:") && notification.status === "unread"
+    ).length;
+    if (unreadQuery.data && unreadQuery.data.count > loadedPersistentUnread) {
       void persistentQuery.refetch();
     }
   }, [notifications, persistentQuery, unreadQuery.data]);
+
+  useEffect(() => {
+    const refetchLoadedList = () => {
+      if (persistentQuery.dataUpdatedAt > 0) void persistentQuery.refetch();
+    };
+    window.addEventListener("focus", refetchLoadedList);
+    return () => window.removeEventListener("focus", refetchLoadedList);
+  }, [persistentQuery]);
 
   const value = useMemo<NotificationsContextValue>(() => {
     const active = activeNotifications(notifications);
     return {
       notifications,
       active,
-      unreadCount: unreadNotificationsCount(notifications),
+      unreadCount:
+        notifications.filter(
+          (notification) => !notification.key.startsWith("persistent:") && notification.status === "unread"
+        ).length +
+        Math.max(
+          notifications.filter(
+            (notification) => notification.key.startsWith("persistent:") && notification.status === "unread"
+          ).length,
+          unreadQuery.data?.count ?? 0
+        ),
       refetchNotifications: () => {
         void Promise.all([persistentQuery.refetch(), unreadQuery.refetch()]);
       },
