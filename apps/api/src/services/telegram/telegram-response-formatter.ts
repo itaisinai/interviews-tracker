@@ -42,8 +42,8 @@ function formatDateForDisplay(isoDate: string): string {
  * Formats a query response into a Telegram message with markdown and links
  */
 export function formatQueryResponseForTelegram(response: QueryResponse, webAppBaseUrl: string): string {
-  // Use answer as-is (AI already formatted it nicely)
-  let message = response.answer;
+  // Escape AI-generated answer text for MarkdownV2
+  let message = escapeMarkdownV2(response.answer);
 
   // Add links to relevant opportunities if any
   if (response.relevantOpportunities && response.relevantOpportunities.length > 0) {
@@ -53,14 +53,14 @@ export function formatQueryResponseForTelegram(response: QueryResponse, webAppBa
       const slug = opp.slug || opp.id;
       const url = `${webAppBaseUrl}/opportunities/${slug}`;
       const companyName = escapeMarkdownV2(opp.companyName || "Unknown");
-      const roleText = opp.roleTitle ? ` - ${escapeMarkdownV2(opp.roleTitle)}` : "";
+      const roleText = opp.roleTitle ? ` \\- ${escapeMarkdownV2(opp.roleTitle)}` : "";
       message += `• [${companyName}${roleText}](${url})\n`;
     });
   }
 
   // Add clarification question if needed
   if (response.needsClarification && response.clarificationQuestion) {
-    message += `\n\n❓ ${response.clarificationQuestion}`;
+    message += `\n\n❓ ${escapeMarkdownV2(response.clarificationQuestion)}`;
   }
 
   return message;
@@ -145,5 +145,5 @@ export function formatErrorMessage(error: Error | string): string {
  * Formats clarification request messages
  */
 export function formatClarificationMessage(question: string): string {
-  return `❓ *Need More Info*\n\n${question}`;
+  return `❓ *Need More Info*\n\n${escapeMarkdownV2(question)}`;
 }
