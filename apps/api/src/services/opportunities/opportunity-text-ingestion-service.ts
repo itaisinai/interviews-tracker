@@ -18,7 +18,8 @@ function joinLines(lines: string[]) {
 }
 
 export async function buildOpportunityInputFromParsedJobDescription(
-  parsed: ParsedJobDescription
+  parsed: ParsedJobDescription,
+  source: "TELEGRAM" | "CHATBOT" = "CHATBOT"
 ): Promise<OpportunityTextInput> {
   const domainIds = await Promise.all(
     parsed.company.domains
@@ -41,7 +42,7 @@ export async function buildOpportunityInputFromParsedJobDescription(
     pipelineType: parsed.pipelineType ?? "POTENTIAL",
     status: parsed.status ?? "RESEARCH_LEAD",
     referrerOrConnection: parsed.process.knownContact,
-    source: "TELEGRAM",
+    source,
     nextStep: parsed.process.suggestedNextStep,
     notes: joinLines(parsed.rawImportantNotes),
     location: parsed.company.location,
@@ -56,9 +57,13 @@ export async function buildOpportunityInputFromParsedJobDescription(
   });
 }
 
-export async function createOpportunityFromText(text: string, ownerEmail?: string) {
+export async function createOpportunityFromText(
+  text: string,
+  ownerEmail?: string,
+  source: "TELEGRAM" | "CHATBOT" = "CHATBOT"
+) {
   const parsed = await getAiParserService().parseJobDescription(text);
-  const input = await buildOpportunityInputFromParsedJobDescription(parsed);
+  const input = await buildOpportunityInputFromParsedJobDescription(parsed, source);
 
   // For webhook calls without auth, use ALLOWED_EMAIL as the owner
   const owner = ownerEmail ?? process.env.ALLOWED_EMAIL?.trim().toLowerCase();

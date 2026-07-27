@@ -72,8 +72,8 @@ export function CompanyResearchProgress({
           const tone = companyResearchLogTone[status];
 
           return (
-            <li key={message} className={`flex items-start gap-3 rounded-lg bg-white px-3 py-2 ${tone.ring ?? ""}`}>
-              <span className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${tone.dot}`} />
+            <li key={message} className={`flex items-center gap-3 rounded-lg bg-white px-3 py-2 ${tone.ring ?? ""}`}>
+              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${tone.dot}`} />
               <span className={`text-body-md ${tone.text}`}>{message}</span>
             </li>
           );

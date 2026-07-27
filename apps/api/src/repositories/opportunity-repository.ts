@@ -221,11 +221,39 @@ export async function createOpportunityRecord(input: OpportunityInput, ownerEmai
   if (!company) throw new Error("Company not found");
 
   const slug = await createUniqueOpportunitySlug(company.name, input.roleTitle, ownerEmail);
-  const opportunity = await prisma.jobOpportunity.create({
-    data: { ...toWrite({ ...input, companyId }, ownerEmail), slug },
-    include: opportunityInclude,
-  });
-  return promoteOpportunityInteractionsForRead(opportunity);
+
+  try {
+    const opportunity = await prisma.jobOpportunity.create({
+      data: { ...toWrite({ ...input, companyId }, ownerEmail), slug },
+      include: opportunityInclude,
+    });
+    return promoteOpportunityInteractionsForRead(opportunity);
+  } catch (error: any) {
+    // Handle unique constraint violation on (ownerEmail, companyId, roleTitle)
+    if (error.code === "P2002" && error.meta?.target?.includes("roleTitle")) {
+      // Find the existing opportunity
+      const existing = await prisma.jobOpportunity.findFirst({
+        where: {
+          ownerEmail,
+          companyId,
+          roleTitle: input.roleTitle,
+        },
+        include: opportunityInclude,
+      });
+
+      if (existing) {
+        const duplicateError: any = new Error(
+          `An opportunity for "${input.roleTitle}" at "${company.name}" already exists.`
+        );
+        duplicateError.code = "DUPLICATE_OPPORTUNITY";
+        duplicateError.existingOpportunity = promoteOpportunityInteractionsForRead(existing);
+        throw duplicateError;
+      }
+    }
+
+    // Re-throw if it's not a duplicate we can handle
+    throw error;
+  }
 }
 
 export async function updateOpportunityRecord(
