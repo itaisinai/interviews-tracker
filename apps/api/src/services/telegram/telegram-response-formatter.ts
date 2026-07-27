@@ -42,8 +42,8 @@ function formatDateForDisplay(isoDate: string): string {
  * Formats a query response into a Telegram message with markdown and links
  */
 export function formatQueryResponseForTelegram(response: QueryResponse, webAppBaseUrl: string): string {
-  // Use answer as-is (AI already formatted it nicely)
-  let message = response.answer;
+  // Escape AI-generated answer text for MarkdownV2
+  let message = escapeMarkdownV2(response.answer);
 
   // Add links to relevant opportunities if any
   if (response.relevantOpportunities && response.relevantOpportunities.length > 0) {
@@ -53,14 +53,14 @@ export function formatQueryResponseForTelegram(response: QueryResponse, webAppBa
       const slug = opp.slug || opp.id;
       const url = `${webAppBaseUrl}/opportunities/${slug}`;
       const companyName = escapeMarkdownV2(opp.companyName || "Unknown");
-      const roleText = opp.roleTitle ? ` - ${escapeMarkdownV2(opp.roleTitle)}` : "";
+      const roleText = opp.roleTitle ? ` \\- ${escapeMarkdownV2(opp.roleTitle)}` : "";
       message += `• [${companyName}${roleText}](${url})\n`;
     });
   }
 
   // Add clarification question if needed
   if (response.needsClarification && response.clarificationQuestion) {
-    message += `\n\n❓ ${response.clarificationQuestion}`;
+    message += `\n\n❓ ${escapeMarkdownV2(response.clarificationQuestion)}`;
   }
 
   return message;
@@ -138,12 +138,34 @@ export function formatDuplicateOpportunityMessage(
 export function formatErrorMessage(error: Error | string): string {
   const errorText = typeof error === "string" ? error : error.message;
 
-  return `❌ *Error*\n\n${escapeMarkdownV2(errorText)}\n\nPlease try again or check the format of your message\\.`;
+  // Clean up Telegram API errors to be more user-friendly
+  let cleanErrorText: string;
+
+  // Extract user-friendly message from Telegram API errors
+  if (errorText.includes("Telegram API") && errorText.includes('"description"')) {
+    try {
+      // Try to extract the description from the JSON error
+      const match = errorText.match(/"description":"([^"]+)"/);
+      if (match) {
+        cleanErrorText = escapeMarkdownV2(match[1]);
+      } else {
+        // Fallback: just say there was an API error
+        cleanErrorText = "Failed to send message\\. Please try again\\.";
+      }
+    } catch {
+      cleanErrorText = "Failed to send message\\. Please try again\\.";
+    }
+  } else {
+    // For other errors, escape them normally
+    cleanErrorText = escapeMarkdownV2(errorText);
+  }
+
+  return `❌ *Error*\n\n${cleanErrorText}\n\nPlease try again or check the format of your message\\.`;
 }
 
 /**
  * Formats clarification request messages
  */
 export function formatClarificationMessage(question: string): string {
-  return `❓ *Need More Info*\n\n${question}`;
+  return `❓ *Need More Info*\n\n${escapeMarkdownV2(question)}`;
 }

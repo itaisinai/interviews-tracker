@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { formatOpportunityCreatedMessage } from "./telegram-response-formatter.js";
+import { formatOpportunityCreatedMessage, formatQueryResponseForTelegram } from "./telegram-response-formatter.js";
 
 describe("Telegram Response Formatter", () => {
   describe("formatOpportunityCreatedMessage", () => {
@@ -128,6 +128,78 @@ describe("Telegram Response Formatter", () => {
       // Defaults should still work (no special chars, but test the flow)
       assert.match(message, /Unknown Company/);
       assert.match(message, /Position/);
+    });
+  });
+
+  describe("formatQueryResponseForTelegram", () => {
+    it("should escape special characters in AI-generated answer", () => {
+      const message = formatQueryResponseForTelegram(
+        {
+          answer: "I can help you! Here are some things you can ask me:",
+          needsClarification: false,
+          clarificationQuestion: null,
+        },
+        "https://example.com"
+      );
+
+      // Exclamation marks and periods should be escaped
+      assert.match(message, /I can help you\\!/);
+      assert.match(message, /ask me:/);
+    });
+
+    it("should escape special characters in clarification questions", () => {
+      const message = formatQueryResponseForTelegram(
+        {
+          answer: "Not sure what you mean.",
+          needsClarification: true,
+          clarificationQuestion: "Could you clarify? What do you want to know?",
+        },
+        "https://example.com"
+      );
+
+      // Question marks and periods in clarification should be escaped
+      assert.match(message, /Could you clarify\\?/);
+      assert.match(message, /want to know\\?/);
+    });
+
+    it("should escape special characters in opportunity names", () => {
+      const message = formatQueryResponseForTelegram(
+        {
+          answer: "You have 2 active processes.",
+          needsClarification: false,
+          clarificationQuestion: null,
+          relevantOpportunities: [
+            {
+              id: "1",
+              companyName: "Tech_Corp [2024]",
+              roleTitle: "Senior Engineer (Backend)",
+              slug: "tech-corp-senior",
+            },
+          ],
+        },
+        "https://example.com"
+      );
+
+      // Company name special chars should be escaped
+      assert.match(message, /Tech\\_Corp \\\[2024\\\]/);
+      assert.match(message, /Senior Engineer \\\(Backend\\\)/);
+    });
+
+    it("should handle answers with multiple special characters", () => {
+      const message = formatQueryResponseForTelegram(
+        {
+          answer: "Great! You have 3 interviews: Google (today at 2pm), Meta (tomorrow), and Stripe (next week).",
+          needsClarification: false,
+          clarificationQuestion: null,
+        },
+        "https://example.com"
+      );
+
+      // All special characters should be escaped
+      assert.match(message, /Great\\!/);
+      assert.match(message, /\\\(today at 2pm\\\)/);
+      assert.match(message, /\\\(tomorrow\\\)/);
+      assert.match(message, /week\\\)\\\./);
     });
   });
 });
