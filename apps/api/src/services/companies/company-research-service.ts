@@ -130,8 +130,9 @@ function getHostname(url: string) {
 
 function isValidUrl(url: string) {
   try {
-    void new URL(url);
-    return true;
+    const parsed = new URL(url);
+    // Ensure URL has a valid hostname (not empty, not just protocol)
+    return parsed.hostname.length > 0;
   } catch {
     return false;
   }
