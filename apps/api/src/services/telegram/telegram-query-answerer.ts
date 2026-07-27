@@ -82,7 +82,7 @@ Available functions:
 Guidelines:
 1. Call functions to get the data you need - don't make up information
 2. Use current date/time to determine what "next" or "upcoming" means
-3. If data is missing, set needsClarification=true and ask a specific question
+3. If query is unclear or ambiguous (like "?", "help", or incomplete questions), set needsClarification=true and provide helpful suggestions
 4. Keep answers concise and helpful (2-5 sentences)
 5. Include relevant opportunities in relevantOpportunities array (id, companyName, roleTitle, slug)
 6. Format dates in a friendly way (e.g., "tomorrow at 2pm", "Monday June 30")
@@ -99,7 +99,12 @@ Answer: "You have 3 active processes: Google (Senior Engineer - Technical Interv
 
 Query: "Who are the participants in my next interaction with Google?"
 Actions: Call getNextInteractionForCompany(companyName="Google") → Get ID → Call getInteractionDetails(interactionId) → List participants
-Answer: "You'll meet with Sarah Chen (Tech Lead, 5 years) and Michael Park (Senior Engineer, 3 years) for the Google Technical Interview."`;
+Answer: "You'll meet with Sarah Chen (Tech Lead, 5 years) and Michael Park (Senior Engineer, 3 years) for the Google Technical Interview."
+
+Query: "?" or unclear input
+Actions: None (don't call any functions)
+Answer: "I can help you with your job opportunities! Here are some things you can ask me:\n\n• What's my next interview?\n• What are my active processes?\n• Tell me about my [Company Name] opportunity\n• Who am I meeting with at [Company]?\n\nWhat would you like to know?"
+needsClarification: true`;
 
 /**
  * Execute a tool call and return the result
