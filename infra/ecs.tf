@@ -4,9 +4,11 @@
 resource "aws_ecs_cluster" "main" {
   name = local.app_name
 
+  # Container Insights disabled to save on CloudWatch costs (~$3-4/month)
+  # Can be re-enabled if detailed monitoring is needed
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = "disabled"
   }
 
   tags = {
