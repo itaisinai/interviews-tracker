@@ -72,7 +72,11 @@ Confidence guidelines:
 - 0.9-1.0: Clear question words OR clear job posting format
 - 0.7-0.9: Probable based on keywords and structure
 - 0.5-0.7: Borderline or ambiguous
-- Below 0.5: Confused or unclear input
+- Below 0.5: Confused or unclear input (like "?", "help", single word)
+
+Special cases:
+- "?" or "help" or very short unclear messages → QUERY (we'll ask for clarification in the response)
+- Empty or gibberish → QUERY (lower confidence, but still query so we can help)
 
 If uncertain between QUERY and CREATE_OPPORTUNITY:
 - Does it have question words or ask for information? → QUERY

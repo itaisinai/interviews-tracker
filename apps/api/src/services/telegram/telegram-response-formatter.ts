@@ -82,7 +82,7 @@ export function formatOpportunityCreatedMessage(
   const roleTitle = escapeMarkdownV2(opportunity.roleTitle || "Position");
   const slug = opportunity.slug || opportunity.id;
 
-  let message = `✅ *Opportunity Created!*\n\n`;
+  let message = `✅ *Opportunity Created\\!*\n\n`;
   message += `📊 *${companyName}*\n`;
   message += `💼 ${roleTitle}\n\n`;
 
@@ -91,7 +91,7 @@ export function formatOpportunityCreatedMessage(
     message += `[View in App](${url})\n\n`;
   }
 
-  message += `The opportunity has been added to your tracker.`;
+  message += `The opportunity has been added to your tracker\\.`;
 
   return message;
 }
@@ -127,7 +127,7 @@ export function formatDuplicateOpportunityMessage(
     message += `[View Existing Opportunity](${url})\n\n`;
   }
 
-  message += `This position is already in your tracker. Click the link above to view or update it.`;
+  message += `This position is already in your tracker\\. Click the link above to view or update it\\.`;
 
   return message;
 }
@@ -138,7 +138,7 @@ export function formatDuplicateOpportunityMessage(
 export function formatErrorMessage(error: Error | string): string {
   const errorText = typeof error === "string" ? error : error.message;
 
-  return `❌ *Error*\n\n${errorText}\n\nPlease try again or check the format of your message.`;
+  return `❌ *Error*\n\n${escapeMarkdownV2(errorText)}\n\nPlease try again or check the format of your message\\.`;
 }
 
 /**

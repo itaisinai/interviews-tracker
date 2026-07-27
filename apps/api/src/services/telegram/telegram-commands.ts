@@ -10,20 +10,20 @@ export function isCommand(text: string): boolean {
 }
 
 export async function handleStartCommand(chatId: string | number) {
-  const welcomeMessage = `👋 *Welcome to Opportunity Tracker!*
+  const welcomeMessage = `👋 *Welcome to Opportunity Tracker\\!*
 
-I help you track job opportunities and answer questions about your process.
+I help you track job opportunities and answer questions about your process\\.
 
 *What I can do:*
 📝 Create opportunities from job descriptions
 🔍 Answer questions about your opportunities
 
 *Examples:*
-_Create: "Senior Software Engineer at Google, Remote, $180k-$220k"_
+_Create: "Senior Software Engineer at Google, Remote, $180k\\-$220k"_
 _Query: "What's my next interview?"_
 _Query: "What are my active processes?"_
 
-Ready? Just send me a message! 🚀`;
+Ready? Just send me a message\\! 🚀`;
 
   await sendTelegramMessage(chatId, welcomeMessage, "MarkdownV2");
 }
@@ -34,7 +34,7 @@ export async function handleHelpCommand(chatId: string | number) {
 *Create Opportunities*
 Just paste job details and I'll create an opportunity:
 _"Senior Backend Engineer at Stripe
-$180k-$220k, Remote
+$180k\\-$220k, Remote
 Applied through referral"_
 
 *Query Your Data*
@@ -46,14 +46,14 @@ Ask me questions about your opportunities:
 • "What are the instructions for my next interview?"
 
 *Commands:*
-/start - Show welcome message
-/help - Show this help message
+/start \\- Show welcome message
+/help \\- Show this help message
 
-I'll automatically detect if you're creating an opportunity or asking a question! 🤖`;
+I'll automatically detect if you're creating an opportunity or asking a question\\! 🤖`;
 
   await sendTelegramMessage(chatId, helpMessage, "MarkdownV2");
 }
 
 export async function handleUnknownCommand(chatId: string | number) {
-  await sendTelegramMessage(chatId, "❓ Unknown command. Send /help for available commands.");
+  await sendTelegramMessage(chatId, "❓ Unknown command\\. Send /help for available commands\\.");
 }

@@ -84,8 +84,8 @@ describe("Telegram Response Formatter", () => {
       // Should contain unescaped normal text
       assert.match(message, /Google/);
       assert.match(message, /Software Engineer/);
-      // Should still have markdown formatting for the emoji/title
-      assert.match(message, /✅ \*Opportunity Created!\*/);
+      // Should still have markdown formatting for the emoji/title with escaped !
+      assert.match(message, /✅ \*Opportunity Created\\!\*/);
     });
 
     it("should include view link with slug", () => {
