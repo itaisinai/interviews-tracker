@@ -9,6 +9,21 @@ A full-stack personal CRM for managing a senior software engineering job search.
 - **AI-assisted ingestion:** parse pasted job descriptions, LinkedIn job pages, Gmail messages, Telegram messages, and person/company research into structured data for user review.
 - **Integrations:** Auth0 for app auth, Google OAuth/Gmail for email import, Telegram webhooks for mobile capture and querying, Exa/OpenAI-backed research, PostgreSQL via Prisma, and AWS ECS Fargate for the API.
 
+## Automatic company research
+
+Opportunity creation persists and returns the new opportunity immediately, then enqueues automatic company research
+through `companyResearchJobService`. The current queue adapter uses `setImmediate` inside the API process, reloads
+owner-scoped company data, skips companies successfully researched in the previous seven days, applies non-empty
+research without replacing known values, and records an unread success or failure Notification Center item.
+
+The notification bell polls only the unread count every 25 seconds. The full list is refetched on window focus, when
+the bell opens, and when the Notifications page opens. Notification reads and entity links are persisted by the API.
+
+This phase is intentionally best-effort: an in-process job can be lost when the API restarts or is deployed and does
+not provide guaranteed delivery. A durable database or external queue can later replace the exported
+`companyResearchJobService` adapter while retaining its `enqueue(CompanyResearchJobInput)` boundary and the existing
+executor.
+
 ## Architecture and operating docs
 
 Start here when you need to understand or change the system:

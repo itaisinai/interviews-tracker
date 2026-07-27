@@ -110,6 +110,23 @@ model Company {
   @@index([ownerEmail, isWatchlisted])
 }
 
+model Notification {
+  id          String   @id @default(cuid())
+  ownerEmail  String
+  type        String
+  title       String
+  message     String
+  entityType  String?
+  entityId    String?
+  metadata    Json?
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerEmail, readAt])
+  @@index([ownerEmail, createdAt])
+}
+
 model CompanyDomain {
   ownerEmail String
   companyId  String
