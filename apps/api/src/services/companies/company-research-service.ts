@@ -649,7 +649,7 @@ export class CompanyResearchService {
     const result = mergeResearchResult(
       normalizedInput,
       extracted,
-      evidence.flatMap((item) => item.results.map((result) => result.url)),
+      evidence.flatMap((item) => item.results.map((result) => result.url)).filter(isValidUrl),
       evidence
     );
     if (!result.companySearchName && containsHebrew(normalizedInput.companyName)) {
