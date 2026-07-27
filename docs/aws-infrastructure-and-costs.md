@@ -197,7 +197,31 @@
 # Create a budget alert for $50/month
 aws budgets create-budget \
   --account-id $(aws sts get-caller-identity --query Account --output text) \
-  --budget file://budget.json
+  --budget '{
+    "BudgetName": "interviews-tracker-monthly",
+    "BudgetLimit": {
+      "Amount": "50",
+      "Unit": "USD"
+    },
+    "TimeUnit": "MONTHLY",
+    "BudgetType": "COST"
+  }' \
+  --notifications-with-subscribers '[
+    {
+      "Notification": {
+        "NotificationType": "ACTUAL",
+        "ComparisonOperator": "GREATER_THAN",
+        "Threshold": 80,
+        "ThresholdType": "PERCENTAGE"
+      },
+      "Subscribers": [
+        {
+          "SubscriptionType": "EMAIL",
+          "Address": "your-email@example.com"
+        }
+      ]
+    }
+  ]'
 ```
 
 ### CloudWatch alarms to create:
@@ -214,7 +238,8 @@ aws budgets create-budget \
 |----------|-------------:|
 | **Current Setup** | $40-45 |
 | **With Fargate Spot** | $34-38 |
-| **Smaller Task Size (256/512)** | $25-30 |
+| **Smaller Task Size (256/512)** | $30-35 |
+| **Both Spot + Smaller Size** | $24-28 |
 | **No ALB (not recommended)** | $22-24 |
 
 ---
@@ -241,13 +266,16 @@ aws budgets create-budget \
 
 ### Check current costs:
 ```bash
-# Last 7 days by service
+# Last 7 days by service (Linux/GNU date)
 aws ce get-cost-and-usage \
-  --time-period Start=$(date -u -v-7d +%Y-%m-%d),End=$(date -u +%Y-%m-%d) \
+  --time-period Start=$(date -u -d '7 days ago' +%Y-%m-%d),End=$(date -u +%Y-%m-%d) \
   --granularity DAILY \
   --metrics "UnblendedCost" \
   --group-by Type=DIMENSION,Key=SERVICE \
   --region us-east-1
+
+# macOS/BSD date alternative:
+# --time-period Start=$(date -u -v-7d +%Y-%m-%d),End=$(date -u +%Y-%m-%d) \
 ```
 
 ### Check ECS task status:
