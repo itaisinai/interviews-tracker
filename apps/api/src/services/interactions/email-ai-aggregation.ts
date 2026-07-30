@@ -24,6 +24,9 @@ type AiSuggestion = Awaited<ReturnType<ReturnType<typeof getAiParserService>["pa
 
 /**
  * Prepare email data for AI parsing
+ *
+ * Increased body limit from 2000 to 8000 characters to preserve important interview
+ * details that often appear later in emails (requirements, instructions, dial-in info).
  */
 function prepareEmailsForAI(attachedEmails: InteractionEmail[]) {
   const emails = [];
@@ -37,7 +40,7 @@ function prepareEmailsForAI(attachedEmails: InteractionEmail[]) {
       subject: email.subject || "",
       from: email.from || "",
       date: email.receivedDate?.toISOString() || "",
-      body: structured.plainText.slice(0, 2000),
+      body: structured.plainText.slice(0, 8000), // Increased from 2000 to preserve more details
       calendar: structured.calendar
         ? {
             start: structured.calendar.start || null,
