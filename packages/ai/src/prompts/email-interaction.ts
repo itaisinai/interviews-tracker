@@ -95,7 +95,6 @@ export const emailInteractionParserSkill = `
 
 - Return only fields that match the schema.
 - Keep agenda, notes, outcome, and followUp concise but complete.
-- Include meeting time, location, link, and original subject in notes when available.
 - Do not invent details that are not explicit in the email or calendar data.
 
 ## Success Criteria
