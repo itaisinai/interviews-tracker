@@ -23,7 +23,40 @@ export const emailInteractionParserSkill = `
   - Calendar organizer if available
   - Do NOT use the company name as the person name
 - If sender name or email exists, do not call them unknown.
-- Keep notes focused on the actual hiring interaction and preserve important details.
+
+## Person and Contact Extraction
+
+- Extract personName and personRole from interviewer mentions in the email body
+- Look for patterns like: "Interview with [Name]", "[Name] (Role/Title)", "Interviewer: [Name]"
+- Check for LinkedIn profile links that indicate the interviewer
+- Examples: "Ido Raz (Banking Team Lead, LinkedIn)", "Your interviewer will be Sarah Chen, VP of Engineering"
+- If multiple interviewers, combine with "and": "John Smith and Jane Doe"
+- Put the primary interviewer in personName, and their title/role in personRole
+
+## Meeting Link Extraction
+
+- Always extract meetingLink from video conference URLs
+- Prioritize explicit "Join with Google Meet" or "Join via Zoom" links
+- Common patterns: meet.google.com/*, zoom.us/*, us0*.zoom.us/*, teams.microsoft.com/*
+- Extract the full URL including meeting ID/code
+
+## Notes Extraction
+
+- Keep notes comprehensive and preserve ALL actionable interview preparation details
+- Include: interviewer details, meeting format, technical requirements (camera, screen sharing, tools)
+- Include: what to prepare/bring, interview style/format, coding language options, special instructions
+- Include: dial-in phone numbers with PINs, parking info, building access, dress code
+- Examples of important details to preserve:
+  * "Camera must be on, be ready to share entire screen for the duration"
+  * "Python preferred, but JavaScript/TypeScript/Node.js also available"
+  * "LeetCode-style practical problem with genuine logic and context - no AI usage permitted"
+  * "AI Notetaker will record and transcribe - opt-out link provided if preferred"
+  * "Dial-in: +972 73-359-9899 PIN: 1195053192824"
+- Do NOT include redundant metadata (subject line, from address, date) already in other fields
+- Organize with bullet points or short paragraphs for readability
+
+## Outcome and Follow-up
+
 - Put the human-readable result of the interaction in outcome.
 - Put the next action, if any, in followUp.
 - Do not use status as the main story of the process.
@@ -62,7 +95,6 @@ export const emailInteractionParserSkill = `
 
 - Return only fields that match the schema.
 - Keep agenda, notes, outcome, and followUp concise but complete.
-- Include meeting time, location, link, and original subject in notes when available.
 - Do not invent details that are not explicit in the email or calendar data.
 
 ## Success Criteria

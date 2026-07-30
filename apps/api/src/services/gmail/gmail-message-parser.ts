@@ -739,9 +739,15 @@ export function extractMeetingUrlFromStructuredEmail(email: GmailStructuredEmail
     .filter(Boolean)
     .join("\n");
   const urlMatches = sources.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
+
+  // Enhanced meeting platform detection - supports Google Meet, Zoom, Teams, WebEx, and more
   const meetingUrl = urlMatches
     .map(cleanMeetingUrl)
-    .find((url) => /(?:^https?:\/\/)?(?:[\w-]+\.)?(?:zoom\.us|meet\.google\.com)\b/i.test(url));
+    .find((url) =>
+      /(?:^https?:\/\/)?(?:[\w-]+\.)?(?:zoom\.us|meet\.google\.com|teams\.microsoft\.com|webex\.com|whereby\.com|around\.co|meet\.jit\.si|chime\.aws)\b/i.test(
+        url
+      )
+    );
 
   return meetingUrl ?? null;
 }
