@@ -29,6 +29,28 @@ import {
   senderDomainFromHeader,
 } from "./gmail-message-utils.js";
 
+export function hasMeaningfulJobRelatedSubject(subject: string) {
+  const normalizedSubject = subject.toLowerCase();
+  const meaningfulKeywords = [
+    "opportunity",
+    "position",
+    "role",
+    "application",
+    "offer",
+    "interview",
+    "assignment",
+    "assessment",
+    "take-home",
+    "challenge",
+    "recruiter",
+    "hiring",
+    "join our team",
+    "we're looking for",
+  ];
+
+  return meaningfulKeywords.some((keyword) => normalizedSubject.includes(keyword));
+}
+
 export async function searchGmailMessages(input: {
   auth0Email: string;
   jobOpportunityId: string;
@@ -153,25 +175,7 @@ export async function searchGmailMessages(input: {
         const senderDomain = candidate.senderDomain?.toLowerCase() ?? "";
 
         // Helper: Check if subject has meaningful job-related content
-        const hasMeaningfulContent = () => {
-          const meaningfulKeywords = [
-            "opportunity",
-            "position",
-            "role",
-            "application",
-            "offer",
-            "interview",
-            "assignment",
-            "assessment",
-            "take-home",
-            "challenge",
-            "recruiter",
-            "hiring",
-            "join our team",
-            "we're looking for",
-          ];
-          return meaningfulKeywords.some((keyword) => subject.includes(keyword));
-        };
+        const hasMeaningfulContent = () => hasMeaningfulJobRelatedSubject(subject);
 
         // 1. Google Calendar notifications - filter only pure notifications/reminders
         // Allow interview invitations through to AI classification
@@ -210,8 +214,10 @@ export async function searchGmailMessages(input: {
         // 3. Vendor notification platforms (e.g., comeet-notifications.com)
         // Only filter if it's from the "notifications@" sender AND has no meaningful content
         if (senderDomain.includes("-notifications.com") || senderDomain.includes("-notification.com")) {
-          // Always filter if from "notifications@" or "notification@" sender
-          if (from.includes("notifications@") || from.includes("notification@")) {
+          // Recruiting platforms commonly send real application updates from a
+          // notifications@ address. Only discard those when the subject has no
+          // meaningful job context.
+          if ((from.includes("notifications@") || from.includes("notification@")) && !hasMeaningfulContent()) {
             logInfo("gmail", "pre-filtered vendor notification sender", {
               company: input.companyName,
               subject: candidate.subject,
@@ -491,25 +497,7 @@ export async function findGmailOpportunityCandidates(input: {
       const senderDomain = senderDomainFromHeader(candidate.from)?.toLowerCase() ?? "";
 
       // Helper: Check if subject has meaningful job-related content
-      const hasMeaningfulContent = () => {
-        const meaningfulKeywords = [
-          "opportunity",
-          "position",
-          "role",
-          "application",
-          "offer",
-          "interview",
-          "assignment",
-          "assessment",
-          "take-home",
-          "challenge",
-          "recruiter",
-          "hiring",
-          "join our team",
-          "we're looking for",
-        ];
-        return meaningfulKeywords.some((keyword) => subject.includes(keyword));
-      };
+      const hasMeaningfulContent = () => hasMeaningfulJobRelatedSubject(subject);
 
       // 1. Google Calendar notifications - filter only pure notifications/reminders
       // Allow interview invitations through to AI classification
@@ -539,8 +527,10 @@ export async function findGmailOpportunityCandidates(input: {
 
       // 3. Vendor notification platforms - smarter filtering
       if (senderDomain.includes("-notifications.com") || senderDomain.includes("-notification.com")) {
-        // Always filter notifications@ sender
-        if (from.includes("notifications@") || from.includes("notification@")) {
+        // Recruiting platforms commonly send real application updates from a
+        // notifications@ address. Only discard those when the subject has no
+        // meaningful job context.
+        if ((from.includes("notifications@") || from.includes("notification@")) && !hasMeaningfulContent()) {
           console.log(
             `[Gmail Search] ❌ PRE-FILTERED (vendor notifications@ sender): ${candidate.subject} (from: ${candidate.from})`
           );

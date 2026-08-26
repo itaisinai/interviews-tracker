@@ -46,23 +46,19 @@ export function AddInteractionModal({
     setMode("text-review");
   };
 
+  const modalAction =
+    mode === "chooser"
+      ? "Add Interaction"
+      : mode === "gmail"
+        ? "Import from Gmail"
+        : mode === "text-parse"
+          ? "Parse from Text"
+          : mode === "text-review"
+            ? "Review Parsed Interaction"
+            : "Add Interaction Manually";
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={
-        mode === "chooser"
-          ? "Add Interaction"
-          : mode === "gmail"
-            ? "Import from Gmail"
-            : mode === "text-parse"
-              ? "Parse from Text"
-              : mode === "text-review"
-                ? "Review Parsed Interaction"
-                : "Add Interaction Manually"
-      }
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} title={`${modalAction} — ${companyName}`} size="lg">
       <div className="p-6">
         {mode === "chooser" && (
           <div className="space-y-4">
