@@ -11,10 +11,15 @@ import {
   parseStructuredGmailEmail,
   sortGmailSearchCandidatesByDate,
 } from "./gmail-message-parser.js";
-import { preferExplicitCompanyMatch } from "./gmail-search.js";
+import { hasMeaningfulJobRelatedSubject, preferExplicitCompanyMatch } from "./gmail-search.js";
 
 const fixturePath = new URL("./__fixtures__/gmail-unframe-interview.json", import.meta.url);
 const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as GmailRawMessageResponse;
+
+test("recognizes recruiting-platform application updates as meaningful", () => {
+  assert.equal(hasMeaningfulJobRelatedSubject("Full Stack Engineer opportunity at Imagen"), true);
+  assert.equal(hasMeaningfulJobRelatedSubject("Your weekly account notification"), false);
+});
 
 test("parses Unframe interview email with calendar-safe date and generic interview stage", async () => {
   const email = await parseStructuredGmailEmail({ message: fixture });
