@@ -18,9 +18,11 @@ function buildOpportunityScopedGmailMessageStateWhere(jobOpportunityId?: string 
     return {};
   }
 
-  return {
-    OR: [{ jobOpportunityId }, { jobOpportunityId: null }] satisfies Prisma.GmailMessageStateWhereInput[],
-  };
+  // A legacy row without an opportunity is global/ambiguous. Including it here made
+  // an email ignored for one company appear ignored (and suppressed) for every
+  // company. Keep opportunity searches strictly scoped; legacy rows remain
+  // available through the all-ignored view.
+  return { jobOpportunityId } satisfies Prisma.GmailMessageStateWhereInput;
 }
 
 async function getSuppressedGmailMessageIds(input: { auth0Email: string; jobOpportunityId: string }) {

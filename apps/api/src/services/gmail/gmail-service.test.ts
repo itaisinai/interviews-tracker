@@ -19,7 +19,7 @@ function encryptRefreshToken(value: string, secret: string) {
   return `${iv.toString("base64url")}.${tag.toString("base64url")}.${encrypted.toString("base64url")}`;
 }
 
-test("gmail tracked states include legacy null-scoped rows and can clear them", async () => {
+test("gmail tracked states are restricted to the requested opportunity", async () => {
   const originalEnv = {
     GMAIL_CLIENT_ID: process.env.GMAIL_CLIENT_ID,
     GMAIL_CLIENT_SECRET: process.env.GMAIL_CLIENT_SECRET,
@@ -120,7 +120,8 @@ test("gmail tracked states include legacy null-scoped rows and can clear them", 
     });
 
     assert.equal(seenWhere.length, 1);
-    assert.deepEqual(seenWhere[0]?.OR, [{ jobOpportunityId: "opportunity-1" }, { jobOpportunityId: null }]);
+    assert.equal(seenWhere[0]?.jobOpportunityId, "opportunity-1");
+    assert.equal(seenWhere[0]?.OR, undefined);
     assert.deepEqual(
       tracked.removedEmails.map((email) => email.id),
       ["legacy-hidden"]
@@ -144,7 +145,8 @@ test("gmail tracked states include legacy null-scoped rows and can clear them", 
     assert.equal(deleteWheres.length, 2);
     for (const where of deleteWheres) {
       assert.equal(where?.status === "HIDDEN" || where?.status === "USED", true);
-      assert.deepEqual(where?.OR, [{ jobOpportunityId: "opportunity-1" }, { jobOpportunityId: null }]);
+      assert.equal(where?.jobOpportunityId, "opportunity-1");
+      assert.equal(where?.OR, undefined);
     }
   } finally {
     globalThis.fetch = originalFetch;

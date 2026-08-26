@@ -11,6 +11,7 @@ import {
   parseStructuredGmailEmail,
   sortGmailSearchCandidatesByDate,
 } from "./gmail-message-parser.js";
+import { preferExplicitCompanyMatch } from "./gmail-search.js";
 
 const fixturePath = new URL("./__fixtures__/gmail-unframe-interview.json", import.meta.url);
 const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as GmailRawMessageResponse;
@@ -112,6 +113,53 @@ test("fallback classification uses English aliases for Hebrew company names", ()
 
   assert.equal(classification.isRelevant, true);
   assert.equal(classification.emailType, "INTERVIEW_INVITATION");
+});
+
+test("keeps a new email when its subject explicitly names the company", () => {
+  const fallback = classifySearchCandidateFallback({
+    messageId: "imagen-message",
+    companyName: "Imagen",
+    roleTitle: "Full Stack Engineer",
+    subject: "Full Stack Engineer opportunity at Imagen",
+    from: "Yam Schatzman <yam@example.com>",
+    snippet: "We appreciate the time...",
+    date: "2026-08-26T09:00:00.000Z",
+  });
+
+  const relevance = preferExplicitCompanyMatch({
+    fallback,
+    ai: { ...fallback, isRelevant: false, confidence: 0.8, reason: "AI false negative" },
+    subject: "Full Stack Engineer opportunity at Imagen",
+    from: "Yam Schatzman <yam@example.com>",
+    companyName: "Imagen",
+  });
+
+  assert.equal(relevance.isRelevant, true);
+  assert.match(relevance.reason, /imagen/i);
+});
+
+test("lets AI reject a broad match that names the company only in quoted body text", () => {
+  const fallback = classifySearchCandidateFallback({
+    messageId: "unrelated-message",
+    companyName: "CrowdStrike",
+    roleTitle: "Software Engineer",
+    subject: "Onsite Interview Blocks",
+    from: "Blocks Recruiting <scheduler@comeet-notifications.com>",
+    snippet: "Reply above to continue. Earlier thread mentioned CrowdStrike.",
+    date: "2026-08-19T09:00:00.000Z",
+  });
+  const ai = { ...fallback, isRelevant: false, confidence: 0.9, reason: "Different company" };
+
+  const relevance = preferExplicitCompanyMatch({
+    fallback,
+    ai,
+    subject: "Onsite Interview Blocks",
+    from: "Blocks Recruiting <scheduler@comeet-notifications.com>",
+    companyName: "CrowdStrike",
+    companyDomains: ["crowdstrike.com"],
+  });
+
+  assert.equal(relevance, ai);
 });
 
 test("sorts Gmail search candidates newest first", () => {

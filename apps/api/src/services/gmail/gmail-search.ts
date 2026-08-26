@@ -301,7 +301,15 @@ export async function searchGmailMessages(input: {
     const rankedCandidates = sortGmailSearchCandidatesByDate(
       candidates.map((candidate) => ({
         ...candidate,
-        relevance: classificationMap.get(candidate.id) ?? candidate.relevance,
+        relevance: preferExplicitCompanyMatch({
+          fallback: candidate.relevance,
+          ai: classificationMap.get(candidate.id),
+          subject: candidate.subject,
+          from: candidate.from,
+          companyName: input.companyName,
+          companySearchName: input.companySearchName,
+          companyDomains: input.companyDomains,
+        }),
       }))
     );
 
@@ -316,6 +324,35 @@ export async function searchGmailMessages(input: {
     timer.fail(error, { company: input.companyName });
     throw error;
   }
+}
+
+export function preferExplicitCompanyMatch(input: {
+  fallback: z.infer<typeof gmailEmailClassificationSchema>;
+  ai?: z.infer<typeof gmailEmailClassificationSchema>;
+  subject: string;
+  from: string;
+  companyName: string;
+  companySearchName?: string | null;
+  companyDomains?: Array<string | null | undefined>;
+}) {
+  const identityText = `${input.subject}\n${input.from}`.toLowerCase();
+  const names = [input.companyName, input.companySearchName]
+    .map((name) => name?.trim().toLowerCase())
+    .filter((name): name is string => Boolean(name));
+  const domains = (input.companyDomains ?? [])
+    .map((domain) => domain?.trim().toLowerCase().replace(/^@/, ""))
+    .filter((domain): domain is string => Boolean(domain));
+  const hasExplicitIdentity =
+    names.some((name) => identityText.includes(name)) || domains.some((domain) => identityText.includes(`@${domain}`));
+
+  // AI can refine broad Gmail matches, but it must not hide an email whose visible
+  // subject/sender explicitly identifies the company (the common false-negative
+  // case for a newly received recruiter email).
+  if (hasExplicitIdentity && input.fallback.isRelevant) {
+    return input.fallback;
+  }
+
+  return input.ai ?? input.fallback;
 }
 
 export async function findGmailOpportunityCandidates(input: {
