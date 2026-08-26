@@ -83,7 +83,8 @@ export function GmailEmailSelector({
 
   // Filter out excluded emails and locally ignored emails
   const availableCandidates = candidates.filter(
-    (candidate) => !filterOutIds.has(candidate.id) && !locallyIgnoredIds.has(candidate.id)
+    (candidate) =>
+      candidate.relevance.isRelevant && !filterOutIds.has(candidate.id) && !locallyIgnoredIds.has(candidate.id)
   );
 
   // Calculate ignored emails including locally ignored and those from messageStates
