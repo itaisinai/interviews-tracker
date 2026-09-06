@@ -30,6 +30,20 @@ provider "aws" {
   }
 }
 
+# Provider for us-east-1 (required for CloudFront ACM certificates)
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = {
+      Project     = "interviews-tracker"
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}
+
 # Data sources
 data "aws_caller_identity" "current" {}
 
@@ -59,10 +73,24 @@ locals {
 
   # Convert SSM parameter paths to environment variable format
   # e.g., /interviews-tracker/prod/DATABASE_URL -> DATABASE_URL
-  ssm_secrets = [
+  ssm_secrets_from_path = [
     for param in data.aws_ssm_parameters_by_path.app_secrets.names : {
       name      = replace(param, "/interviews-tracker/prod/", "")
       valueFrom = param
     }
   ]
+
+  # If RDS is created, explicitly include its DATABASE_URL parameter
+  # This ensures proper ordering: RDS creates parameter -> ECS reads it
+  rds_database_secret = var.create_rds ? [{
+    name      = "DATABASE_URL"
+    valueFrom = aws_ssm_parameter.database_url[0].name
+  }] : []
+
+  # Merge existing SSM parameters with RDS parameter (if created)
+  # RDS parameter takes precedence if both exist
+  ssm_secrets = concat(
+    [for s in local.ssm_secrets_from_path : s if s.name != "DATABASE_URL"],
+    local.rds_database_secret
+  )
 }

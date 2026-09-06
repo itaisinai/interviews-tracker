@@ -1,25 +1,37 @@
+# ============================================
+# Terraform Variables Configuration
+# ============================================
+# Copy this file to terraform.tfvars and fill in your values
+# IMPORTANT: Never commit terraform.tfvars to git (it's in .gitignore)
+
 # AWS Configuration
 aws_region  = "eu-central-1"
 environment = "prod"
 
-# ECS Configuration
-app_image     = "669424048162.dkr.ecr.eu-central-1.amazonaws.com/interviews-tracker:latest"
-cpu           = 512
-memory        = 1024
+# Domain Configuration
+domain_name         = "interviews.trackylab.com"  # Your full app domain
+root_domain_name    = "trackylab.com"            # Your Route53 hosted zone
+create_www_redirect = false
+
+# ECS Configuration (Cost-optimized for minimal usage)
+cpu           = 256  # 0.25 vCPU
+memory        = 512  # 0.5 GB RAM
 desired_count = 1
+
+# Container Image
+app_image = "669424048162.dkr.ecr.eu-central-1.amazonaws.com/interviews-tracker:latest"
+
+# Logging
+log_retention_days = 7  # Reduce to save on CloudWatch costs
+
+# RDS Configuration
+create_rds              = true  # Using AWS RDS PostgreSQL
+db_instance_class       = "db.t4g.micro"
+db_allocated_storage    = 20
+db_max_allocated_storage = 50
+db_username             = "postgres"
+# db_password          = "YOUR_SECURE_PASSWORD_HERE" # Set via TF_VAR_db_password instead
+db_backup_retention_days = 7
 
 # Health Check
 health_check_grace_period = 60
-
-# Logging
-log_retention_days = 14
-
-# HTTPS (optional)
-enable_https    = false
-certificate_arn = ""
-
-# To enable HTTPS:
-# 1. Create an ACM certificate in AWS Console or CLI
-# 2. Validate the certificate
-# 3. Set enable_https = true
-# 4. Set certificate_arn to your certificate ARN

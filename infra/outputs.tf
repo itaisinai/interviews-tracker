@@ -25,12 +25,12 @@ output "ecs_cluster_arn" {
 
 output "ecs_service_name" {
   description = "Name of the ECS service"
-  value       = aws_ecs_service.app.name
+  value       = "interviews-tracker"
 }
 
 output "ecs_service_arn" {
   description = "ARN of the ECS service"
-  value       = aws_ecs_service.app.id
+  value       = try(aws_ecs_service.app.id, "")
 }
 
 output "task_definition_arn" {
@@ -61,4 +61,35 @@ output "execution_role_arn" {
 output "task_role_arn" {
   description = "ARN of the ECS task role"
   value       = aws_iam_role.ecs_task.arn
+}
+
+# ============================================
+# DNS Outputs
+# ============================================
+output "domain_name" {
+  description = "Application domain name"
+  value       = var.domain_name
+}
+
+output "api_url" {
+  description = "API URL (HTTP only - HTTPS temporarily disabled)"
+  value       = var.create_route53_records ? "http://api.${var.domain_name}" : "http://${aws_lb.main.dns_name}"
+}
+
+output "route53_fqdn" {
+  description = "Route53 FQDN (empty if Route53 not enabled)"
+  value       = var.create_route53_records ? aws_route53_record.api[0].fqdn : "Route53 not enabled"
+}
+
+# ============================================
+# Database Outputs (if RDS is created)
+# ============================================
+output "database_endpoint" {
+  description = "RDS database endpoint (empty if not using RDS)"
+  value       = var.create_rds ? aws_db_instance.main[0].endpoint : "Not using RDS"
+}
+
+output "database_name" {
+  description = "RDS database name (empty if not using RDS)"
+  value       = var.create_rds ? aws_db_instance.main[0].db_name : "Not using RDS"
 }
