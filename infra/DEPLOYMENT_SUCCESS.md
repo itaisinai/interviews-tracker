@@ -20,8 +20,10 @@
 
 **Credentials:**
 - Username: `postgres`
-- Password: `s1wdeT7QqUEtPDc4QiAeQeVNApXEQp0K`
+- Password: Stored securely in AWS SSM Parameter Store
 - Connection String stored in SSM: `/interviews-tracker/prod/DATABASE_URL`
+
+⚠️ **Security Note:** Database credentials are managed through AWS Systems Manager Parameter Store. Use the AWS CLI to retrieve them securely (see Secrets Management section below).
 
 ### 2. ECS Fargate Service ✅
 - **Cluster:** interviews-tracker
@@ -134,7 +136,14 @@ The database is empty and needs Prisma migrations:
 
 ```bash
 # Option A: From local machine (requires VPN or public access)
-export DATABASE_URL="postgresql://postgres:s1wdeT7QqUEtPDc4QiAeQeVNApXEQp0K@interviews-tracker.c52om4gaqpwf.eu-central-1.rds.amazonaws.com:5432/interviews_tracker"
+# First, retrieve the DATABASE_URL from SSM
+export DATABASE_URL=$(aws ssm get-parameter \
+  --name "/interviews-tracker/prod/DATABASE_URL" \
+  --region eu-central-1 \
+  --with-decryption \
+  --query 'Parameter.Value' \
+  --output text)
+
 npx prisma migrate deploy
 
 # Option B: From ECS task (if exec enabled)

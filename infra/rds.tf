@@ -92,7 +92,7 @@ resource "aws_ssm_parameter" "database_url" {
   name        = "/interviews-tracker/prod/DATABASE_URL"
   description = "PostgreSQL connection string for ${local.app_name}"
   type        = "SecureString"
-  value       = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.main[0].endpoint}/${aws_db_instance.main[0].db_name}"
+  value       = "postgresql://${urlencode(var.db_username)}:${urlencode(var.db_password)}@${aws_db_instance.main[0].endpoint}/${aws_db_instance.main[0].db_name}"
   overwrite   = true
 
   tags = {

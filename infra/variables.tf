@@ -73,6 +73,12 @@ variable "root_domain_name" {
   default     = "trackylab.com"
 }
 
+variable "create_route53_records" {
+  description = "Create Route53 DNS records (requires existing hosted zone)"
+  type        = bool
+  default     = false
+}
+
 variable "create_www_redirect" {
   description = "Create www subdomain redirect"
   type        = bool

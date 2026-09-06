@@ -73,7 +73,12 @@ output "domain_name" {
 
 output "api_url" {
   description = "API URL (HTTP only - HTTPS temporarily disabled)"
-  value       = "http://${aws_lb.main.dns_name}"
+  value       = var.create_route53_records ? "http://api.${var.domain_name}" : "http://${aws_lb.main.dns_name}"
+}
+
+output "route53_fqdn" {
+  description = "Route53 FQDN (empty if Route53 not enabled)"
+  value       = var.create_route53_records ? aws_route53_record.api[0].fqdn : "Route53 not enabled"
 }
 
 # ============================================
