@@ -19,7 +19,7 @@ Go to: https://vercel.com/[your-team]/interviews-tracker/settings/environment-va
 Add these variables for **Production** environment:
 
 ```
-VITE_API_BASE_URL=https://api.interviews.trackylab.com/api
+VITE_API_BASE_URL=https://api.interviews.trackylab.com
 VITE_AUTH0_DOMAIN=dev-c1s005zh8spezp0e.us.auth0.com
 VITE_AUTH0_CLIENT_ID=hlI5kn4lePStXeHJohsGqyKnyoBHJtTW
 VITE_AUTH0_AUDIENCE=https://interviews-tracker-api.com
@@ -39,7 +39,7 @@ npm i -g vercel
 
 # Set environment variables
 vercel env add VITE_API_BASE_URL production
-# When prompted, enter: https://api.interviews.trackylab.com/api
+# When prompted, enter: https://api.interviews.trackylab.com
 
 vercel env add VITE_AUTH0_DOMAIN production
 # When prompted, enter: dev-c1s005zh8spezp0e.us.auth0.com
@@ -70,7 +70,7 @@ Or push a new commit to trigger automatic deployment.
 ## Verification
 
 After deployment, check the browser console network tab. API requests should go to:
-- ✅ `https://api.interviews.trackylab.com/api/*`
+- ✅ `https://api.interviews.trackylab.com/*`
 - ❌ NOT `http://localhost:4000/api/*`
 - ❌ NOT using HTTP (must be HTTPS to avoid mixed content errors)
 
