@@ -664,16 +664,23 @@ export function buildGmailSearchQueries(
   const companyVariants = buildCompanySearchVariants(companyName, aliases);
   const queries = new Set<string>();
 
+  // IMPROVED: Use stricter queries that require context, not just company name mention
+  // This prevents false matches where company is mentioned in passing/comparisons
   for (const variant of companyVariants) {
-    queries.add(`${variant} newer_than:365d`);
-    queries.add(`"${variant}" interview newer_than:365d`);
-    queries.add(`"${variant}" (interview OR recruiter OR assignment OR offer OR rejection) newer_than:365d`);
+    // Require company name + job-related keywords (not bare company name)
+    queries.add(
+      `"${variant}" (interview OR recruiter OR assignment OR offer OR rejection OR application OR position OR role OR hiring) newer_than:365d`
+    );
+
+    // Subject-scoped search (company must be in subject)
+    queries.add(`subject:"${variant}" (interview OR recruiter) newer_than:365d`);
 
     if (roleTitle?.trim()) {
       queries.add(`"${variant}" "${roleTitle.trim()}" newer_than:365d`);
     }
   }
 
+  // Domain-based queries are already strict (from:domain)
   for (const query of buildRelatedSenderDomainSearchQueries(companyName, senderDomains, aliases)) {
     queries.add(query);
   }
@@ -915,15 +922,13 @@ export function classifySearchCandidateFallback(input: {
   const company = companyNames[0] ?? input.companyName.toLowerCase();
   const role = input.roleTitle?.toLowerCase() ?? "";
   const senderDomain = input.senderDomain?.toLowerCase() ?? "";
-  const searchQuery = input.searchQuery?.toLowerCase() ?? "";
   const companyTokens = buildCompanySearchTokens(input.companyName, input.companyAliases);
   const domainRelated = companyTokens.some((token) => senderDomain.includes(token));
-  const queryRelated = companyTokens.some((token) => searchQuery.includes(token));
+
+  // FIXED: Removed queryRelated circular logic - don't use the fact that Gmail
+  // returned this email as evidence of relevance. Only check actual content.
   const related =
-    companyNames.some((name) => text.includes(name)) ||
-    (role ? text.includes(role) : false) ||
-    domainRelated ||
-    queryRelated;
+    companyNames.some((name) => text.includes(name)) || (role ? text.includes(role) : false) || domainRelated;
   const interview =
     /interview|screening|onsite|phone screen|recruiter|assignment|offer|rejection|follow[- ]up|invitation|meeting|calendar/.test(
       text
@@ -943,16 +948,12 @@ export function classifySearchCandidateFallback(input: {
   let reason = "No strong company or hiring-process signal found.";
 
   if (relevant) {
-    if (queryRelated && interview) {
-      reason = `Matched a related sender-domain search for ${company} and hiring-process language.`;
-    } else if (domainRelated && interview) {
+    if (domainRelated && interview) {
       reason = `Sender domain matches ${company} and hiring-process language.`;
     } else if (related && interview) {
       reason = `Mentions ${company} and hiring-process language.`;
     } else if (domainRelated) {
       reason = `Sender domain matches ${company}.`;
-    } else if (queryRelated) {
-      reason = `Matched a related sender-domain search for ${company}.`;
     } else if (related) {
       reason = `Directly mentions ${company}.`;
     } else {
