@@ -46,7 +46,10 @@ const localOrigins = [
   "http://localhost:5176",
   "http://127.0.0.1:5176",
 ];
-const productionOrigins = ["https://interviews-tracker.vercel.app"];
+const productionOrigins = [
+  "https://interviews-tracker.vercel.app",
+  "https://interviews.trackylab.com", // Custom domain
+];
 const frontendOrigins = (process.env.FRONTEND_ORIGIN ?? "")
   .split(",")
   .map((origin) => origin.trim())
