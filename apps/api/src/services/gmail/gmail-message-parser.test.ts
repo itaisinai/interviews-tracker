@@ -39,11 +39,16 @@ test("parses Unframe interview email with calendar-safe date and generic intervi
   assert.match(derived.notes ?? "", /Noam Shchori/);
 });
 
-test("builds greedy Gmail queries for .ai company names", () => {
+test("builds Gmail queries for .ai company names with both full and stripped variants", () => {
   const queries = buildGmailSearchQueries("Unframe.ai", "Software Engineer");
 
-  assert.ok(queries.some((query) => query.includes("Unframe.ai newer_than:365d")));
-  assert.ok(queries.some((query) => query.includes("Unframe newer_than:365d")));
+  // Should include both "Unframe.ai" and "Unframe" variants with job keywords
+  assert.ok(
+    queries.some((query) => query.includes('"Unframe.ai"') && query.includes("interview OR recruiter OR assignment"))
+  );
+  assert.ok(
+    queries.some((query) => query.includes('"Unframe"') && query.includes("interview OR recruiter OR assignment"))
+  );
   assert.ok(queries.some((query) => query.includes('"Unframe.ai" "Software Engineer" newer_than:365d')));
   assert.ok(queries.some((query) => query.includes('"Unframe" "Software Engineer" newer_than:365d')));
 });
@@ -51,17 +56,20 @@ test("builds greedy Gmail queries for .ai company names", () => {
 test("builds Gmail queries with an English search alias for Hebrew company names", () => {
   const queries = buildGmailSearchQueries("טוקו", "Software Engineer", ["Toko"]);
 
-  assert.ok(queries.some((query) => query.includes("טוקו newer_than:365d")));
-  assert.ok(queries.some((query) => query.includes("Toko newer_than:365d")));
+  // Should include both Hebrew and English variants with job context
+  assert.ok(queries.some((query) => query.includes("טוקו") && query.includes("interview OR recruiter")));
+  assert.ok(queries.some((query) => query.includes("Toko") && query.includes("interview OR recruiter")));
   assert.ok(queries.some((query) => query.includes('"Toko" "Software Engineer" newer_than:365d')));
 });
 
 test("builds extra searches for sender domains that include the company token", () => {
   const queries = buildRelatedSenderDomainSearchQueries("Alta", ["altahq.com", "dialog.co.il", "gmail.com", null]);
 
-  assert.ok(queries.includes("altahq newer_than:365d"));
+  // Should only create domain-scoped queries (not bare word searches)
   assert.ok(queries.includes('"altahq.com" newer_than:365d'));
   assert.ok(queries.includes("from:altahq.com newer_than:365d"));
+  // Should not include bare word search "altahq newer_than:365d" (removed to prevent false positives)
+  assert.equal(queries.includes("altahq newer_than:365d"), false);
   assert.equal(
     queries.some((query) => query.includes("dialog")),
     false
@@ -71,17 +79,21 @@ test("builds extra searches for sender domains that include the company token", 
 test("builds initial Gmail searches from known company domains", () => {
   const queries = buildGmailSearchQueries("Alta", "Senior Software Engineer", [], ["altahq.com"]);
 
-  assert.ok(queries.includes("altahq newer_than:365d"));
+  // Should only create domain-scoped queries (not bare word searches)
   assert.ok(queries.includes('"altahq.com" newer_than:365d'));
   assert.ok(queries.includes("from:altahq.com newer_than:365d"));
+  // Should not include bare word search (removed to prevent false positives)
+  assert.equal(queries.includes("altahq newer_than:365d"), false);
 });
 
 test("builds extra sender-domain searches from English aliases", () => {
   const queries = buildRelatedSenderDomainSearchQueries("טוקו", ["toku.com"], ["Toku"]);
 
-  assert.ok(queries.includes("toku newer_than:365d"));
+  // Should only create domain-scoped queries (not bare word searches)
   assert.ok(queries.includes('"toku.com" newer_than:365d'));
   assert.ok(queries.includes("from:toku.com newer_than:365d"));
+  // Should not include bare word search (removed to prevent false positives)
+  assert.equal(queries.includes("toku newer_than:365d"), false);
 });
 
 test("fallback classification treats matching sender domains as company-related", () => {

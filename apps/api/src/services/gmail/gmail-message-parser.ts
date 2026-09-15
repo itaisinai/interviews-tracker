@@ -672,10 +672,13 @@ export function buildGmailSearchQueries(
     // Subject-scoped search (company must be in subject with job keywords)
     queries.add(`subject:"${variant}" (interview OR recruiter OR assessment OR coding OR next steps) newer_than:365d`);
 
-    // Fallback: Company in subject only (for cases like "Acme coding assessment")
-    // AI will filter false positives, but this ensures we don't miss legitimate emails
-    // with non-standard subject lines
-    queries.add(`subject:"${variant}" newer_than:365d`);
+    // Fallback: Company in subject with minimal job context
+    // Removed pure subject-only query as it caused too many false positives for common company names
+    // (e.g., "subject:Microsoft" matches account notifications, product emails, etc.)
+    // Instead, require at least one minimal job-related indicator:
+    queries.add(
+      `subject:"${variant}" (interview OR recruiter OR position OR role OR opportunity OR application OR assessment OR team OR join OR career) newer_than:365d`
+    );
 
     if (roleTitle?.trim()) {
       queries.add(`"${variant}" "${roleTitle.trim()}" newer_than:365d`);
@@ -712,12 +715,10 @@ export function buildRelatedSenderDomainSearchQueries(
       continue;
     }
 
-    const domainRoot = domain.split(".")[0]?.trim();
-
-    if (domainRoot && domainRoot.length >= 3) {
-      queries.add(`${domainRoot} newer_than:365d`);
-    }
-
+    // Only create queries scoped to the exact domain (from:)
+    // Removed bare word search for domainRoot as it causes false positives:
+    // e.g., "microsoft newer_than:365d" matches ANY email mentioning Microsoft anywhere,
+    // including job descriptions from other companies that mention Microsoft as a comparison.
     queries.add(`"${domain}" newer_than:365d`);
     queries.add(`from:${domain} newer_than:365d`);
   }
