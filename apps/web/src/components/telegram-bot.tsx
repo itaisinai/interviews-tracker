@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { Button, MaterialIcon, Spinner } from "@interviews-tracker/design-system";
+import { MaterialIcon, Spinner } from "@interviews-tracker/design-system";
 
 import { useLocalStorage } from "../hooks/use-local-storage";
 import { api } from "../lib/api";
@@ -106,7 +106,7 @@ function formatMarkdown(text: string): JSX.Element {
       // Add plain URL as clickable link
       const url = urlMatch[1];
       // Shorten display text for long URLs
-      const displayText = url.length > 50 ? url.substring(0, 47) + "..." : url;
+      const displayText = url.length > 50 ? `${url.substring(0, 47)}...` : url;
       parts.push(
         <a
           key={`url-${key++}`}
@@ -141,7 +141,7 @@ export function TelegramBot() {
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const isDraggingRef = useRef(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
+  const _dragStartRef = useRef({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
   // Store button position in localStorage
@@ -197,7 +197,7 @@ export function TelegramBot() {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isLoading, isOpen]);
+  }, [isOpen]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;

@@ -10,7 +10,6 @@ import {
   fromPersistentNotification,
   NOTIFICATIONS_STORAGE_KEY,
   syncNotifications,
-  unreadNotificationsCount,
 } from "../../lib/notifications";
 
 import { NotificationsContext, type NotificationsContextValue } from "./notifications-context";

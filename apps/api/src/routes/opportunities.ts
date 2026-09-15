@@ -21,13 +21,7 @@ import {
 } from "../controllers/opportunities-controller.js";
 import { asyncHandler } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
-import {
-  serializeInteraction,
-  serializeInteractions,
-  serializeOpportunities,
-  serializeOpportunity,
-  serializePerson,
-} from "../lib/serializers.js";
+import { serializeInteractions, serializeOpportunity, serializePerson } from "../lib/serializers.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };
 

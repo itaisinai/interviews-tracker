@@ -29,7 +29,7 @@ function stripMarkdownLink(value: string): string {
   return value.match(/^\[([^\]]+)\]/)?.[1] || value;
 }
 
-function normalizeCompanyName(name: string): string {
+function _normalizeCompanyName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
@@ -54,7 +54,7 @@ function parseExperienceDateLine(line: string): { dates: string; duration?: stri
   };
 }
 
-function parseCompanyLine(line: string): string {
+function _parseCompanyLine(line: string): string {
   return stripMarkdownLink(line).split(/[·•]/)[0]?.trim() || "";
 }
 
@@ -142,7 +142,7 @@ export class ExaProvider {
       }
 
       const result = linkedInResults[0];
-      // @ts-ignore - text field exists when contents.text is requested
+      // @ts-expect-error - text field exists when contents.text is requested
       const text = result.text;
 
       if (!text) {
@@ -217,7 +217,7 @@ export class ExaProvider {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      const nextLine = lines[i + 1];
+      const _nextLine = lines[i + 1];
 
       // Detect sections
       if (line.match(/^(?:#+\s*)?Experience$/i)) {
@@ -275,9 +275,9 @@ export class ExaProvider {
           // Start new position under the same company
           const positionTitle = line.replace(/^####\s*/, "").trim();
           currentExperience = {
-            // @ts-ignore
+            // @ts-expect-error
             company: currentExperience?.company || "",
-            // @ts-ignore
+            // @ts-expect-error
             companyUrl: currentExperience?.companyUrl,
             title: positionTitle,
           };
@@ -410,7 +410,7 @@ export class ExaProvider {
             if (!currentExperience.description) {
               currentExperience.description = line;
             } else {
-              currentExperience.description += " " + line;
+              currentExperience.description += ` ${line}`;
             }
           }
         }

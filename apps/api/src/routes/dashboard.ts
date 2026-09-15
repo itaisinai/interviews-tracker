@@ -3,8 +3,6 @@ import { type Request, Router } from "express";
 import { asyncHandler } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
 import { serializeInteractions, serializeOpportunities } from "../lib/serializers.js";
-import { normalizeOverdueScheduledInteractionsForRead } from "../repositories/interaction-read-normalizer.js";
-import { syncOpportunityStatusRecord } from "../repositories/opportunity-repository.js";
 import { startOfToday } from "../services/gmail/date-helpers.js";
 
 type AuthenticatedRequest = Request & { auth: { email: string } };

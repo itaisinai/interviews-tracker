@@ -1,7 +1,7 @@
 import { MaterialIcon } from "@interviews-tracker/design-system";
 
 import { displayLabelForEnumValue, normalizeInteractionType } from "../../lib/enum-labels";
-import { formatDateTime, formatDurationBetween } from "../../lib/format";
+import { formatDurationBetween } from "../../lib/format";
 import { getInteractionTimelineBadgeMeta } from "../../lib/interaction-status";
 import type { Interaction } from "../../lib/types";
 

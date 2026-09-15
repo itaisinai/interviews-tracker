@@ -21,7 +21,6 @@ export function filterNotifications(notifications: readonly AppNotification[], f
     case "Opportunities":
     case "System":
       return [];
-    case "All":
     default:
       return [...notifications];
   }

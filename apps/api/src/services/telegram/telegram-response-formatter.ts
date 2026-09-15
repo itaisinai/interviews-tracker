@@ -12,7 +12,7 @@ function escapeMarkdownV2(text: string): string {
 /**
  * Format a date for Telegram display
  */
-function formatDateForDisplay(isoDate: string): string {
+function _formatDateForDisplay(isoDate: string): string {
   const date = new Date(isoDate);
   const now = new Date();
   const tomorrow = new Date(now);

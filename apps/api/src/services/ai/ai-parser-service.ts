@@ -513,7 +513,7 @@ export class OpenAiParserService implements AiParserService {
         from: email.from,
         date: email.date,
         bodyLength: email.body.length,
-        bodyPreview: email.body.slice(0, 150) + "...",
+        bodyPreview: `${email.body.slice(0, 150)}...`,
         hasCalendar: !!email.calendar,
         calendarStart: email.calendar?.start,
         calendarEnd: email.calendar?.end,

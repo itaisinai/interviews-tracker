@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import type { CompanyExperience } from "@interviews-tracker/design-system";
 import { Button, Checkbox, IconLink, JobHistoryTimeline, MaterialIcon, Modal } from "@interviews-tracker/design-system";

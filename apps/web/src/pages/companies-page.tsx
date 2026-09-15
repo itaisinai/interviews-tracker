@@ -8,7 +8,6 @@ import { DataTable, MaterialIcon } from "@interviews-tracker/design-system";
 import { Button, InlineLoadingState, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
 import { PageIntro } from "../components/app-layout";
-import { Badge } from "../components/badge";
 import { api } from "../lib/api";
 import { formatDate, initials } from "../lib/format";
 

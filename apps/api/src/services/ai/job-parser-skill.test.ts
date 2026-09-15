@@ -126,7 +126,7 @@ test("openai interaction parser schema includes meetingLink", async () => {
     };
 
     assert.ok(request.text?.format?.schema?.required?.includes("meetingLink"));
-    assert.ok(Object.prototype.hasOwnProperty.call(request.text?.format?.schema?.properties ?? {}, "meetingLink"));
+    assert.ok(Object.hasOwn(request.text?.format?.schema?.properties ?? {}, "meetingLink"));
   } finally {
     globalThis.fetch = originalFetch;
   }

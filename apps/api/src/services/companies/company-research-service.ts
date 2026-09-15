@@ -438,7 +438,7 @@ function mergeResearchResult(
 function truncateText(text: string | null, maxLength: number): string | null {
   if (!text) return null;
   if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + "... [truncated]";
+  return `${text.slice(0, maxLength)}... [truncated]`;
 }
 
 function createEvidencePayload(evidence: ResearchEvidence[]) {

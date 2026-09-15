@@ -5,12 +5,7 @@ import { asyncHandler } from "../lib/http.js";
 import { createTimer } from "../lib/logger.js";
 import { prisma } from "../lib/prisma.js";
 import { companyInputSchema, companyResearchApplyInputSchema, companyResearchInputSchema } from "../lib/schemas.js";
-import {
-  serializeCompany,
-  serializeCompanyDetail,
-  serializeCompanySummary,
-  serializeInteraction,
-} from "../lib/serializers.js";
+import { serializeCompany, serializeCompanyDetail } from "../lib/serializers.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
 import { applyCompanyResearch } from "../services/companies/company-research-apply-service.js";
 import { buildResearchNote, getCompanyResearchService } from "../services/companies/company-research-service.js";

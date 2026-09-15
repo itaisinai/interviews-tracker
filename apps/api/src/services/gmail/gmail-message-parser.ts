@@ -1,12 +1,9 @@
 import type {
   GmailDerivedInteraction,
-  GmailMeetingDateSource,
   GmailRawMessageHeader,
   GmailRawMessagePayload,
   GmailRawMessageResponse,
   GmailSearchCandidateClassification,
-  GmailSearchCandidateMetadata,
-  GmailSearchQuery,
   GmailStructuredEmail,
   GmailStructuredEmailCalendar,
 } from "@interviews-tracker/integrations";
@@ -550,7 +547,7 @@ export async function parseStructuredGmailEmail(input: {
   const threadId = input.message.threadId ?? "";
   let calendar = structured.calendar;
   let plainText = structured.plainText;
-  let htmlText = structured.htmlText;
+  const htmlText = structured.htmlText;
   let calendarText = structured.calendarText;
 
   // If no plainText but we have HTML, strip HTML to get text

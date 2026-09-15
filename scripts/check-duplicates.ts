@@ -47,7 +47,7 @@ async function main() {
   }
 
   let foundDuplicates = false;
-  for (const [key, persons] of grouped.entries()) {
+  for (const [_key, persons] of grouped.entries()) {
     if (persons.length > 1) {
       foundDuplicates = true;
       console.log("\n---");

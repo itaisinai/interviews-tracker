@@ -1,15 +1,11 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
-import {
-  companyResearchRunMeta,
-  type CompanyResearchRunState,
-  companyResearchStepMessages,
-} from "../../lib/company-research";
+import { type CompanyResearchRunState, companyResearchStepMessages } from "../../lib/company-research";
 import type { CompanyResearchExistingData, CompanyResearchResult } from "../../lib/types";
 
 import { Field, splitListInput } from "./company-research-fields";

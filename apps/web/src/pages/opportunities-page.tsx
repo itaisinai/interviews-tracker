@@ -21,7 +21,6 @@ import { SourceBadge } from "../components/opportunity-detail/source-badge";
 import { api } from "../lib/api";
 import { jobStatusOptions, pipelineTypeOptions } from "../lib/enum-labels";
 import { formatDate, titleize } from "../lib/format";
-import type { Opportunity } from "../lib/types";
 
 // Lightweight opportunity type for table view - matches API response
 type OpportunityListItem = {
@@ -337,7 +336,7 @@ export function OpportunitiesPage() {
         ),
       },
     ],
-    [deleteOpportunity, handleSort, sort, sortDirection, status, setStatus, pipeline, setPipeline]
+    [deleteOpportunity, handleSort, sort, sortDirection, status, pipeline]
   );
 
   if (optionsError) {

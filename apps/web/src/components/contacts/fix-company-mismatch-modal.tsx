@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import { IconLink, MaterialIcon, Modal } from "@interviews-tracker/design-system";
 
 import type { Person } from "../../lib/types";

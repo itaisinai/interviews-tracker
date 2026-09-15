@@ -1,7 +1,5 @@
 import { MaterialIcon } from "@interviews-tracker/design-system";
 
-import type { GmailSearchCandidate } from "../../lib/types";
-
 type GmailEmailListItemProps = {
   email: {
     id: string;

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { Button, IconButton, MaterialIcon } from "@interviews-tracker/design-system";
 
@@ -114,7 +114,6 @@ export function ReviewPanel({
                     onChange={(e) => setCompanyName(e.target.value)}
                     className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                     placeholder="Company name"
-                    autoFocus
                   />
                   <IconButton
                     variant="ghost"
@@ -160,7 +159,6 @@ export function ReviewPanel({
                     onChange={(e) => setProduct(e.target.value)}
                     className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                     placeholder="Product or division (optional)"
-                    autoFocus
                   />
                   <Button
                     variant="ghost"
@@ -212,7 +210,6 @@ export function ReviewPanel({
                     onChange={(e) => setRoleTitle(e.target.value)}
                     className="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                     placeholder="Role title"
-                    autoFocus
                   />
                   <IconButton
                     variant="ghost"

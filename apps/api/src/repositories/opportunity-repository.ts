@@ -1,4 +1,4 @@
-import type { PipelineType, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 
 import {
@@ -11,10 +11,7 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { opportunityInputSchema } from "../lib/schemas.js";
 
-import {
-  normalizeOverdueScheduledInteractionsForRead,
-  promoteOpportunityInteractionsForRead,
-} from "./interaction-read-normalizer.js";
+import { promoteOpportunityInteractionsForRead } from "./interaction-read-normalizer.js";
 
 export type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
@@ -279,7 +276,7 @@ export async function updateOpportunityRecord(
       if (!existing) throw new Error("Opportunity not found");
 
       const inputWithPreservedMetadata = preserveLinkedinMetadataForUpdate(input as OpportunityInput, existing);
-      const finalCompanyId = companyId || existing.companyId;
+      const _finalCompanyId = companyId || existing.companyId;
 
       // Only regenerate slug if company or role actually changed
       let slug = existing.slug;

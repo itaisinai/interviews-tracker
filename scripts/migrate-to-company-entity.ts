@@ -17,15 +17,13 @@
 
 import { PrismaClient } from "@prisma/client";
 
-import { createOpportunitySlug } from "@interviews-tracker/core/domain/slugs";
-
 const prisma = new PrismaClient();
 
 function normalizeCompanyName(name: string): string {
   return name.trim().toLowerCase();
 }
 
-function createCompanySlug(companyName: string, ownerEmail: string): string {
+function createCompanySlug(companyName: string, _ownerEmail: string): string {
   // Simple slug: normalized company name
   return normalizeCompanyName(companyName).replace(/[^a-z0-9]+/g, "-");
 }

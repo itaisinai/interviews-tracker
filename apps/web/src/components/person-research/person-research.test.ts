@@ -135,7 +135,7 @@ test("research flow: research is not saved before confirmation", () => {
   let saveWasCalled = false;
 
   // Simulate research flow
-  const research = { about: "Sample research" };
+  const _research = { about: "Sample research" };
   const userConfirmed = false;
 
   // Only save if confirmed
@@ -150,7 +150,7 @@ test("research flow: research is saved after confirmation", () => {
   let saveWasCalled = false;
 
   // Simulate research flow
-  const research = { about: "Sample research" };
+  const _research = { about: "Sample research" };
   const userConfirmed = true;
 
   // Only save if confirmed

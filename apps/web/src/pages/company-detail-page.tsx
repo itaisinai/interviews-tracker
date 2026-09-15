@@ -93,7 +93,7 @@ export function CompanyDetailPage() {
       isDeletingInteraction={(interactionSlug) =>
         deleteInteraction.isPending && deleteInteraction.variables === interactionSlug
       }
-      onResearchSaved={(research, newSlug) => {
+      onResearchSaved={(_research, newSlug) => {
         if (newSlug && newSlug !== decodedSlugOrId) {
           // Slug changed, navigate to new URL
           navigate(`/companies/${encodeURIComponent(newSlug)}`, { replace: true });

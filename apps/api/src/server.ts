@@ -101,7 +101,7 @@ app.get("/api/ready", async (_request, response) => {
   }
 });
 
-app.get("/api/gmail/callback", async (request, response, next) => {
+app.get("/api/gmail/callback", async (request, response, _next) => {
   try {
     const code = typeof request.query.code === "string" ? request.query.code : undefined;
     const state = typeof request.query.state === "string" ? request.query.state : undefined;
