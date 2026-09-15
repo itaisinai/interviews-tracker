@@ -667,13 +667,18 @@ export function buildGmailSearchQueries(
   // IMPROVED: Use stricter queries that require context, not just company name mention
   // This prevents false matches where company is mentioned in passing/comparisons
   for (const variant of companyVariants) {
-    // Require company name + job-related keywords (not bare company name)
+    // Primary: Require company name + job-related keywords (not bare company name)
     queries.add(
       `"${variant}" (interview OR recruiter OR assignment OR offer OR rejection OR application OR position OR role OR hiring) newer_than:365d`
     );
 
-    // Subject-scoped search (company must be in subject)
-    queries.add(`subject:"${variant}" (interview OR recruiter) newer_than:365d`);
+    // Subject-scoped search (company must be in subject with job keywords)
+    queries.add(`subject:"${variant}" (interview OR recruiter OR assessment OR coding OR next steps) newer_than:365d`);
+
+    // Fallback: Company in subject only (for cases like "Acme coding assessment")
+    // AI will filter false positives, but this ensures we don't miss legitimate emails
+    // with non-standard subject lines
+    queries.add(`subject:"${variant}" newer_than:365d`);
 
     if (roleTitle?.trim()) {
       queries.add(`"${variant}" "${roleTitle.trim()}" newer_than:365d`);
@@ -922,19 +927,33 @@ export function classifySearchCandidateFallback(input: {
   const company = companyNames[0] ?? input.companyName.toLowerCase();
   const role = input.roleTitle?.toLowerCase() ?? "";
   const senderDomain = input.senderDomain?.toLowerCase() ?? "";
+  const searchQuery = input.searchQuery?.toLowerCase() ?? "";
   const companyTokens = buildCompanySearchTokens(input.companyName, input.companyAliases);
   const domainRelated = companyTokens.some((token) => senderDomain.includes(token));
 
-  // FIXED: Removed queryRelated circular logic - don't use the fact that Gmail
-  // returned this email as evidence of relevance. Only check actual content.
+  // Check if this email was matched by a strict query (with role or job keywords)
+  // This gives us confidence that Gmail matched deeper content, not just a passing mention
+  const matchedStrictQuery =
+    searchQuery &&
+    (searchQuery.includes('"') || // quoted search terms
+      /interview|recruiter|assignment|offer|rejection|application|position|role|hiring/.test(searchQuery));
+
+  // IMPROVED: Don't blindly trust all Gmail matches (removed circular queryRelated logic)
+  // BUT do give credit when email matched a strict query with role/keywords
   const related =
-    companyNames.some((name) => text.includes(name)) || (role ? text.includes(role) : false) || domainRelated;
+    companyNames.some((name) => text.includes(name)) ||
+    (role ? text.includes(role) : false) ||
+    domainRelated ||
+    (matchedStrictQuery && companyNames.some((name) => searchQuery.includes(name)));
+
   const interview =
     /interview|screening|onsite|phone screen|recruiter|assignment|offer|rejection|follow[- ]up|invitation|meeting|calendar/.test(
       text
     );
   const relevant = related || interview;
-  const confidence = relevant ? (related && interview ? 0.88 : 0.72) : 0.22;
+
+  // Boost confidence if matched a strict query
+  const confidence = relevant ? (related && interview ? 0.88 : matchedStrictQuery ? 0.75 : 0.72) : 0.22;
 
   let emailType: GmailSearchCandidateClassification["emailType"] = "UNRELATED";
   if (/offer/.test(text)) emailType = "OFFER";
@@ -951,9 +970,13 @@ export function classifySearchCandidateFallback(input: {
     if (domainRelated && interview) {
       reason = `Sender domain matches ${company} and hiring-process language.`;
     } else if (related && interview) {
-      reason = `Mentions ${company} and hiring-process language.`;
+      reason = matchedStrictQuery
+        ? `Matched strict search for ${company} with job keywords and contains hiring-process language.`
+        : `Mentions ${company} and hiring-process language.`;
     } else if (domainRelated) {
       reason = `Sender domain matches ${company}.`;
+    } else if (matchedStrictQuery) {
+      reason = `Matched strict search query with ${company} and job-related keywords.`;
     } else if (related) {
       reason = `Directly mentions ${company}.`;
     } else {
