@@ -142,7 +142,6 @@ export class ExaProvider {
       }
 
       const result = linkedInResults[0];
-      // @ts-expect-error - text field exists when contents.text is requested
       const text = result.text;
 
       if (!text) {
