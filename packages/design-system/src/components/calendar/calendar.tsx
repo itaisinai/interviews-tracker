@@ -125,6 +125,7 @@ export function Calendar<Event extends CalendarEvent = CalendarEvent>({
         {calendar.days.map((day) => (
           <div key={day.key} className="group relative">
             <div
+              role="button"
               className={`flex min-h-12 flex-col items-center justify-center rounded-xl border transition-all ${getDayTileClassName(
                 day.isCurrentMonth,
                 day.events.length
