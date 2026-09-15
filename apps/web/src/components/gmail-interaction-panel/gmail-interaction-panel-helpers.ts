@@ -1,10 +1,4 @@
-import type {
-  GmailEmailExtractionAnalysis,
-  GmailInteractionDraft,
-  GmailSearchCandidate,
-  GmailStructuredEmail,
-  Interaction,
-} from "../../lib/types";
+import type { GmailInteractionDraft, Interaction } from "../../lib/types";
 
 export type TrackedGmailEmail = {
   id: string;

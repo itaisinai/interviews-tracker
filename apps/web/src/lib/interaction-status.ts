@@ -39,7 +39,7 @@ function interactionContextText(
     .toLowerCase();
 }
 
-function isTerminalInteraction(interaction: Pick<Interaction, "type" | "status" | "outcome" | "followUp">) {
+function _isTerminalInteraction(interaction: Pick<Interaction, "type" | "status" | "outcome" | "followUp">) {
   const normalizedType = normalizeInteractionType(interaction.type);
   if (normalizedType === "Rejection" || normalizedType === "Offer") {
     return true;

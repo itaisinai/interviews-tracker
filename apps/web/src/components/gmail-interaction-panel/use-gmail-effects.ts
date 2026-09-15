@@ -31,7 +31,7 @@ type EffectsHandlers = {
  * Side effects for Gmail interaction panel
  */
 export function useGmailEffects(handlers: EffectsHandlers) {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   const {
     flowState,

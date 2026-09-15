@@ -60,7 +60,7 @@ export function DevModeAuthBypass({ userEmail, children }: DevModeAuthBypassProp
       "%c⚠️ DEV MODE AUTHENTICATION BYPASS ENABLED",
       "color: orange; font-size: 20px; font-weight: bold; padding: 10px;"
     );
-    console.log("%cUsing test user: " + userEmail, "color: orange; font-size: 14px; font-weight: bold;");
+    console.log(`%cUsing test user: ${userEmail}`, "color: orange; font-size: 14px; font-weight: bold;");
     console.log(
       "%cAuth0 is BYPASSED. This should NEVER happen in production.",
       "color: orange; font-size: 14px; font-weight: bold;"

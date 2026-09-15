@@ -122,7 +122,7 @@ function extractCompanyCandidates(root) {
   root.querySelectorAll('a[href*="/company/"]').forEach((link) => {
     const text = cleanText(link.textContent);
     const ariaLabel = link.getAttribute("aria-label");
-    const hasCompanyLabel = ariaLabel && ariaLabel.toLowerCase().includes("company");
+    const hasCompanyLabel = ariaLabel?.toLowerCase().includes("company");
 
     // Skip navigation links like "Show more", "Follow", etc.
     const isNavigationLink = /^(show|view|follow|see|learn)\s/i.test(text);
@@ -255,7 +255,7 @@ function extractDescriptionCandidates(root) {
       while (current && description.length < 10000) {
         const text = cleanText(current.textContent);
         if (text && !text.toLowerCase().includes("about the company")) {
-          description += text + "\n";
+          description += `${text}\n`;
           current = current.nextElementSibling;
         } else {
           break;

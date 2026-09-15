@@ -13,7 +13,6 @@ import { InteractionsDrawer } from "../components/interactions-drawer";
 import { buildInteractionCalendarEvents } from "../components/interactions-flow";
 import { api } from "../lib/api";
 import { formatDateTime } from "../lib/format";
-import type { Interaction } from "../lib/types";
 
 function splitMonthDay(value: string) {
   const date = new Date(value);

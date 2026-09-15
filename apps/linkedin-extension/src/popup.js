@@ -69,7 +69,7 @@ async function updateAuthStatus() {
   const localSettings = await chrome.storage.local.get({ authToken: "" });
   const hasManualToken = Boolean(localSettings.authToken);
   const hasOAuthToken = Boolean(authData.accessToken);
-  const hasToken = hasOAuthToken || hasManualToken;
+  const _hasToken = hasOAuthToken || hasManualToken;
 
   if (hasOAuthToken) {
     elements.authBadge.textContent = "Signed in ✓";

@@ -4,7 +4,7 @@ import type { AuthenticatedRequest } from "../lib/http.js";
 import { asyncHandler } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
 import { personResearchInputSchema } from "../lib/schemas.js";
-import { serializePeople, serializePerson } from "../lib/serializers.js";
+import { serializePerson } from "../lib/serializers.js";
 import { resolveOpportunitySlug } from "../lib/slug-resolver.js";
 import { createPersonWithSlug, resolvePersonId } from "../repositories/person-repository.js";
 import { applyParsedJobToTimeline, parseCurrentJobDescription } from "../services/people/parse-current-job-service.js";
@@ -13,7 +13,7 @@ import { getPersonResearchService } from "../services/people/person-research-ser
 export const peopleRouter = Router();
 
 // Log all requests to people routes
-peopleRouter.use((req, res, next) => {
+peopleRouter.use((req, _res, next) => {
   console.log("[PEOPLE ROUTER]", req.method, req.path);
   next();
 });

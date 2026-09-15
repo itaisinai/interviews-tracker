@@ -25,7 +25,7 @@ function buildOpportunityScopedGmailMessageStateWhere(jobOpportunityId?: string 
   return { jobOpportunityId } satisfies Prisma.GmailMessageStateWhereInput;
 }
 
-async function getSuppressedGmailMessageIds(input: { auth0Email: string; jobOpportunityId: string }) {
+async function _getSuppressedGmailMessageIds(input: { auth0Email: string; jobOpportunityId: string }) {
   const states = await prisma.gmailMessageState.findMany({
     where: {
       auth0Email: input.auth0Email,

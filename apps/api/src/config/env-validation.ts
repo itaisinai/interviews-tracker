@@ -18,7 +18,7 @@ const REQUIRED_VARIABLES = [
   "CHROME_EXTENSION_ORIGIN",
 ] as const;
 
-const OPTIONAL_VARIABLES = [
+const _OPTIONAL_VARIABLES = [
   "PORT",
   "FRONTEND_ORIGIN",
   "AI_PROVIDER",
@@ -71,7 +71,7 @@ function validateDatabaseUrl(url: string): ValidationError | null {
     if (!parsed.pathname || parsed.pathname === "/") {
       return { variable: "DATABASE_URL", issue: "Missing database name in path" };
     }
-  } catch (error) {
+  } catch (_error) {
     return { variable: "DATABASE_URL", issue: "Malformed URL" };
   }
 

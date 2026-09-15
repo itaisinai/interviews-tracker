@@ -154,7 +154,7 @@ async function main() {
       try {
         await prisma.$executeRawUnsafe(`DROP INDEX IF EXISTS "${idx}"`);
         console.log(`   ✓ Dropped ${idx}`);
-      } catch (e: any) {
+      } catch (_e: any) {
         console.log(`   ⊙ ${idx} already dropped or doesn't exist`);
       }
     }

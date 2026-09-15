@@ -64,7 +64,7 @@ export function initSentry() {
 
     logger.info("sentry_initialized", {
       environment,
-      dsn: dsn.substring(0, 30) + "...", // Log partial DSN for verification
+      dsn: `${dsn.substring(0, 30)}...`, // Log partial DSN for verification
       profilingEnabled: !!profiling,
     });
   } catch (error) {

@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-import { getFirstFrontendOrigin, type GmailSettings } from "./gmail-settings.js";
+import { getFirstFrontendOrigin } from "./gmail-settings.js";
 
 export type GmailStatePayload = {
   auth0Email: string;

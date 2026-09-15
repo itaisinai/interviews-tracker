@@ -76,9 +76,9 @@ export function validateDevModeOnStartup(): void {
   const dbUrl = process.env.DATABASE_URL || "";
   if (!isLocalDatabase(dbUrl)) {
     logger.error("dev_mode_production_database_detected", {
-      dbUrlPrefix: dbUrl.substring(0, 30) + "...",
+      dbUrlPrefix: `${dbUrl.substring(0, 30)}...`,
     });
-    console.error("\n" + "=".repeat(60));
+    console.error(`\n${"=".repeat(60)}`);
     console.error("❌ CRITICAL ERROR: DEV MODE WITH PRODUCTION DATABASE");
     console.error("=".repeat(60));
     console.error("DEV_MODE_BYPASS_AUTH=true but DATABASE_URL is not local!");
@@ -87,14 +87,14 @@ export function validateDevModeOnStartup(): void {
     console.error("To fix:");
     console.error("  1. Set DEV_MODE_BYPASS_AUTH=false, OR");
     console.error("  2. Use a local database (localhost/docker)");
-    console.error("=".repeat(60) + "\n");
+    console.error(`${"=".repeat(60)}\n`);
     process.exit(1);
   }
 
   // CRITICAL: Check NODE_ENV
   if (process.env.NODE_ENV === "production") {
     logger.error("dev_mode_production_env_detected");
-    console.error("\n" + "=".repeat(60));
+    console.error(`\n${"=".repeat(60)}`);
     console.error("❌ CRITICAL ERROR: DEV MODE IN PRODUCTION ENVIRONMENT");
     console.error("=".repeat(60));
     console.error("DEV_MODE_BYPASS_AUTH=true with NODE_ENV=production!");
@@ -102,18 +102,18 @@ export function validateDevModeOnStartup(): void {
     console.error("");
     console.error("To fix:");
     console.error("  Set DEV_MODE_BYPASS_AUTH=false immediately");
-    console.error("=".repeat(60) + "\n");
+    console.error(`${"=".repeat(60)}\n`);
     process.exit(1);
   }
 
   // SUCCESS - Log prominent warning
-  console.log("\n" + "=".repeat(60));
+  console.log(`\n${"=".repeat(60)}`);
   console.log("⚠️  DEV MODE AUTHENTICATION BYPASS ENABLED");
   console.log("=".repeat(60));
   console.log(`Test user: ${devModeConfig.userEmail}`);
   console.log("Auth0 authentication is DISABLED");
   console.log("This should ONLY be used in local development");
-  console.log("=".repeat(60) + "\n");
+  console.log(`${"=".repeat(60)}\n`);
 
   logger.warn("dev_mode_enabled", { userEmail: devModeConfig.userEmail });
 }

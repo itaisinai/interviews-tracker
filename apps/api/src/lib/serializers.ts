@@ -3,8 +3,6 @@
  * Part of slug-first architecture - frontend should never see DB IDs.
  */
 
-import type { Compensation, Interaction, JobOpportunity, Person, PersonResearch } from "@prisma/client";
-
 /**
  * Remove internal IDs from opportunity response
  */

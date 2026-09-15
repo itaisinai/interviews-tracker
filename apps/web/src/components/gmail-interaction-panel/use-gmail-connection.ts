@@ -1,10 +1,7 @@
-import type { UseQueryResult } from "@tanstack/react-query";
-
 import { ApiError } from "@interviews-tracker/api-client";
 
 import { api } from "../../lib/api";
 import { getErrorMessage } from "../../lib/error";
-import type { GmailStatus } from "../../lib/types";
 
 type GmailConnectionHandlers = {
   setNeedsReconnect: (value: boolean) => void;

@@ -115,7 +115,7 @@ export function CompanyDetailView({
   const domains = [
     ...new Set(company.opportunities.flatMap((item) => item.domains.map((domain) => domain.domain.label))),
   ];
-  const summaryDomain = domains.find((domain) => !domain.includes(".")) ?? domains[0] ?? "-";
+  const _summaryDomain = domains.find((domain) => !domain.includes(".")) ?? domains[0] ?? "-";
   const summaryFacts = [
     { label: "Location", value: company.location ?? "-", icon: "location_on" },
     {

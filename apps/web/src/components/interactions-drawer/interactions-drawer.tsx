@@ -88,7 +88,7 @@ export function InteractionsDrawer({
   useEffect(() => {
     setIsEditing(false);
     setDraft(mountedInteraction ? interactionToDraft(mountedInteraction) : null);
-  }, [mountedInteraction?.slug]);
+  }, [mountedInteraction?.slug, mountedInteraction]);
 
   const timeline = useMemo(
     () => promoteOverdueInteractionsForRead(opportunity?.interactions ?? []),

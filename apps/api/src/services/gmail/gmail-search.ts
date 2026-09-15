@@ -341,23 +341,25 @@ export function preferExplicitCompanyMatch(input: {
   companySearchName?: string | null;
   companyDomains?: Array<string | null | undefined>;
 }) {
-  const identityText = `${input.subject}\n${input.from}`.toLowerCase();
-  const names = [input.companyName, input.companySearchName]
-    .map((name) => name?.trim().toLowerCase())
-    .filter((name): name is string => Boolean(name));
+  const fromLower = input.from.toLowerCase();
   const domains = (input.companyDomains ?? [])
     .map((domain) => domain?.trim().toLowerCase().replace(/^@/, ""))
     .filter((domain): domain is string => Boolean(domain));
-  const hasExplicitIdentity =
-    names.some((name) => identityText.includes(name)) || domains.some((domain) => identityText.includes(`@${domain}`));
 
-  // AI can refine broad Gmail matches, but it must not hide an email whose visible
-  // subject/sender explicitly identifies the company (the common false-negative
-  // case for a newly received recruiter email).
-  if (hasExplicitIdentity && input.fallback.isRelevant) {
+  // IMPROVED: Only override AI when sender domain explicitly matches company domain
+  // Don't override based on company name appearing in subject/from, as that can be
+  // a false positive (comparisons, mentions, etc.). Trust AI for those cases.
+  const hasDomainMatch = domains.some((domain) => fromLower.includes(`@${domain}`));
+
+  // Only use fallback override if:
+  // 1. Email is from company's verified domain (strong signal)
+  // 2. AND fallback classification says it's relevant
+  // This prevents overriding AI's judgment when company is just mentioned in passing
+  if (hasDomainMatch && input.fallback.isRelevant) {
     return input.fallback;
   }
 
+  // Otherwise, trust AI classification (or fallback if AI unavailable)
   return input.ai ?? input.fallback;
 }
 

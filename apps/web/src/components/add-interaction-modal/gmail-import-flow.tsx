@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Button, DiffReviewRow, MaterialIcon } from "@interviews-tracker/design-system";
+import { Button, MaterialIcon } from "@interviews-tracker/design-system";
 
 import { api } from "../../lib/api";
 import { formatDateTime } from "../../lib/format";
@@ -46,7 +46,7 @@ export function GmailImportFlow({ opportunitySlug, companyName, roleTitle, onSav
     queryFn: () => api.gmailMessageStates(opportunitySlug),
   });
 
-  const parseEmail = useMutation({
+  const _parseEmail = useMutation({
     mutationFn: (messageId: string) => api.gmailParseEmail(opportunitySlug, { messageId }),
     onSuccess: (result) => {
       setDraft(result.interaction);

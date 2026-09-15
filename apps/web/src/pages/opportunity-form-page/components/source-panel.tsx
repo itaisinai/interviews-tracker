@@ -71,11 +71,11 @@ export function SourcePanel({
 
   const restoreMutation = useMutation({
     mutationFn: (messageId: string) => api.gmailRestoreMessage(messageId),
-    onSuccess: (_, messageId) => {
+    onSuccess: (_, _messageId) => {
       setRestoringMessageId(null);
       onRefresh();
     },
-    onError: (error, messageId) => {
+    onError: (_error, _messageId) => {
       setRestoringMessageId(null);
     },
   });
@@ -90,7 +90,7 @@ export function SourcePanel({
       setSelectedEmails(newSelected);
       onRefresh();
     },
-    onError: (error, messageId) => {
+    onError: (_error, _messageId) => {
       setIgnoringMessageId(null);
     },
   });
@@ -262,7 +262,7 @@ export function SourcePanel({
                     const isExpanded = expandedCompanies.has(companyKey);
                     const displayName = companyKey.charAt(0).toUpperCase() + companyKey.slice(1);
                     const allGroupSelected = candidates.every((c) => selectedEmails.has(c.id));
-                    const someGroupSelected = candidates.some((c) => selectedEmails.has(c.id));
+                    const _someGroupSelected = candidates.some((c) => selectedEmails.has(c.id));
 
                     return (
                       <div

@@ -18,7 +18,7 @@ test("getBasicHealth returns valid ISO timestamp", () => {
   const health = getBasicHealth();
   const timestamp = new Date(health.timestamp);
 
-  assert.ok(!isNaN(timestamp.getTime()));
+  assert.ok(!Number.isNaN(timestamp.getTime()));
 });
 
 test("getDeepHealth returns ok when database is available", async () => {

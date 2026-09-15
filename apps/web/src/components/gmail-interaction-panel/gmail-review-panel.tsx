@@ -11,12 +11,7 @@ import type {
 } from "../../lib/types";
 import { Badge } from "../badge";
 
-import {
-  type InteractionDiffField,
-  toDatetimeLocalValue,
-  toDateValue,
-  toTimeValue,
-} from "./gmail-interaction-panel-helpers";
+import { type InteractionDiffField, toDateValue, toTimeValue } from "./gmail-interaction-panel-helpers";
 
 type GmailReviewPanelProps = {
   draft: GmailInteractionDraft;

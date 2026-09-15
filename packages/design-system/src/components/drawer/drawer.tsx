@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 
 import { Button } from "../button/index.js";
-import { MaterialIcon } from "../material-icon/index.js";
 
 export function Drawer({
   open,
