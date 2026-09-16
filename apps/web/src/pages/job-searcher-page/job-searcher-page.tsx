@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -18,8 +18,18 @@ export function JobSearcherPage() {
     location: "",
     remoteOnly: false,
   });
+  const [debouncedFilters, setDebouncedFilters] = useState<SearchFilters>(filters);
   const [selectedJob, setSelectedJob] = useState<JobSearchResult | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Debounce search filters to avoid searching on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters);
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [filters]);
 
   const {
     data: searchResults = [],
@@ -29,15 +39,15 @@ export function JobSearcherPage() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["job-search", filters],
+    queryKey: ["job-search", debouncedFilters],
     queryFn: () =>
       api.searchJobs({
-        query: filters.query,
-        location: filters.location || undefined,
-        remoteOnly: filters.remoteOnly,
+        query: debouncedFilters.query,
+        location: debouncedFilters.location || undefined,
+        remoteOnly: debouncedFilters.remoteOnly,
         limit: 20,
       }),
-    enabled: filters.query.trim().length > 0,
+    enabled: debouncedFilters.query.trim().length > 0,
     staleTime: 10 * 60 * 1000,
   });
 
@@ -74,7 +84,17 @@ export function JobSearcherPage() {
           </div>
         )}
 
-        {isLoading && <PageLoadingState title="" description="Searching LinkedIn..." />}
+        {filters.query.trim().length > 0 && debouncedFilters.query.trim().length === 0 && (
+          <div className="panel p-12 text-center">
+            <MaterialIcon name="pending" className="text-6xl text-gray-300 mb-4 animate-spin" />
+            <h3 className="text-lg font-medium mb-2">Typing...</h3>
+            <p className="text-gray-600">Results will appear after you stop typing</p>
+          </div>
+        )}
+
+        {isLoading && debouncedFilters.query.trim().length > 0 && (
+          <PageLoadingState title="" description="Searching LinkedIn..." />
+        )}
 
         {isError && (
           <PageErrorState
@@ -84,13 +104,17 @@ export function JobSearcherPage() {
           />
         )}
 
-        {!isLoading && !isError && searchResults.length === 0 && filters.query.trim().length > 0 && (
-          <div className="panel p-12 text-center">
-            <MaterialIcon name="info" className="text-6xl text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Results Found</h3>
-            <p className="text-gray-600">Try adjusting your search query or filters</p>
-          </div>
-        )}
+        {!isLoading &&
+          !isError &&
+          searchResults.length === 0 &&
+          debouncedFilters.query.trim().length > 0 &&
+          filters.query === debouncedFilters.query && (
+            <div className="panel p-12 text-center">
+              <MaterialIcon name="info" className="text-6xl text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Results Found</h3>
+              <p className="text-gray-600">Try adjusting your search query or filters</p>
+            </div>
+          )}
 
         {!isLoading && !isError && searchResults.length > 0 && (
           <JobResultsList results={searchResults} onJobClick={handleJobClick} />
