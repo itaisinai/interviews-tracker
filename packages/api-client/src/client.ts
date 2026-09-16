@@ -47,6 +47,35 @@ export type PersistentNotification = {
   updatedAt: string;
 };
 
+export type JobSearchResult = {
+  id: string;
+  title: string;
+  companyName: string;
+  location: string | null;
+  workModel: string | null;
+  postedDate: string | null;
+  url: string;
+  snippet: string | null;
+  fullDescription: string | null;
+};
+
+export type JobSearchQuery = {
+  query: string;
+  location?: string;
+  remoteOnly?: boolean;
+  limit?: number;
+};
+
+export type SavedJobSearch = {
+  id: string;
+  name: string;
+  query: string;
+  location: string | null;
+  remoteOnly: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 let accessTokenGetter: AccessTokenGetter | undefined;
 
 export function setAccessTokenGetter(getter: AccessTokenGetter | undefined) {
@@ -471,4 +500,17 @@ export const api = {
       data?: unknown;
       error?: string;
     }>("/telegram/query", { method: "POST", body: JSON.stringify({ text }) }),
+  searchJobs: (body: JobSearchQuery) =>
+    request<JobSearchResult[]>("/jobs/search", { method: "POST", body: JSON.stringify(body) }),
+  getJobDetails: (body: { url: string }) =>
+    request<JobSearchResult>("/jobs/details", { method: "POST", body: JSON.stringify(body) }),
+  parseJobTitle: (body: { title: string }) =>
+    request<{ jobTitle: string | null; companyName: string | null }>("/jobs/parse-title", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  createSavedJobSearch: (body: { name: string; query: string; location?: string; remoteOnly?: boolean }) =>
+    request<SavedJobSearch>("/jobs/saved-searches", { method: "POST", body: JSON.stringify(body) }),
+  listSavedJobSearches: () => request<SavedJobSearch[]>("/jobs/saved-searches"),
+  deleteSavedJobSearch: (id: string) => request<void>(`/jobs/saved-searches/${id}`, { method: "DELETE" }),
 };

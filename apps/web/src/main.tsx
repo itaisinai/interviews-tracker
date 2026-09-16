@@ -67,6 +67,11 @@ const SearchPage = lazy(() =>
     default: module.SearchPage,
   }))
 );
+const JobSearcherPage = lazy(() =>
+  import("./pages/job-searcher-page").then((module) => ({
+    default: module.JobSearcherPage,
+  }))
+);
 
 function App() {
   return (
@@ -86,6 +91,7 @@ function App() {
                   <Route path="/opportunities/:slug/edit" element={<Navigate to="/opportunities/:slug" replace />} />
                   <Route path="/interactions" element={<InteractionsPage />} />
                   <Route path="/search" element={<SearchPage />} />
+                  <Route path="/job-searcher" element={<JobSearcherPage />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Route>
