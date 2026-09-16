@@ -156,25 +156,80 @@ export class ExaJobSearchProvider implements JobSearchProvider {
   }
 
   private parseTitle(title: string): { companyName: string | null; title: string } {
-    const patterns = [
-      / - (.+?)(?:\s+\||\s+-\s+LinkedIn|\s+hiring|$)/i,
-      / at (.+?)(?:\s+\||\s+-\s+LinkedIn|$)/i,
-      /^(.+?) - (.+?)(?:\s+\||$)/,
-    ];
+    // Remove common suffixes
+    const cleaned = title
+      .replace(/\s+LinkedIn$/i, "")
+      .replace(/\s+\|\s+LinkedIn$/i, "")
+      .replace(/\s+-\s+LinkedIn$/i, "")
+      .trim();
 
-    for (const pattern of patterns) {
-      const match = title.match(pattern);
-      if (match) {
+    // Pattern 1: "Company — Location" or "Company - Location"
+    // Example: "Vonage — Tel Aviv-Yafo" or "entrypoint — Herzliya, Tel Aviv"
+    const dashPattern = /^(.+?)\s+[—–-]\s+(.+?)(?:\s*,\s*(.+?))?$/;
+    const dashMatch = cleaned.match(dashPattern);
+    if (dashMatch) {
+      const [, company, location] = dashMatch;
+      // Check if first part looks like a company (not a full job title)
+      if (company && !company.includes("Senior") && !company.includes("Engineer") && company.length < 50) {
         return {
-          companyName: match[2]?.trim() || null,
-          title: match[1]?.trim() || title,
+          companyName: company.trim(),
+          title: cleaned, // Return full title since we don't have a separate job title
         };
       }
     }
 
+    // Pattern 2: "Job Title | Company Location"
+    // Example: "Senior Full-Stack Engineer | עובדים Modiin-Maccabim-Reut"
+    const pipePattern = /^(.+?)\s+\|\s+(.+?)(?:\s+(.+?))?$/;
+    const pipeMatch = cleaned.match(pipePattern);
+    if (pipeMatch) {
+      const [, jobTitle, rest] = pipeMatch;
+      // Extract company from rest (before location keywords)
+      const companyMatch = rest.match(/^([^\s]+(?:\s+[^\s]+)?)\s+(?:ב|in|at|Tel Aviv|Herzliya|Jerusalem)/i);
+      if (companyMatch) {
+        return {
+          companyName: companyMatch[1].trim(),
+          title: jobTitle.trim(),
+        };
+      }
+      // If no location found, treat first words as company
+      const words = rest.trim().split(/\s+/);
+      if (words.length > 0) {
+        return {
+          companyName: words.slice(0, 2).join(" ").trim(), // Take first 1-2 words as company
+          title: jobTitle.trim(),
+        };
+      }
+    }
+
+    // Pattern 3: "Job Title - Company"
+    const hyphenPattern = /^(.+?)\s+-\s+(.+?)$/;
+    const hyphenMatch = cleaned.match(hyphenPattern);
+    if (hyphenMatch) {
+      const [, part1, part2] = hyphenMatch;
+      // If first part looks like job title (contains keywords), second is company
+      if (
+        part1.match(/senior|junior|full.?stack|backend|frontend|engineer|developer|lead|architect/i) &&
+        part1.length > part2.length
+      ) {
+        return {
+          companyName: part2.trim(),
+          title: part1.trim(),
+        };
+      }
+      // Otherwise, first part is company
+      if (part1.length < 50 && !part1.match(/senior|engineer|developer/i)) {
+        return {
+          companyName: part1.trim(),
+          title: part2.trim(),
+        };
+      }
+    }
+
+    // Pattern 4: Just the title or unclear format - return as-is
     return {
       companyName: null,
-      title: title.trim(),
+      title: cleaned.trim() || title.trim(),
     };
   }
 }
