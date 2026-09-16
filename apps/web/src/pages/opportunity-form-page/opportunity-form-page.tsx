@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -15,9 +15,18 @@ import { useParser } from "./hooks/use-parser";
 import type { GmailCandidatesResult, SourceMode } from "./types";
 import { findMatchingOption, normalizeJobStatus, normalizeLookupValue } from "./utils";
 
+interface LocationState {
+  sourceText?: string;
+  linkedinUrl?: string;
+  linkedinJobId?: string;
+}
+
 export function OpportunityFormPage() {
+  const location = useLocation();
+  const locationState = location.state as LocationState | null;
+
   const [sourceMode, setSourceMode] = useState<SourceMode>("raw-text");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(locationState?.sourceText || "");
   const [gmailCandidates, setGmailCandidates] = useState<GmailCandidatesResult | null>(null);
   const [gmailPageToken, setGmailPageToken] = useState<string | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
@@ -45,6 +54,13 @@ export function OpportunityFormPage() {
     error,
     refetch,
   } = useQuery({ queryKey: ["options"], queryFn: api.options });
+
+  // Auto-trigger parser when LinkedIn job import data is present
+  useEffect(() => {
+    if (locationState?.sourceText && runState === "idle" && !parseResult) {
+      runParser(locationState.sourceText);
+    }
+  }, [locationState?.sourceText, runState, parseResult, runParser]);
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
