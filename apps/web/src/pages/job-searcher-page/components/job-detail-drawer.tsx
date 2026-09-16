@@ -7,6 +7,7 @@ import { Badge, Button, Drawer, MaterialIcon } from "@interviews-tracker/design-
 
 import { api } from "../../../lib/api";
 import type { JobSearchResult } from "../types";
+import { formatJobTitle } from "../utils/parse-job-title";
 
 import { MarkdownContent } from "./markdown-content";
 
@@ -78,7 +79,7 @@ export function JobDetailDrawer({ job, isOpen, onClose, onImportSuccess }: JobDe
   }, [isOpen, parsedTitle]);
 
   const showSkeleton = isInitialLoad && !job.snippet && !fullDescription && isFetchingDetails;
-  const displayTitle = parsedTitle ? `${parsedTitle.jobTitle} at ${parsedTitle.companyName}` : job.title;
+  const displayTitle = formatJobTitle(job.title, job.companyName, parsedTitle);
 
   return (
     <Drawer open={isOpen} onClose={onClose} title={displayTitle}>

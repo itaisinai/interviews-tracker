@@ -1,6 +1,7 @@
 import { Badge, MaterialIcon } from "@interviews-tracker/design-system";
 
 import type { JobSearchResult } from "../types";
+import { formatJobTitle } from "../utils/parse-job-title";
 
 interface JobCardProps {
   job: JobSearchResult;
@@ -8,11 +9,13 @@ interface JobCardProps {
 }
 
 export function JobCard({ job, onClick }: JobCardProps) {
+  const displayTitle = formatJobTitle(job.title, job.companyName);
+
   return (
     <button onClick={onClick} className="panel p-4 hover:shadow-md transition-shadow text-left w-full cursor-pointer">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-lg mb-1 truncate">{job.title}</h3>
+          <h3 className="font-medium text-lg mb-1 truncate">{displayTitle}</h3>
           <p className="text-gray-600 mb-2">{job.companyName}</p>
 
           <div className="flex flex-wrap gap-2 mb-2">
