@@ -7,6 +7,7 @@ import { Badge, Button, Drawer, MaterialIcon } from "@interviews-tracker/design-
 
 import { api } from "../../../lib/api";
 import type { JobSearchResult } from "../types";
+import { isJobClosed } from "../utils/detect-closed-job";
 import { formatJobTitle } from "../utils/parse-job-title";
 
 import { MarkdownContent } from "./markdown-content";
@@ -80,10 +81,20 @@ export function JobDetailDrawer({ job, isOpen, onClose, onImportSuccess }: JobDe
 
   const showSkeleton = isInitialLoad && !job.snippet && !fullDescription && isFetchingDetails;
   const displayTitle = formatJobTitle(job.title, job.companyName, parsedTitle);
+  const jobIsClosed = isJobClosed(fullDescription);
 
   return (
     <Drawer open={isOpen} onClose={onClose} title={displayTitle}>
       <div className="space-y-6">
+        {jobIsClosed && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+            <MaterialIcon name="warning" className="text-yellow-600 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium text-yellow-900 mb-1">This job is no longer accepting applications</h4>
+              <p className="text-sm text-yellow-800">This position may have been filled or the posting has expired.</p>
+            </div>
+          </div>
+        )}
         {showSkeleton ? (
           <>
             {/* Skeleton for company info */}
@@ -154,9 +165,9 @@ export function JobDetailDrawer({ job, isOpen, onClose, onImportSuccess }: JobDe
         )}
 
         <div className="flex gap-3 pt-4 border-t">
-          <Button variant="primary" onClick={handleImport} className="flex-1">
+          <Button variant="primary" onClick={handleImport} disabled={jobIsClosed} className="flex-1">
             <MaterialIcon name="add" />
-            Import to Pipeline
+            {jobIsClosed ? "Job Closed" : "Import to Pipeline"}
           </Button>
           <Button variant="ghost" onClick={() => window.open(job.url, "_blank", "noopener,noreferrer")}>
             <MaterialIcon name="open_in_new" />
