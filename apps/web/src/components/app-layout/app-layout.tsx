@@ -28,6 +28,7 @@ export function useBreadcrumbs() {
 const nav = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
   { to: "/opportunities/new", label: "New Opportunity", icon: "add_circle" },
+  { to: "/job-searcher", label: "Job Searcher", icon: "manage_search" },
   { to: "/companies", label: "Companies", icon: "business" },
   { to: "/opportunities", label: "Opportunities", icon: "work" },
   { to: "/interactions", label: "Interactions", icon: "forum" },
@@ -38,6 +39,7 @@ const nav = [
 const placeholders: Record<string, string> = {
   "/": "Search opportunities...",
   "/opportunities/new": "Search opportunities...",
+  "/job-searcher": "Search LinkedIn jobs...",
   "/companies": "Search companies...",
   "/opportunities": "Search opportunities...",
   "/interactions": "Search interactions...",
