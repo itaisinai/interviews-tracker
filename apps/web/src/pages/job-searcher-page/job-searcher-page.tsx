@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { MaterialIcon, PageErrorState, PageLoadingState } from "@interviews-tracker/design-system";
 
@@ -9,6 +9,7 @@ import { api } from "../../lib/api";
 
 import { JobDetailDrawer } from "./components/job-detail-drawer";
 import { JobResultsList } from "./components/job-results-list";
+import { type SavedJobSearch, SavedSearches } from "./components/saved-searches";
 import { SearchForm } from "./components/search-form";
 import type { JobSearchResult, SearchFilters } from "./types";
 
@@ -21,6 +22,9 @@ export function JobSearcherPage() {
   const [debouncedFilters, setDebouncedFilters] = useState<SearchFilters>(filters);
   const [selectedJob, setSelectedJob] = useState<JobSearchResult | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const queryClient = useQueryClient();
 
   // Debounce search filters to avoid searching on every keystroke
   useEffect(() => {
@@ -51,6 +55,28 @@ export function JobSearcherPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: savedSearches = [] } = useQuery({
+    queryKey: ["saved-job-searches"],
+    queryFn: api.listSavedJobSearches,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { mutate: createSavedSearch } = useMutation({
+    mutationFn: api.createSavedJobSearch,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-job-searches"] });
+      setIsSaveDialogOpen(false);
+      setSaveName("");
+    },
+  });
+
+  const { mutate: deleteSavedSearch } = useMutation({
+    mutationFn: api.deleteSavedJobSearch,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-job-searches"] });
+    },
+  });
+
   const handleJobClick = (job: JobSearchResult) => {
     setSelectedJob(job);
     setIsDrawerOpen(true);
@@ -65,6 +91,33 @@ export function JobSearcherPage() {
     handleDrawerClose();
   };
 
+  const handleSaveSearch = () => {
+    const defaultName = filters.location ? `${filters.query} in ${filters.location}` : filters.query;
+    const name = prompt("Enter a name for this search:", defaultName);
+    if (name) {
+      createSavedSearch({
+        name,
+        query: filters.query,
+        location: filters.location || undefined,
+        remoteOnly: filters.remoteOnly,
+      });
+    }
+  };
+
+  const handleSelectSavedSearch = (search: SavedJobSearch) => {
+    setFilters({
+      query: search.query,
+      location: search.location || "",
+      remoteOnly: search.remoteOnly,
+    });
+  };
+
+  const handleDeleteSavedSearch = (id: string) => {
+    if (confirm("Delete this saved search?")) {
+      deleteSavedSearch(id);
+    }
+  };
+
   return (
     <>
       <PageIntro
@@ -74,7 +127,20 @@ export function JobSearcherPage() {
       />
 
       <div className="space-y-6">
-        <SearchForm filters={filters} onFiltersChange={setFilters} onSearch={() => refetch()} isLoading={isFetching} />
+        <SearchForm
+          filters={filters}
+          onFiltersChange={setFilters}
+          onSearch={() => refetch()}
+          onSaveSearch={handleSaveSearch}
+          isLoading={isFetching}
+          canSave={filters.query.trim().length > 0}
+        />
+
+        <SavedSearches
+          searches={savedSearches}
+          onSelectSearch={handleSelectSavedSearch}
+          onDeleteSearch={handleDeleteSavedSearch}
+        />
 
         {filters.query.trim().length === 0 && (
           <div className="panel p-12 text-center">

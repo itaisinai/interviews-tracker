@@ -6,10 +6,12 @@ interface SearchFormProps {
   filters: SearchFilters;
   onFiltersChange: (filters: SearchFilters) => void;
   onSearch: () => void;
+  onSaveSearch: () => void;
   isLoading: boolean;
+  canSave: boolean;
 }
 
-export function SearchForm({ filters, onFiltersChange, onSearch, isLoading }: SearchFormProps) {
+export function SearchForm({ filters, onFiltersChange, onSearch, onSaveSearch, isLoading, canSave }: SearchFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch();
@@ -55,10 +57,23 @@ export function SearchForm({ filters, onFiltersChange, onSearch, isLoading }: Se
           <span className="text-sm">Remote jobs only</span>
         </label>
 
-        <Button type="submit" variant="primary" disabled={isLoading || filters.query.trim().length === 0}>
-          <MaterialIcon name="search" />
-          Search Jobs
-        </Button>
+        <div className="flex gap-2">
+          {canSave && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onSaveSearch}
+              disabled={isLoading || filters.query.trim().length === 0}
+            >
+              <MaterialIcon name="bookmark" />
+              Save Search
+            </Button>
+          )}
+          <Button type="submit" variant="primary" disabled={isLoading || filters.query.trim().length === 0}>
+            <MaterialIcon name="search" />
+            Search Jobs
+          </Button>
+        </div>
       </div>
     </form>
   );

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { asyncHandler } from "../lib/http.js";
 import { getAiParserService } from "../services/ai/ai-parser-service.js";
 import { getJobSearchService } from "../services/job-search/job-search-service.js";
+import { getSavedJobSearchService } from "../services/job-search/saved-job-search-service.js";
 
 const searchJobsSchema = z.object({
   query: z.string().min(1),
@@ -57,4 +58,37 @@ export const parseJobTitleHandler = asyncHandler(async (request, response) => {
       companyName: null,
     });
   }
+});
+
+const savedSearchSchema = z.object({
+  name: z.string().min(1).max(100),
+  query: z.string().min(1),
+  location: z.string().optional(),
+  remoteOnly: z.boolean().optional(),
+});
+
+export const createSavedSearchHandler = asyncHandler(async (request, response) => {
+  const ownerEmail = request.ownerEmail!;
+  const body = savedSearchSchema.parse(request.body);
+  const service = getSavedJobSearchService();
+
+  const savedSearch = await service.create(ownerEmail, body);
+  response.status(201).json(savedSearch);
+});
+
+export const listSavedSearchesHandler = asyncHandler(async (request, response) => {
+  const ownerEmail = request.ownerEmail!;
+  const service = getSavedJobSearchService();
+
+  const searches = await service.list(ownerEmail);
+  response.json(searches);
+});
+
+export const deleteSavedSearchHandler = asyncHandler(async (request, response) => {
+  const ownerEmail = request.ownerEmail!;
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const service = getSavedJobSearchService();
+
+  await service.delete(ownerEmail, id);
+  response.status(204).send();
 });

@@ -66,6 +66,16 @@ export type JobSearchQuery = {
   limit?: number;
 };
 
+export type SavedJobSearch = {
+  id: string;
+  name: string;
+  query: string;
+  location: string | null;
+  remoteOnly: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 let accessTokenGetter: AccessTokenGetter | undefined;
 
 export function setAccessTokenGetter(getter: AccessTokenGetter | undefined) {
@@ -499,4 +509,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  createSavedJobSearch: (body: { name: string; query: string; location?: string; remoteOnly?: boolean }) =>
+    request<SavedJobSearch>("/jobs/saved-searches", { method: "POST", body: JSON.stringify(body) }),
+  listSavedJobSearches: () => request<SavedJobSearch[]>("/jobs/saved-searches"),
+  deleteSavedJobSearch: (id: string) => request<void>(`/jobs/saved-searches/${id}`, { method: "DELETE" }),
 };

@@ -433,3 +433,17 @@ model WrongPersonCandidate {
   @@index([opportunityId])
   @@index([linkedinUrl])
 }
+
+model SavedJobSearch {
+  id          String   @id @default(cuid())
+  ownerEmail  String
+  name        String
+  query       String
+  location    String?
+  remoteOnly  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([ownerEmail, name])
+  @@index([ownerEmail])
+}
