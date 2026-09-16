@@ -105,28 +105,30 @@ export class ExaJobSearchProvider implements JobSearchProvider {
   }
 
   private parseResults(payload: ExaSearchResponse): JobSearchResult[] {
-    return (payload.results ?? [])
-      .map((result) => {
-        if (!result.url || !result.title) {
-          return null;
-        }
+    const results: JobSearchResult[] = [];
 
-        const jobId = this.extractJobId(result.url);
-        const { companyName, title, location } = this.parseTitle(result.title);
+    for (const result of payload.results ?? []) {
+      if (!result.url || !result.title) {
+        continue;
+      }
 
-        return {
-          id: jobId,
-          title: title || result.title,
-          companyName: companyName || "Unknown Company",
-          location: this.cleanLocation(location),
-          workModel: null,
-          postedDate: result.publishedDate ?? null,
-          url: result.url,
-          snippet: result.highlights?.join(" ") || result.text?.substring(0, 200) || null,
-          fullDescription: result.text || null,
-        };
-      })
-      .filter((result): result is JobSearchResult => result !== null);
+      const jobId = this.extractJobId(result.url);
+      const { companyName, title, location } = this.parseTitle(result.title);
+
+      results.push({
+        id: jobId,
+        title: title || result.title,
+        companyName: companyName || "Unknown Company",
+        location: this.cleanLocation(location),
+        workModel: null,
+        postedDate: result.publishedDate ?? null,
+        url: result.url,
+        snippet: result.highlights?.join(" ") || result.text?.substring(0, 200) || null,
+        fullDescription: result.text || null,
+      });
+    }
+
+    return results;
   }
 
   private cleanLocation(location: string | null): string | null {
