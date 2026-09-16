@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { asyncHandler } from "../lib/http.js";
-import { getAiService } from "../services/ai/ai-service.js";
+import { getAiParserService } from "../services/ai/ai-parser-service.js";
 import { getJobSearchService } from "../services/job-search/job-search-service.js";
 
 const searchJobsSchema = z.object({
@@ -29,21 +29,23 @@ export const getJobDetailsHandler = asyncHandler(async (request, response) => {
 
 export const parseJobTitleHandler = asyncHandler(async (request, response) => {
   const { title } = z.object({ title: z.string() }).parse(request.body);
-  const aiService = getAiService();
+  const aiService = getAiParserService();
 
-  const prompt = `Extract the job title and company name from this LinkedIn job posting title. Return ONLY a JSON object with "jobTitle" and "companyName" fields. If you can't determine either, use null.
-
-Title: "${title}"
-
-Example response format:
-{"jobTitle": "Senior Full Stack Engineer", "companyName": "Acme Corp"}`;
+  const schema = z.object({
+    jobTitle: z.string().nullable(),
+    companyName: z.string().nullable(),
+  });
 
   try {
-    const result = await aiService.chat([{ role: "user", content: prompt }], {
-      response_format: { type: "json_object" },
+    const result = await aiService.createStructuredOutput({
+      name: "parseJobTitle",
+      schema: schema,
+      systemPrompt:
+        "Extract the job title and company name from LinkedIn job posting titles. Return jobTitle and companyName fields.",
+      text: `Parse this LinkedIn job title:\n\n${title}`,
     });
 
-    const parsed = JSON.parse(result.content);
+    const parsed = JSON.parse(result);
     response.json({
       jobTitle: parsed.jobTitle || null,
       companyName: parsed.companyName || null,
