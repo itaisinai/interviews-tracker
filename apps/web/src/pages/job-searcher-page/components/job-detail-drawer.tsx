@@ -8,6 +8,8 @@ import { Badge, Button, Drawer, MaterialIcon } from "@interviews-tracker/design-
 import { api } from "../../../lib/api";
 import type { JobSearchResult } from "../types";
 
+import { MarkdownContent } from "./markdown-content";
+
 interface JobDetailDrawerProps {
   job: JobSearchResult;
   isOpen: boolean;
@@ -70,12 +72,18 @@ export function JobDetailDrawer({ job, isOpen, onClose, onImportSuccess }: JobDe
           </div>
         </div>
 
-        <div className="prose prose-sm max-w-none">
+        <div className="max-w-none">
           {fullDescription ? (
-            <div className="whitespace-pre-wrap">{fullDescription}</div>
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+              <MarkdownContent content={fullDescription} />
+            </div>
           ) : (
             <>
-              {job.snippet && <p className="text-gray-700">{job.snippet}</p>}
+              {job.snippet && (
+                <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                  <p className="text-gray-700 leading-relaxed">{job.snippet}</p>
+                </div>
+              )}
               {!job.snippet && <p className="text-gray-500 italic">No description available</p>}
               <Button variant="secondary" onClick={handleLoadMore} disabled={isFetchingDetails} className="mt-4">
                 <MaterialIcon name="description" />
