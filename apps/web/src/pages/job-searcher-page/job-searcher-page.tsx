@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -19,21 +19,12 @@ export function JobSearcherPage() {
     location: "",
     remoteOnly: false,
   });
-  const [debouncedFilters, setDebouncedFilters] = useState<SearchFilters>(filters);
+  const [activeSearch, setActiveSearch] = useState<SearchFilters | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobSearchResult | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
   const queryClient = useQueryClient();
-
-  // Debounce search filters to avoid searching on every keystroke
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedFilters(filters);
-    }, 500); // Wait 500ms after user stops typing
-
-    return () => clearTimeout(timer);
-  }, [filters]);
 
   const {
     data: searchResults = [],
@@ -43,15 +34,15 @@ export function JobSearcherPage() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["job-search", debouncedFilters],
+    queryKey: ["job-search", activeSearch],
     queryFn: () =>
       api.searchJobs({
-        query: debouncedFilters.query,
-        location: debouncedFilters.location || undefined,
-        remoteOnly: debouncedFilters.remoteOnly,
+        query: activeSearch!.query,
+        location: activeSearch!.location || undefined,
+        remoteOnly: activeSearch!.remoteOnly,
         limit: 20,
       }),
-    enabled: debouncedFilters.query.trim().length > 0,
+    enabled: activeSearch !== null && activeSearch.query.trim().length > 0,
     staleTime: 10 * 60 * 1000,
   });
 
@@ -91,6 +82,10 @@ export function JobSearcherPage() {
     handleDrawerClose();
   };
 
+  const handleSearch = () => {
+    setActiveSearch(filters);
+  };
+
   const handleSaveSearch = () => {
     const defaultName = filters.location ? `${filters.query} in ${filters.location}` : filters.query;
     const name = prompt("Enter a name for this search:", defaultName);
@@ -105,11 +100,13 @@ export function JobSearcherPage() {
   };
 
   const handleSelectSavedSearch = (search: SavedJobSearch) => {
-    setFilters({
+    const newFilters = {
       query: search.query,
       location: search.location || "",
       remoteOnly: search.remoteOnly,
-    });
+    };
+    setFilters(newFilters);
+    setActiveSearch(newFilters);
   };
 
   const handleDeleteSavedSearch = (id: string) => {
@@ -130,7 +127,7 @@ export function JobSearcherPage() {
         <SearchForm
           filters={filters}
           onFiltersChange={setFilters}
-          onSearch={() => refetch()}
+          onSearch={handleSearch}
           onSaveSearch={handleSaveSearch}
           isLoading={isFetching}
           canSave={filters.query.trim().length > 0}
@@ -142,7 +139,7 @@ export function JobSearcherPage() {
           onDeleteSearch={handleDeleteSavedSearch}
         />
 
-        {filters.query.trim().length === 0 && (
+        {!activeSearch && (
           <div className="panel p-12 text-center">
             <MaterialIcon name="search" className="text-6xl text-gray-300 mb-4" />
             <h3 className="text-lg font-medium mb-2">Start Your Job Search</h3>
@@ -150,37 +147,23 @@ export function JobSearcherPage() {
           </div>
         )}
 
-        {filters.query.trim().length > 0 && debouncedFilters.query.trim().length === 0 && (
-          <div className="panel p-12 text-center">
-            <MaterialIcon name="pending" className="text-6xl text-gray-300 mb-4 animate-spin" />
-            <h3 className="text-lg font-medium mb-2">Typing...</h3>
-            <p className="text-gray-600">Results will appear after you stop typing</p>
-          </div>
-        )}
+        {isLoading && activeSearch && <PageLoadingState title="" description="Searching LinkedIn..." />}
 
-        {isLoading && debouncedFilters.query.trim().length > 0 && (
-          <PageLoadingState title="" description="Searching LinkedIn..." />
-        )}
-
-        {isError && (
+        {isError && activeSearch && (
           <PageErrorState
             title="Search Failed"
             description={(error as Error)?.message ?? "Failed to search jobs"}
-            onRetry={refetch}
+            onRetry={() => handleSearch()}
           />
         )}
 
-        {!isLoading &&
-          !isError &&
-          searchResults.length === 0 &&
-          debouncedFilters.query.trim().length > 0 &&
-          filters.query === debouncedFilters.query && (
-            <div className="panel p-12 text-center">
-              <MaterialIcon name="info" className="text-6xl text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium mb-2">No Results Found</h3>
-              <p className="text-gray-600">Try adjusting your search query or filters</p>
-            </div>
-          )}
+        {!isLoading && !isError && activeSearch && searchResults.length === 0 && (
+          <div className="panel p-12 text-center">
+            <MaterialIcon name="info" className="text-6xl text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Results Found</h3>
+            <p className="text-gray-600">Try adjusting your search query or filters</p>
+          </div>
+        )}
 
         {!isLoading && !isError && searchResults.length > 0 && (
           <JobResultsList results={searchResults} onJobClick={handleJobClick} />
