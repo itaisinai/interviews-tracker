@@ -20,6 +20,7 @@ interface JobDetailDrawerProps {
 export function JobDetailDrawer({ job, isOpen, onClose, onImportSuccess }: JobDetailDrawerProps) {
   const [fullDescription, setFullDescription] = useState<string | null>(job.fullDescription);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [parsedTitle, setParsedTitle] = useState<{ jobTitle: string; companyName: string } | null>(null);
   const navigate = useNavigate();
 
   const { mutate: fetchDetails, isPending: isFetchingDetails } = useMutation({
@@ -30,6 +31,18 @@ export function JobDetailDrawer({ job, isOpen, onClose, onImportSuccess }: JobDe
     },
     onError: () => {
       setIsInitialLoad(false);
+    },
+  });
+
+  const { mutate: parseTitle } = useMutation({
+    mutationFn: () => api.parseJobTitle({ title: job.title }),
+    onSuccess: (data) => {
+      if (data.jobTitle && data.companyName) {
+        setParsedTitle({
+          jobTitle: data.jobTitle,
+          companyName: data.companyName,
+        });
+      }
     },
   });
 
@@ -57,10 +70,18 @@ export function JobDetailDrawer({ job, isOpen, onClose, onImportSuccess }: JobDe
     }
   }, [isOpen, fullDescription, job.snippet]);
 
+  // Parse title for better formatting
+  useEffect(() => {
+    if (isOpen && !parsedTitle) {
+      parseTitle();
+    }
+  }, [isOpen, parsedTitle]);
+
   const showSkeleton = isInitialLoad && !job.snippet && !fullDescription && isFetchingDetails;
+  const displayTitle = parsedTitle ? `${parsedTitle.jobTitle} at ${parsedTitle.companyName}` : job.title;
 
   return (
-    <Drawer open={isOpen} onClose={onClose} title={job.title}>
+    <Drawer open={isOpen} onClose={onClose} title={displayTitle}>
       <div className="space-y-6">
         {showSkeleton ? (
           <>

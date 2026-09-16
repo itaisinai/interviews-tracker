@@ -494,4 +494,9 @@ export const api = {
     request<JobSearchResult[]>("/jobs/search", { method: "POST", body: JSON.stringify(body) }),
   getJobDetails: (body: { url: string }) =>
     request<JobSearchResult>("/jobs/details", { method: "POST", body: JSON.stringify(body) }),
+  parseJobTitle: (body: { title: string }) =>
+    request<{ jobTitle: string | null; companyName: string | null }>("/jobs/parse-title", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };
