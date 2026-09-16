@@ -9,40 +9,23 @@ interface JobCardProps {
 }
 
 export function JobCard({ job, onClick }: JobCardProps) {
-  const displayTitle = formatJobTitle(job.title, job.companyName);
-
   return (
     <button onClick={onClick} className="panel p-4 hover:shadow-md transition-shadow text-left w-full cursor-pointer">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-lg mb-1 truncate">{displayTitle}</h3>
+          <h3 className="font-medium text-lg mb-1">{job.title}</h3>
           <p className="text-gray-600 mb-2">{job.companyName}</p>
-
-          <div className="flex flex-wrap gap-2 mb-2">
-            {job.location && (
-              <Badge tone="neutral">
-                <MaterialIcon name="location_on" className="text-sm" />
-                {job.location}
-              </Badge>
-            )}
-            {job.workModel && (
-              <Badge tone="neutral">
-                <MaterialIcon name="work" className="text-sm" />
-                {job.workModel}
-              </Badge>
-            )}
-            {job.postedDate && (
-              <Badge tone="neutral">
-                <MaterialIcon name="schedule" className="text-sm" />
-                {formatDate(job.postedDate)}
-              </Badge>
-            )}
-          </div>
-
-          {job.snippet && <p className="text-sm text-gray-600 line-clamp-2">{job.snippet}</p>}
         </div>
 
-        <MaterialIcon name="chevron_right" className="text-gray-400 flex-shrink-0" />
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {job.location && (
+            <div className="flex items-center gap-1 text-gray-500">
+              <MaterialIcon name="location_on" className="text-sm" />
+              <span className="text-sm">{job.location}</span>
+            </div>
+          )}
+          <MaterialIcon name="chevron_right" className="text-gray-400" />
+        </div>
       </div>
     </button>
   );

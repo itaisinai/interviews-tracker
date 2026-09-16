@@ -68,7 +68,7 @@ const savedSearchSchema = z.object({
 });
 
 export const createSavedSearchHandler = asyncHandler(async (request, response) => {
-  const ownerEmail = request.ownerEmail!;
+  const ownerEmail = request.auth.email;
   const body = savedSearchSchema.parse(request.body);
   const service = getSavedJobSearchService();
 
@@ -77,7 +77,7 @@ export const createSavedSearchHandler = asyncHandler(async (request, response) =
 });
 
 export const listSavedSearchesHandler = asyncHandler(async (request, response) => {
-  const ownerEmail = request.ownerEmail!;
+  const ownerEmail = request.auth.email;
   const service = getSavedJobSearchService();
 
   const searches = await service.list(ownerEmail);
@@ -85,7 +85,7 @@ export const listSavedSearchesHandler = asyncHandler(async (request, response) =
 });
 
 export const deleteSavedSearchHandler = asyncHandler(async (request, response) => {
-  const ownerEmail = request.ownerEmail!;
+  const ownerEmail = request.auth.email;
   const { id } = z.object({ id: z.string() }).parse(request.params);
   const service = getSavedJobSearchService();
 

@@ -112,13 +112,13 @@ export class ExaJobSearchProvider implements JobSearchProvider {
         }
 
         const jobId = this.extractJobId(result.url);
-        const { companyName, title } = this.parseTitle(result.title);
+        const { companyName, title, location } = this.parseTitle(result.title);
 
         return {
           id: jobId,
           title: title || result.title,
           companyName: companyName || "Unknown Company",
-          location: null,
+          location: this.cleanLocation(location),
           workModel: null,
           postedDate: result.publishedDate ?? null,
           url: result.url,
@@ -129,19 +129,25 @@ export class ExaJobSearchProvider implements JobSearchProvider {
       .filter((result): result is JobSearchResult => result !== null);
   }
 
+  private cleanLocation(location: string | null): string | null {
+    if (!location) return null;
+    // Remove leading pipe and whitespace
+    return location.replace(/^\|\s*/, "").trim() || null;
+  }
+
   private parseJobDetail(result: any, url: string): JobSearchResult {
     if (!result) {
       throw new Error("No job details found");
     }
 
     const jobId = this.extractJobId(url);
-    const { companyName, title } = this.parseTitle(result.title || "");
+    const { companyName, title, location } = this.parseTitle(result.title || "");
 
     return {
       id: jobId,
       title: title || result.title || "Unknown Position",
       companyName: companyName || "Unknown Company",
-      location: null,
+      location: this.cleanLocation(location),
       workModel: null,
       postedDate: result.publishedDate ?? null,
       url,
@@ -155,7 +161,7 @@ export class ExaJobSearchProvider implements JobSearchProvider {
     return match ? match[1] : url;
   }
 
-  private parseTitle(title: string): { companyName: string | null; title: string } {
+  private parseTitle(title: string): { companyName: string | null; title: string; location: string | null } {
     // Remove common suffixes
     const cleaned = title
       .replace(/\s+LinkedIn$/i, "")
@@ -163,73 +169,117 @@ export class ExaJobSearchProvider implements JobSearchProvider {
       .replace(/\s+-\s+LinkedIn$/i, "")
       .trim();
 
-    // Pattern 1: "Company — Location" or "Company - Location"
-    // Example: "Vonage — Tel Aviv-Yafo" or "entrypoint — Herzliya, Tel Aviv"
-    const dashPattern = /^(.+?)\s+[—–-]\s+(.+?)(?:\s*,\s*(.+?))?$/;
-    const dashMatch = cleaned.match(dashPattern);
-    if (dashMatch) {
-      const [, company, location] = dashMatch;
-      // Check if first part looks like a company (not a full job title)
-      if (company && !company.includes("Senior") && !company.includes("Engineer") && company.length < 50) {
-        return {
-          companyName: company.trim(),
-          title: cleaned, // Return full title since we don't have a separate job title
-        };
-      }
+    // Pattern 0: "Company hiring Job Title in Location"
+    // Example: "Sage Intacct, Inc. hiring Senior Full-Stack Engineer in Tel Aviv-Yafo"
+    const hiringPattern = /^(.+?)\s+hiring\s+(.+?)\s+in\s+(.+?)(?:\s*\.\.\.)?$/i;
+    const hiringMatch = cleaned.match(hiringPattern);
+    if (hiringMatch) {
+      const [, company, jobTitle, location] = hiringMatch;
+      return {
+        companyName: company.trim(),
+        title: jobTitle.trim(),
+        location: location.trim(),
+      };
     }
 
-    // Pattern 2: "Job Title | Company Location"
-    // Example: "Senior Full-Stack Engineer | עובדים Modiin-Maccabim-Reut"
-    const pipePattern = /^(.+?)\s+\|\s+(.+?)(?:\s+(.+?))?$/;
-    const pipeMatch = cleaned.match(pipePattern);
-    if (pipeMatch) {
-      const [, jobTitle, rest] = pipeMatch;
-      // Extract company from rest (before location keywords)
-      const companyMatch = rest.match(/^([^\s]+(?:\s+[^\s]+)?)\s+(?:ב|in|at|Tel Aviv|Herzliya|Jerusalem)/i);
-      if (companyMatch) {
-        return {
-          companyName: companyMatch[1].trim(),
-          title: jobTitle.trim(),
-        };
-      }
-      // If no location found, treat first words as company
-      const words = rest.trim().split(/\s+/);
-      if (words.length > 0) {
-        return {
-          companyName: words.slice(0, 2).join(" ").trim(), // Take first 1-2 words as company
-          title: jobTitle.trim(),
-        };
-      }
+    // Pattern 0b: "Job Title - Company -" (trailing dash)
+    // Example: "Senior Full stack developer - HUNTHEAD -"
+    const dashCompanyPattern = /^(.+?)\s+-\s+([A-Z][A-Za-z0-9\s&.]+)\s+-\s*$/;
+    const dashCompanyMatch = cleaned.match(dashCompanyPattern);
+    if (dashCompanyMatch) {
+      const [, jobTitle, company] = dashCompanyMatch;
+      return {
+        companyName: company.trim(),
+        title: jobTitle.trim(),
+        location: null,
+      };
     }
 
-    // Pattern 3: "Job Title - Company"
-    const hyphenPattern = /^(.+?)\s+-\s+(.+?)$/;
-    const hyphenMatch = cleaned.match(hyphenPattern);
-    if (hyphenMatch) {
-      const [, part1, part2] = hyphenMatch;
-      // If first part looks like job title (contains keywords), second is company
-      if (
-        part1.match(/senior|junior|full.?stack|backend|frontend|engineer|developer|lead|architect/i) &&
-        part1.length > part2.length
-      ) {
-        return {
-          companyName: part2.trim(),
-          title: part1.trim(),
-        };
-      }
-      // Otherwise, first part is company
-      if (part1.length < 50 && !part1.match(/senior|engineer|developer/i)) {
-        return {
-          companyName: part1.trim(),
-          title: part2.trim(),
-        };
-      }
+    // Pattern 1: Hebrew "at" pattern with location
+    // Example: "Senior Full Stack Developer ב FINQ ISRAEL -" or "Job Title ב Company — Location"
+    const hebrewAtPattern = /^(.+?)\s+ב\s+(.+?)(?:\s+[—–-]\s+(.+?))?$/;
+    const hebrewMatch = cleaned.match(hebrewAtPattern);
+    if (hebrewMatch) {
+      const [, jobTitle, companyPart, locationPart] = hebrewMatch;
+      // Clean trailing dash from company
+      const company = companyPart.replace(/\s*-\s*$/, "").trim();
+      return {
+        companyName: company,
+        title: jobTitle.trim(),
+        location: locationPart?.trim() || null,
+      };
     }
 
-    // Pattern 4: Just the title or unclear format - return as-is
+    // Pattern 2: "at/in Location ב Company — Location"
+    // Example: "Senior Full Stack Engineer at Israel ב Vonage — Tel Aviv-Yafo"
+    const atLocationPattern = /^(.+?)\s+(?:at|in)\s+[^\s]+\s+ב\s+(.+?)\s+[—–-]\s+(.+?)$/i;
+    const atLocationMatch = cleaned.match(atLocationPattern);
+    if (atLocationMatch) {
+      const [, jobTitle, company, location] = atLocationMatch;
+      return {
+        companyName: company.trim(),
+        title: jobTitle.trim(),
+        location: location.trim(),
+      };
+    }
+
+    // Pattern 3: "Company גיוס Job Title at/עובדים Location"
+    // Example: "surense גיוס Senior Full-Stack Engineerעובדים at Modiin-Maccabim-Reut"
+    const recruitmentPattern = /^(.+?)\s+גיוס\s+(.+?)(?:עובדים|at)\s+(?:at\s+)?(.+?)$/;
+    const recruitmentMatch = cleaned.match(recruitmentPattern);
+    if (recruitmentMatch) {
+      const [, company, jobTitle, location] = recruitmentMatch;
+      return {
+        companyName: company.trim(),
+        title: jobTitle.trim(),
+        location: location.trim(),
+      };
+    }
+
+    // Pattern 4: "Company גיוס Job Title at Location"
+    // Example: "Fairmatic גיוס Senior Software Engineer at Fullstackעובדים"
+    const recruitmentPattern2 = /^(.+?)\s+גיוס\s+(.+?)\s+at\s+(.+?)(?:עובדים)?$/;
+    const recruitmentMatch2 = cleaned.match(recruitmentPattern2);
+    if (recruitmentMatch2) {
+      const [, company, jobTitle, location] = recruitmentMatch2;
+      return {
+        companyName: company.trim(),
+        title: jobTitle.trim(),
+        location: location.replace(/עובדים$/, "").trim(),
+      };
+    }
+
+    // Pattern 5: "Company גיוס Job Titleעובדים at Location"
+    // Example: "Obol גיוס Senior Full Stack Developerעובדים at Tel"
+    const recruitmentPattern3 = /^(.+?)\s+גיוס\s+(.+?)עובדים\s+at\s+(.+?)$/;
+    const recruitmentMatch3 = cleaned.match(recruitmentPattern3);
+    if (recruitmentMatch3) {
+      const [, company, jobTitle, location] = recruitmentMatch3;
+      return {
+        companyName: company.trim(),
+        title: jobTitle.trim(),
+        location: location.trim(),
+      };
+    }
+
+    // Pattern 6: "Job Title at Company -"
+    // Example: "Senior Full-stack Developer at The5ers.com -"
+    const atPattern = /^(.+?)\s+at\s+(.+?)(?:\s+-)?$/i;
+    const atMatch = cleaned.match(atPattern);
+    if (atMatch) {
+      const [, jobTitle, company] = atMatch;
+      return {
+        companyName: company.trim(),
+        title: jobTitle.trim(),
+        location: null,
+      };
+    }
+
+    // Pattern 7: Just the title or unclear format - return as-is
     return {
       companyName: null,
       title: cleaned.trim() || title.trim(),
+      location: null,
     };
   }
 }
